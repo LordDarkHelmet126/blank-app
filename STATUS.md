@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — command strip burst (March/Attack always on screen).
+**Last checkpoint:** 2026-09-20 — player-assignable standing orders for recruited generals.
 
 ## How to run
 
@@ -16,24 +16,22 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-Optional: `/?demo=slice` (banner raised), `/?demo=week` (two autoplay weeks).
+Optional: `/?demo=slice` (banner raised), `/?demo=orders` (Eli Hart hired with Drill order), `/?demo=week` (two autoplay weeks).
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Pinned **Command** strip on the main UI: Raise Banner, Travel, Hire, and full-width **March/Attack** stay visible without scrolling
-- Town/plot actions sit in a separate scrollable block above that strip
-- Shorter week-report modal (headline + 6 personality lines; rest stays in the field log)
-
-v0.1 loop is unchanged: Alaska map, weekly AP, 14 AI officers, 6 factions, battles, save/load.
+- Recruited generals (up to 5) have a **standing order** on the You card: By personality, Drill, Commerce, Cultivate, Fortify, Safety, Spy, Hide, Salvage
+- Orders cost no AP; they fire at **End Week**. Assigned work is tagged `— ordered.` in the log
+- Player staff no longer launch independent attacks; Command strip **March/Attack** is still the player's war button
+- Save/load keeps standing orders
 
 ## What’s next (small bursts)
 
-1. Recruited generals: player-assignable orders instead of only AI auto-act
-2. One more Alaska event + reveal path for legend Ilya Karr that’s obvious in-UI
-3. Town & plots: show at least one domestic row without looking collapsed on short windows
-4. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
+1. One more Alaska event + reveal path for legend Ilya Karr that’s obvious in-UI
+2. Town & plots: show at least one domestic row without looking collapsed on short windows
+3. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
 
 ## Blockers
 

@@ -18,6 +18,8 @@ import {
   serialize,
   deserialize,
   createCustomOfficer,
+  setGeneralOrder,
+  GENERAL_ORDERS,
   autoplayWeek,
   MAX_GENERALS,
 } from "./engine.js";
@@ -44,6 +46,25 @@ export function boot(loaded) {
       seed: 7,
     });
     act(state, content, "raise_banner");
+    selectedRegion = "bethel";
+    hideModal();
+    render();
+    return;
+  }
+  if (params.get("demo") === "orders") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    act(state, content, "raise_banner");
+    const hart = state.officers.find((o) => o.id === "hart");
+    if (hart) {
+      hart.faction = "northern_front";
+      hart.loyalty = 80;
+      hart.standingOrder = "drill";
+    }
     selectedRegion = "bethel";
     hideModal();
     render();
@@ -169,11 +190,10 @@ function hideModal() {
 function helpHtml() {
   return `
     <h2>How to play</h2>
-    <p>Each turn is <strong>one week</strong>. Spend AP, then End Week. AI officers act according to personality (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse).</p>
-    <ul>
-      <li>Raise Banner in uncontrolled Bethel to found Northern Front.</li>
+      <li>Hire up to 5 generals, then set their <strong>standing order</strong> on the You card. They carry it out at End Week (no extra AP). March/Attack is still your command.</li>
       <li>Domestic actions need a region you hold.</li>
       <li>Hire free officers in your region (max 5 generals).</li>
+      <li>Set each general's standing order on the You card; they act at End Week (no extra AP).</li>
       <li>Spy, rumor, persuade, hide, and alliances are always on the board.</li>
       <li>March/Attack opens a short grid battle (or auto-resolve).</li>
       <li>Tech is salvage + calendar. No leapfrog.</li>
@@ -314,6 +334,7 @@ export function render() {
   renderLog();
   renderLegend();
   drawMap();
+  wireOrders();
   wireAfterRender();
   if (state.phase === "battle") openBattle();
   else $("battle").hidden = true;
@@ -330,7 +351,20 @@ function youHtml() {
       <span class="pill">WAR ${p.war}</span><span class="pill">INT ${p.int}</span>
       <span class="pill">POL ${p.pol}</span><span class="pill">CHR ${p.chr}</span>
     </div>
-    <p class="muted">Generals ${gens.length}/${MAX_GENERALS}${gens.length ? ": " + gens.map((g) => g.name).join(", ") : ""} · ${esc(state.difficulty)} · salvage ${state.research.points}</p>
+    <p class="muted">Generals ${gens.length}/${MAX_GENERALS} · ${esc(state.difficulty)} · salvage ${state.research.points}</p>
+    ${
+      gens.length
+        ? `<div class="gen-orders">${gens
+            .map(
+              (g) => `<label class="gen-row"><span>${esc(g.name)} <small>${esc(g.personality)}</small></span>
+      <select data-order-gen="${g.id}">${GENERAL_ORDERS.map(
+                (o) =>
+                  `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
+              ).join("")}</select></label>`
+            )
+            .join("")}</div>`
+        : `<p class="muted">Hire from Command, then assign orders here.</p>`
+    }
   `;
 }
 
@@ -641,11 +675,17 @@ function doBattle(cmd, extra) {
   drawBattle();
 }
 
+function wireOrders() {
+  document.querySelectorAll("[data-order-gen]").forEach((sel) => {
+    sel.onchange = () => {
+      const res = setGeneralOrder(state, sel.dataset.orderGen, sel.value);
+      toast(res.message);
+      render();
+    };
+  });
+}
+
 function wireAfterRender() {
-  const card = $("modal-card");
-  if ($("modal").hidden) {
-    // still wire officers modal buttons if we opened via dock after render
-  }
   const add = document.getElementById("c-add");
   if (add) {
     add.onclick = () => {

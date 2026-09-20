@@ -11,6 +11,17 @@ import {
 
 export const GAME_VERSION = 1;
 export const MAX_GENERALS = 5;
+export const GENERAL_ORDERS = [
+  { id: "auto", label: "By personality" },
+  { id: "drill", label: "Drill" },
+  { id: "commerce", label: "Commerce" },
+  { id: "cultivate", label: "Cultivate" },
+  { id: "fortify", label: "Fortify" },
+  { id: "safety", label: "Safety" },
+  { id: "spy", label: "Spy" },
+  { id: "hide", label: "Hide" },
+  { id: "research", label: "Salvage" },
+];
 const LOG_CAP = 240;
 
 const DIFFICULTY = {
@@ -86,6 +97,21 @@ export function playerGenerals(state) {
   const p = playerOf(state);
   if (!p.faction) return [];
   return livingOfficers(state).filter((o) => o.faction === p.faction && o.id !== p.id);
+}
+
+export function orderLabel(id) {
+  return GENERAL_ORDERS.find((o) => o.id === id)?.label || "By personality";
+}
+
+export function setGeneralOrder(state, officerId, orderId) {
+  if (state.phase === "battle") return { ok: false, message: "Finish the field first." };
+  const g = playerGenerals(state).find((o) => o.id === officerId);
+  if (!g) return { ok: false, message: "Not one of your generals." };
+  if (!GENERAL_ORDERS.some((o) => o.id === orderId)) return { ok: false, message: "Unknown order." };
+  g.standingOrder = orderId;
+  const msg = `${g.name} is ordered: ${orderLabel(orderId)}.`;
+  pushLog(state, msg, "player");
+  return { ok: true, message: msg };
 }
 
 export function regionsOfFaction(state, fid) {
@@ -217,6 +243,7 @@ export function createNewGame(content, opts = {}) {
     alive: true,
     retinue: o.retinue || 0,
     fame: o.legend ? 70 : 20,
+    standingOrder: "auto",
   }));
 
   const player = {
@@ -324,6 +351,9 @@ export function deserialize(raw) {
   const state = typeof raw === "string" ? JSON.parse(raw) : raw;
   attachSeason(state);
   if (!state.log) state.log = [];
+  (state.officers || []).forEach((o) => {
+    if (!o.standingOrder) o.standingOrder = "auto";
+  });
   return state;
 }
 
@@ -739,6 +769,7 @@ function doHire(state, officerId, stats) {
   state.gold -= cost;
   t.faction = p.faction;
   t.loyalty = Math.min(90, 55 + Math.floor(stats.chr / 8));
+  t.standingOrder = t.standingOrder || "auto";
   addBond(state, t.id, 12);
   p.fame += 4;
   const msg = `${t.name} takes your color as general ${playerGenerals(state).length}/${MAX_GENERALS}.`;
@@ -818,6 +849,7 @@ function doPersuade(state, officerId, stats) {
   }
   t.faction = p.faction;
   t.loyalty = 50 + Math.floor(stats.chr / 10);
+  t.standingOrder = t.standingOrder || "auto";
   addBond(state, t.id, 10);
   const msg = `${t.name} crosses the floor to Northern Front.`;
   pushLog(state, msg, "alert");
@@ -964,6 +996,70 @@ function weightedPick(state, weights, allowed) {
   return entries[0]?.[0] || "hide";
 }
 
+function applyOfficerChoice(state, off, choice, playerStaff) {
+  const fac = off.faction ? factionOf(state, off.faction) : null;
+  const region = regionOf(state, off.region);
+  const ordered = playerStaff && off.standingOrder && off.standingOrder !== "auto";
+  const suffix = ordered ? " — ordered." : "";
+  const tag = `${off.name} [${off.personality}]`;
+
+  if (choice === "drill" && region && fac && region.owner === fac.id) {
+    const g = 2 + Math.floor(off.war / 22);
+    region.garrison = Math.min(280, region.garrison + g);
+    return { personality: off.personality, text: `${tag} drills ${region.short} (+${g} garrison).${suffix}` };
+  }
+  if (choice === "commerce" && region && fac && region.owner === fac.id) {
+    const g = 3 + Math.floor(off.pol / 20);
+    fac.gold += g;
+    if (playerStaff) state.gold += g;
+    region.economy = Math.min(100, region.economy + 1);
+    return { personality: off.personality, text: `${tag} works markets in ${region.short} (+${g} gold).${suffix}` };
+  }
+  if (choice === "cultivate" && region && fac && region.owner === fac.id) {
+    region.food = Math.min(100, region.food + 3);
+    if (playerStaff) state.food += 2 + Math.floor(off.pol / 25);
+    return { personality: off.personality, text: `${tag} caches food in ${region.short}.${suffix}` };
+  }
+  if (choice === "fortify" && region && fac && region.owner === fac.id) {
+    region.walls = Math.min(90, region.walls + 2);
+    return { personality: off.personality, text: `${tag} fortifies ${region.short} (walls ${region.walls}).${suffix}` };
+  }
+  if (choice === "safety" && region && fac && region.owner === fac.id) {
+    region.order = Math.min(100, region.order + 3);
+    return { personality: off.personality, text: `${tag} runs safety in ${region.short}.${suffix}` };
+  }
+  if (choice === "spy") {
+    const n = pick(state, state.regions);
+    n.intel = Math.min(3, n.intel + (off.personality === "schemer" ? 1 : 0));
+    if (n.id === "arctic_slope") discoverCheck(state, n.id);
+    return { personality: off.personality, text: `${tag} runs a net over ${n.short}.${suffix}` };
+  }
+  if (choice === "ally" && fac && !playerStaff) {
+    const others = state.factions.filter((f) => f.id !== fac.id && f.alive !== false && f.alignment !== "invader");
+    const o = pick(state, others);
+    if (o) {
+      setRelation(state, fac.id, o.id, getRelation(state, fac.id, o.id) + (off.personality === "diplomat" ? 6 : 2));
+      return { personality: off.personality, text: `${tag} talks to ${o.short} (rel ${getRelation(state, fac.id, o.id)}).` };
+    }
+  }
+  if (choice === "rumor" && !playerStaff) {
+    const t = pick(state, livingOfficers(state).filter((x) => x.id !== off.id && x.faction && x.faction !== off.faction));
+    if (t) {
+      t.loyalty = Math.max(5, t.loyalty - (off.personality === "schemer" || off.personality === "ambitious" ? 5 : 2));
+      return { personality: off.personality, text: `${tag} spreads rumor against ${t.name} (loy ${t.loyalty}).` };
+    }
+  }
+  if (choice === "persuade" && !playerStaff) {
+    return { personality: off.personality, text: `${tag} tests loyalties in ${region?.short || "the dark"}.` };
+  }
+  if (choice === "research") {
+    if (playerStaff) state.research.points += 1;
+    return { personality: off.personality, text: `${tag} scrapes a workshop for parts.${suffix}` };
+  }
+  region && (region.order = Math.min(100, region.order + 1));
+  return { personality: off.personality, text: `${tag} hides stores and waits.${suffix}` };
+}
+
 function officerActAI(state, content, off) {
   if (off.id === "player" || off.alive === false) return null;
   if (off.hidden && !state.discovered.includes(off.id) && off.legend) {
@@ -976,6 +1072,17 @@ function officerActAI(state, content, off) {
   }
   const fac = off.faction ? factionOf(state, off.faction) : null;
   const region = regionOf(state, off.region);
+  const p = playerOf(state);
+  const servingPlayer = !!(p.faction && off.faction === p.faction && off.id !== p.id);
+  if (servingPlayer) {
+    let choice = off.standingOrder && off.standingOrder !== "auto" ? off.standingOrder : null;
+    if (!choice) {
+      const weights = { ...aiWeights(content, off.personality), attack: 0 };
+      choice = weightedPick(state, weights, ["drill", "commerce", "cultivate", "fortify", "safety", "spy", "hide", "research"]);
+    }
+    return applyOfficerChoice(state, off, choice, true);
+  }
+
   const weights = aiWeights(content, off.personality);
   const allowed = ["drill", "commerce", "cultivate", "fortify", "safety", "spy", "ally", "rumor", "persuade", "hide", "research", "attack"];
   let choice = weightedPick(state, weights, allowed);
@@ -988,7 +1095,6 @@ function officerActAI(state, content, off) {
     const targets = region.neighbors
       .map((id) => regionOf(state, id))
       .filter((r) => r && r.owner !== fac.id);
-    const p = playerOf(state);
     const grace = DIFFICULTY[state.difficulty].grace;
     const filtered = targets.filter((r) => {
       if (p.faction && r.owner === p.faction && regionsOfFaction(state, p.faction).length <= 1 && state.week < grace) return false;
@@ -1027,58 +1133,7 @@ function officerActAI(state, content, off) {
     }
   }
 
-  if (choice === "drill" && region && fac && region.owner === fac.id) {
-    const g = 2 + Math.floor(off.war / 22);
-    region.garrison = Math.min(280, region.garrison + g);
-    return { personality: off.personality, text: `${off.name} [${off.personality}] drills ${region.short} (+${g} garrison).` };
-  }
-  if (choice === "commerce" && region && fac && region.owner === fac.id) {
-    const g = 3 + Math.floor(off.pol / 20);
-    fac.gold += g;
-    region.economy = Math.min(100, region.economy + 1);
-    return { personality: off.personality, text: `${off.name} [${off.personality}] works markets in ${region.short} (+${g} gold).` };
-  }
-  if (choice === "cultivate" && region && fac && region.owner === fac.id) {
-    region.food = Math.min(100, region.food + 3);
-    return { personality: off.personality, text: `${off.name} [${off.personality}] caches food in ${region.short}.` };
-  }
-  if (choice === "fortify" && region && fac && region.owner === fac.id) {
-    region.walls = Math.min(90, region.walls + 2);
-    return { personality: off.personality, text: `${off.name} [${off.personality}] fortifies ${region.short} (walls ${region.walls}).` };
-  }
-  if (choice === "safety" && region && fac && region.owner === fac.id) {
-    region.order = Math.min(100, region.order + 3);
-    return { personality: off.personality, text: `${off.name} [${off.personality}] runs safety in ${region.short}.` };
-  }
-  if (choice === "spy") {
-    const n = pick(state, state.regions);
-    n.intel = Math.min(3, n.intel + (off.personality === "schemer" ? 1 : 0));
-    if (n.id === "arctic_slope") discoverCheck(state, n.id);
-    return { personality: off.personality, text: `${off.name} [${off.personality}] runs a net over ${n.short}.` };
-  }
-  if (choice === "ally" && fac) {
-    const others = state.factions.filter((f) => f.id !== fac.id && f.alive !== false && f.alignment !== "invader");
-    const o = pick(state, others);
-    if (o) {
-      setRelation(state, fac.id, o.id, getRelation(state, fac.id, o.id) + (off.personality === "diplomat" ? 6 : 2));
-      return { personality: off.personality, text: `${off.name} [${off.personality}] talks to ${o.short} (rel ${getRelation(state, fac.id, o.id)}).` };
-    }
-  }
-  if (choice === "rumor") {
-    const t = pick(state, livingOfficers(state).filter((x) => x.id !== off.id && x.faction && x.faction !== off.faction));
-    if (t) {
-      t.loyalty = Math.max(5, t.loyalty - (off.personality === "schemer" || off.personality === "ambitious" ? 5 : 2));
-      return { personality: off.personality, text: `${off.name} [${off.personality}] spreads rumor against ${t.name} (loy ${t.loyalty}).` };
-    }
-  }
-  if (choice === "persuade") {
-    return { personality: off.personality, text: `${off.name} [${off.personality}] tests loyalties in ${region?.short || "the dark"}.` };
-  }
-  if (choice === "research") {
-    return { personality: off.personality, text: `${off.name} [${off.personality}] scrapes a workshop for parts.` };
-  }
-  region && (region.order = Math.min(100, region.order + 1));
-  return { personality: off.personality, text: `${off.name} [${off.personality}] hides stores and waits.` };
+  return applyOfficerChoice(state, off, choice, false);
 }
 
 function upkeep(state) {
@@ -1284,6 +1339,7 @@ export function createCustomOfficer(state, spec) {
     fame: 10,
     bio: spec.bio || "A name written into the expandable roster.",
     custom: true,
+    standingOrder: "auto",
   });
   state.customSlotsUsed += 1;
   pushLog(state, `${spec.name || "Custom"} added to the free roster in ${currentRegion(state).short}.`, "info");

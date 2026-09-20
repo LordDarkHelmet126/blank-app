@@ -12,6 +12,7 @@ import {
   playerGenerals,
   listActions,
   createCustomOfficer,
+  setGeneralOrder,
 } from "../js/engine.js";
 
 function assert(cond, msg) {
@@ -77,6 +78,27 @@ const custom = createCustomOfficer(spyState, { name: "Pat Quinn", war: 55, perso
 assert(custom.ok, "custom officer slot");
 assert(spyState.officers.some((o) => o.id === custom.id), "custom in roster");
 console.log("ok spy/ally/hire/custom");
+
+const orderState = createNewGame(content, { seed: 11, difficulty: "easy", name: "Pat", background: "organizer" });
+act(orderState, content, "raise_banner");
+const hart = orderState.officers.find((o) => o.id === "hart");
+hart.faction = "northern_front";
+hart.loyalty = 80;
+hart.region = "bethel";
+const beforeG = regionOf(orderState, "bethel").garrison;
+const ordered = setGeneralOrder(orderState, "hart", "drill");
+assert(ordered.ok, `set order: ${ordered.message}`);
+assert(hart.standingOrder === "drill", "standing order persisted");
+res = act(orderState, content, "end_week");
+assert(res.ok, "end week after order");
+assert(
+  orderState.log.some((l) => l.text.includes("Eli Hart") && l.text.includes("drills") && l.text.includes("ordered")),
+  "ordered general should drill at week end"
+);
+assert(regionOf(orderState, "bethel").garrison > beforeG, "drill should raise garrison");
+const loadedOrders = deserialize(serialize(orderState));
+assert(loadedOrders.officers.find((o) => o.id === "hart").standingOrder === "drill", "order survives save");
+console.log("ok general standing orders");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
