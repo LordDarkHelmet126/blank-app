@@ -427,6 +427,7 @@ function weekReportHtml(report) {
 }
 
 const COMMAND_IDS = ["raise_banner", "travel", "hire", "attack"];
+const PINNED_TOWN_IDS = ["seek_legend", "drill", "commerce", "cultivate"];
 
 function actionButton(a) {
   const b = document.createElement("button");
@@ -440,8 +441,10 @@ function actionButton(a) {
 }
 
 function renderActions() {
+  const pinned = $("actions-pinned");
   const town = $("actions");
   const cmd = $("command-actions");
+  pinned.innerHTML = "";
   town.innerHTML = "";
   cmd.innerHTML = "";
   const actions = listActions(state).filter((a) => a.id !== "end_week");
@@ -449,7 +452,12 @@ function renderActions() {
     const a = actions.find((x) => x.id === id);
     if (a) cmd.appendChild(actionButton(a));
   });
-  actions.filter((a) => !COMMAND_IDS.includes(a.id)).forEach((a) => town.appendChild(actionButton(a)));
+  const townActs = actions.filter((a) => !COMMAND_IDS.includes(a.id));
+  PINNED_TOWN_IDS.forEach((id) => {
+    const a = townActs.find((x) => x.id === id);
+    if (a) pinned.appendChild(actionButton(a));
+  });
+  townActs.filter((a) => !PINNED_TOWN_IDS.includes(a.id)).forEach((a) => town.appendChild(actionButton(a)));
 }
 
 function startAction(a) {

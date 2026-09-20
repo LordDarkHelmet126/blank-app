@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — in-UI reveal path for hidden legend Ilya Karr.
+**Last checkpoint:** 2026-09-20 — Town & plots keeps a domestic row visible on short windows.
 
 ## How to run
 
@@ -22,14 +22,13 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- ROTK7-style hidden officer: **Ilya Karr** (original Slope Ghost, not licensed IP)
-- In-UI path: rumor on the Arctic Slope card + Officers list + **?** on the map; **Seek Legend** (Town & plots) names him; travel Fairbanks → Slope and Seek again to list him (Hire if you share the region)
-- Spy/Hide on the Slope also advances the hunt; standing orders and Command March/Attack unchanged
+- Town & plots no longer collapses to a heading: **Seek Legend** plus **Drill / Commerce / Cultivate** stay pinned; extra plots scroll
+- You + Region cards cap and scroll so they cannot eat the action strip; Field log may shrink on short windows
+- Standing orders and Command March/Attack unchanged
 
 ## What’s next (small bursts)
 
-1. Town & plots: show at least one domestic row without looking collapsed on short windows
-2. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
+1. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
 
 ## Blockers
 
