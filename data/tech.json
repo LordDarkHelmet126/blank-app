@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "version": "0.1",
+    "feel": "Walking Dead slow salvage — calendar gates plus research points, no leapfrog tree",
+    "notes": "Later unlocks (tracked hulls, relic airframes) are listed so the roster can grow; Alaska v0.1 only reaches early salvage."
+  },
+  "tracks": [
+    {
+      "id": "small_arms",
+      "name": "Hunting Pattern Rifles",
+      "week": 0,
+      "points": 0,
+      "summary": "What people already own. No bonus, no fantasy.",
+      "battle": { "atk": 0, "snowPenalty": 0, "unlockUnit": null }
+    },
+    {
+      "id": "workshop",
+      "name": "Workshop Salvage",
+      "week": 6,
+      "points": 8,
+      "summary": "Filed sights, patched webbing, hand-loaded scraps.",
+      "battle": { "atk": 1, "snowPenalty": 0, "unlockUnit": null }
+    },
+    {
+      "id": "winter_kit",
+      "name": "Winter Kit",
+      "week": 12,
+      "points": 16,
+      "summary": "Parkas, stove fuel, whiteout drill — not new weapons.",
+      "battle": { "atk": 1, "snowPenalty": -1, "unlockUnit": null }
+    },
+    {
+      "id": "technicals",
+      "name": "Improvised Technicals",
+      "week": 18,
+      "points": 28,
+      "summary": "Pickups with bolted steel and a scavenged gun.",
+      "battle": { "atk": 2, "snowPenalty": 0, "unlockUnit": "technical" }
+    },
+    {
+      "id": "tracked_hulls",
+      "name": "Tracked Support Hulls",
+      "week": 32,
+      "points": 48,
+      "summary": "Captured IFV hulks running on cannibalized parts. Rare, loud, late.",
+      "battle": { "atk": 4, "snowPenalty": 0, "unlockUnit": "ifv" }
+    },
+    {
+      "id": "relic_air",
+      "name": "Carrier Relic Airframe",
+      "week": 48,
+      "points": 72,
+      "summary": "One flyable naval interceptor from a frozen wreck — not a fleet.",
+      "battle": { "atk": 6, "snowPenalty": 0, "unlockUnit": "interceptor" }
+    }
+  ]
+}

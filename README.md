@@ -1,19 +1,84 @@
-# 🎈 Blank app template
+# Northern Front
 
-A simple Streamlit app template for you to modify!
+Working title for an original-IP, officer-first sandbox. Invasion week 0, Alaska theater. Romance of the Three Kingdoms VII–style weekly AP, not a licensed ROTK product and not a Red Dawn tie-in (no Wolverines, no Koei assets).
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+**v0.1 vertical slice** — playable loop, expandable JSON roster (not a fake 500-officer dump).
 
-### How to run it on your own machine
+## Why HTML / Canvas (not Godot 4)
 
-1. Install the requirements
+Godot 4 is the long-term target, but this environment has no Godot editor/export toolchain. A static **HTML + ES modules + Canvas** prototype:
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+- runs with the Python 3 standard library (no pip, no engine install)
+- keeps officers/factions/regions/tech as plain JSON you can grow toward ~500 officers
+- is easy to headlessly simulate (see tests) so a 10+ week loop can be proven without a GPU
 
-2. Run the app
+The combat layer is a short, low-animation grid between strategy weeks — the same scope a Godot 2D port would keep.
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## Run (exact)
+
+You need a local HTTP server. Chrome blocks ES module `fetch` of JSON from `file://`.
+
+From the repository root:
+
+```bash
+python3 -m http.server 8765
+```
+
+Then open:
+
+```
+http://127.0.0.1:8765/
+```
+
+Equivalent:
+
+```bash
+npm start
+```
+
+(also serves on port **8765**.)
+
+If Python is missing, any static server in this folder works (`npx serve .`, etc.) as long as `index.html` is the site root and `/data/*.json` is reachable.
+
+### First session (what “done” looks like)
+
+1. New game → name + background + difficulty (Easy / Normal / Hard).
+2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**, week 0.
+3. **Raise Banner** to found Northern Front (max **5 generals** later via Hire / Persuade).
+4. Spend AP: Drill, Commerce, Cultivate, Fortify, Safety, Salvage/Forge, Spy, Hire, Alliance, Rumor, Persuade, Hide, Travel, March/Attack.
+5. **End Week** — AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
+6. March into a neighbor (Nome is the usual first fight) for a short grid battle, or check Auto-resolve.
+7. **Save** writes `localStorage` and downloads JSON. **Load** reads the browser slot, a file, or pasted JSON.
+
+Play 10+ weeks without the UI locking: **End Week** is always available in strategy phase. If gold and food both hit 0, a cache event keeps the campaign movable.
+
+## Data files (expand later)
+
+| File | Role |
+|------|------|
+| `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
+| `data/factions.json` | 6 Alaska-theater factions with pluses/minuses. |
+| `data/regions.json` | Simplified Alaska regions, neighbors, polygons. |
+| `data/tech.json` | Slow salvage unlocks (calendar + research points). |
+
+Add objects; the engine does not assume a fixed officer count.
+
+v0.1 ships **14 AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). One is a **hidden legend** (`Ilya Karr`) until intel or a later week.
+
+## Tests
+
+```bash
+node tests/simulate.mjs
+```
+
+or `npm test`. Proves 12 autoplay weeks on Easy/Normal/Hard, save/load, a resolved battle, spy/alliance, and personality-tagged AI logs.
+
+## Layout
+
+```
+index.html
+css/game.css
+js/          engine, battle, UI
+data/        JSON content
+tests/       headless simulation
+```

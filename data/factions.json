@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "theater": "alaska",
+    "version": "0.1",
+    "notes": "v0.1 ships 6 Alaska-theater factions. Add objects here to expand toward the full 40-faction roster; the engine does not hard-code count."
+  },
+  "factions": [
+    {
+      "id": "northern_front",
+      "name": "Northern Front",
+      "short": "Front",
+      "color": "#d4a056",
+      "colorDark": "#8a6230",
+      "alignment": "resistance",
+      "playerFoundable": true,
+      "plus": ["Home-ground improvisation", "Flexible command"],
+      "minus": ["Almost no heavy kit", "Tiny starting levy"],
+      "mods": { "war": 0, "int": 2, "pol": 2, "chr": 2, "upkeep": 0.9 },
+      "ai": "survive",
+      "gold": 0,
+      "relationsDefault": 40
+    },
+    {
+      "id": "pof",
+      "name": "Pacific Occupation Force",
+      "short": "POF",
+      "color": "#9a3b3b",
+      "colorDark": "#5c1f1f",
+      "alignment": "invader",
+      "playerFoundable": false,
+      "plus": ["Discipline", "Captured depots", "Airlift (late)"],
+      "minus": ["Hated by locals", "Long supply tail"],
+      "mods": { "war": 12, "int": 4, "pol": -12, "chr": -8, "upkeep": 1.25 },
+      "ai": "expand",
+      "gold": 220,
+      "relationsDefault": 8
+    },
+    {
+      "id": "interior",
+      "name": "Interior Holdouts",
+      "short": "Holdouts",
+      "color": "#6a8f5a",
+      "colorDark": "#3d542f",
+      "alignment": "resistance",
+      "playerFoundable": false,
+      "plus": ["Winter fighting", "Loyal townships"],
+      "minus": ["Suspicious of outsiders", "Poor ports"],
+      "mods": { "war": 8, "int": 0, "pol": 4, "chr": -2, "upkeep": 1.0 },
+      "ai": "hold",
+      "gold": 90,
+      "relationsDefault": 48
+    },
+    {
+      "id": "compact",
+      "name": "Coastal Compact",
+      "short": "Compact",
+      "color": "#3d7ea6",
+      "colorDark": "#1f445c",
+      "alignment": "civilian",
+      "playerFoundable": false,
+      "plus": ["Fisheries & trade", "Legal cover"],
+      "minus": ["Thin garrisons", "Hesitant to strike"],
+      "mods": { "war": -6, "int": 4, "pol": 12, "chr": 8, "upkeep": 0.95 },
+      "ai": "trade",
+      "gold": 140,
+      "relationsDefault": 55
+    },
+    {
+      "id": "aurora",
+      "name": "AURORA Cell",
+      "short": "AURORA",
+      "color": "#7b6ea8",
+      "colorDark": "#433b5e",
+      "alignment": "intel",
+      "playerFoundable": false,
+      "plus": ["Signals & spies", "Hidden caches"],
+      "minus": ["Few rifles", "Opaque leadership"],
+      "mods": { "war": -4, "int": 14, "pol": 2, "chr": 4, "upkeep": 0.85 },
+      "ai": "spy",
+      "gold": 70,
+      "relationsDefault": 50
+    },
+    {
+      "id": "banner",
+      "name": "Northern Banner Corps",
+      "short": "Banner",
+      "color": "#4a5568",
+      "colorDark": "#2a313c",
+      "alignment": "invader",
+      "playerFoundable": false,
+      "plus": ["Naval guns", "Island redoubt"],
+      "minus": ["Isolated", "Fuel hungry"],
+      "mods": { "war": 10, "int": 2, "pol": -8, "chr": -6, "upkeep": 1.2 },
+      "ai": "expand",
+      "gold": 160,
+      "relationsDefault": 12
+    }
+  ]
+}

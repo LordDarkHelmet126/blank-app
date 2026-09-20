@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Northern Front</title>
+    <link rel="stylesheet" href="css/game.css" />
+  </head>
+  <body>
+    <div id="boot">Loading Alaska theater…</div>
+    <div id="app" hidden>
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">NF</div>
+          <div>
+            <h1>Northern Front</h1>
+            <p class="tag">Alaska theater · week <span id="week">0</span> · <span id="season">Deep Winter</span></p>
+          </div>
+        </div>
+        <div class="meters">
+          <div class="meter"><span>AP</span><strong id="ap">0</strong></div>
+          <div class="meter"><span>Gold</span><strong id="gold">0</strong></div>
+          <div class="meter"><span>Food</span><strong id="food">0</strong></div>
+          <div class="meter"><span>Fame</span><strong id="fame">0</strong></div>
+          <div class="meter"><span>Rank</span><strong id="rank">Free</strong></div>
+        </div>
+        <div class="top-actions">
+          <button type="button" id="btn-help">Help</button>
+          <button type="button" id="btn-save">Save</button>
+          <button type="button" id="btn-load">Load</button>
+          <button type="button" id="btn-end" class="primary">End Week</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="map-wrap">
+          <canvas id="map" width="1000" height="620" aria-label="Alaska theater map"></canvas>
+          <div class="map-legend" id="legend"></div>
+        </section>
+        <aside class="side">
+          <section class="card" id="you-card"></section>
+          <section class="card" id="region-card"></section>
+          <section class="card actions-card">
+            <h2>Weekly actions</h2>
+            <div id="actions" class="actions"></div>
+          </section>
+        </aside>
+      </main>
+
+      <section class="dock">
+        <div class="dock-head">
+          <h2>Field log</h2>
+          <button type="button" id="btn-officers">Officers</button>
+          <button type="button" id="btn-factions">Factions</button>
+        </div>
+        <ol id="log" class="log"></ol>
+      </section>
+    </div>
+
+    <div id="modal" class="modal" hidden>
+      <div class="modal-card" id="modal-card"></div>
+    </div>
+
+    <div id="battle" class="battle" hidden>
+      <div class="battle-inner">
+        <header class="battle-bar">
+          <h2 id="battle-title">Field</h2>
+          <p id="battle-meta"></p>
+          <div class="battle-cmds">
+            <button type="button" id="ploy-rally">Ploy: Rally</button>
+            <button type="button" id="ploy-ambush">Ploy: Ambush</button>
+            <button type="button" id="ploy-rumor">Ploy: Rumor</button>
+            <button type="button" id="battle-end-turn" class="primary">End impulse</button>
+            <button type="button" id="battle-auto">Auto-resolve</button>
+          </div>
+        </header>
+        <canvas id="battle-canvas" width="960" height="520"></canvas>
+        <p id="battle-hint" class="hint">Select a unit, then a hex to step or an adjacent enemy to fire. Low animation by design.</p>
+        <ol id="battle-log" class="log battle-log"></ol>
+      </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

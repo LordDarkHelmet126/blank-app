@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "theater": "alaska",
+    "version": "0.1",
+    "coordinateSpace": "1000x620 map units (west-east, north-south)",
+    "notes": "Simplified Alaska regions for v0.1. Add regions and neighbor links to expand the map later."
+  },
+  "coast": [
+    [40, 210], [70, 140], [160, 70], [280, 30], [520, 18], [740, 40],
+    [820, 90], [880, 180], [960, 250], [990, 360], [970, 500], [900, 560],
+    [780, 540], [700, 500], [620, 560], [500, 590], [360, 570], [240, 520],
+    [140, 470], [70, 380], [40, 280]
+  ],
+  "regions": [
+    {
+      "id": "arctic_slope",
+      "name": "Arctic Slope",
+      "short": "Slope",
+      "type": "oil",
+      "plus": ["Fuel stocks", "Pipeline remnant"],
+      "minus": ["Brutal weather", "Exposed to air"],
+      "neighbors": ["fairbanks"],
+      "startOwner": "pof",
+      "garrison": 70,
+      "economy": 55,
+      "food": 18,
+      "walls": 20,
+      "order": 35,
+      "population": 9000,
+      "terrainBias": "ice",
+      "polygon": [
+        [180, 24], [720, 20], [740, 110], [560, 128], [300, 132], [170, 96]
+      ],
+      "label": [430, 72]
+    },
+    {
+      "id": "fairbanks",
+      "name": "Fairbanks Interior",
+      "short": "Fairbanks",
+      "type": "interior",
+      "plus": ["Training grounds", "Rail spur"],
+      "minus": ["Long winters", "Fuel scarce"],
+      "neighbors": ["arctic_slope", "nome", "anchorage", "bethel"],
+      "startOwner": "interior",
+      "garrison": 48,
+      "economy": 42,
+      "food": 40,
+      "walls": 28,
+      "order": 62,
+      "population": 32000,
+      "terrainBias": "forest",
+      "polygon": [
+        [300, 132], [560, 128], [590, 250], [400, 268], [250, 240], [240, 170]
+      ],
+      "label": [420, 190]
+    },
+    {
+      "id": "nome",
+      "name": "Nome Coast",
+      "short": "Nome",
+      "type": "port",
+      "plus": ["Sea lift", "Quiet inlets"],
+      "minus": ["Icebound months", "Thin roads"],
+      "neighbors": ["fairbanks", "bethel"],
+      "startOwner": "aurora",
+      "garrison": 22,
+      "economy": 36,
+      "food": 28,
+      "walls": 16,
+      "order": 50,
+      "population": 3800,
+      "terrainBias": "coast",
+      "polygon": [
+        [48, 150], [240, 170], [250, 240], [180, 310], [60, 290], [40, 200]
+      ],
+      "label": [130, 230]
+    },
+    {
+      "id": "bethel",
+      "name": "Kuskokwim Lowlands",
+      "short": "Bethel",
+      "type": "rural",
+      "plus": ["Easy to hide", "Local guides"],
+      "minus": ["Sparse levy", "No industry"],
+      "neighbors": ["nome", "fairbanks", "anchorage"],
+      "startOwner": null,
+      "garrison": 6,
+      "economy": 18,
+      "food": 34,
+      "walls": 8,
+      "order": 44,
+      "population": 6200,
+      "terrainBias": "tundra",
+      "polygon": [
+        [180, 310], [400, 268], [430, 390], [300, 450], [150, 420], [120, 340]
+      ],
+      "label": [270, 360]
+    },
+    {
+      "id": "anchorage",
+      "name": "Anchorage Bowl",
+      "short": "Anchorage",
+      "type": "urban",
+      "plus": ["Depots", "Roads", "Airfield wrecks"],
+      "minus": ["Occupation HQ", "High unrest"],
+      "neighbors": ["fairbanks", "bethel", "kenai", "juneau"],
+      "startOwner": "pof",
+      "garrison": 96,
+      "economy": 70,
+      "food": 36,
+      "walls": 40,
+      "order": 28,
+      "population": 290000,
+      "terrainBias": "urban",
+      "polygon": [
+        [400, 268], [590, 250], [620, 360], [520, 410], [430, 390]
+      ],
+      "label": [510, 330]
+    },
+    {
+      "id": "kenai",
+      "name": "Kenai Peninsula",
+      "short": "Kenai",
+      "type": "resource",
+      "plus": ["Fisheries", "Old drill pads"],
+      "minus": ["Bottleneck roads", "Split loyalties"],
+      "neighbors": ["anchorage", "kodiak"],
+      "startOwner": "pof",
+      "garrison": 40,
+      "economy": 48,
+      "food": 44,
+      "walls": 18,
+      "order": 32,
+      "population": 58000,
+      "terrainBias": "forest",
+      "polygon": [
+        [430, 390], [520, 410], [560, 500], [470, 540], [390, 500], [400, 430]
+      ],
+      "label": [475, 460]
+    },
+    {
+      "id": "kodiak",
+      "name": "Kodiak Island",
+      "short": "Kodiak",
+      "type": "naval",
+      "plus": ["Harbor guns", "Hard to storm"],
+      "minus": ["Needs the sea", "Food imports"],
+      "neighbors": ["kenai"],
+      "startOwner": "banner",
+      "garrison": 58,
+      "economy": 34,
+      "food": 22,
+      "walls": 48,
+      "order": 40,
+      "population": 13000,
+      "terrainBias": "coast",
+      "polygon": [
+        [300, 500], [430, 490], [460, 560], [350, 590], [270, 560]
+      ],
+      "label": [365, 545]
+    },
+    {
+      "id": "juneau",
+      "name": "Southeast Panhandle",
+      "short": "Juneau",
+      "type": "capital",
+      "plus": ["Civil records", "Ferry routes"],
+      "minus": ["Far from Interior", "Rain-rot stores"],
+      "neighbors": ["anchorage"],
+      "startOwner": "compact",
+      "garrison": 30,
+      "economy": 58,
+      "food": 38,
+      "walls": 24,
+      "order": 70,
+      "population": 32000,
+      "terrainBias": "forest",
+      "polygon": [
+        [760, 280], [980, 270], [990, 470], [820, 510], [740, 400]
+      ],
+      "label": [870, 380]
+    }
+  ]
+}
