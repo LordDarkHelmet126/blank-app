@@ -27,7 +27,20 @@ const officerIds = content.officers.officers.map((o) => o.id);
 assert(new Set(officerIds).size === officerIds.length, "duplicate officer ids");
 assert(content.officers.officers.every((o) => o.name && o.bio && o.personality && o.region), "every officer needs name/bio/personality/region");
 assert(content.officers.officers.filter((o) => o.legend).map((o) => o.id).join() === "karr", "single original legend remains Ilya Karr");
-assert(content.factions.factions.length >= 4 && content.factions.factions.length <= 6, "Need 4–6 factions");
+assert(content.factions.factions.length >= 36 && content.factions.factions.length <= 44, `Need ~40 original factions, got ${content.factions.factions.length}`);
+const facIds = content.factions.factions.map((f) => f.id);
+assert(new Set(facIds).size === facIds.length, "duplicate faction ids");
+assert(
+  content.factions.factions.every((f) => f.name && f.bio && f.plus?.length && f.minus?.length && f.personalityLean),
+  "every faction needs name, bio, pluses/minuses, personality lean"
+);
+const sandboxIds = content.factions.factions.filter((f) => f.sandbox).map((f) => f.id).sort();
+assert(
+  sandboxIds.join() === "aurora,banner,compact,interior,northern_front,pof",
+  `Alaska sandbox subset must stay the original six, got ${sandboxIds}`
+);
+const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
+assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
 assert(content.regions.regions.length >= 6, "Need an Alaska region set");
 
 for (const diff of ["easy", "normal", "hard"]) {
@@ -36,6 +49,9 @@ for (const diff of ["easy", "normal", "hard"]) {
   assert(playerOf(state).region === "bethel", "start in Bethel");
   assert(!playerOf(state).faction, "start alone / no banner");
   assert(listActions(state).some((a) => a.id === "end_week" && a.enabled), "End Week always available");
+  assert(state.factions.length === content.factions.factions.length, "unused factions still load into state");
+  assert(state.factions.filter((f) => f.onMap).length === 6, "only the Alaska six are on-map");
+  assert(state.regions.every((r) => !r.owner || state.factions.find((f) => f.id === r.owner && f.onMap)), "no off-map region owner");
 
   for (let i = 0; i < 12; i++) {
     const res = autoplayWeek(state, content);

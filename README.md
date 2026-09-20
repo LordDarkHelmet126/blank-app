@@ -57,7 +57,7 @@ Play 10+ weeks without the UI locking: **End Week** is always available in strat
 | File | Role |
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
-| `data/factions.json` | 6 Alaska-theater factions with pluses/minuses. |
+| `data/factions.json` | ~40 original groups (name, bio, plus/minus, personality lean). Six are wired into the Alaska sandbox; the rest load for later maps. |
 | `data/regions.json` | Simplified Alaska regions, neighbors, polygons. |
 | `data/tech.json` | Slow salvage unlocks (calendar + research points). |
 

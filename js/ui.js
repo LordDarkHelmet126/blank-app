@@ -241,18 +241,23 @@ function officersHtml() {
 function factionsHtml() {
   if (!state) return `<p>No game.</p>`;
   const p = playerOf(state);
-  const rows = state.factions
-    .filter((f) => f.id !== "northern_front" || f.alive)
-    .map((f) => {
-      const rel = p.faction ? getRelation(state, p.faction, f.id) : f.relationsDefault;
-      const held = state.regions.filter((r) => r.owner === f.id).map((r) => r.short).join(", ") || "none";
-      return `<div class="card" style="margin:8px 0"><h2 style="color:${f.color}">${f.name}</h2>
-        <p>${f.alignment} · held: ${held} · rel ${rel}</p>
+  const row = (f) => {
+    const rel = p.faction ? getRelation(state, p.faction, f.id) : f.relationsDefault;
+    const held = state.regions.filter((r) => r.owner === f.id).map((r) => r.short).join(", ") || "none";
+    const where = f.onMap ? `held: ${held}` : `off-map · ${esc(f.theater || "later")}`;
+    return `<div class="card" style="margin:8px 0"><h2 style="color:${f.color}">${esc(f.name)}</h2>
+        <p class="muted">${esc(f.bio || "")}</p>
+        <p>${esc(f.alignment)} · ${esc(f.personalityLean || "loyalist")} lean · ${where} · rel ${rel}</p>
         <p class="plus">+ ${f.plus.join(" · ")}</p>
         <p class="minus">− ${f.minus.join(" · ")}</p></div>`;
-    })
-    .join("");
-  return `<h2>Factions</h2>${rows}<button type="button" data-close>Close</button>`;
+  };
+  const onMap = state.factions.filter((f) => f.onMap && (f.id !== "northern_front" || f.alive));
+  const later = state.factions.filter((f) => !f.onMap);
+  return `<h2>Factions on this map (${onMap.length})</h2>${onMap.map(row).join("")}
+    <h2>Later theaters (${later.length})</h2>
+    <p class="muted">Loaded from JSON. Not wired into the eight-region sandbox — no land, no pacts here.</p>
+    ${later.map(row).join("")}
+    <button type="button" data-close>Close</button>`;
 }
 
 function loadMenuHtml() {
@@ -487,6 +492,7 @@ function startAction(a) {
   if (a.needs === "faction" || a.needs === "ally") {
     const p = playerOf(state);
     const list = state.factions.filter((f) => {
+      if (!f.onMap) return false;
       if (!f.alive && f.id === "northern_front") return false;
       if (f.id === p.faction) return false;
       if (a.needs === "ally") return getRelation(state, p.faction, f.id) >= 70;
@@ -544,7 +550,7 @@ function renderLog() {
 
 function renderLegend() {
   $("legend").innerHTML = state.factions
-    .filter((f) => f.id !== "northern_front" || f.alive)
+    .filter((f) => f.onMap && (f.id !== "northern_front" || f.alive))
     .map((f) => `<span><i style="background:${f.color}"></i>${esc(f.short)}</span>`)
     .join("") + `<span><i style="background:#5a6a72"></i>Open</span>`;
 }

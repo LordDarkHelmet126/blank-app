@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — data-driven officer roster grown to 52 original AI officers.
+**Last checkpoint:** 2026-09-20 — ~40 original factions in JSON; six wired into Alaska.
 
 ## How to run
 
@@ -22,13 +22,14 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- `data/officers.json` now has **52 original AI officers** (was 14): varied personalities, stats, and factions across Alaska plus nearby Bering / Aleutian / south-pass pressure
-- Not a 500-name dump. Ilya Karr remains the only hidden legend. Seek Legend, standing orders, and Command strip unchanged
-- Tests expect a 40–60 original roster and still cover 12-week autoplay, battle, hire, orders, and the Karr path
+- `data/factions.json` now has **40 original groups**, each with name, short bio, pluses/minuses, and a personality lean
+- **Sandbox subset stays the original six** (Front, POF, Holdouts, Compact, AURORA, Banner) so the eight-region map is not restacked
+- The other 34 load into state as off-map / later-theater data (Yukon, Bering, Aleutians, Pacific, civic, mercenary). Ally UI, map legend, and AI pacts ignore them
+- Seek Legend, standing orders, Command/Town strips unchanged. Godot still not installed — skipped
 
 ## What’s next (small bursts)
 
-1. Later (not this burst): Godot 2D port if the toolchain exists
+1. Later: Godot 2D port if the toolchain exists
 
 ## Blockers
 

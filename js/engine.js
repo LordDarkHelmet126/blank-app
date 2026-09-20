@@ -75,6 +75,9 @@ export function regionOf(state, id) {
 export function factionOf(state, id) {
   return state.factions.find((f) => f.id === id);
 }
+export function isOnMapFaction(f) {
+  return !!(f && f.onMap);
+}
 export function playerOf(state) {
   return officerOf(state, state.playerOfficerId);
 }
@@ -215,6 +218,7 @@ export function createNewGame(content, opts = {}) {
   const factions = content.factions.factions.map((f) => ({
     ...deep(f),
     ruler: null,
+    onMap: f.sandbox === true,
     alive: true,
   }));
   const regions = content.regions.regions.map((r) => ({
@@ -356,6 +360,11 @@ export function deserialize(raw) {
     if (!o.standingOrder) o.standingOrder = "auto";
   });
   if (state.legendHunt == null) state.legendHunt = state.discovered?.includes("karr") ? 2 : 0;
+  (state.factions || []).forEach((f) => {
+    if (f.onMap == null) f.onMap = f.sandbox === true;
+    if (!f.bio) f.bio = "";
+    if (!f.personalityLean) f.personalityLean = "loyalist";
+  });
   return state;
 }
 
@@ -659,7 +668,7 @@ export function neighborRegions(state) {
 function alliedFactions(state) {
   const p = playerOf(state);
   if (!p.faction) return [];
-  return state.factions.filter((f) => f.id !== p.faction && f.alive !== false && getRelation(state, p.faction, f.id) >= 70);
+  return state.factions.filter((f) => f.onMap && f.id !== p.faction && f.alive !== false && getRelation(state, p.faction, f.id) >= 70);
 }
 
 export function act(state, content, actionId, extra = {}) {
@@ -884,6 +893,7 @@ function doAlly(state, factionId, stats) {
   if (!p.faction) return { ok: false, message: "No banner, no treaty." };
   const f = factionOf(state, factionId);
   if (!f || f.id === p.faction || f.alive === false) return { ok: false, message: "Pick a living faction." };
+  if (!f.onMap) return { ok: false, message: "That banner is off this theater." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   let rel = getRelation(state, p.faction, f.id);
   const invader = f.alignment === "invader";
@@ -1136,7 +1146,7 @@ function applyOfficerChoice(state, off, choice, playerStaff) {
     return { personality: off.personality, text: `${tag} runs a net over ${n.short}.${suffix}` };
   }
   if (choice === "ally" && fac && !playerStaff) {
-    const others = state.factions.filter((f) => f.id !== fac.id && f.alive !== false && f.alignment !== "invader");
+    const others = state.factions.filter((f) => f.onMap && f.id !== fac.id && f.alive !== false && f.alignment !== "invader");
     const o = pick(state, others);
     if (o) {
       setRelation(state, fac.id, o.id, getRelation(state, fac.id, o.id) + (off.personality === "diplomat" ? 6 : 2));

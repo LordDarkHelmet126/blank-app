@@ -2,7 +2,15 @@
   "meta": {
     "theater": "alaska",
     "version": "0.1",
-    "notes": "v0.1 ships 6 Alaska-theater factions. Add objects here to expand toward the full 40-faction roster; the engine does not hard-code count."
+    "notes": "About 40 original groups. sandbox:true are wired into the Alaska v0.1 map; the rest load from JSON for later theaters and must not own v0.1 regions.",
+    "sandboxIds": [
+      "northern_front",
+      "pof",
+      "interior",
+      "compact",
+      "aurora",
+      "banner"
+    ]
   },
   "factions": [
     {
@@ -13,12 +21,28 @@
       "colorDark": "#8a6230",
       "alignment": "resistance",
       "playerFoundable": true,
-      "plus": ["Home-ground improvisation", "Flexible command"],
-      "minus": ["Almost no heavy kit", "Tiny starting levy"],
-      "mods": { "war": 0, "int": 2, "pol": 2, "chr": 2, "upkeep": 0.9 },
+      "plus": [
+        "Home-ground improvisation",
+        "Flexible command"
+      ],
+      "minus": [
+        "Almost no heavy kit",
+        "Tiny starting levy"
+      ],
+      "mods": {
+        "war": 0,
+        "int": 2,
+        "pol": 2,
+        "chr": 2,
+        "upkeep": 0.9
+      },
       "ai": "survive",
       "gold": 0,
-      "relationsDefault": 40
+      "relationsDefault": 40,
+      "sandbox": true,
+      "theater": "alaska",
+      "personalityLean": "loyalist",
+      "bio": "A banner you raise from almost nothing. Neighbors, caches, and whoever still answers a hall bell."
     },
     {
       "id": "pof",
@@ -28,12 +52,29 @@
       "colorDark": "#5c1f1f",
       "alignment": "invader",
       "playerFoundable": false,
-      "plus": ["Discipline", "Captured depots", "Airlift (late)"],
-      "minus": ["Hated by locals", "Long supply tail"],
-      "mods": { "war": 12, "int": 4, "pol": -12, "chr": -8, "upkeep": 1.25 },
+      "plus": [
+        "Discipline",
+        "Captured depots",
+        "Airlift (late)"
+      ],
+      "minus": [
+        "Hated by locals",
+        "Long supply tail"
+      ],
+      "mods": {
+        "war": 12,
+        "int": 4,
+        "pol": -12,
+        "chr": -8,
+        "upkeep": 1.25
+      },
       "ai": "expand",
       "gold": 220,
-      "relationsDefault": 8
+      "relationsDefault": 8,
+      "sandbox": true,
+      "theater": "alaska",
+      "personalityLean": "aggressive",
+      "bio": "Occupation spear that took the Bowl and the Slope. They came for ports, fuel, and a quiet calendar."
     },
     {
       "id": "interior",
@@ -43,12 +84,28 @@
       "colorDark": "#3d542f",
       "alignment": "resistance",
       "playerFoundable": false,
-      "plus": ["Winter fighting", "Loyal townships"],
-      "minus": ["Suspicious of outsiders", "Poor ports"],
-      "mods": { "war": 8, "int": 0, "pol": 4, "chr": -2, "upkeep": 1.0 },
+      "plus": [
+        "Winter fighting",
+        "Loyal townships"
+      ],
+      "minus": [
+        "Suspicious of outsiders",
+        "Poor ports"
+      ],
+      "mods": {
+        "war": 8,
+        "int": 0,
+        "pol": 4,
+        "chr": -2,
+        "upkeep": 1.0
+      },
       "ai": "hold",
       "gold": 90,
-      "relationsDefault": 48
+      "relationsDefault": 48,
+      "sandbox": true,
+      "theater": "alaska",
+      "personalityLean": "cautious",
+      "bio": "Township rifles and winter roads around Fairbanks. They hold what they can see and distrust a fast ally."
     },
     {
       "id": "compact",
@@ -58,12 +115,28 @@
       "colorDark": "#1f445c",
       "alignment": "civilian",
       "playerFoundable": false,
-      "plus": ["Fisheries & trade", "Legal cover"],
-      "minus": ["Thin garrisons", "Hesitant to strike"],
-      "mods": { "war": -6, "int": 4, "pol": 12, "chr": 8, "upkeep": 0.95 },
+      "plus": [
+        "Fisheries & trade",
+        "Legal cover"
+      ],
+      "minus": [
+        "Thin garrisons",
+        "Hesitant to strike"
+      ],
+      "mods": {
+        "war": -6,
+        "int": 4,
+        "pol": 12,
+        "chr": 8,
+        "upkeep": 0.95
+      },
       "ai": "trade",
       "gold": 140,
-      "relationsDefault": 55
+      "relationsDefault": 55,
+      "sandbox": true,
+      "theater": "alaska",
+      "personalityLean": "diplomat",
+      "bio": "Juneau habits: fisheries, ferries, and paperwork that still pretends a capital exists."
     },
     {
       "id": "aurora",
@@ -73,12 +146,28 @@
       "colorDark": "#433b5e",
       "alignment": "intel",
       "playerFoundable": false,
-      "plus": ["Signals & spies", "Hidden caches"],
-      "minus": ["Few rifles", "Opaque leadership"],
-      "mods": { "war": -4, "int": 14, "pol": 2, "chr": 4, "upkeep": 0.85 },
+      "plus": [
+        "Signals & spies",
+        "Hidden caches"
+      ],
+      "minus": [
+        "Few rifles",
+        "Opaque leadership"
+      ],
+      "mods": {
+        "war": -4,
+        "int": 14,
+        "pol": 2,
+        "chr": 4,
+        "upkeep": 0.85
+      },
       "ai": "spy",
       "gold": 70,
-      "relationsDefault": 50
+      "relationsDefault": 50,
+      "sandbox": true,
+      "theater": "alaska",
+      "personalityLean": "schemer",
+      "bio": "A signals cell on the Nome coast. Few rifles, many frequencies, no public roster."
     },
     {
       "id": "banner",
@@ -88,12 +177,1082 @@
       "colorDark": "#2a313c",
       "alignment": "invader",
       "playerFoundable": false,
-      "plus": ["Naval guns", "Island redoubt"],
-      "minus": ["Isolated", "Fuel hungry"],
-      "mods": { "war": 10, "int": 2, "pol": -8, "chr": -6, "upkeep": 1.2 },
+      "plus": [
+        "Naval guns",
+        "Island redoubt"
+      ],
+      "minus": [
+        "Isolated",
+        "Fuel hungry"
+      ],
+      "mods": {
+        "war": 10,
+        "int": 2,
+        "pol": -8,
+        "chr": -6,
+        "upkeep": 1.2
+      },
       "ai": "expand",
       "gold": 160,
-      "relationsDefault": 12
+      "relationsDefault": 12,
+      "sandbox": true,
+      "theater": "alaska",
+      "personalityLean": "ambitious",
+      "bio": "Island guns on Kodiak. A second occupation color that wants its own sea-lane and its own rank."
+    },
+    {
+      "id": "yukon_relay",
+      "name": "Whitehorse Relay",
+      "short": "Relay",
+      "theater": "yukon",
+      "color": "#c4a35a",
+      "colorDark": "#6e5728",
+      "alignment": "civilian",
+      "personalityLean": "diplomat",
+      "plus": [
+        "Canadian rumor net",
+        "Fuel favors"
+      ],
+      "minus": [
+        "No Alaska levy",
+        "Slow to commit"
+      ],
+      "ai": "trade",
+      "gold": 80,
+      "relationsDefault": 52,
+      "mods": {
+        "war": -4,
+        "int": 6,
+        "pol": 8,
+        "chr": 6,
+        "upkeep": 0.95
+      },
+      "bio": "A south-pass desk that still talks as if a border means something. Useful later; not on this map.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "klondike_watch",
+      "name": "Klondike Watch",
+      "short": "Watch",
+      "theater": "yukon",
+      "color": "#8b7348",
+      "colorDark": "#4a3c24",
+      "alignment": "resistance",
+      "personalityLean": "cautious",
+      "plus": [
+        "Mine-road ambushes",
+        "Cold storage"
+      ],
+      "minus": [
+        "Thin numbers",
+        "Hates occupier scrip"
+      ],
+      "ai": "hold",
+      "gold": 40,
+      "relationsDefault": 44,
+      "mods": {
+        "war": 4,
+        "int": 2,
+        "pol": 0,
+        "chr": -2,
+        "upkeep": 1.0
+      },
+      "bio": "Claim-holders and road judges who never signed the landing. They wait on a map east of here.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "pacific_spine",
+      "name": "Pacific Spine Haul",
+      "short": "Spine",
+      "theater": "yukon",
+      "color": "#6d8b6e",
+      "colorDark": "#3a4c3b",
+      "alignment": "civilian",
+      "personalityLean": "merchant",
+      "plus": [
+        "Truck convoys",
+        "Spare parts"
+      ],
+      "minus": [
+        "Needs open road",
+        "Will sell to anyone"
+      ],
+      "ai": "trade",
+      "gold": 110,
+      "relationsDefault": 50,
+      "mods": {
+        "war": -2,
+        "int": 4,
+        "pol": 4,
+        "chr": 6,
+        "upkeep": 1.05
+      },
+      "bio": "Haulers who treat the highway as a country. Their depot is off this theater.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "timberline",
+      "name": "Timberline Militia",
+      "short": "Timber",
+      "theater": "yukon",
+      "color": "#4f6f45",
+      "colorDark": "#2a3c25",
+      "alignment": "resistance",
+      "personalityLean": "loyalist",
+      "plus": [
+        "Forest fighting",
+        "Local food"
+      ],
+      "minus": [
+        "No artillery",
+        "Suspicious of towns"
+      ],
+      "ai": "hold",
+      "gold": 35,
+      "relationsDefault": 46,
+      "mods": {
+        "war": 6,
+        "int": 0,
+        "pol": 2,
+        "chr": 0,
+        "upkeep": 0.9
+      },
+      "bio": "Mill towns that drilled on weekends and then the weekends did not stop. Later forest hexes.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "chain_wardens",
+      "name": "Chain Wardens",
+      "short": "Chain",
+      "theater": "aleutians",
+      "color": "#5a7d8a",
+      "colorDark": "#2f4550",
+      "alignment": "resistance",
+      "personalityLean": "cautious",
+      "plus": [
+        "Fog and reefs",
+        "Island caches"
+      ],
+      "minus": [
+        "Scattered posts",
+        "Fuel poor"
+      ],
+      "ai": "hold",
+      "gold": 30,
+      "relationsDefault": 42,
+      "mods": {
+        "war": 4,
+        "int": 6,
+        "pol": 0,
+        "chr": -4,
+        "upkeep": 1.1
+      },
+      "bio": "Village lookouts along a chain of islands this sandbox does not paint yet.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "bering_pact",
+      "name": "Bering Ice Pact",
+      "short": "Pact",
+      "theater": "bering",
+      "color": "#7aa0b4",
+      "colorDark": "#3d5663",
+      "alignment": "civilian",
+      "personalityLean": "merchant",
+      "plus": [
+        "Ice-road trade",
+        "Neutral scrip"
+      ],
+      "minus": [
+        "No army",
+        "Pays whoever holds the strait"
+      ],
+      "ai": "trade",
+      "gold": 95,
+      "relationsDefault": 54,
+      "mods": {
+        "war": -8,
+        "int": 6,
+        "pol": 8,
+        "chr": 8,
+        "upkeep": 0.9
+      },
+      "bio": "Factors who price ivory, fuel, and silence across the strait. A later Bering map.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "strait_lanterns",
+      "name": "Strait Lanterns",
+      "short": "Lanterns",
+      "theater": "bering",
+      "color": "#9aa7b0",
+      "colorDark": "#4e585e",
+      "alignment": "intel",
+      "personalityLean": "recluse",
+      "plus": [
+        "Night markers",
+        "Hidden coves"
+      ],
+      "minus": [
+        "Will not mass",
+        "Ignore radios"
+      ],
+      "ai": "spy",
+      "gold": 20,
+      "relationsDefault": 40,
+      "mods": {
+        "war": -2,
+        "int": 10,
+        "pol": -2,
+        "chr": -4,
+        "upkeep": 0.8
+      },
+      "bio": "Lamp codes on ice that occupiers still have not catalogued. Off-map on purpose.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "fog_banner",
+      "name": "Fog Banner Flotilla",
+      "short": "Fog",
+      "theater": "aleutians",
+      "color": "#3d4a5c",
+      "colorDark": "#1e2530",
+      "alignment": "invader",
+      "personalityLean": "aggressive",
+      "plus": [
+        "Small combatants",
+        "Weather cover"
+      ],
+      "minus": [
+        "Hungry for fuel",
+        "Rivals Banner"
+      ],
+      "ai": "expand",
+      "gold": 120,
+      "relationsDefault": 10,
+      "mods": {
+        "war": 8,
+        "int": 2,
+        "pol": -6,
+        "chr": -6,
+        "upkeep": 1.2
+      },
+      "bio": "A western occupation flotilla that wants Kodiak's job. Not landed on this eight-region board.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "red_wharf",
+      "name": "Red Wharf Directorate",
+      "short": "Wharf",
+      "theater": "pacific",
+      "color": "#8c4a4a",
+      "colorDark": "#4c2626",
+      "alignment": "invader",
+      "personalityLean": "schemer",
+      "plus": [
+        "Civil files",
+        "Port clerks"
+      ],
+      "minus": [
+        "Hated",
+        "Needs a captured city"
+      ],
+      "ai": "spy",
+      "gold": 150,
+      "relationsDefault": 6,
+      "mods": {
+        "war": 2,
+        "int": 8,
+        "pol": 4,
+        "chr": -10,
+        "upkeep": 1.15
+      },
+      "bio": "Occupation civil arm. They annex with stamps. Their desks are still south and west of this map.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "iron_keel",
+      "name": "Iron Keel Squadron",
+      "short": "Keel",
+      "theater": "pacific",
+      "color": "#4b5360",
+      "colorDark": "#262a32",
+      "alignment": "invader",
+      "personalityLean": "aggressive",
+      "plus": [
+        "Blue-water guns",
+        "Marines"
+      ],
+      "minus": [
+        "Cannot live inland",
+        "Loud"
+      ],
+      "ai": "expand",
+      "gold": 180,
+      "relationsDefault": 8,
+      "mods": {
+        "war": 14,
+        "int": 0,
+        "pol": -10,
+        "chr": -8,
+        "upkeep": 1.3
+      },
+      "bio": "Heavier hulls than Banner's island boats. They are a later coastal threat, not a v0.1 owner.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "pale_airlift",
+      "name": "Pale Airlift",
+      "short": "Airlift",
+      "theater": "pacific",
+      "color": "#b8c0c8",
+      "colorDark": "#5c646c",
+      "alignment": "invader",
+      "personalityLean": "ambitious",
+      "plus": [
+        "Runway seizure",
+        "Late air"
+      ],
+      "minus": [
+        "Weather gated",
+        "Fuel sink"
+      ],
+      "ai": "expand",
+      "gold": 160,
+      "relationsDefault": 9,
+      "mods": {
+        "war": 6,
+        "int": 8,
+        "pol": -6,
+        "chr": -4,
+        "upkeep": 1.35
+      },
+      "bio": "An air corridor cadre waiting on calendar and concrete. Not based in the Bowl yet.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "commissary_ring",
+      "name": "Commissary Ring",
+      "short": "Ring",
+      "theater": "pacific",
+      "color": "#a67c52",
+      "colorDark": "#5a422c",
+      "alignment": "invader",
+      "personalityLean": "merchant",
+      "plus": [
+        "Depot math",
+        "Scrip"
+      ],
+      "minus": [
+        "No fighters",
+        "Looted if isolated"
+      ],
+      "ai": "trade",
+      "gold": 200,
+      "relationsDefault": 14,
+      "mods": {
+        "war": -6,
+        "int": 6,
+        "pol": 6,
+        "chr": 0,
+        "upkeep": 1.1
+      },
+      "bio": "The occupation's purse. They follow the guns; they do not hold Alaska hexes in v0.1.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "second_landing",
+      "name": "Second Landing Cadre",
+      "short": "Cadre",
+      "theater": "pacific",
+      "color": "#7a3e3e",
+      "colorDark": "#401f1f",
+      "alignment": "invader",
+      "personalityLean": "ambitious",
+      "plus": [
+        "Fresh battalions",
+        "Doctrine"
+      ],
+      "minus": [
+        "Not ashore",
+        "Calendar locked"
+      ],
+      "ai": "expand",
+      "gold": 90,
+      "relationsDefault": 7,
+      "mods": {
+        "war": 10,
+        "int": 4,
+        "pol": -8,
+        "chr": -6,
+        "upkeep": 1.2
+      },
+      "bio": "A reserve landing that has not been spent. Keeping them off the board is the balance call.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "tanana_circle",
+      "name": "Tanana Circle",
+      "short": "Circle",
+      "theater": "rivers",
+      "color": "#6e8f6a",
+      "colorDark": "#3b4e39",
+      "alignment": "resistance",
+      "personalityLean": "recluse",
+      "plus": [
+        "River knowledge",
+        "Quiet food"
+      ],
+      "minus": [
+        "Avoids banners",
+        "Few rifles"
+      ],
+      "ai": "hold",
+      "gold": 25,
+      "relationsDefault": 48,
+      "mods": {
+        "war": 2,
+        "int": 6,
+        "pol": 2,
+        "chr": -2,
+        "upkeep": 0.85
+      },
+      "bio": "Families on a river this map folds into Fairbanks. They get their own hex later.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "delta_cache",
+      "name": "Delta Cache League",
+      "short": "Cache",
+      "theater": "rivers",
+      "color": "#7a9a6a",
+      "colorDark": "#415438",
+      "alignment": "resistance",
+      "personalityLean": "cautious",
+      "plus": [
+        "Hidden stores",
+        "Flood knowledge"
+      ],
+      "minus": [
+        "Won't attack first",
+        "Hard to raise as levy"
+      ],
+      "ai": "hold",
+      "gold": 28,
+      "relationsDefault": 50,
+      "mods": {
+        "war": 0,
+        "int": 4,
+        "pol": 4,
+        "chr": 2,
+        "upkeep": 0.85
+      },
+      "bio": "A league of winter boxes in the deltas. Not a seventh on-map owner.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "rail_brotherhood",
+      "name": "Frozen Rail Brotherhood",
+      "short": "Rail",
+      "theater": "interior_ext",
+      "color": "#8a7a5a",
+      "colorDark": "#4a402e",
+      "alignment": "civilian",
+      "personalityLean": "loyalist",
+      "plus": [
+        "Track repair",
+        "Shop tools"
+      ],
+      "minus": [
+        "Needs a line",
+        "Strike-prone"
+      ],
+      "ai": "trade",
+      "gold": 55,
+      "relationsDefault": 47,
+      "mods": {
+        "war": 2,
+        "int": 2,
+        "pol": 6,
+        "chr": 2,
+        "upkeep": 1.0
+      },
+      "bio": "Gandy dancers who still own their tools. They attach when a later rail region exists.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "ember_campus",
+      "name": "Ember Campus",
+      "short": "Ember",
+      "theater": "interior_ext",
+      "color": "#c9a06a",
+      "colorDark": "#6e5434",
+      "alignment": "civilian",
+      "personalityLean": "diplomat",
+      "plus": [
+        "Labs and radio",
+        "Young labor"
+      ],
+      "minus": [
+        "No garrison culture",
+        "Argumentative"
+      ],
+      "ai": "spy",
+      "gold": 45,
+      "relationsDefault": 56,
+      "mods": {
+        "war": -6,
+        "int": 12,
+        "pol": 6,
+        "chr": 6,
+        "upkeep": 0.9
+      },
+      "bio": "A university remnant that still prints syllabi and jammers. Later Fairbanks split, not v0.1.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "passage_keepers",
+      "name": "Passage Keepers",
+      "short": "Keepers",
+      "theater": "panhandle",
+      "color": "#3a6e7a",
+      "colorDark": "#1e3c44",
+      "alignment": "civilian",
+      "personalityLean": "cautious",
+      "plus": [
+        "Narrows guns",
+        "Pilot books"
+      ],
+      "minus": [
+        "Tiny crews",
+        "Hesitant"
+      ],
+      "ai": "hold",
+      "gold": 50,
+      "relationsDefault": 53,
+      "mods": {
+        "war": 0,
+        "int": 6,
+        "pol": 6,
+        "chr": 2,
+        "upkeep": 0.95
+      },
+      "bio": "Pilots who treat the Inside Passage as a locked door. Extra SE hexes later.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "cannery_row",
+      "name": "Cannery Row Lodge",
+      "short": "Lodge",
+      "theater": "panhandle",
+      "color": "#4a8aaa",
+      "colorDark": "#274858",
+      "alignment": "civilian",
+      "personalityLean": "merchant",
+      "plus": [
+        "Tin and fish",
+        "Seasonal labor"
+      ],
+      "minus": [
+        "Season gated",
+        "Thin walls"
+      ],
+      "ai": "trade",
+      "gold": 75,
+      "relationsDefault": 55,
+      "mods": {
+        "war": -4,
+        "int": 2,
+        "pol": 8,
+        "chr": 6,
+        "upkeep": 0.9
+      },
+      "bio": "A lodge Compact did not absorb. They would sit on a later cannery hex, not Juneau.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "mist_pulpit",
+      "name": "Mist Pulpit",
+      "short": "Pulpit",
+      "theater": "panhandle",
+      "color": "#8f9aa8",
+      "colorDark": "#4a525c",
+      "alignment": "civilian",
+      "personalityLean": "diplomat",
+      "plus": [
+        "Aid corridors",
+        "Neutral talk"
+      ],
+      "minus": [
+        "No offensive",
+        "Easy to rob"
+      ],
+      "ai": "trade",
+      "gold": 40,
+      "relationsDefault": 60,
+      "mods": {
+        "war": -8,
+        "int": 2,
+        "pol": 10,
+        "chr": 10,
+        "upkeep": 0.8
+      },
+      "bio": "Halls and clinics that will treat either uniform. A later moral pressure, not a garrison.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "rain_capital",
+      "name": "Rain Capital Watch",
+      "short": "Rain",
+      "theater": "panhandle",
+      "color": "#2f5f6a",
+      "colorDark": "#183238",
+      "alignment": "resistance",
+      "personalityLean": "loyalist",
+      "plus": [
+        "Old militia lists",
+        "Harbor memory"
+      ],
+      "minus": [
+        "Nostalgia",
+        "Under-armed"
+      ],
+      "ai": "hold",
+      "gold": 38,
+      "relationsDefault": 49,
+      "mods": {
+        "war": 4,
+        "int": 2,
+        "pol": 6,
+        "chr": 4,
+        "upkeep": 0.95
+      },
+      "bio": "Sitka-side watchmen who still drill on a green. Off this simplified coast.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "frost_contract",
+      "name": "Frost Contract Co.",
+      "short": "Frost",
+      "theater": "mercenary",
+      "color": "#7b8c9c",
+      "colorDark": "#414a54",
+      "alignment": "intel",
+      "personalityLean": "ambitious",
+      "plus": [
+        "Hireable rifles",
+        "No flag pride"
+      ],
+      "minus": [
+        "Loyalty is price",
+        "Desert if unpaid"
+      ],
+      "ai": "expand",
+      "gold": 70,
+      "relationsDefault": 35,
+      "mods": {
+        "war": 8,
+        "int": 4,
+        "pol": -4,
+        "chr": 2,
+        "upkeep": 1.4
+      },
+      "bio": "A company that will fight for stove oil. They spawn when a later board has a market hex.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "night_mail",
+      "name": "Night Mail Company",
+      "short": "Mail",
+      "theater": "mercenary",
+      "color": "#5a4e78",
+      "colorDark": "#2e2840",
+      "alignment": "intel",
+      "personalityLean": "schemer",
+      "plus": [
+        "Dead-drop routes",
+        "Small planes"
+      ],
+      "minus": [
+        "Few shooters",
+        "Sells both ways"
+      ],
+      "ai": "spy",
+      "gold": 60,
+      "relationsDefault": 45,
+      "mods": {
+        "war": -2,
+        "int": 10,
+        "pol": 2,
+        "chr": 4,
+        "upkeep": 1.05
+      },
+      "bio": "Pilots who move envelopes after curfew. Related to AURORA, not the same cell.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "salvage_choir",
+      "name": "Salvage Choir",
+      "short": "Choir",
+      "theater": "mercenary",
+      "color": "#6a7a6a",
+      "colorDark": "#384038",
+      "alignment": "civilian",
+      "personalityLean": "merchant",
+      "plus": [
+        "Wreck stripping",
+        "Workshop hours"
+      ],
+      "minus": [
+        "Won't hold ground",
+        "No doctrine"
+      ],
+      "ai": "trade",
+      "gold": 65,
+      "relationsDefault": 48,
+      "mods": {
+        "war": 0,
+        "int": 8,
+        "pol": 0,
+        "chr": 2,
+        "upkeep": 1.0
+      },
+      "bio": "Divers and cutters who sing over hulks. Tech flavor for a later salvage region.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "black_ice",
+      "name": "Black Ice Company",
+      "short": "Black Ice",
+      "theater": "mercenary",
+      "color": "#3a3f4a",
+      "colorDark": "#1c1f26",
+      "alignment": "intel",
+      "personalityLean": "aggressive",
+      "plus": [
+        "Night raids",
+        "Hard men"
+      ],
+      "minus": [
+        "War crimes rumor",
+        "Hated if seen"
+      ],
+      "ai": "expand",
+      "gold": 55,
+      "relationsDefault": 20,
+      "mods": {
+        "war": 10,
+        "int": 4,
+        "pol": -8,
+        "chr": -6,
+        "upkeep": 1.25
+      },
+      "bio": "A free company nobody admits hiring. Kept off the v0.1 board so they cannot steamroll Bethel.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "village_net",
+      "name": "Village Net",
+      "short": "Net",
+      "theater": "civic",
+      "color": "#8aa090",
+      "colorDark": "#4a584e",
+      "alignment": "resistance",
+      "personalityLean": "recluse",
+      "plus": [
+        "Quiet consensus",
+        "Food shares"
+      ],
+      "minus": [
+        "No commander",
+        "Slow decisions"
+      ],
+      "ai": "hold",
+      "gold": 22,
+      "relationsDefault": 58,
+      "mods": {
+        "war": -2,
+        "int": 4,
+        "pol": 8,
+        "chr": 4,
+        "upkeep": 0.75
+      },
+      "bio": "A mesh of halls that refuse a single flag. Later rural hexes, not a fake 500 dump.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "river_seat",
+      "name": "River Seat Council",
+      "short": "Seat",
+      "theater": "civic",
+      "color": "#5b8f8a",
+      "colorDark": "#2f4c49",
+      "alignment": "civilian",
+      "personalityLean": "diplomat",
+      "plus": [
+        "Legitimacy",
+        "Talk first"
+      ],
+      "minus": [
+        "Meetings",
+        "Thin levy"
+      ],
+      "ai": "trade",
+      "gold": 48,
+      "relationsDefault": 62,
+      "mods": {
+        "war": -4,
+        "int": 4,
+        "pol": 12,
+        "chr": 8,
+        "upkeep": 0.9
+      },
+      "bio": "A civic council with a river name, not a licensed nation. They belong on a later diplomacy map.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "idle_hour",
+      "name": "Idle Hour Committee",
+      "short": "Idle Hour",
+      "theater": "civic",
+      "color": "#a09070",
+      "colorDark": "#544c38",
+      "alignment": "civilian",
+      "personalityLean": "loyalist",
+      "plus": [
+        "Town labor",
+        "Hall lists"
+      ],
+      "minus": [
+        "No field craft",
+        "Panic easily"
+      ],
+      "ai": "hold",
+      "gold": 30,
+      "relationsDefault": 51,
+      "mods": {
+        "war": -2,
+        "int": 0,
+        "pol": 6,
+        "chr": 6,
+        "upkeep": 0.85
+      },
+      "bio": "Volunteer committees that still post minutes. They become a levy when a town hex exists for them.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "north_star_press",
+      "name": "North Star Press",
+      "short": "Press",
+      "theater": "civic",
+      "color": "#cfc8a8",
+      "colorDark": "#6c684e",
+      "alignment": "intel",
+      "personalityLean": "schemer",
+      "plus": [
+        "Pamphlets",
+        "Fame swings"
+      ],
+      "minus": [
+        "No troops",
+        "Easy to smash"
+      ],
+      "ai": "spy",
+      "gold": 18,
+      "relationsDefault": 50,
+      "mods": {
+        "war": -8,
+        "int": 8,
+        "pol": 6,
+        "chr": 10,
+        "upkeep": 0.7
+      },
+      "bio": "A mimeograph and a shortwave. They print whoever is still standing. Off-map media layer.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "icebound_court",
+      "name": "Icebound Court",
+      "short": "Court",
+      "theater": "civic",
+      "color": "#d0d4d8",
+      "colorDark": "#6a6e72",
+      "alignment": "civilian",
+      "personalityLean": "cautious",
+      "plus": [
+        "Legal cover",
+        "Order ticks"
+      ],
+      "minus": [
+        "No guns",
+        "Ignored by colonels"
+      ],
+      "ai": "hold",
+      "gold": 25,
+      "relationsDefault": 57,
+      "mods": {
+        "war": -10,
+        "int": 4,
+        "pol": 14,
+        "chr": 4,
+        "upkeep": 0.8
+      },
+      "bio": "Judges who still hear cases in a gym. Later order mechanic, not a region owner.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "gulf_lease",
+      "name": "Gulf Lease Syndicate",
+      "short": "Lease",
+      "theater": "gulf",
+      "color": "#3d6a7a",
+      "colorDark": "#203840",
+      "alignment": "civilian",
+      "personalityLean": "merchant",
+      "plus": [
+        "Platform leftover fuel",
+        "Boats"
+      ],
+      "minus": [
+        "Exposed",
+        "Occupation magnet"
+      ],
+      "ai": "trade",
+      "gold": 130,
+      "relationsDefault": 36,
+      "mods": {
+        "war": -2,
+        "int": 4,
+        "pol": 4,
+        "chr": 2,
+        "upkeep": 1.15
+      },
+      "bio": "Lease men on water this map does not draw. Wiring them in now would gift the Bowl extra gold.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "polar_survey",
+      "name": "Polar Survey",
+      "short": "Survey",
+      "theater": "arctic",
+      "color": "#a8c4d0",
+      "colorDark": "#546870",
+      "alignment": "intel",
+      "personalityLean": "recluse",
+      "plus": [
+        "Ice charts",
+        "Science stores"
+      ],
+      "minus": [
+        "Civilian",
+        "One bad storm"
+      ],
+      "ai": "spy",
+      "gold": 33,
+      "relationsDefault": 49,
+      "mods": {
+        "war": -6,
+        "int": 14,
+        "pol": 2,
+        "chr": 0,
+        "upkeep": 0.85
+      },
+      "bio": "A survey crew that stayed when the airlift left. Their camp is a later Arctic hex, not the Slope owner.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "copper_road",
+      "name": "Copper Road Band",
+      "short": "Copper",
+      "theater": "interior_ext",
+      "color": "#b06a3a",
+      "colorDark": "#5c361c",
+      "alignment": "resistance",
+      "personalityLean": "aggressive",
+      "plus": [
+        "Highway raids",
+        "Scrap metal"
+      ],
+      "minus": [
+        "No towns",
+        "Bandit rumor"
+      ],
+      "ai": "expand",
+      "gold": 42,
+      "relationsDefault": 30,
+      "mods": {
+        "war": 8,
+        "int": 2,
+        "pol": -4,
+        "chr": 0,
+        "upkeep": 1.05
+      },
+      "bio": "Road people on a copper corridor this eight-region map skipped. Kept off so they cannot raid Bethel.",
+      "sandbox": false,
+      "playerFoundable": false
+    },
+    {
+      "id": "lantern_pact",
+      "name": "Lantern Pact",
+      "short": "Pact Lights",
+      "theater": "civic",
+      "color": "#d4b46a",
+      "colorDark": "#6e5a30",
+      "alignment": "civilian",
+      "personalityLean": "diplomat",
+      "plus": [
+        "Aid corridor",
+        "Rel ticks"
+      ],
+      "minus": [
+        "Pacifist charter",
+        "Needs escorts"
+      ],
+      "ai": "trade",
+      "gold": 36,
+      "relationsDefault": 64,
+      "mods": {
+        "war": -8,
+        "int": 2,
+        "pol": 8,
+        "chr": 12,
+        "upkeep": 0.8
+      },
+      "bio": "A corridor of lanterns and safe barns. They would dilute Compact's diplomat niche if landed now.",
+      "sandbox": false,
+      "playerFoundable": false
     }
   ]
 }
