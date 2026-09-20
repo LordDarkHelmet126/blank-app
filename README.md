@@ -73,6 +73,8 @@ node tests/simulate.mjs
 
 or `npm test`. Proves 12 autoplay weeks on Easy/Normal/Hard, save/load, a resolved battle, spy/alliance, and personality-tagged AI logs.
 
+Optional screenshot URLs while the server is running: `/?demo=slice` (banner already raised) and `/?demo=week` (two autoplay weeks).
+
 ## Layout
 
 ```

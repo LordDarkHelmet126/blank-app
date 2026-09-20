@@ -18,6 +18,7 @@ import {
   serialize,
   deserialize,
   createCustomOfficer,
+  autoplayWeek,
   MAX_GENERALS,
 } from "./engine.js";
 
@@ -32,10 +33,39 @@ const $ = (id) => document.getElementById(id);
 export function boot(loaded) {
   content = loaded;
   bindChrome();
-  const saved = localStorage.getItem(SAVE_KEY);
-  showModal(titleScreenHtml(!!saved));
   $("app").hidden = false;
   $("boot").hidden = true;
+  const params = new URLSearchParams(location.search);
+  if (params.get("demo") === "slice") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    act(state, content, "raise_banner");
+    selectedRegion = "bethel";
+    hideModal();
+    render();
+    return;
+  }
+  if (params.get("demo") === "week") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    act(state, content, "raise_banner");
+    autoplayWeek(state, content);
+    autoplayWeek(state, content);
+    selectedRegion = playerOf(state).region;
+    hideModal();
+    render();
+    return;
+  }
+  const saved = localStorage.getItem(SAVE_KEY);
+  showModal(titleScreenHtml(!!saved));
 }
 
 function bindChrome() {
@@ -553,7 +583,7 @@ function drawBattle() {
     ctx.fillRect(px - 16, py - 16, 32, 32);
     ctx.fillStyle = "#081018";
     ctx.font = "11px sans-serif";
-    ctx.fillText(u.label.slice(0, 7), px - 14, py + 4);
+    ctx.fillText(u.label.slice(0, 4), px - 12, py + 4);
     ctx.fillStyle = "#7aa17b";
     ctx.fillRect(px - 16, py + 18, 32 * (u.hp / u.maxHp), 4);
   });

@@ -17,12 +17,18 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
-  min-height: 100%;
+  height: 100%;
   background:
     radial-gradient(1200px 500px at 10% -10%, #143044 0%, transparent 50%),
     linear-gradient(180deg, var(--bg) 0%, #04080c 100%);
   color: var(--ice);
   font: 14px/1.45 "Segoe UI", "Helvetica Neue", sans-serif;
+}
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 #boot {
@@ -92,6 +98,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 12px;
   padding: 12px;
+  flex: 1;
+  min-height: 0;
 }
 .map-wrap {
   position: relative;
@@ -99,8 +107,9 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   border: 1px solid var(--line);
   overflow: hidden;
   box-shadow: var(--shadow);
+  min-height: 0;
 }
-#map { width: 100%; height: auto; display: block; background: #08131b; }
+#map { width: 100%; height: 100%; display: block; background: #08131b; object-fit: contain; }
 .map-legend {
   position: absolute;
   left: 10px;
@@ -120,12 +129,14 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   vertical-align: middle;
 }
 
-.side { display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 92px); overflow: auto; }
+.side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
-  padding: 12px;
+  padding: 10px;
 }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.actions button { text-align: left; font-size: 12px; min-height: 36px; padding: 5px 8px; }
 .card h2 {
   margin: 0 0 8px;
   font-size: 12px;
@@ -142,19 +153,23 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 .plus { color: var(--ok); }
 .minus { color: var(--blood); }
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.actions button { text-align: left; font-size: 12px; min-height: 44px; }
+.actions-card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.actions { overflow: auto; }
 .actions button small { display: block; color: var(--ice-dim); font-weight: 400; }
 
 .dock {
-  margin: 0 12px 16px;
+  margin: 0 12px 12px;
   border: 1px solid var(--line);
   background: var(--panel);
+  flex: 0 0 168px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .dock-head { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); }
 .dock-head h2 { margin: 0 auto 0 0; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--amber); }
 .log {
-  max-height: 180px;
+  flex: 1;
   overflow: auto;
   margin: 0;
   padding: 8px 14px 12px 28px;

@@ -622,7 +622,7 @@ function raiseBanner(state) {
   if (p.faction || here.owner) return { ok: false, message: "Cannot raise a banner here." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   foundNorthernFront(state, here, true);
-  state.ap = Math.min(state.ap, apMax(state));
+  state.ap = Math.max(0, apMax(state) - 1);
   return { ok: true, message: `Banner raised over ${here.short}.` };
 }
 
