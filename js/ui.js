@@ -151,7 +151,8 @@ function wireTitle() {
   if (cont) cont.onclick = () => loadFromStorage();
 }
 
-function showModal(html) {
+function showModal(html, opts = {}) {
+  $("modal-card").className = "modal-card" + (opts.kind === "week" ? " week-card" : "");
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
   wireTitle();
@@ -162,6 +163,7 @@ function showModal(html) {
 
 function hideModal() {
   $("modal").hidden = true;
+  $("modal-card").className = "modal-card";
 }
 
 function helpHtml() {
@@ -284,9 +286,7 @@ function run(id, extra) {
     return;
   }
   if (res.weekEnd) {
-    showModal(`<h2>Week ${state.week} report</h2><ol>${(res.report || []).slice(0, 18).map((l) => `<li>${esc(l)}</li>`).join("")}</ol>
-      <p class="muted">AI lines include personality tags in [brackets].</p>
-      <button type="button" data-close class="primary">Continue</button>`);
+    showModal(weekReportHtml(res.report || []), { kind: "week" });
   }
   if (state.gameOver) {
     showModal(`<h2>Campaign closed</h2><p>${esc(state.ending || state.gameOver)}</p><button type="button" data-close>Close</button>`);
@@ -330,9 +330,7 @@ function youHtml() {
       <span class="pill">WAR ${p.war}</span><span class="pill">INT ${p.int}</span>
       <span class="pill">POL ${p.pol}</span><span class="pill">CHR ${p.chr}</span>
     </div>
-    <p class="muted">Generals ${gens.length}/${MAX_GENERALS}${gens.length ? ": " + gens.map((g) => g.name).join(", ") : ""}</p>
-    <p class="muted">Tech: ${state.research.unlocked.join(", ")} · salvage ${state.research.points}</p>
-    <p class="muted">Difficulty: ${state.difficulty}</p>
+    <p class="muted">Generals ${gens.length}/${MAX_GENERALS}${gens.length ? ": " + gens.map((g) => g.name).join(", ") : ""} · ${esc(state.difficulty)} · salvage ${state.research.points}</p>
   `;
 }
 
@@ -357,19 +355,42 @@ function regionHtml() {
   `;
 }
 
+function weekReportHtml(report) {
+  const lines = report || [];
+  const headline = lines[0] || `Week ${state.week}`;
+  const ai = lines.filter((l) => /\[[a-z]+\]/.test(l)).slice(0, 6);
+  const extra = Math.max(0, lines.length - 1 - ai.length);
+  return `<h2>Week ${state.week}</h2>
+    <p>${esc(headline)}</p>
+    <ul class="week-ai">${ai.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+    <p class="muted">${extra ? `${extra} more in the field log. ` : ""}Personality tags are in [brackets].</p>
+    <button type="button" data-close class="primary">Continue</button>`;
+}
+
+const COMMAND_IDS = ["raise_banner", "travel", "hire", "attack"];
+
+function actionButton(a) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.dataset.id = a.id;
+  b.disabled = !a.enabled || (a.ap > 0 && state.ap < a.ap);
+  b.innerHTML = `${esc(a.label)} <small>AP ${a.ap}${a.enabled ? "" : " · locked"}</small>`;
+  b.title = a.hint;
+  b.onclick = () => startAction(a);
+  return b;
+}
+
 function renderActions() {
-  const box = $("actions");
-  box.innerHTML = "";
-  listActions(state).forEach((a) => {
-    if (a.id === "end_week") return;
-    const b = document.createElement("button");
-    b.type = "button";
-    b.disabled = !a.enabled || (a.ap > 0 && state.ap < a.ap);
-    b.innerHTML = `${esc(a.label)} <small>AP ${a.ap}${a.enabled ? "" : " · locked"}</small>`;
-    b.title = a.hint;
-    b.onclick = () => startAction(a);
-    box.appendChild(b);
+  const town = $("actions");
+  const cmd = $("command-actions");
+  town.innerHTML = "";
+  cmd.innerHTML = "";
+  const actions = listActions(state).filter((a) => a.id !== "end_week");
+  COMMAND_IDS.forEach((id) => {
+    const a = actions.find((x) => x.id === id);
+    if (a) cmd.appendChild(actionButton(a));
   });
+  actions.filter((a) => !COMMAND_IDS.includes(a.id)).forEach((a) => town.appendChild(actionButton(a)));
 }
 
 function startAction(a) {

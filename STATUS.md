@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — v0.1 Alaska slice is playable on `cursor/northern-front-v01-2330` (PR #1).
+**Last checkpoint:** 2026-09-20 — command strip burst (March/Attack always on screen).
 
 ## How to run
 
@@ -20,24 +20,20 @@ Optional: `/?demo=slice` (banner raised), `/?demo=week` (two autoplay weeks).
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
-## What landed (v0.1)
+## What landed (this burst)
 
-- HTML/Canvas prototype (Godot 4 not available here; documented in README)
-- Alaska map (8 regions), week-0 start alone in Bethel
-- Weekly AP: domestic, spy, hire (max 5 generals), alliance, plots, march
-- 14 AI officers / 8 personalities; 6 factions with pluses/minuses
-- Short grid battles + auto-resolve
-- Slow salvage tech, Easy/Normal/Hard, save/load
-- Expandable JSON (`data/*.json`) — no fake 500 roster
-- Headless 12-week tests pass; browser pass through week 3 + Nome fight + save
+- Pinned **Command** strip on the main UI: Raise Banner, Travel, Hire, and full-width **March/Attack** stay visible without scrolling
+- Town/plot actions sit in a separate scrollable block above that strip
+- Shorter week-report modal (headline + 6 personality lines; rest stays in the field log)
+
+v0.1 loop is unchanged: Alaska map, weekly AP, 14 AI officers, 6 factions, battles, save/load.
 
 ## What’s next (small bursts)
 
-1. Sidebar: keep March/Attack and Hire visible without scrolling the action grid
-2. Week-report modal: shorter, personality filter, don’t bury the map
-3. Recruited generals: player-assignable orders instead of only AI auto-act
-4. One more Alaska event + reveal path for legend Ilya Karr that’s obvious in-UI
-5. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
+1. Recruited generals: player-assignable orders instead of only AI auto-act
+2. One more Alaska event + reveal path for legend Ilya Karr that’s obvious in-UI
+3. Town & plots: show at least one domestic row without looking collapsed on short windows
+4. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
 
 ## Blockers
 
