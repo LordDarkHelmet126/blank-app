@@ -301,6 +301,7 @@ export function createNewGame(content, opts = {}) {
     relations: {},
     bonds: { hart: 55, quinn: 30 },
     discovered: [],
+    legendHunt: 0,
     research: { points: 0, unlocked: ["small_arms"] },
     log: [],
     logSeq: 1,
@@ -354,6 +355,7 @@ export function deserialize(raw) {
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
   });
+  if (state.legendHunt == null) state.legendHunt = state.discovered?.includes("karr") ? 2 : 0;
   return state;
 }
 
@@ -387,7 +389,61 @@ function spend(state, ap) {
   return true;
 }
 
+export function legendStatus(state) {
+  const k = officerOf(state, "karr");
+  const revealed = !!(k && isVisibleOfficer(state, k));
+  const hunt = revealed ? 2 : state.legendHunt || 0;
+  let rumor;
+  if (revealed) rumor = `${k.name}, ${k.title}, is listed. He still keeps to the Slope.`;
+  else if (hunt >= 1) rumor = "Named: Ilya Karr, Slope Ghost. Travel to Arctic Slope (via Fairbanks) and Seek Legend.";
+  else rumor = "Rumor: an unlisted ranging contractor still walks Slope traplines. Seek Legend or Spy the Arctic Slope.";
+  return {
+    id: "karr",
+    hunt,
+    revealed,
+    regionId: "arctic_slope",
+    rumor,
+    mapMark: !revealed,
+  };
+}
+
+function noteKarrRumor(state) {
+  if (legendStatus(state).revealed) return false;
+  if ((state.legendHunt || 0) >= 1) return false;
+  state.legendHunt = 1;
+  pushLog(state, "A name surfaces: Ilya Karr, the Slope Ghost. Travel to Arctic Slope and Seek Legend to make contact.", "legend");
+  return true;
+}
+
+function revealKarr(state) {
+  const k = officerOf(state, "karr");
+  if (!k) return false;
+  if (state.discovered.includes("karr") && !k.hidden) {
+    state.legendHunt = 2;
+    return false;
+  }
+  if (!state.discovered.includes("karr")) state.discovered.push("karr");
+  k.hidden = false;
+  state.legendHunt = 2;
+  pushLog(state, `Legend found: ${k.name}, ${k.title}. ${k.bio} He can be hired if you share the Slope.`, "legend");
+  return true;
+}
+
+function advanceKarrHunt(state, onSlope) {
+  if (legendStatus(state).revealed) return { revealed: false, already: true };
+  if (onSlope) {
+    const fresh = revealKarr(state);
+    return { revealed: fresh, rumored: false };
+  }
+  const rumored = noteKarrRumor(state);
+  return { revealed: false, rumored };
+}
+
 function discoverCheck(state, regionId) {
+  if (regionId === "arctic_slope") {
+    const onSlope = playerOf(state).region === "arctic_slope";
+    return advanceKarrHunt(state, onSlope);
+  }
   const hidden = livingOfficers(state).filter((o) => o.hidden && o.region === regionId && !state.discovered.includes(o.id));
   hidden.forEach((o) => {
     if (chance(state, 0.35) || state.week >= 10) {
@@ -396,6 +452,7 @@ function discoverCheck(state, regionId) {
       pushLog(state, `Hidden name: ${o.name}, ${o.title}, is real. ${o.bio}`, "legend");
     }
   });
+  return { revealed: false };
 }
 
 export function listActions(state) {
@@ -417,6 +474,19 @@ export function listActions(state) {
     group: "command",
     enabled: !hasBanner && !here.owner,
     hint: hasBanner ? "You already fly a color." : here.owner ? "Cannot raise a banner in occupied ground." : "Found Northern Front and claim this region.",
+  });
+  const hunt = legendStatus(state);
+  actions.push({
+    id: "seek_legend",
+    label: hunt.hunt >= 1 && p.region === "arctic_slope" ? "Contact Legend" : "Seek Legend",
+    ap: hunt.hunt >= 1 && p.region !== "arctic_slope" ? 0 : 1,
+    group: "spy",
+    enabled: !hunt.revealed,
+    hint: hunt.revealed
+      ? "Ilya Karr is listed."
+      : hunt.hunt >= 1
+        ? "Travel to Arctic Slope (via Fairbanks) and seek again to make contact."
+        : "Follow Slope trapline rumors. A hidden officer may be walking the ice.",
   });
   actions.push({
     id: "drill",
@@ -619,6 +689,7 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "research") return doResearch(state, content, stats);
   if (actionId === "hide") return doHide(state, stats);
   if (actionId === "spy") return doSpy(state, extra.regionId, stats);
+  if (actionId === "seek_legend") return doSeekLegend(state);
   if (actionId === "hire") return doHire(state, extra.officerId, stats);
   if (actionId === "ally") return doAlly(state, extra.factionId, stats);
   if (actionId === "break_ally") return doBreak(state, extra.factionId);
@@ -710,6 +781,33 @@ function tryUnlockTech(state, content, announce) {
   });
 }
 
+function doSeekLegend(state) {
+  const st = legendStatus(state);
+  if (st.revealed) return { ok: false, message: "Ilya Karr is already listed." };
+  const onSlope = playerOf(state).region === "arctic_slope";
+  if (st.hunt >= 1 && !onSlope) {
+    const msg = "The name is Ilya Karr. Travel to Arctic Slope (Fairbanks → Slope) and Seek Legend again.";
+    pushLog(state, msg, "legend");
+    return { ok: true, message: msg };
+  }
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  if (onSlope) {
+    revealKarr(state);
+    const k = officerOf(state, "karr");
+    return {
+      ok: true,
+      message: `${k.name} steps out of the weather. Legend listed.`,
+      revealed: true,
+      officerName: k.name,
+    };
+  }
+  noteKarrRumor(state);
+  return {
+    ok: true,
+    message: "Trapline talk names Ilya Karr, Slope Ghost. Go north to Arctic Slope to make contact.",
+  };
+}
+
 function doHide(state, stats) {
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const here = currentRegion(state);
@@ -718,7 +816,8 @@ function doHide(state, stats) {
   const bonus = stats.int >= 70 ? " Watchers lose your trail." : "";
   const msg = `You go to ground in ${here.short}.${bonus}`;
   pushLog(state, msg, "player");
-  discoverCheck(state, here.id);
+  const hunt = discoverCheck(state, here.id);
+  if (hunt?.revealed) return { ok: true, message: msg, revealed: true, officerName: "Ilya Karr" };
   return { ok: true, message: msg };
 }
 
@@ -733,11 +832,13 @@ function doSpy(state, regionId, stats) {
   let msg;
   if (roll >= dc) {
     msg = `Spy net over ${target.name}: garrison ${target.garrison}, walls ${target.walls}, order ${target.order}, owner ${ownerName(state, target)}.`;
-    discoverCheck(state, target.id);
   } else {
     msg = `Spy attempt over ${target.short} comes back thin. Intel tick only.`;
   }
+  const hunt = discoverCheck(state, target.id);
   pushLog(state, msg, "spy");
+  if (hunt?.revealed) return { ok: true, message: msg, revealed: true, officerName: "Ilya Karr" };
+  if (hunt?.rumored) return { ok: true, message: `${msg} Trapline rumor attached.` };
   return { ok: true, message: msg };
 }
 
@@ -1063,12 +1164,11 @@ function applyOfficerChoice(state, off, choice, playerStaff) {
 function officerActAI(state, content, off) {
   if (off.id === "player" || off.alive === false) return null;
   if (off.hidden && !state.discovered.includes(off.id) && off.legend) {
-    if (state.week >= 12 && chance(state, 0.15)) {
-      state.discovered.push(off.id);
-      off.hidden = false;
-      return { personality: off.personality, text: `${off.name} (recluse, legend) is sighted on the Slope and vanishes again.` };
+    if (state.week >= 6 && chance(state, 0.2)) {
+      noteKarrRumor(state);
+      return { personality: off.personality, text: "Slope talk: traplines are being walked by someone who will not take a radio." };
     }
-    return { personality: off.personality, text: `${off.name} stays unlisted.` };
+    return null;
   }
   const fac = off.faction ? factionOf(state, off.faction) : null;
   const region = regionOf(state, off.region);
@@ -1212,11 +1312,9 @@ function randomEvent(state) {
     here.order = Math.max(0, here.order - 6);
     return `Pamphlets in ${here.short} — order slips.`;
   }
-  if (roll < 36 && !state.discovered.includes("karr") && state.week >= 8) {
-    state.discovered.push("karr");
-    const k = officerOf(state, "karr");
-    if (k) k.hidden = false;
-    return "A trapper talks about Ilya Karr still walking the Slope. Legend flagged.";
+  if (roll < 36 && !legendStatus(state).revealed && state.week >= 4) {
+    noteKarrRumor(state);
+    return "A trapper south of the Brooks talks about Ilya Karr still walking the Slope. Seek Legend when you can go north.";
   }
   return null;
 }

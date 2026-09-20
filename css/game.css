@@ -214,6 +214,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .log .war { color: var(--blood); }
 .log .ai { color: #9ec4d4; }
 .log .legend { color: #d2b8ff; }
+.rumor { color: #d2b8ff; margin: 6px 0 0; }
+.rumor-card { margin: 8px 0; border-color: #7b6ea8; }
 
 .modal {
   position: fixed;

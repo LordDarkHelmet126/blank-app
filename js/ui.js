@@ -20,6 +20,7 @@ import {
   createCustomOfficer,
   setGeneralOrder,
   GENERAL_ORDERS,
+  legendStatus,
   autoplayWeek,
   MAX_GENERALS,
 } from "./engine.js";
@@ -66,6 +67,19 @@ export function boot(loaded) {
       hart.standingOrder = "drill";
     }
     selectedRegion = "bethel";
+    hideModal();
+    render();
+    return;
+  }
+  if (params.get("demo") === "legend") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    act(state, content, "raise_banner");
+    selectedRegion = "arctic_slope";
     hideModal();
     render();
     return;
@@ -190,21 +204,25 @@ function hideModal() {
 function helpHtml() {
   return `
     <h2>How to play</h2>
-      <li>Hire up to 5 generals, then set their <strong>standing order</strong> on the You card. They carry it out at End Week (no extra AP). March/Attack is still your command.</li>
-      <li>Domestic actions need a region you hold.</li>
-      <li>Hire free officers in your region (max 5 generals).</li>
-      <li>Set each general's standing order on the You card; they act at End Week (no extra AP).</li>
-      <li>Spy, rumor, persuade, hide, and alliances are always on the board.</li>
-      <li>March/Attack opens a short grid battle (or auto-resolve).</li>
+    <p>Each turn is <strong>one week</strong>. Spend AP, then End Week. AI officers act by personality. Your generals follow standing orders on the You card.</p>
+    <ul>
+      <li>Raise Banner in uncontrolled Bethel to found Northern Front.</li>
+      <li>Hire up to 5 generals, then set their standing order. They act at End Week (no extra AP). March/Attack stays on Command.</li>
+      <li>Hidden legend: <strong>Seek Legend</strong> (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
+      <li>Spy, rumor, persuade, hide, and alliances are on Town &amp; plots.</li>
       <li>Tech is salvage + calendar. No leapfrog.</li>
     </ul>
-    <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON.</p>
+    <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
     <button type="button" data-close>Close</button>
   `;
 }
 
 function officersHtml() {
   if (!state) return `<p>No game.</p>`;
+  const hunt = legendStatus(state);
+  const locked = hunt.revealed
+    ? ""
+    : `<div class="card rumor-card"><h2>Unlisted legend</h2><p class="rumor">${esc(hunt.rumor)}</p><p class="muted">Use Seek Legend on Town &amp; plots. A ? mark sits on the Slope until he is listed.</p></div>`;
   const rows = visibleOfficers(state)
     .map((o) => {
       const fac = o.faction ? factionOf(state, o.faction)?.short : "free";
@@ -212,7 +230,7 @@ function officersHtml() {
       return `<button type="button" class="list-btn" data-off="${o.id}"><strong>${o.name}</strong> · ${o.title} · ${fac} · ${loc}<br><span class="muted">${o.personality} · WAR ${o.war} INT ${o.int} POL ${o.pol} CHR ${o.chr} · loy ${o.loyalty}${o.legend ? " · LEGEND" : ""}</span></button>`;
     })
     .join("");
-  return `<h2>Officers (${visibleOfficers(state).length} visible)</h2><p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
+  return `<h2>Officers (${visibleOfficers(state).length} visible)</h2>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
     <hr />
     <h2>Add custom officer (${state.customSlotsUsed}/${state.contentMeta.customOfficerSlots})</h2>
     <div class="field"><label>Name</label><input id="c-name" value="Riley Cho" /></div>
@@ -305,6 +323,12 @@ function run(id, extra) {
     openBattle();
     return;
   }
+  if (res.revealed) {
+    showModal(`<h2>Legend listed</h2>
+      <p class="rumor">${esc(res.officerName || "Ilya Karr")} answers on the Arctic Slope.</p>
+      <p>Original character — a hidden free officer, ROTK7-style. Hire him if you share the Slope (Command → Hire).</p>
+      <button type="button" data-close class="primary">Continue</button>`);
+  }
   if (res.weekEnd) {
     showModal(weekReportHtml(res.report || []), { kind: "week" });
   }
@@ -386,6 +410,7 @@ function regionHtml() {
       <span class="pill">Econ ${r.economy}</span>
     </div>
     <p class="muted">Officers here: ${present.map((o) => o.name).join(", ") || "none visible"}</p>
+    ${r.id === "arctic_slope" ? `<p class="rumor">${esc(legendStatus(state).rumor)}</p>` : ""}
   `;
 }
 
@@ -593,11 +618,21 @@ function drawMap() {
       ctx.arc(r.label[0] + 36, r.label[1] - 6, 5, 0, Math.PI * 2);
       ctx.fill();
     }
+    if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
+      ctx.fillStyle = "#d2b8ff";
+      ctx.font = "bold 16px Segoe UI, sans-serif";
+      ctx.fillText("?", r.label[0] + 28, r.label[1] + 4);
+    }
   });
 
   ctx.fillStyle = "#8eacb8";
   ctx.font = "11px Segoe UI, sans-serif";
-  ctx.fillText("Alaska theater (simplified) — click a region", 16, 20);
+  const hunt = legendStatus(state);
+  ctx.fillText(
+    hunt.revealed ? "Alaska theater (simplified) — click a region" : "Alaska theater — ? on the Slope marks an unlisted legend",
+    16,
+    20
+  );
 }
 
 function openBattle() {

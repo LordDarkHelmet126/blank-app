@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — player-assignable standing orders for recruited generals.
+**Last checkpoint:** 2026-09-20 — in-UI reveal path for hidden legend Ilya Karr.
 
 ## How to run
 
@@ -16,22 +16,20 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-Optional: `/?demo=slice` (banner raised), `/?demo=orders` (Eli Hart hired with Drill order), `/?demo=week` (two autoplay weeks).
+Optional: `/?demo=slice`, `/?demo=orders`, `/?demo=legend` (Slope selected, rumor + ? mark), `/?demo=week`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Recruited generals (up to 5) have a **standing order** on the You card: By personality, Drill, Commerce, Cultivate, Fortify, Safety, Spy, Hide, Salvage
-- Orders cost no AP; they fire at **End Week**. Assigned work is tagged `— ordered.` in the log
-- Player staff no longer launch independent attacks; Command strip **March/Attack** is still the player's war button
-- Save/load keeps standing orders
+- ROTK7-style hidden officer: **Ilya Karr** (original Slope Ghost, not licensed IP)
+- In-UI path: rumor on the Arctic Slope card + Officers list + **?** on the map; **Seek Legend** (Town & plots) names him; travel Fairbanks → Slope and Seek again to list him (Hire if you share the region)
+- Spy/Hide on the Slope also advances the hunt; standing orders and Command March/Attack unchanged
 
 ## What’s next (small bursts)
 
-1. One more Alaska event + reveal path for legend Ilya Karr that’s obvious in-UI
-2. Town & plots: show at least one domestic row without looking collapsed on short windows
-3. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
+1. Town & plots: show at least one domestic row without looking collapsed on short windows
+2. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
 
 ## Blockers
 

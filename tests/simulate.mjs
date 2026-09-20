@@ -13,6 +13,7 @@ import {
   listActions,
   createCustomOfficer,
   setGeneralOrder,
+  legendStatus,
 } from "../js/engine.js";
 
 function assert(cond, msg) {
@@ -99,6 +100,23 @@ assert(regionOf(orderState, "bethel").garrison > beforeG, "drill should raise ga
 const loadedOrders = deserialize(serialize(orderState));
 assert(loadedOrders.officers.find((o) => o.id === "hart").standingOrder === "drill", "order survives save");
 console.log("ok general standing orders");
+
+const huntState = createNewGame(content, { seed: 3, difficulty: "easy", name: "Scout", background: "scout" });
+act(huntState, content, "raise_banner");
+assert(!visibleOfficers(huntState).some((o) => o.id === "karr"), "Karr starts hidden");
+assert(legendStatus(huntState).mapMark, "Slope should show a hunt mark");
+assert(listActions(huntState).some((a) => a.id === "seek_legend" && a.enabled), "Seek Legend available");
+res = act(huntState, content, "seek_legend");
+assert(res.ok, `seek rumor: ${res.message}`);
+assert(!res.revealed, "first seek from Bethel is rumor only");
+assert(legendStatus(huntState).hunt === 1, "hunt stage 1 after rumor");
+assert(!visibleOfficers(huntState).some((o) => o.id === "karr"), "still hidden after rumor");
+playerOf(huntState).region = "arctic_slope";
+res = act(huntState, content, "seek_legend");
+assert(res.ok && res.revealed, `contact: ${res.message}`);
+assert(visibleOfficers(huntState).some((o) => o.id === "karr"), "Karr listed after Slope contact");
+assert(!legendStatus(huntState).mapMark, "hunt mark clears");
+console.log("ok Ilya Karr reveal path");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
