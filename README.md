@@ -57,8 +57,8 @@ Play 10+ weeks without the UI locking: **End Week** is always available in strat
 | File | Role |
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
-| `data/factions.json` | ~40 original groups (name, bio, plus/minus, personality lean). Six are wired into the Alaska sandbox; the rest load for later maps. |
-| `data/regions.json` | Simplified Alaska regions, neighbors, polygons. |
+| `data/factions.json` | ~40 original groups. Nine are on the current board (Alaska six + Yukon/Bering); the rest load for later maps. |
+| `data/regions.json` | Alaska eight plus Yukon Road, Klondike, and Bering Ice. |
 | `data/tech.json` | Slow salvage unlocks (calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.

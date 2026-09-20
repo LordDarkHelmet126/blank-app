@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — ~40 original factions in JSON; six wired into Alaska.
+**Last checkpoint:** 2026-09-20 — Yukon + Bering nodes; three later-theater factions now on the board.
 
 ## How to run
 
@@ -22,10 +22,9 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- `data/factions.json` now has **40 original groups**, each with name, short bio, pluses/minuses, and a personality lean
-- **Sandbox subset stays the original six** (Front, POF, Holdouts, Compact, AURORA, Banner) so the eight-region map is not restacked
-- The other 34 load into state as off-map / later-theater data (Yukon, Bering, Aleutians, Pacific, civic, mercenary). Ally UI, map legend, and AI pacts ignore them
-- Seek Legend, standing orders, Command/Town strips unchanged. Godot still not installed — skipped
+- Map adds **3 nodes** (max 4): Whitehorse Road, Klondike Interior, Bering Ice
+- Wired **Whitehorse Relay**, **Klondike Watch**, and **Bering Ice Pact** onto them (civilian/cautious, modest garrisons). Path is Fairbanks→Yukon→Klondike and Nome→Bering — not a shortcut to Bethel or the Slope
+- Inga Yarrow sits the Pact; Ellen Haro / Bo Tagg staff the Yukon spur. Alaska v0.1 loop, Seek Legend, standing orders, and UI strips unchanged
 
 ## What’s next (small bursts)
 

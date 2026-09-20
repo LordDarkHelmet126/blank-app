@@ -285,6 +285,12 @@ export function createNewGame(content, opts = {}) {
   interior.ruler = "pike";
   compact.ruler = "solano";
   aurora.ruler = "solen";
+  const relay = factions.find((f) => f.id === "yukon_relay");
+  const watch = factions.find((f) => f.id === "klondike_watch");
+  const pact = factions.find((f) => f.id === "bering_pact");
+  if (relay) relay.ruler = "haro";
+  if (watch) watch.ruler = "tagg";
+  if (pact) pact.ruler = "yarrow";
   front.ruler = null;
   front.alive = false;
 

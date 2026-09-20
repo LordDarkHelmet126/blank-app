@@ -3,7 +3,7 @@
     "theater": "alaska",
     "version": "0.1",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Simplified Alaska regions for v0.1. Add regions and neighbor links to expand the map later."
+    "notes": "Alaska eight plus Yukon spur (2) and Bering ice (1). Coordinate space 1000x620."
   },
   "coast": [
     [40, 210], [70, 140], [160, 70], [280, 30], [520, 18], [740, 40],
@@ -40,7 +40,7 @@
       "type": "interior",
       "plus": ["Training grounds", "Rail spur"],
       "minus": ["Long winters", "Fuel scarce"],
-      "neighbors": ["arctic_slope", "nome", "anchorage", "bethel"],
+      "neighbors": ["arctic_slope", "nome", "anchorage", "bethel", "yukon_road"],
       "startOwner": "interior",
       "garrison": 48,
       "economy": 42,
@@ -61,7 +61,7 @@
       "type": "port",
       "plus": ["Sea lift", "Quiet inlets"],
       "minus": ["Icebound months", "Thin roads"],
-      "neighbors": ["fairbanks", "bethel"],
+      "neighbors": ["fairbanks", "bethel", "bering_strait"],
       "startOwner": "aurora",
       "garrison": 22,
       "economy": 36,
@@ -179,6 +179,69 @@
         [760, 280], [980, 270], [990, 470], [820, 510], [740, 400]
       ],
       "label": [870, 380]
+    },
+    {
+      "id": "yukon_road",
+      "name": "Whitehorse Road",
+      "short": "Yukon",
+      "type": "road",
+      "plus": ["South-pass talk", "Fuel favors"],
+      "minus": ["Thin levy", "Long supply"],
+      "neighbors": ["fairbanks", "klondike"],
+      "startOwner": "yukon_relay",
+      "garrison": 26,
+      "economy": 32,
+      "food": 36,
+      "walls": 20,
+      "order": 58,
+      "population": 14000,
+      "terrainBias": "forest",
+      "polygon": [
+        [560, 128], [740, 110], [800, 190], [760, 268], [590, 250]
+      ],
+      "label": [680, 188]
+    },
+    {
+      "id": "klondike",
+      "name": "Klondike Interior",
+      "short": "Klondike",
+      "type": "interior",
+      "plus": ["Mine-road ambushes", "Cold storage"],
+      "minus": ["Far from the sea", "Few rifles"],
+      "neighbors": ["yukon_road"],
+      "startOwner": "klondike_watch",
+      "garrison": 22,
+      "economy": 24,
+      "food": 30,
+      "walls": 18,
+      "order": 55,
+      "population": 8500,
+      "terrainBias": "forest",
+      "polygon": [
+        [740, 110], [910, 48], [992, 130], [975, 240], [800, 190]
+      ],
+      "label": [870, 145]
+    },
+    {
+      "id": "bering_strait",
+      "name": "Bering Ice",
+      "short": "Bering",
+      "type": "ice",
+      "plus": ["Ice-road trade", "Neutral scrip"],
+      "minus": ["No army", "Icebound months"],
+      "neighbors": ["nome"],
+      "startOwner": "bering_pact",
+      "garrison": 14,
+      "economy": 28,
+      "food": 22,
+      "walls": 12,
+      "order": 48,
+      "population": 2100,
+      "terrainBias": "ice",
+      "polygon": [
+        [14, 68], [155, 78], [48, 150], [40, 200], [10, 160]
+      ],
+      "label": [58, 118]
     }
   ]
 }

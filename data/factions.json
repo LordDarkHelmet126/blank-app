@@ -2,14 +2,17 @@
   "meta": {
     "theater": "alaska",
     "version": "0.1",
-    "notes": "About 40 original groups. sandbox:true are wired into the Alaska v0.1 map; the rest load from JSON for later theaters and must not own v0.1 regions.",
+    "notes": "About 40 original groups. sandbox:true are on the current board (Alaska six plus Yukon/Bering nodes). The rest load for later theaters.",
     "sandboxIds": [
       "northern_front",
       "pof",
       "interior",
       "compact",
       "aurora",
-      "banner"
+      "banner",
+      "yukon_relay",
+      "klondike_watch",
+      "bering_pact"
     ]
   },
   "factions": [
@@ -227,8 +230,8 @@
         "chr": 6,
         "upkeep": 0.95
       },
-      "bio": "A south-pass desk that still talks as if a border means something. Useful later; not on this map.",
-      "sandbox": false,
+      "bio": "A south-pass desk east of Fairbanks. Treaties and fuel favors; almost no levy.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -258,8 +261,8 @@
         "chr": -2,
         "upkeep": 1.0
       },
-      "bio": "Claim-holders and road judges who never signed the landing. They wait on a map east of here.",
-      "sandbox": false,
+      "bio": "Claim-holders and road judges east of the Relay. They hold the mine road and distrust a fast ally.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -382,8 +385,8 @@
         "chr": 8,
         "upkeep": 0.9
       },
-      "bio": "Factors who price ivory, fuel, and silence across the strait. A later Bering map.",
-      "sandbox": false,
+      "bio": "Factors on the ice west of Nome. Trade first; they will not storm the coast.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {

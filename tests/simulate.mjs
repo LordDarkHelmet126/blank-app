@@ -35,13 +35,28 @@ assert(
   "every faction needs name, bio, pluses/minuses, personality lean"
 );
 const sandboxIds = content.factions.factions.filter((f) => f.sandbox).map((f) => f.id).sort();
+assert(sandboxIds.includes("yukon_relay") && sandboxIds.includes("klondike_watch") && sandboxIds.includes("bering_pact"), "Yukon/Bering factions must be sandbox");
 assert(
-  sandboxIds.join() === "aurora,banner,compact,interior,northern_front,pof",
-  `Alaska sandbox subset must stay the original six, got ${sandboxIds}`
+  ["aurora", "banner", "bering_pact", "compact", "interior", "klondike_watch", "northern_front", "pof", "yukon_relay"].join() === sandboxIds.join(),
+  `sandbox set mismatch: ${sandboxIds}`
 );
 const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
-assert(content.regions.regions.length >= 6, "Need an Alaska region set");
+assert(content.regions.regions.length >= 10 && content.regions.regions.length <= 12, `Need Alaska + 2–4 new nodes, got ${content.regions.regions.length}`);
+const fairbanks = content.regions.regions.find((r) => r.id === "fairbanks");
+const nome = content.regions.regions.find((r) => r.id === "nome");
+const yukon = content.regions.regions.find((r) => r.id === "yukon_road");
+const klondike = content.regions.regions.find((r) => r.id === "klondike");
+const bering = content.regions.regions.find((r) => r.id === "bering_strait");
+assert(yukon && yukon.startOwner === "yukon_relay", "Yukon node for Whitehorse Relay");
+assert(klondike && klondike.startOwner === "klondike_watch", "Klondike node for Watch");
+assert(bering && bering.startOwner === "bering_pact", "Bering node for Ice Pact");
+assert(fairbanks.neighbors.includes("yukon_road") && yukon.neighbors.includes("fairbanks"), "Yukon attached through Fairbanks");
+assert(yukon.neighbors.includes("klondike") && klondike.neighbors.includes("yukon_road"), "Klondike behind the Relay");
+assert(nome.neighbors.includes("bering_strait") && bering.neighbors.includes("nome"), "Bering attached through Nome");
+assert(!fairbanks.neighbors.includes("klondike"), "Klondike must not skip the Yukon spur");
+assert(!content.regions.regions.find((r) => r.id === "arctic_slope").neighbors.includes("yukon_road"), "POF Slope must not neighbor Yukon");
+assert(!content.regions.regions.find((r) => r.id === "bethel").neighbors.includes("yukon_road"), "Bethel must not neighbor Yukon");
 
 for (const diff of ["easy", "normal", "hard"]) {
   const state = createNewGame(content, { seed: 42 + diff.length, difficulty: diff, name: "Casey Flint", background: "scout" });
@@ -50,7 +65,7 @@ for (const diff of ["easy", "normal", "hard"]) {
   assert(!playerOf(state).faction, "start alone / no banner");
   assert(listActions(state).some((a) => a.id === "end_week" && a.enabled), "End Week always available");
   assert(state.factions.length === content.factions.factions.length, "unused factions still load into state");
-  assert(state.factions.filter((f) => f.onMap).length === 6, "only the Alaska six are on-map");
+  assert(state.factions.filter((f) => f.onMap).length === 9, "Alaska six plus Yukon/Bering three on-map");
   assert(state.regions.every((r) => !r.owner || state.factions.find((f) => f.id === r.owner && f.onMap)), "no off-map region owner");
 
   for (let i = 0; i < 12; i++) {
@@ -137,6 +152,20 @@ assert(res.ok && res.revealed, `contact: ${res.message}`);
 assert(visibleOfficers(huntState).some((o) => o.id === "karr"), "Karr listed after Slope contact");
 assert(!legendStatus(huntState).mapMark, "hunt mark clears");
 console.log("ok Ilya Karr reveal path");
+
+const spur = createNewGame(content, { seed: 5, difficulty: "easy", name: "Scout", background: "scout" });
+act(spur, content, "raise_banner");
+playerOf(spur).region = "fairbanks";
+res = act(spur, content, "travel", { regionId: "yukon_road" });
+assert(res.ok && playerOf(spur).region === "yukon_road", `travel Yukon: ${res.message}`);
+res = act(spur, content, "travel", { regionId: "klondike" });
+assert(res.ok && playerOf(spur).region === "klondike", `travel Klondike: ${res.message}`);
+playerOf(spur).region = "nome";
+res = act(spur, content, "travel", { regionId: "bering_strait" });
+assert(res.ok && playerOf(spur).region === "bering_strait", `travel Bering: ${res.message}`);
+assert(visibleOfficers(spur).some((o) => o.id === "haro"), "Relay clerk on board");
+assert(visibleOfficers(spur).some((o) => o.id === "yarrow" && o.faction === "bering_pact"), "Yarrow wired to Ice Pact");
+console.log("ok Yukon/Bering spur");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");

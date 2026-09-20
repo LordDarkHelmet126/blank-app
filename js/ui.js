@@ -255,7 +255,7 @@ function factionsHtml() {
   const later = state.factions.filter((f) => !f.onMap);
   return `<h2>Factions on this map (${onMap.length})</h2>${onMap.map(row).join("")}
     <h2>Later theaters (${later.length})</h2>
-    <p class="muted">Loaded from JSON. Not wired into the eight-region sandbox — no land, no pacts here.</p>
+    <p class="muted">Loaded from JSON. No land and no pacts on this board until a later expansion.</p>
     ${later.map(row).join("")}
     <button type="button" data-close>Close</button>`;
 }
@@ -643,7 +643,7 @@ function drawMap() {
   ctx.font = "11px Segoe UI, sans-serif";
   const hunt = legendStatus(state);
   ctx.fillText(
-    hunt.revealed ? "Alaska theater (simplified) — click a region" : "Alaska theater — ? on the Slope marks an unlisted legend",
+    hunt.revealed ? "Alaska + Yukon/Bering — click a region" : "Alaska + Yukon/Bering — ? on the Slope marks an unlisted legend",
     16,
     20
   );

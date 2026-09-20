@@ -841,13 +841,13 @@
       "pol": 77,
       "chr": 81,
       "personality": "merchant",
-      "faction": "compact",
-      "region": "nome",
+      "faction": "bering_pact",
+      "region": "bering_strait",
       "loyalty": 58,
       "ambition": 67,
       "hidden": false,
       "legend": false,
-      "bio": "Trades across ice that used to be a border. Compact money with Nome weather."
+      "bio": "Trades across ice that used to be a border. Compact lost the desk when the Pact took the strait."
     },
     {
       "id": "fen",
@@ -1086,6 +1086,40 @@
       "hidden": false,
       "legend": false,
       "bio": "Pulls radios out of hulks. Wants a crew that pays in parts, not medals."
+    },
+    {
+      "id": "haro",
+      "name": "Ellen Haro",
+      "title": "Relay Clerk",
+      "war": 34,
+      "int": 72,
+      "pol": 86,
+      "chr": 79,
+      "personality": "diplomat",
+      "faction": "yukon_relay",
+      "region": "yukon_road",
+      "loyalty": 76,
+      "ambition": 38,
+      "hidden": false,
+      "legend": false,
+      "bio": "Stamps south-pass paper as if a border still means something. Will talk before she will march."
+    },
+    {
+      "id": "tagg",
+      "name": "Bo Tagg",
+      "title": "Claim Judge",
+      "war": 63,
+      "int": 68,
+      "pol": 52,
+      "chr": 41,
+      "personality": "cautious",
+      "faction": "klondike_watch",
+      "region": "klondike",
+      "loyalty": 84,
+      "ambition": 21,
+      "hidden": false,
+      "legend": false,
+      "bio": "Holds the mine road and waits. Occupier scrip does not buy a claim in his book."
     }
   ]
 }
