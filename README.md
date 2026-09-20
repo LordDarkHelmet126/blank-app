@@ -63,7 +63,7 @@ Play 10+ weeks without the UI locking: **End Week** is always available in strat
 
 Add objects; the engine does not assume a fixed officer count.
 
-v0.1 ships **14 AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). One is a **hidden legend** (`Ilya Karr`) until intel or a later week.
+v0.1 ships **52 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). One is a **hidden legend** (`Ilya Karr`) until intel or Seek Legend.
 
 ## Tests
 

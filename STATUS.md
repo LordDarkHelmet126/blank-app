@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — Town & plots keeps a domestic row visible on short windows.
+**Last checkpoint:** 2026-09-20 — data-driven officer roster grown to 52 original AI officers.
 
 ## How to run
 
@@ -22,13 +22,13 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- Town & plots no longer collapses to a heading: **Seek Legend** plus **Drill / Commerce / Cultivate** stay pinned; extra plots scroll
-- You + Region cards cap and scroll so they cannot eat the action strip; Field log may shrink on short windows
-- Standing orders and Command March/Attack unchanged
+- `data/officers.json` now has **52 original AI officers** (was 14): varied personalities, stats, and factions across Alaska plus nearby Bering / Aleutian / south-pass pressure
+- Not a 500-name dump. Ilya Karr remains the only hidden legend. Seek Legend, standing orders, and Command strip unchanged
+- Tests expect a 40–60 original roster and still cover 12-week autoplay, battle, hire, orders, and the Karr path
 
 ## What’s next (small bursts)
 
-1. Later (not this burst): grow JSON roster; Godot 2D port if the toolchain exists
+1. Later (not this burst): Godot 2D port if the toolchain exists
 
 ## Blockers
 

@@ -22,7 +22,11 @@ function assert(cond, msg) {
 
 const content = await loadContent();
 const aiCount = content.officers.officers.length;
-assert(aiCount >= 8 && aiCount <= 15, `AI roster should be 8–15, got ${aiCount}`);
+assert(aiCount >= 40 && aiCount <= 60, `AI roster should be 40–60 original officers, got ${aiCount}`);
+const officerIds = content.officers.officers.map((o) => o.id);
+assert(new Set(officerIds).size === officerIds.length, "duplicate officer ids");
+assert(content.officers.officers.every((o) => o.name && o.bio && o.personality && o.region), "every officer needs name/bio/personality/region");
+assert(content.officers.officers.filter((o) => o.legend).map((o) => o.id).join() === "karr", "single original legend remains Ilya Karr");
 assert(content.factions.factions.length >= 4 && content.factions.factions.length <= 6, "Need 4–6 factions");
 assert(content.regions.regions.length >= 6, "Need an Alaska region set");
 
