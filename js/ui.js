@@ -19,7 +19,13 @@ import {
   deserialize,
   createCustomOfficer,
   setGeneralOrder,
-  GENERAL_ORDERS,
+  ordersForOfficer,
+  skillsForPersonality,
+  portraitInitials,
+  orderLabel,
+  CUSTOM_STAT_MIN,
+  CUSTOM_STAT_MAX,
+  CUSTOM_STAT_BUDGET,
   legendStatus,
   autoplayWeek,
   MAX_GENERALS,
@@ -207,7 +213,7 @@ function helpHtml() {
     <p>Each turn is <strong>one week</strong>. Spend AP, then End Week. AI officers act by personality. Your generals follow standing orders on the You card.</p>
     <ul>
       <li>Raise Banner in uncontrolled Bethel to found Northern Front.</li>
-      <li>Hire up to 5 generals, then set their standing order. They act at End Week (no extra AP). March/Attack stays on Command.</li>
+      <li>Hire up to 5 generals, then set their standing order. Personality type gates skills (ROTK7-style). March/Attack stays on Command.</li>
       <li>Hidden legend: <strong>Seek Legend</strong> (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
       <li>Spy, rumor, persuade, hide, and alliances are on Town &amp; plots.</li>
       <li>Tech is salvage + calendar. No leapfrog.</li>
@@ -227,14 +233,37 @@ function officersHtml() {
     .map((o) => {
       const fac = o.faction ? factionOf(state, o.faction)?.short : "free";
       const loc = regionOf(state, o.region)?.short || "?";
-      return `<button type="button" class="list-btn" data-off="${o.id}"><strong>${o.name}</strong> · ${o.title} · ${fac} · ${loc}<br><span class="muted">${o.personality} · WAR ${o.war} INT ${o.int} POL ${o.pol} CHR ${o.chr} · loy ${o.loyalty}${o.legend ? " · LEGEND" : ""}</span></button>`;
+      const face = esc(o.portrait || portraitInitials(o.name));
+      return `<button type="button" class="list-btn" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span><strong>${esc(o.name)}</strong> · ${esc(o.title)} · ${fac} · ${loc}<br><span class="muted">${esc(o.personality)} · WAR ${o.war} INT ${o.int} POL ${o.pol} CHR ${o.chr} · loy ${o.loyalty}${o.legend ? " · LEGEND" : ""}${o.custom ? " · CUSTOM" : ""}</span></span></button>`;
     })
     .join("");
+  const types = Object.entries(content.officers.personalities || {});
+  const typeOpts = types
+    .map(([id, p], i) => `<option value="${esc(id)}"${id === "loyalist" ? " selected" : ""}>${esc(p.label || id)}</option>`)
+    .join("");
+  const slots = state.contentMeta.customOfficerSlots || 10;
+  const full = state.customSlotsUsed >= slots;
   return `<h2>Officers (${visibleOfficers(state).length} visible)</h2>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
     <hr />
-    <h2>Add custom officer (${state.customSlotsUsed}/${state.contentMeta.customOfficerSlots})</h2>
-    <div class="field"><label>Name</label><input id="c-name" value="Riley Cho" /></div>
-    <button type="button" id="c-add">Add free officer here</button>
+    <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
+    <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Type gates skills the way ROTK7 aptitudes did.</p>
+    <div class="creator">
+      <div class="portrait portrait-lg" id="c-portrait" aria-hidden="true">RC</div>
+      <div class="creator-fields">
+        <div class="field"><label>Name</label><input id="c-name" maxlength="28" value="Riley Cho" /></div>
+        <div class="field"><label>Title</label><input id="c-title" maxlength="24" value="Volunteer" /></div>
+        <div class="field"><label>Type</label><select id="c-type">${typeOpts}</select></div>
+        <p class="muted" id="c-skills"></p>
+        <div class="creator-stats">
+          <label>WAR <input id="c-war" type="number" min="${CUSTOM_STAT_MIN}" max="${CUSTOM_STAT_MAX}" value="55" /></label>
+          <label>INT <input id="c-int" type="number" min="${CUSTOM_STAT_MIN}" max="${CUSTOM_STAT_MAX}" value="55" /></label>
+          <label>POL <input id="c-pol" type="number" min="${CUSTOM_STAT_MIN}" max="${CUSTOM_STAT_MAX}" value="55" /></label>
+          <label>CHR <input id="c-chr" type="number" min="${CUSTOM_STAT_MIN}" max="${CUSTOM_STAT_MAX}" value="55" /></label>
+        </div>
+        <p class="muted" id="c-budget">Budget 220/${CUSTOM_STAT_BUDGET}</p>
+      </div>
+    </div>
+    <button type="button" id="c-add" class="primary"${full ? " disabled" : ""}>${full ? "Slots full" : "Add free officer here"}</button>
     <p></p><button type="button" data-close>Close</button>`;
 }
 
@@ -386,10 +415,12 @@ function youHtml() {
         ? `<div class="gen-orders">${gens
             .map(
               (g) => `<label class="gen-row"><span>${esc(g.name)} <small>${esc(g.personality)}</small></span>
-      <select data-order-gen="${g.id}">${GENERAL_ORDERS.map(
-                (o) =>
-                  `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
-              ).join("")}</select></label>`
+      <select data-order-gen="${g.id}">${ordersForOfficer(g)
+        .map(
+          (o) =>
+            `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
+        )
+        .join("")}</select></label>`
             )
             .join("")}</div>`
         : `<p class="muted">Hire from Command, then assign orders here.</p>`
@@ -734,12 +765,46 @@ function wireOrders() {
   });
 }
 
+function refreshCreator() {
+  const name = document.getElementById("c-name")?.value;
+  const port = document.getElementById("c-portrait");
+  if (port) port.textContent = portraitInitials(name);
+  const sel = document.getElementById("c-type");
+  const hint = document.getElementById("c-skills");
+  if (sel && hint) {
+    hint.textContent = `Skills: ${skillsForPersonality(sel.value).map((id) => orderLabel(id)).join(", ")}`;
+  }
+  const nums = ["c-war", "c-int", "c-pol", "c-chr"].map((id) => Number(document.getElementById(id)?.value || 0));
+  const bud = document.getElementById("c-budget");
+  if (bud) {
+    const sum = nums.reduce((s, n) => s + n, 0);
+    bud.textContent = `Budget ${sum}/${CUSTOM_STAT_BUDGET}`;
+    bud.classList.toggle("minus", sum > CUSTOM_STAT_BUDGET);
+  }
+}
+
 function wireAfterRender() {
   const add = document.getElementById("c-add");
   if (add) {
+    refreshCreator();
+    ["c-name", "c-type", "c-war", "c-int", "c-pol", "c-chr"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", refreshCreator);
+        el.addEventListener("change", refreshCreator);
+      }
+    });
     add.onclick = () => {
       const name = document.getElementById("c-name").value;
-      const res = createCustomOfficer(state, { name, personality: "loyalist" });
+      const res = createCustomOfficer(state, {
+        name,
+        title: document.getElementById("c-title")?.value,
+        personality: document.getElementById("c-type")?.value,
+        war: Number(document.getElementById("c-war")?.value),
+        int: Number(document.getElementById("c-int")?.value),
+        pol: Number(document.getElementById("c-pol")?.value),
+        chr: Number(document.getElementById("c-chr")?.value),
+      });
       toast(res.ok ? `${name} added to the free roster.` : res.message);
       showModal(officersHtml());
       wireDynamicModals();

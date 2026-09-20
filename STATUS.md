@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — Yukon + Bering nodes; three later-theater factions now on the board.
+**Last checkpoint:** 2026-09-20 — custom officer creator (10 slots, fair caps, personality-gated skills).
 
 ## How to run
 
@@ -22,9 +22,9 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- Map adds **3 nodes** (max 4): Whitehorse Road, Klondike Interior, Bering Ice
-- Wired **Whitehorse Relay**, **Klondike Watch**, and **Bering Ice Pact** onto them (civilian/cautious, modest garrisons). Path is Fairbanks→Yukon→Klondike and Nome→Bering — not a shortcut to Bethel or the Slope
-- Inga Yarrow sits the Pact; Ellen Haro / Bo Tagg staff the Yukon spur. Alaska v0.1 loop, Seek Legend, standing orders, and UI strips unchanged
+- Officers panel **Create officer**: name, title, type, WAR/INT/POL/CHR (30–80 each, total ≤ 220), initials portrait placeholder
+- Personality type gates standing-order skills (ROTK7-style aptitudes). Cap **10** custom originals. Save/load keeps them
+- Map, Seek Legend, Command/Town strips unchanged
 
 ## What’s next (small bursts)
 

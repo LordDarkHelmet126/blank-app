@@ -110,9 +110,27 @@ const beforeHire = playerGenerals(spyState).length;
 act(spyState, content, "end_week");
 act(spyState, content, "hire", { officerId: "hart" });
 assert(playerGenerals(spyState).length === beforeHire || playerGenerals(spyState).length === beforeHire + 1, "hire attempted");
-const custom = createCustomOfficer(spyState, { name: "Pat Quinn", war: 55, personality: "merchant" });
+const custom = createCustomOfficer(spyState, { name: "Pat Quinn", war: 55, int: 55, pol: 55, chr: 55, personality: "merchant" });
 assert(custom.ok, "custom officer slot");
 assert(spyState.officers.some((o) => o.id === custom.id), "custom in roster");
+const pat = spyState.officers.find((o) => o.id === custom.id);
+assert(pat.custom && pat.portrait === "PQ", "placeholder portrait initials");
+assert(pat.skills.includes("commerce") && !pat.skills.includes("drill"), "merchant type gates skills");
+pat.faction = "northern_front";
+pat.loyalty = 80;
+assert(!setGeneralOrder(spyState, pat.id, "drill").ok, "gated skill rejected");
+assert(setGeneralOrder(spyState, pat.id, "commerce").ok, "in-type skill allowed");
+assert(!createCustomOfficer(spyState, { name: "Over", war: 80, int: 80, pol: 80, chr: 80, personality: "loyalist" }).ok, "stat budget cap");
+assert(!createCustomOfficer(spyState, { name: "X", personality: "loyalist" }).ok, "name too short");
+for (let i = spyState.customSlotsUsed; i < 10; i++) {
+  const extra = createCustomOfficer(spyState, { name: `Slot ${i + 1}`, personality: "loyalist", war: 40, int: 40, pol: 40, chr: 40 });
+  assert(extra.ok, `slot ${i + 1}`);
+}
+assert(!createCustomOfficer(spyState, { name: "Eleventh", personality: "loyalist" }).ok, "11th custom blocked");
+const loadedCustom = deserialize(serialize(spyState));
+const savedPat = loadedCustom.officers.find((o) => o.id === pat.id);
+assert(savedPat && savedPat.custom && savedPat.skills.includes("commerce") && savedPat.portrait === "PQ", "custom survives save");
+assert(loadedCustom.customSlotsUsed === 10, "slot count persists");
 console.log("ok spy/ally/hire/custom");
 
 const orderState = createNewGame(content, { seed: 11, difficulty: "easy", name: "Pat", background: "organizer" });

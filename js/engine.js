@@ -22,6 +22,19 @@ export const GENERAL_ORDERS = [
   { id: "hide", label: "Hide" },
   { id: "research", label: "Salvage" },
 ];
+export const PERSONALITY_SKILLS = {
+  aggressive: ["drill", "fortify", "safety"],
+  cautious: ["fortify", "safety", "hide", "cultivate"],
+  diplomat: ["commerce", "safety", "research"],
+  schemer: ["spy", "hide", "research"],
+  merchant: ["commerce", "cultivate", "research"],
+  loyalist: ["drill", "fortify", "safety", "cultivate"],
+  ambitious: ["drill", "commerce", "spy"],
+  recluse: ["hide", "cultivate", "safety", "research"],
+};
+export const CUSTOM_STAT_MIN = 30;
+export const CUSTOM_STAT_MAX = 80;
+export const CUSTOM_STAT_BUDGET = 220;
 const LOG_CAP = 240;
 
 const DIFFICULTY = {
@@ -106,11 +119,28 @@ export function orderLabel(id) {
   return GENERAL_ORDERS.find((o) => o.id === id)?.label || "By personality";
 }
 
+export function skillsForPersonality(personality) {
+  return PERSONALITY_SKILLS[personality] || PERSONALITY_SKILLS.loyalist;
+}
+
+export function portraitInitials(name) {
+  const parts = String(name || "CO").trim().split(/\s+/).filter(Boolean);
+  const letters = parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : (parts[0] || "CO").slice(0, 2);
+  return letters.toUpperCase();
+}
+
+export function ordersForOfficer(off) {
+  const allowed = new Set(["auto", ...(off?.skills || skillsForPersonality(off?.personality))]);
+  return GENERAL_ORDERS.filter((o) => allowed.has(o.id));
+}
+
 export function setGeneralOrder(state, officerId, orderId) {
   if (state.phase === "battle") return { ok: false, message: "Finish the field first." };
   const g = playerGenerals(state).find((o) => o.id === officerId);
   if (!g) return { ok: false, message: "Not one of your generals." };
-  if (!GENERAL_ORDERS.some((o) => o.id === orderId)) return { ok: false, message: "Unknown order." };
+  if (!ordersForOfficer(g).some((o) => o.id === orderId)) {
+    return { ok: false, message: `${g.name}'s type (${g.personality}) cannot take that skill.` };
+  }
   g.standingOrder = orderId;
   const msg = `${g.name} is ordered: ${orderLabel(orderId)}.`;
   pushLog(state, msg, "player");
@@ -364,7 +394,12 @@ export function deserialize(raw) {
   if (!state.log) state.log = [];
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
+    if (!o.skills) o.skills = skillsForPersonality(o.personality);
+    if (!o.portrait) o.portrait = portraitInitials(o.name);
   });
+  if (state.customSlotsUsed == null) {
+    state.customSlotsUsed = (state.officers || []).filter((o) => o.custom).length;
+  }
   if (state.legendHunt == null) state.legendHunt = state.discovered?.includes("karr") ? 2 : 0;
   (state.factions || []).forEach((f) => {
     if (f.onMap == null) f.onMap = f.sandbox === true;
@@ -1426,22 +1461,41 @@ export function personalityHistogram(state) {
 }
 
 export function createCustomOfficer(state, spec) {
-  if (state.customSlotsUsed >= (state.contentMeta.customOfficerSlots || 10)) {
+  const slots = state.contentMeta.customOfficerSlots || 10;
+  if (state.customSlotsUsed >= slots) {
     return { ok: false, message: "Custom officer slots full (10)." };
   }
   if (state.officers.length >= (state.contentMeta.rosterCap || 500)) {
     return { ok: false, message: "Roster cap (500) reached." };
   }
+  const name = String(spec.name || "").trim().slice(0, 28);
+  if (name.length < 2) return { ok: false, message: "Name needs at least two letters." };
+  const personality = spec.personality || "loyalist";
+  if (!PERSONALITY_SKILLS[personality]) return { ok: false, message: "Unknown personality type." };
+  const war = Number(spec.war ?? 55);
+  const intel = Number(spec.int ?? 55);
+  const pol = Number(spec.pol ?? 55);
+  const chr = Number(spec.chr ?? 55);
+  const stats = [war, intel, pol, chr];
+  if (stats.some((n) => Number.isNaN(n) || n < CUSTOM_STAT_MIN || n > CUSTOM_STAT_MAX)) {
+    return { ok: false, message: `Each stat must be ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX}.` };
+  }
+  const total = stats.reduce((s, n) => s + n, 0);
+  if (total > CUSTOM_STAT_BUDGET) {
+    return { ok: false, message: `Stat total ${total} exceeds budget ${CUSTOM_STAT_BUDGET}.` };
+  }
+  const skills = skillsForPersonality(personality);
   const id = `custom_${state.customSlotsUsed + 1}`;
+  const portrait = spec.portrait || portraitInitials(name);
   state.officers.push({
     id,
-    name: (spec.name || "Custom").slice(0, 28),
-    title: spec.title || "Volunteer",
-    war: clampStat(spec.war ?? 50),
-    int: clampStat(spec.int ?? 50),
-    pol: clampStat(spec.pol ?? 50),
-    chr: clampStat(spec.chr ?? 50),
-    personality: spec.personality || "loyalist",
+    name,
+    title: (spec.title || "Volunteer").slice(0, 24),
+    war,
+    int: intel,
+    pol,
+    chr,
+    personality,
     faction: null,
     region: playerOf(state).region,
     loyalty: 50,
@@ -1451,13 +1505,15 @@ export function createCustomOfficer(state, spec) {
     alive: true,
     retinue: 0,
     fame: 10,
-    bio: spec.bio || "A name written into the expandable roster.",
+    bio: spec.bio || `${name} is an original volunteer. Type ${personality} gates ${skills.join(", ")}.`,
     custom: true,
+    skills,
+    portrait,
     standingOrder: "auto",
   });
   state.customSlotsUsed += 1;
-  pushLog(state, `${spec.name || "Custom"} added to the free roster in ${currentRegion(state).short}.`, "info");
-  return { ok: true, id };
+  pushLog(state, `${name} [${personality}] added to the free roster in ${currentRegion(state).short}.`, "info");
+  return { ok: true, id, skills, portrait };
 }
 
 export { DIFFICULTY, alliedFactions };
