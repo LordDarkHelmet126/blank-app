@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-20 — custom officer creator (10 slots, fair caps, personality-gated skills).
+**Last checkpoint:** 2026-09-21 — parchment/ink PS-strategy look + walkable ink roads on every travel edge.
 
 ## How to run
 
@@ -16,15 +16,15 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-Optional: `/?demo=slice`, `/?demo=orders`, `/?demo=legend` (Slope selected, rumor + ? mark), `/?demo=week`.
+Optional: `/?demo=slice`, `/?demo=orders`, `/?demo=legend`, `/?demo=week`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Officers panel **Create officer**: name, title, type, WAR/INT/POL/CHR (30–80 each, total ≤ 220), initials portrait placeholder
-- Personality type gates standing-order skills (ROTK7-style aptitudes). Cap **10** custom originals. Save/load keeps them
-- Map, Seek Legend, Command/Town strips unchanged
+- Warm parchment HUD and ink map: city house-markers, double-line roads, period chrome. Battles use a still, banner-on-dirt field (no licensed sprites)
+- Every neighbor pair has a drawn road; every road is a travel edge. Slope↔Yukon now walkable because those polygons share a border
+- AP loop, Seek Legend, standing orders, custom officers, Yukon/Bering otherwise unchanged
 
 ## What’s next (small bursts)
 

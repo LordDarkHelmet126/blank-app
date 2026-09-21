@@ -14,6 +14,7 @@ import {
   createCustomOfficer,
   setGeneralOrder,
   legendStatus,
+  mapRoads,
 } from "../js/engine.js";
 
 function assert(cond, msg) {
@@ -55,8 +56,28 @@ assert(fairbanks.neighbors.includes("yukon_road") && yukon.neighbors.includes("f
 assert(yukon.neighbors.includes("klondike") && klondike.neighbors.includes("yukon_road"), "Klondike behind the Relay");
 assert(nome.neighbors.includes("bering_strait") && bering.neighbors.includes("nome"), "Bering attached through Nome");
 assert(!fairbanks.neighbors.includes("klondike"), "Klondike must not skip the Yukon spur");
-assert(!content.regions.regions.find((r) => r.id === "arctic_slope").neighbors.includes("yukon_road"), "POF Slope must not neighbor Yukon");
+assert(content.regions.regions.find((r) => r.id === "arctic_slope").neighbors.includes("yukon_road"), "Slope shares an edge with Yukon and must be walkable");
 assert(!content.regions.regions.find((r) => r.id === "bethel").neighbors.includes("yukon_road"), "Bethel must not neighbor Yukon");
+content.regions.regions.forEach((r) => {
+  r.neighbors.forEach((n) => {
+    const o = content.regions.regions.find((x) => x.id === n);
+    assert(o, `${r.id} lists missing neighbor ${n}`);
+    assert(o.neighbors.includes(r.id), `one-way edge ${r.id}→${n}`);
+  });
+});
+const roads = mapRoads(content.regions.regions);
+const roadKeys = new Set(roads.map((rd) => [rd.from, rd.to].sort().join("|")));
+let edgeCount = 0;
+content.regions.regions.forEach((r) => {
+  r.neighbors.forEach((n) => {
+    if (r.id < n) {
+      edgeCount += 1;
+      assert(roadKeys.has(`${r.id}|${n}`), `travel ${r.id}–${n} has no drawn road`);
+    }
+  });
+});
+assert(roads.length === edgeCount, "every drawn road must be a travel edge");
+assert(roads.every((rd) => rd.a && rd.b), "roads need city markers");
 
 for (const diff of ["easy", "normal", "hard"]) {
   const state = createNewGame(content, { seed: 42 + diff.length, difficulty: diff, name: "Casey Flint", background: "scout" });
@@ -178,6 +199,9 @@ res = act(spur, content, "travel", { regionId: "yukon_road" });
 assert(res.ok && playerOf(spur).region === "yukon_road", `travel Yukon: ${res.message}`);
 res = act(spur, content, "travel", { regionId: "klondike" });
 assert(res.ok && playerOf(spur).region === "klondike", `travel Klondike: ${res.message}`);
+playerOf(spur).region = "arctic_slope";
+res = act(spur, content, "travel", { regionId: "yukon_road" });
+assert(res.ok && playerOf(spur).region === "yukon_road", `travel Slope–Yukon road: ${res.message}`);
 playerOf(spur).region = "nome";
 res = act(spur, content, "travel", { regionId: "bering_strait" });
 assert(res.ok && playerOf(spur).region === "bering_strait", `travel Bering: ${res.message}`);

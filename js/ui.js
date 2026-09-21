@@ -29,6 +29,7 @@ import {
   legendStatus,
   autoplayWeek,
   MAX_GENERALS,
+  mapRoads,
 } from "./engine.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -622,22 +623,86 @@ function onMapMove(e) {
   }
 }
 
+function cityXY(r) {
+  const p = r.city || r.label;
+  return [p[0], p[1]];
+}
+
+function drawInkRoad(ctx, a, b) {
+  const mx = (a[0] + b[0]) / 2;
+  const my = (a[1] + b[1]) / 2;
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const cx = mx - dy * 0.07;
+  const cy = my + dx * 0.07;
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.quadraticCurveTo(cx, cy, b[0], b[1]);
+  ctx.strokeStyle = "#4a3014";
+  ctx.lineWidth = 5.5;
+  ctx.lineCap = "round";
+  ctx.stroke();
+  ctx.strokeStyle = "#d2b06a";
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+}
+
+function drawCityMark(ctx, r, selected, hover) {
+  const [x, y] = cityXY(r);
+  const fac = r.owner ? factionOf(state, r.owner) : null;
+  ctx.fillStyle = fac ? fac.color : "#6a5a40";
+  ctx.strokeStyle = selected ? "#5a2010" : hover ? "#3a2410" : "#2a1c10";
+  ctx.lineWidth = selected ? 2.4 : 1.4;
+  ctx.fillRect(x - 8, y - 8, 16, 12);
+  ctx.strokeRect(x - 8, y - 8, 16, 12);
+  ctx.beginPath();
+  ctx.moveTo(x - 9, y - 8);
+  ctx.lineTo(x, y - 16);
+  ctx.lineTo(x + 9, y - 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#2a1c10";
+  ctx.font = "bold 12px Palatino, Times New Roman, serif";
+  ctx.fillText(r.short, x - ctx.measureText(r.short).width / 2, y + 18);
+  const p = playerOf(state);
+  if (p.region === r.id) {
+    ctx.fillStyle = "#c9a227";
+    ctx.beginPath();
+    ctx.arc(x + 14, y - 14, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#5a2010";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
+    ctx.fillStyle = "#5a2a68";
+    ctx.font = "bold 16px Palatino, serif";
+    ctx.fillText("?", x + 12, y + 4);
+  }
+}
+
 function drawMap() {
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "#08141c";
+  ctx.fillStyle = "#6d7a74";
   ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "rgba(42, 28, 16, 0.08)";
+  for (let i = 0; i < 40; i++) {
+    ctx.fillRect((i * 97) % w, (i * 53) % h, 3, 2);
+  }
 
   if (state.coast) {
     ctx.beginPath();
     state.coast.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
     ctx.closePath();
-    ctx.fillStyle = "#0d1e28";
+    ctx.fillStyle = "#d7c49a";
     ctx.fill();
-    ctx.strokeStyle = "#3d6a7a";
+    ctx.strokeStyle = "#3d2a14";
+    ctx.lineWidth = 1.5;
     ctx.stroke();
   }
 
@@ -646,37 +711,27 @@ function drawMap() {
     ctx.beginPath();
     r.polygon.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
     ctx.closePath();
-    ctx.fillStyle = fac ? fac.colorDark : "#243038";
-    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = fac ? fac.colorDark : "#b8a878";
+    ctx.globalAlpha = 0.55;
     ctx.fill();
     ctx.globalAlpha = 1;
-    ctx.lineWidth = r.id === selectedRegion ? 3 : 1;
-    ctx.strokeStyle = r.id === selectedRegion ? "#f0d3a0" : r.id === hoverRegion ? "#c5dde8" : "#1c3340";
+    ctx.lineWidth = r.id === selectedRegion ? 2.6 : 1.2;
+    ctx.strokeStyle = r.id === selectedRegion ? "#5a2010" : r.id === hoverRegion ? "#7a4a20" : "#4a3418";
     ctx.stroke();
-    ctx.fillStyle = "#e8f4f8";
-    ctx.font = "12px Segoe UI, sans-serif";
-    ctx.fillText(r.short, r.label[0] - 24, r.label[1]);
-    const p = playerOf(state);
-    if (p.region === r.id) {
-      ctx.fillStyle = "#d4a056";
-      ctx.beginPath();
-      ctx.arc(r.label[0] + 36, r.label[1] - 6, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
-      ctx.fillStyle = "#d2b8ff";
-      ctx.font = "bold 16px Segoe UI, sans-serif";
-      ctx.fillText("?", r.label[0] + 28, r.label[1] + 4);
-    }
   });
 
-  ctx.fillStyle = "#8eacb8";
-  ctx.font = "11px Segoe UI, sans-serif";
+  mapRoads(state.regions).forEach((rd) => drawInkRoad(ctx, rd.a, rd.b));
+  state.regions.forEach((r) => drawCityMark(ctx, r, r.id === selectedRegion, r.id === hoverRegion));
+
+  ctx.fillStyle = "#3a2410";
+  ctx.font = "12px Palatino, Times New Roman, serif";
   const hunt = legendStatus(state);
   ctx.fillText(
-    hunt.revealed ? "Alaska + Yukon/Bering — click a region" : "Alaska + Yukon/Bering — ? on the Slope marks an unlisted legend",
+    hunt.revealed
+      ? "Ink roads are march lines. Cities that touch are linked."
+      : "Ink roads are march lines. ? on the Slope marks an unlisted legend.",
     16,
-    20
+    22
   );
 }
 
@@ -698,29 +753,43 @@ function drawBattle() {
   const ch = canvas.height;
   const gw = cw / b.cols;
   const gh = ch / b.rows;
-  const colors = { plains: "#2d4a3a", forest: "#1c3a2c", hills: "#3a4030", urban: "#3a3a42", ice: "#6a8a9a" };
+  const colors = { plains: "#c4b07a", forest: "#6a7a48", hills: "#8a7048", urban: "#8a7a68", ice: "#b8c4b8" };
+  ctx.fillStyle = "#3a2a16";
+  ctx.fillRect(0, 0, cw, ch);
   for (let y = 0; y < b.rows; y++) {
     for (let x = 0; x < b.cols; x++) {
-      ctx.fillStyle = colors[b.grid[y][x]] || "#234";
-      ctx.fillRect(x * gw, y * gh, gw - 1, gh - 1);
+      ctx.fillStyle = colors[b.grid[y][x]] || "#a89868";
+      ctx.fillRect(x * gw + 1, y * gh + 1, gw - 3, gh - 3);
+      ctx.strokeStyle = "rgba(42,28,16,0.35)";
+      ctx.strokeRect(x * gw + 1, y * gh + 1, gw - 3, gh - 3);
     }
   }
   b.units.forEach((u) => {
     if (u.hp <= 0) return;
     const px = u.x * gw + gw / 2;
     const py = u.y * gh + gh / 2;
-    ctx.fillStyle = u.side === "atk" ? "#d4a056" : "#b04a4a";
+    const col = u.side === "atk" ? "#c9a227" : "#8a3030";
     if (b.selected === u.id) {
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(u.x * gw + 6, u.y * gh + 6, gw - 12, gh - 12);
+      ctx.strokeStyle = "#5a2010";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(u.x * gw + 8, u.y * gh + 8, gw - 16, gh - 16);
     }
-    ctx.fillRect(px - 16, py - 16, 32, 32);
-    ctx.fillStyle = "#081018";
-    ctx.font = "11px sans-serif";
-    ctx.fillText(u.label.slice(0, 4), px - 12, py + 4);
-    ctx.fillStyle = "#7aa17b";
-    ctx.fillRect(px - 16, py + 18, 32 * (u.hp / u.maxHp), 4);
+    ctx.fillStyle = col;
+    ctx.fillRect(px - 7, py - 18, 14, 22);
+    ctx.strokeStyle = "#2a1c10";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(px - 7, py - 18, 14, 22);
+    ctx.beginPath();
+    ctx.moveTo(px + 7, py - 18);
+    ctx.lineTo(px + 18, py - 12);
+    ctx.lineTo(px + 7, py - 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#2a1c10";
+    ctx.font = "11px Palatino, serif";
+    ctx.fillText(u.label.slice(0, 4), px - 14, py + 18);
+    ctx.fillStyle = "#4a6a32";
+    ctx.fillRect(px - 16, py + 20, 32 * (u.hp / u.maxHp), 3);
   });
 }
 

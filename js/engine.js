@@ -85,6 +85,29 @@ export function officerOf(state, id) {
 export function regionOf(state, id) {
   return state.regions.find((r) => r.id === id);
 }
+
+export function mapRoads(regions) {
+  const list = regions || [];
+  const byId = Object.fromEntries(list.map((r) => [r.id, r]));
+  const seen = new Set();
+  const roads = [];
+  list.forEach((r) => {
+    (r.neighbors || []).forEach((nid) => {
+      const key = r.id < nid ? `${r.id}|${nid}` : `${nid}|${r.id}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const o = byId[nid];
+      if (!o) return;
+      roads.push({
+        from: r.id,
+        to: o.id,
+        a: r.city || r.label,
+        b: o.city || o.label,
+      });
+    });
+  });
+  return roads;
+}
 export function factionOf(state, id) {
   return state.factions.find((f) => f.id === id);
 }
@@ -269,6 +292,7 @@ export function createNewGame(content, opts = {}) {
     terrainBias: r.terrainBias,
     polygon: r.polygon,
     label: r.label,
+    city: r.city || r.label,
     prefect: null,
     intel: 0,
   }));
@@ -392,6 +416,9 @@ export function deserialize(raw) {
   const state = typeof raw === "string" ? JSON.parse(raw) : raw;
   attachSeason(state);
   if (!state.log) state.log = [];
+  (state.regions || []).forEach((r) => {
+    if (!r.city) r.city = r.label;
+  });
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
     if (!o.skills) o.skills = skillsForPersonality(o.personality);
