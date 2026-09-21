@@ -115,12 +115,13 @@ button:hover {
   color: var(--amber);
   border-color: var(--amber);
 }
-button:active:not(:disabled) {
-  animation: px-press 80ms steps(2);
+button:active:not(:disabled),
+button.is-press {
+  animation: px-press 140ms steps(2);
   box-shadow: inset 4px 4px 0 #000030, inset -4px -4px 0 #4040a0;
 }
 @keyframes px-press {
-  0%, 49% { filter: brightness(1.8); }
+  0%, 49% { filter: brightness(2.2); background: #f8d800; color: #000018; border-color: #f8f8f8; }
   50%, 100% { filter: none; }
 }
 button.primary {
@@ -233,15 +234,18 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   align-items: stretch;
   padding: 0;
   min-height: 0;
+  overflow: hidden;
 }
 .cmd-tab img {
   width: 100%;
-  height: 40px;
+  height: 48px;
   object-fit: cover;
   image-rendering: pixelated;
   display: block;
+  border-bottom: var(--chrome);
+  background: #000010;
 }
-.cmd-tab span { padding: 4px; text-align: center; }
+.cmd-tab span { padding: var(--pad); text-align: center; }
 .cmd-tab.active {
   border-color: var(--amber);
   color: var(--amber);
@@ -257,11 +261,16 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
 .cmd-actions button {
   text-align: left;
   font-size: 8px;
-  min-height: 48px;
-  padding: var(--pad);
+  min-height: 0;
+  padding: 0;
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+}
+.cmd-actions button span {
+  padding: var(--pad);
 }
 .cmd-actions button small {
   display: block;
@@ -270,20 +279,32 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   text-transform: uppercase;
 }
 .cmd-thumb {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: 100%;
+  height: 56px;
+  flex: 0 0 56px;
   object-fit: cover;
   image-rendering: pixelated;
-  border: var(--chrome);
+  border: 0;
+  border-bottom: var(--chrome);
   background: #000010;
+  display: block;
+}
+.list-btn .cmd-thumb {
+  width: 64px;
+  height: 36px;
+  flex: 0 0 64px;
+  border: var(--chrome);
+  border-bottom: var(--chrome);
 }
 .cmd-actions button[data-id="attack"] {
   grid-column: 1 / -1;
-  min-height: 52px;
   background: #803010;
   border-color: var(--amber);
   color: var(--amber);
+}
+.cmd-actions button[data-id="attack"] .cmd-thumb {
+  height: 72px;
+  flex-basis: 72px;
 }
 .card h2 {
   margin: 0 0 8px;
@@ -334,11 +355,17 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
 }
 .event-scene[hidden] { display: none !important; }
 .event-scene.open .event-card {
-  animation: scene-in 180ms steps(4);
+  animation: scene-in 240ms steps(4);
+}
+.event-scene.open .event-art img:first-child {
+  animation: scene-in 240ms steps(4);
 }
 @keyframes scene-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
+  0% { opacity: 0; }
+  25% { opacity: 0.25; }
+  50% { opacity: 0.55; }
+  75% { opacity: 1; }
+  100% { opacity: 1; }
 }
 .event-card {
   width: min(720px, 100%);
@@ -351,6 +378,7 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   position: relative;
   border-bottom: var(--chrome);
   background: #000010;
+  box-shadow: var(--chrome-in);
 }
 .event-art img:first-child,
 .week-art img:first-child {
@@ -439,7 +467,7 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
 }
 .choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }
 .field { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
-.field input, .field select {
+.field input, .field select, .field textarea, textarea, input[type="file"] {
   font-family: "Press Start 2P", monospace;
   font-size: 8px;
   background: #000030;
@@ -449,7 +477,32 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   border-radius: 0;
   box-shadow: var(--chrome-in);
 }
-.list-btn { display: flex; align-items: center; gap: 8px; text-align: left; width: 100%; margin: 4px 0; }
+textarea, .field textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+}
+input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0 8px 0 0;
+  vertical-align: middle;
+  background: #000030;
+  border: var(--chrome);
+  box-shadow: var(--chrome-in);
+  border-radius: 0;
+}
+input[type="checkbox"]:checked {
+  background: var(--amber);
+}
+hr {
+  border: none;
+  border-top: var(--chrome);
+  margin: 8px 0;
+}
+.list-btn { display: flex; align-items: center; gap: 8px; text-align: left; width: 100%; margin: 4px 0; padding: 0; }
+.list-btn > span { padding: var(--pad); min-width: 0; }
 .modal-card.officers-card {
   width: min(760px, 100%);
   background: var(--panel);
@@ -509,6 +562,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   color: var(--ice);
   border: var(--chrome);
   padding: var(--pad);
+  border-radius: 0;
+  box-shadow: var(--chrome-in);
 }
 .muted { color: var(--ice-dim); }
 
@@ -568,6 +623,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   .officer-face { width: 96px; height: 96px; flex-basis: 96px; }
   .officer-plate { min-height: 112px; }
   .officer-plate .gen-orders { display: none; }
-  .cmd-tab img { height: 28px; }
-  .cmd-actions button { min-height: 40px; padding: var(--pad); }
+  .cmd-tab img { height: 36px; }
+  .cmd-actions button { min-height: 0; padding: 0; }
+  .cmd-thumb { height: 40px; flex-basis: 40px; }
+  .cmd-actions button[data-id="attack"] .cmd-thumb { height: 52px; flex-basis: 52px; }
 }

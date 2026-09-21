@@ -63,6 +63,7 @@ export async function boot(loaded) {
     selectedRegion = "bethel";
     hideModal();
     if (params.get("cat") === "domestic" || params.get("panel") === "drill") commandCat = "domestic";
+    if (params.get("cat") === "military") commandCat = "military";
     render();
     if (params.get("panel") === "officers") showModal(officersHtml(), { kind: "officers" });
     if (params.get("panel") === "spy") {
@@ -80,6 +81,15 @@ export async function boot(loaded) {
       });
     }
     if (params.get("fx") === "travel") pulseTravel("bethel", "fairbanks");
+    if (params.get("fx") === "battle") {
+      const home = regionOf(state, "bethel");
+      home.garrison = 90;
+      const fight = act(state, content, "attack", { regionId: "nome" });
+      if (fight.battle && state.battle) {
+        state.battle.flash = { x: 3, y: 2, side: "atk" };
+        openBattle();
+      }
+    }
     afterFonts();
     return;
   }
@@ -334,7 +344,7 @@ function loadMenuHtml() {
   return `
     <h2>Load</h2>
     <p><button type="button" id="load-ls">Load browser save</button></p>
-    <div class="field"><label>Or paste / import JSON</label><textarea id="load-json" rows="8" style="width:100%;background:#0b1720;color:var(--ice);border:1px solid var(--line)"></textarea></div>
+    <div class="field"><label>Or paste / import JSON</label><textarea id="load-json" rows="8"></textarea></div>
     <p><input type="file" id="load-file" accept="application/json" /></p>
     <button type="button" id="load-paste">Load pasted JSON</button>
     <button type="button" data-close>Close</button>
@@ -554,7 +564,11 @@ function actionButton(a) {
   b.disabled = !a.enabled || (a.ap > 0 && state.ap < a.ap);
   b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(a.label)}<small>AP ${a.ap}${a.enabled ? "" : " · locked"}</small></span>`;
   b.title = a.hint;
-  b.onclick = () => startAction(a);
+  b.onclick = () => {
+    b.classList.add("is-press");
+    setTimeout(() => b.classList.remove("is-press"), 140);
+    startAction(a);
+  };
   return b;
 }
 
@@ -816,7 +830,7 @@ function pulseTravel(fromId, toId) {
   mapFx = { kind: "travel", a: cityXY(a), b: cityXY(b), hop: true, t0: performance.now() };
   const tick = () => {
     drawMap();
-    if (mapFx && performance.now() - mapFx.t0 < 420) requestAnimationFrame(tick);
+    if (mapFx && performance.now() - mapFx.t0 < 720) requestAnimationFrame(tick);
     else mapFx = null;
   };
   requestAnimationFrame(tick);
@@ -840,7 +854,7 @@ function drawCityMark(ctx, r, selected) {
   ctx.fillRect(x + 4, y - 5, 2, 2);
   const p = playerOf(state);
   if (p.region === r.id) {
-    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 80) % 2 === 0 ? -2 : 0;
+    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
     ctx.fillRect(x - 4, y - 5 + hop, 2, 2);
   }
@@ -949,7 +963,7 @@ function scheduleFlashClear(battle) {
       battle.flash = null;
       drawBattle();
     }
-  }, 160);
+  }, 240);
 }
 
 function terrainFrameInk(t) {
@@ -1035,8 +1049,14 @@ function drawBattle() {
   if (b.flash) {
     const fx = Math.floor(b.flash.x * gw);
     const fy = Math.floor(b.flash.y * gh);
-    ctx.fillStyle = Math.floor(Date.now() / 80) % 2 ? "#f8d800" : "#f8f8f8";
-    ctx.fillRect(fx + 4, fy + 4, Math.floor(gw) - 8, Math.floor(gh) - 8);
+    const fw = Math.floor(gw);
+    const fh = Math.floor(gh);
+    ctx.fillStyle = Math.floor(Date.now() / 70) % 2 ? "#f8d800" : "#f8f8f8";
+    ctx.fillRect(fx, fy, fw, fh);
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(fx + 4, fy + 4, fw - 8, fh - 8);
+    ctx.fillStyle = Math.floor(Date.now() / 70) % 2 ? "#f8f8f8" : "#f03030";
+    ctx.fillRect(fx + 8, fy + 8, fw - 16, fh - 16);
     scheduleFlashClear(b);
   }
   b.units.forEach((u) => {

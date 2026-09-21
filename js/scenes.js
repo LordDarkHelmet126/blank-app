@@ -210,15 +210,21 @@ const PAINT = {
 };
 
 function paintId(id) {
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  const ctx = c.getContext("2d");
+  const src = document.createElement("canvas");
+  src.width = W;
+  src.height = H;
+  const ctx = src.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   const fn = PAINT[id] || PAINT.travel;
   fn(ctx);
   frame(ctx);
-  return c.toDataURL("image/png");
+  const out = document.createElement("canvas");
+  out.width = W * 2;
+  out.height = H * 2;
+  const octx = out.getContext("2d");
+  octx.imageSmoothingEnabled = false;
+  octx.drawImage(src, 0, 0, W * 2, H * 2);
+  return out.toDataURL("image/png");
 }
 
 function loadImg(src) {
@@ -256,27 +262,34 @@ async function tintPhoto(src, color) {
   }
 }
 
+const PHOTO_TINTS = {
+  hire: ["art/scenes/scene-council.png", "#c8a060"],
+  ally: ["art/scenes/scene-council.png", "#f8d800"],
+  persuade: ["art/scenes/scene-council.png", "#80c0a0"],
+  rumor: ["art/scenes/scene-council.png", "#a04060"],
+  break_ally: ["art/scenes/scene-council.png", "#c02020"],
+  spy: ["art/scenes/scene-spy.png", "#4060a0"],
+  hide: ["art/scenes/scene-spy.png", "#203040"],
+  seek_legend: ["art/scenes/scene-spy.png", "#8040c0"],
+};
+
 export async function bakeScenes() {
-  const ids = Object.keys(PAINT);
-  ids.forEach((id) => {
+  Object.keys(PAINT).forEach((id) => {
     cache[id] = paintId(id);
   });
-  const council = await tintPhoto("art/scenes/scene-council.png", "#c8a060");
-  const spy = await tintPhoto("art/scenes/scene-spy.png", "#4060a0");
-  if (council) {
-    cache.hire = council;
-    cache.ally = (await tintPhoto("art/scenes/scene-council.png", "#f8d800")) || council;
-    cache.persuade = council;
-    cache.rumor = (await tintPhoto("art/scenes/scene-council.png", "#a04060")) || cache.rumor;
-  }
-  if (spy) {
-    cache.spy = spy;
-    cache.hide = await tintPhoto("art/scenes/scene-spy.png", "#203040") || spy;
-    cache.seek_legend = spy;
+  for (const [id, [src, color]] of Object.entries(PHOTO_TINTS)) {
+    const tinted = await tintPhoto(src, color);
+    if (tinted) cache[id] = tinted;
   }
   return cache;
 }
 
 export function sceneUrl(id) {
-  return cache[id] || cache.travel || "art/scenes/scene-council.png";
+  if (cache[id]) return cache[id];
+  try {
+    cache[id] = paintId(id);
+    return cache[id];
+  } catch {
+    return cache.travel || cache.drill || "art/scenes/scene-council.png";
+  }
 }

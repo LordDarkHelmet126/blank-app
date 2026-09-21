@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-21 — mid/late-1980s authenticity pass (kit, copy, unlocks).
+**Last checkpoint:** 2026-09-21 — uniform pixel chrome, photo tiles on every command, short flashes.
 
 ## How to run
 
@@ -17,18 +17,18 @@ node tests/simulate.mjs
 ```
 
 Optional: `/?demo=slice`, `/?demo=orders`, `/?demo=legend`, `/?demo=week`.
-Domestic photos: `/?demo=slice&cat=domestic`. Spy event: `/?demo=slice&panel=spy`.
-Drill scene: `/?demo=slice&panel=drill`. Road pulse: `/?demo=slice&fx=travel`.
+Domestic photos: `/?demo=slice&cat=domestic`. Military tiles: `/?demo=slice&cat=military`.
+Spy event: `/?demo=slice&panel=spy`. Drill scene: `/?demo=slice&panel=drill`.
+Road pulse: `/?demo=slice&fx=travel`. Hit flash: `/?demo=slice&fx=battle`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Era lock **1985–89**: audited tech, officer/faction/region copy, battle labels, and HUD help
-- Vehicles: Jeeps, F-series pickups, early Humvees, M113s, Bradleys late — no MRAPs/JLTVs
-- Air: Hueys then early Apaches, one A-10 or F-14 — no F-35s/drones
-- Weapons: M16A2, AK-47, M60, TOW, Stinger. Products: analog radios, CRT sets, cassette logs, typewriters, landlines
-- Pixel HUD, roads, AP loop, orders, custom officers, Yukon/Bering unchanged
+- One chrome token on HUD boxes, dropdowns, textareas, checkboxes, scene frames, and battle bar
+- Every Domestic / Plot / Military action is a photo tile (tinted council/spy stills or 2× pixel scenes). No empty 32px thumbs
+- Short motion: gold button press, 4-step scene fade, longer road pulse + pip hop, battle cell strobe
+- 1985–89 kit lock kept (M16A2, Jeeps, M113s, Hueys). Roads, AP loop, orders unchanged
 
 ## What’s next (small bursts)
 
