@@ -130,7 +130,7 @@ button.primary {
   color: var(--amber);
   box-shadow: inset -4px -4px 0 #401008, inset 4px 4px 0 #c06020;
 }
-button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
+button:disabled { opacity: 0.6; cursor: not-allowed; outline: none; }
 
 .workspace {
   display: grid;
