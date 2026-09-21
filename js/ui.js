@@ -57,6 +57,8 @@ export function boot(loaded) {
     selectedRegion = "bethel";
     hideModal();
     render();
+    if (params.get("panel") === "officers") showModal(officersHtml(), { kind: "officers" });
+    afterFonts();
     return;
   }
   if (params.get("demo") === "orders") {
@@ -76,6 +78,7 @@ export function boot(loaded) {
     selectedRegion = "bethel";
     hideModal();
     render();
+    afterFonts();
     return;
   }
   if (params.get("demo") === "legend") {
@@ -89,6 +92,7 @@ export function boot(loaded) {
     selectedRegion = "arctic_slope";
     hideModal();
     render();
+    afterFonts();
     return;
   }
   if (params.get("demo") === "week") {
@@ -104,10 +108,19 @@ export function boot(loaded) {
     selectedRegion = playerOf(state).region;
     hideModal();
     render();
+    afterFonts();
     return;
   }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
+  afterFonts();
+}
+
+function afterFonts() {
+  const again = () => {
+    if (state) render();
+  };
+  if (document.fonts?.ready) document.fonts.ready.then(again).catch(() => {});
 }
 
 function bindChrome() {
@@ -245,7 +258,7 @@ function officersHtml() {
     .join("");
   const slots = state.contentMeta.customOfficerSlots || 10;
   const full = state.customSlotsUsed >= slots;
-  return `<div class="chrome-head"><span class="chrome-tick"></span><h2>Officers (${visibleOfficers(state).length} visible)</h2><span class="chrome-tick"></span></div>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
+  return `<h2>Officers (${visibleOfficers(state).length} visible)</h2>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
     <hr />
     <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
     <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Type gates skills the way ROTK7 aptitudes did.</p>
@@ -629,159 +642,181 @@ function cityXY(r) {
   return [p[0], p[1]];
 }
 
-function drawInkRoad(ctx, a, b) {
-  const mx = (a[0] + b[0]) / 2;
-  const my = (a[1] + b[1]) / 2;
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const cx = mx - dy * 0.07;
-  const cy = my + dx * 0.07;
-  ctx.beginPath();
-  ctx.moveTo(a[0], a[1]);
-  ctx.quadraticCurveTo(cx, cy, b[0], b[1]);
-  ctx.strokeStyle = "#4a3014";
-  ctx.lineWidth = 5.5;
-  ctx.lineCap = "round";
-  ctx.stroke();
-  ctx.strokeStyle = "#d2b06a";
-  ctx.lineWidth = 2.2;
-  ctx.stroke();
+const MAP_S = 4;
+const LOW_W = 250;
+const LOW_H = 155;
+const PX_FONT = "8px 'Press Start 2P', 'Courier New', monospace";
+const ditherCache = new Map();
+
+function lowPt(p) {
+  return [Math.floor(p[0] / MAP_S), Math.floor(p[1] / MAP_S)];
 }
 
-function drawCityMark(ctx, r, selected, hover) {
+function dither(ctx, a, b) {
+  const key = `${a}|${b}`;
+  if (ditherCache.has(key)) return ditherCache.get(key);
+  const c = document.createElement("canvas");
+  c.width = 2;
+  c.height = 2;
+  const x = c.getContext("2d");
+  x.fillStyle = a;
+  x.fillRect(0, 0, 1, 1);
+  x.fillRect(1, 1, 1, 1);
+  x.fillStyle = b;
+  x.fillRect(1, 0, 1, 1);
+  x.fillRect(0, 1, 1, 1);
+  const pat = ctx.createPattern(c, "repeat");
+  ditherCache.set(key, pat);
+  return pat;
+}
+
+function walkLine(x0, y0, x1, y1, plot) {
+  x0 |= 0;
+  y0 |= 0;
+  x1 |= 0;
+  y1 |= 0;
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  for (;;) {
+    plot(x0, y0);
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = err * 2;
+    if (e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+}
+
+function drawPixelRoad(ctx, a, b) {
+  const [x0, y0] = lowPt(a);
+  const [x1, y1] = lowPt(b);
+  walkLine(x0, y0, x1, y1, (x, y) => {
+    ctx.fillStyle = "#503010";
+    ctx.fillRect(x - 1, y - 1, 3, 3);
+  });
+  walkLine(x0, y0, x1, y1, (x, y) => {
+    ctx.fillStyle = "#c8a038";
+    ctx.fillRect(x, y, 1, 1);
+  });
+}
+
+function drawCityMark(ctx, r, selected) {
+  const [x, y] = lowPt(cityXY(r));
+  const fac = r.owner ? factionOf(state, r.owner) : null;
+  const fill = fac ? fac.color : "#607838";
+  const ink = selected ? "#f8d800" : "#f8f8f8";
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(x - 3, y - 4, 7, 7);
+  ctx.fillStyle = fill;
+  ctx.fillRect(x - 2, y - 3, 5, 5);
+  ctx.fillStyle = ink;
+  ctx.fillRect(x - 1, y - 2, 1, 1);
+  ctx.fillRect(x + 1, y - 2, 1, 1);
+  ctx.fillRect(x, y, 1, 1);
+  ctx.fillStyle = fill;
+  ctx.fillRect(x + 3, y - 5, 1, 4);
+  ctx.fillRect(x + 4, y - 5, 2, 2);
+  const p = playerOf(state);
+  if (p.region === r.id) {
+    ctx.fillStyle = "#f8d800";
+    ctx.fillRect(x - 4, y - 5, 2, 2);
+  }
+  if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
+    ctx.fillStyle = "#d080f8";
+    ctx.fillRect(x + 4, y - 1, 2, 2);
+  }
+}
+
+function drawCityPlate(ctx, r, selected) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
-  const ink = selected ? "#5a2010" : hover ? "#3a2410" : "#2a1c10";
-  const fill = fac ? fac.color : "#6a5a40";
-  ctx.fillStyle = fill;
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = selected ? 2.4 : 1.4;
-  ctx.fillRect(x - 8, y - 10, 16, 13);
-  ctx.strokeRect(x - 8, y - 10, 16, 13);
-  ctx.beginPath();
-  ctx.moveTo(x - 10, y - 10);
-  ctx.lineTo(x, y - 19);
-  ctx.lineTo(x + 10, y - 10);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = "#d8c490";
-  ctx.fillRect(x - 5, y - 7, 4, 6);
-  ctx.fillRect(x + 1, y - 7, 4, 6);
-  ctx.strokeStyle = ink;
-  ctx.strokeRect(x - 5, y - 7, 4, 6);
-  ctx.strokeRect(x + 1, y - 7, 4, 6);
-
-  ctx.fillStyle = fill;
-  ctx.fillRect(x + 10, y - 18, 3, 16);
-  ctx.beginPath();
-  ctx.moveTo(x + 13, y - 18);
-  ctx.lineTo(x + 24, y - 14);
-  ctx.lineTo(x + 13, y - 9);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
   const p = playerOf(state);
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? String(r.garrison) : "?";
-  ctx.font = selected ? "bold 11px Palatino, Times New Roman, serif" : "bold 10px Palatino, Times New Roman, serif";
+  ctx.font = PX_FONT;
   const nameW = ctx.measureText(r.short).width;
-  ctx.font = "9px Palatino, Times New Roman, serif";
   const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(62, nameW + garrW + 22);
-  const ph = 20;
-  let px = x - pw / 2;
-  let py = y + 8;
+  const pw = Math.max(72, Math.ceil((nameW + garrW + 20) / 4) * 4);
+  const ph = 16;
+  let px = Math.round(x - pw / 2);
+  let py = Math.round(y + 16);
   px = Math.max(4, Math.min(996 - pw, px));
-  if (py + ph > 616) py = y - 40;
-
-  ctx.fillStyle = selected ? "#efe0b8" : hover ? "#e6d4a8" : "#d8c490";
+  if (py + ph > 616) py = Math.round(y - 36);
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
+  ctx.fillStyle = selected ? "#f8d800" : "#f8f8f8";
   ctx.fillRect(px, py, pw, ph);
-  ctx.strokeStyle = ink;
-  ctx.lineWidth = selected ? 2 : 1.3;
-  ctx.strokeRect(px, py, pw, ph);
-  ctx.strokeStyle = "#c4a060";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(px + 2, py + 2, pw - 4, ph - 4);
-  ctx.fillStyle = fill;
-  ctx.fillRect(px + 3, py + 3, 4, ph - 6);
-  ctx.fillStyle = "#2a1c10";
-  ctx.font = selected ? "bold 11px Palatino, Times New Roman, serif" : "bold 10px Palatino, Times New Roman, serif";
-  ctx.fillText(r.short, px + 10, py + 13);
-  ctx.font = "9px Palatino, Times New Roman, serif";
-  ctx.fillStyle = "#5a3a18";
-  ctx.fillText(garr, px + pw - 6 - garrW, py + 14);
-
-  if (p.region === r.id) {
-    ctx.fillStyle = "#c9a227";
-    ctx.beginPath();
-    ctx.arc(x - 14, y - 16, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#5a2010";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-  if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
-    ctx.fillStyle = "#5a2a68";
-    ctx.font = "bold 16px Palatino, serif";
-    ctx.fillText("?", x + 26, y - 6);
-  }
+  ctx.fillStyle = "#101050";
+  ctx.fillRect(px + 4, py + 4, pw - 8, ph - 8);
+  ctx.fillStyle = fac ? fac.color : "#607838";
+  ctx.fillRect(px + 4, py + 4, 4, ph - 8);
+  ctx.fillStyle = "#f8d800";
+  ctx.fillText(r.short, px + 10, py + 12);
+  ctx.fillStyle = "#f8f8f8";
+  ctx.fillText(garr, px + pw - 8 - garrW, py + 12);
 }
 
 function drawMap() {
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
-  const w = canvas.width;
-  const h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "#6d7a74";
-  ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = "rgba(42, 28, 16, 0.08)";
-  for (let i = 0; i < 40; i++) {
-    ctx.fillRect((i * 97) % w, (i * 53) % h, 3, 2);
+  ctx.imageSmoothingEnabled = false;
+  if (!drawMap.off) {
+    drawMap.off = document.createElement("canvas");
+    drawMap.off.width = LOW_W;
+    drawMap.off.height = LOW_H;
   }
-
+  const o = drawMap.off.getContext("2d");
+  o.imageSmoothingEnabled = false;
+  for (let y = 0; y < LOW_H; y += 2) {
+    for (let x = 0; x < LOW_W; x += 2) {
+      o.fillStyle = ((x + y) >> 1) % 2 ? "#082038" : "#103058";
+      o.fillRect(x, y, 2, 2);
+    }
+  }
   if (state.coast) {
-    ctx.beginPath();
-    state.coast.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
-    ctx.closePath();
-    ctx.fillStyle = "#d7c49a";
-    ctx.fill();
-    ctx.strokeStyle = "#3d2a14";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    o.beginPath();
+    state.coast.forEach((p, i) => {
+      const [x, y] = lowPt(p);
+      i ? o.lineTo(x, y) : o.moveTo(x, y);
+    });
+    o.closePath();
+    o.fillStyle = dither(o, "#2a5028", "#386830");
+    o.fill();
   }
-
   state.regions.forEach((r) => {
     const fac = r.owner ? factionOf(state, r.owner) : null;
-    ctx.beginPath();
-    r.polygon.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
-    ctx.closePath();
-    ctx.fillStyle = fac ? fac.colorDark : "#b8a878";
-    ctx.globalAlpha = 0.55;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = r.id === selectedRegion ? 2.6 : 1.2;
-    ctx.strokeStyle = r.id === selectedRegion ? "#5a2010" : r.id === hoverRegion ? "#7a4a20" : "#4a3418";
-    ctx.stroke();
+    o.beginPath();
+    r.polygon.forEach((p, i) => {
+      const [x, y] = lowPt(p);
+      i ? o.lineTo(x, y) : o.moveTo(x, y);
+    });
+    o.closePath();
+    o.fillStyle = dither(o, fac ? fac.colorDark : "#486030", fac ? fac.color : "#607838");
+    o.fill();
+    o.lineWidth = 1;
+    o.strokeStyle = r.id === selectedRegion ? "#f8d800" : r.id === hoverRegion ? "#f8f8f8" : "#203040";
+    o.stroke();
   });
+  mapRoads(state.regions).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
+  state.regions.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
 
-  mapRoads(state.regions).forEach((rd) => drawInkRoad(ctx, rd.a, rd.b));
-  state.regions.forEach((r) => drawCityMark(ctx, r, r.id === selectedRegion, r.id === hoverRegion));
-
-  ctx.fillStyle = "#3a2410";
-  ctx.font = "12px Palatino, Times New Roman, serif";
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
+  ctx.imageSmoothingEnabled = false;
+  state.regions.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  ctx.fillStyle = "#f8d800";
+  ctx.font = PX_FONT;
   const hunt = legendStatus(state);
-  ctx.fillText(
-    hunt.revealed
-      ? "Ink roads are march lines. Cities that touch are linked."
-      : "Ink roads are march lines. ? on the Slope marks an unlisted legend.",
-    16,
-    22
-  );
+  ctx.fillText(hunt.revealed ? "ROADS = MARCH LINES" : "ROADS = MARCH. ? = LEGEND", 12, 16);
 }
 
 function openBattle() {
@@ -811,31 +846,19 @@ function terrainFrameInk(t) {
 }
 
 function drawTerrainGlyph(ctx, t, x, y) {
-  ctx.strokeStyle = "rgba(42,28,16,0.55)";
-  ctx.fillStyle = "rgba(42,28,16,0.28)";
-  ctx.lineWidth = 1;
+  ctx.fillStyle = "#000018";
   if (t === "forest") {
-    ctx.beginPath();
-    ctx.moveTo(x + 8, y + 14);
-    ctx.lineTo(x + 14, y + 4);
-    ctx.lineTo(x + 20, y + 14);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fillRect(x + 8, y + 4, 8, 4);
+    ctx.fillRect(x + 12, y + 8, 4, 8);
   } else if (t === "hills") {
-    ctx.beginPath();
-    ctx.moveTo(x + 4, y + 14);
-    ctx.quadraticCurveTo(x + 12, y + 2, x + 22, y + 14);
-    ctx.stroke();
+    ctx.fillRect(x + 4, y + 12, 16, 4);
+    ctx.fillRect(x + 8, y + 8, 8, 4);
   } else if (t === "urban") {
-    ctx.fillRect(x + 6, y + 6, 6, 8);
-    ctx.fillRect(x + 13, y + 4, 5, 10);
+    ctx.fillRect(x + 6, y + 8, 8, 8);
+    ctx.fillRect(x + 16, y + 4, 6, 12);
   } else if (t === "ice") {
-    ctx.beginPath();
-    ctx.moveTo(x + 8, y + 6);
-    ctx.lineTo(x + 14, y + 12);
-    ctx.moveTo(x + 14, y + 6);
-    ctx.lineTo(x + 8, y + 12);
-    ctx.stroke();
+    ctx.fillRect(x + 8, y + 6, 4, 4);
+    ctx.fillRect(x + 14, y + 10, 4, 4);
   }
 }
 
@@ -859,71 +882,78 @@ function drawBattle() {
   const ch = canvas.height;
   const gw = cw / b.cols;
   const gh = ch / b.rows;
-  const colors = { plains: "#c4b07a", forest: "#6a7a48", hills: "#8a7048", urban: "#8a7a68", ice: "#b8c4b8" };
-  ctx.fillStyle = "#3a2a16";
+  const colors = {
+    plains: ["#c0a050", "#887838"],
+    forest: ["#306830", "#184818"],
+    hills: ["#886838", "#503018"],
+    urban: ["#686868", "#404040"],
+    ice: ["#80a0b0", "#487088"],
+  };
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#000018";
   ctx.fillRect(0, 0, cw, ch);
   for (let y = 0; y < b.rows; y++) {
     for (let x = 0; x < b.cols; x++) {
       const t = b.grid[y][x];
-      const rx = x * gw + 2;
-      const ry = y * gh + 2;
-      const rw = gw - 4;
-      const rh = gh - 4;
-      ctx.fillStyle = colors[t] || "#a89868";
-      ctx.fillRect(rx, ry, rw, rh);
-      ctx.strokeStyle = terrainFrameInk(t);
-      ctx.lineWidth = 2;
-      ctx.strokeRect(rx + 1, ry + 1, rw - 2, rh - 2);
-      ctx.strokeStyle = "rgba(42,28,16,0.35)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(rx + 4, ry + 4, rw - 8, rh - 8);
+      const pair = colors[t] || ["#607838", "#304018"];
+      const rx = Math.floor(x * gw);
+      const ry = Math.floor(y * gh);
+      const rw = Math.floor(gw);
+      const rh = Math.floor(gh);
+      for (let ty = 4; ty < rh - 4; ty += 8) {
+        for (let tx = 4; tx < rw - 4; tx += 8) {
+          ctx.fillStyle = ((tx + ty) >> 3) % 2 ? pair[0] : pair[1];
+          ctx.fillRect(rx + tx, ry + ty, 8, 8);
+        }
+      }
+      ctx.fillStyle = "#000018";
+      ctx.fillRect(rx, ry, rw, 4);
+      ctx.fillRect(rx, ry, 4, rh);
+      ctx.fillRect(rx + rw - 4, ry, 4, rh);
+      ctx.fillRect(rx, ry + rh - 4, rw, 4);
+      ctx.fillStyle = terrainFrameInk(t);
+      ctx.fillRect(rx + 4, ry + 4, rw - 8, 4);
+      ctx.fillRect(rx + 4, ry + 4, 4, rh - 8);
       drawTerrainGlyph(ctx, t, rx, ry);
     }
   }
   if (b.flash) {
-    const fx = b.flash.x * gw;
-    const fy = b.flash.y * gh;
-    ctx.fillStyle = "rgba(240, 208, 144, 0.5)";
-    ctx.fillRect(fx + 3, fy + 3, gw - 6, gh - 6);
-    ctx.strokeStyle = "#f0d090";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(fx + 6, fy + 6, gw - 12, gh - 12);
+    const fx = Math.floor(b.flash.x * gw);
+    const fy = Math.floor(b.flash.y * gh);
+    ctx.fillStyle = "#f8d800";
+    ctx.fillRect(fx + 4, fy + 4, Math.floor(gw) - 8, Math.floor(gh) - 8);
     scheduleFlashClear(b);
   }
   b.units.forEach((u) => {
     if (u.hp <= 0) return;
     const cx = u.x * gw + gw / 2;
     const cy = u.y * gh + gh / 2;
-    const col = u.side === "atk" ? "#c9a227" : "#8a3030";
-    const face = u.side === "atk" ? "#3a2a14" : "#2a1010";
-    const cwct = 46;
-    const chct = 38;
-    const ox = cx - cwct / 2;
-    const oy = cy - chct / 2 - 2;
+    const col = u.side === "atk" ? "#f8d800" : "#f03030";
+    const face = "#000030";
+    const cwct = 48;
+    const chct = 40;
+    const ox = Math.round(cx - cwct / 2);
+    const oy = Math.round(cy - chct / 2);
     if (b.selected === u.id) {
-      ctx.strokeStyle = "#f0d090";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(ox - 4, oy - 4, cwct + 8, chct + 8);
+      ctx.fillStyle = "#f8f8f8";
+      ctx.fillRect(ox - 8, oy - 8, cwct + 16, chct + 16);
     }
-    ctx.fillStyle = face;
-    ctx.fillRect(ox, oy, cwct, chct);
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2.2;
-    ctx.strokeRect(ox, oy, cwct, chct);
-    ctx.strokeStyle = "#2a1c10";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox + 2, oy + 2, cwct - 4, chct - 4);
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(ox - 4, oy - 4, cwct + 8, chct + 8);
     ctx.fillStyle = col;
-    ctx.fillRect(ox + 3, oy + 3, 5, chct - 6);
-    ctx.fillStyle = "#f3e6c8";
-    ctx.font = "bold 11px Palatino, Times New Roman, serif";
-    ctx.fillText(unitAbbrev(u), ox + 11, oy + 15);
-    ctx.font = "bold 12px Palatino, Times New Roman, serif";
-    ctx.fillText(String(Math.max(0, u.hp)), ox + 11, oy + 28);
-    ctx.fillStyle = "#2a1c10";
-    ctx.fillRect(ox + 3, oy + chct - 7, cwct - 6, 4);
-    ctx.fillStyle = u.hp / u.maxHp > 0.35 ? "#4a6a32" : "#8a3030";
-    ctx.fillRect(ox + 3, oy + chct - 7, (cwct - 6) * (u.hp / u.maxHp), 4);
+    ctx.fillRect(ox, oy, cwct, chct);
+    ctx.fillStyle = face;
+    ctx.fillRect(ox + 4, oy + 4, cwct - 8, chct - 8);
+    ctx.fillStyle = col;
+    ctx.fillRect(ox + 4, oy + 4, 4, chct - 8);
+    ctx.fillStyle = "#f8f8f8";
+    ctx.font = PX_FONT;
+    ctx.fillText(unitAbbrev(u), ox + 12, oy + 16);
+    ctx.fillText(String(Math.max(0, u.hp)), ox + 12, oy + 28);
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(ox + 4, oy + chct - 10, cwct - 8, 6);
+    ctx.fillStyle = u.hp / u.maxHp > 0.35 ? "#30c030" : "#f03030";
+    ctx.fillRect(ox + 4, oy + chct - 10, Math.floor((cwct - 8) * (u.hp / u.maxHp)), 6);
   });
 }
 

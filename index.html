@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Northern Front</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%23071018' width='32' height='32'/%3E%3Ctext x='4' y='22' fill='%23d4a056' font-family='serif' font-size='14'%3ENF%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23000018' width='16' height='16'/%3E%3Crect fill='%23f8d800' x='2' y='2' width='12' height='12'/%3E%3Crect fill='%23101050' x='4' y='4' width='8' height='8'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="css/game.css" />
   </head>
   <body>
@@ -46,12 +46,8 @@
             <div id="actions-pinned" class="actions actions-pinned"></div>
             <div id="actions" class="actions actions-more"></div>
           </section>
-          <section class="card command-card chrome-plate">
-            <div class="chrome-head">
-              <span class="chrome-tick"></span>
-              <h2>Command</h2>
-              <span class="chrome-tick"></span>
-            </div>
+          <section class="card command-card">
+            <h2>Command</h2>
             <div id="command-actions" class="command-actions"></div>
           </section>
         </aside>
@@ -85,7 +81,7 @@
           </div>
         </header>
         <canvas id="battle-canvas" width="960" height="520"></canvas>
-        <p id="battle-hint" class="hint">Select a counter, then a hex to step or an adjacent enemy to fire. Terrain frames are inked. Attack flash is one beat. Low animation by design.</p>
+        <p id="battle-hint" class="hint">Select a unit. Step or fire adjacent. Pixel field. Low animation.</p>
         <ol id="battle-log" class="log battle-log"></ol>
       </div>
     </div>
