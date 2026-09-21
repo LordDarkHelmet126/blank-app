@@ -257,11 +257,12 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   overflow: auto;
   min-height: 0;
   flex: 1 1 auto;
+  align-content: start;
 }
 .cmd-actions button {
   text-align: left;
   font-size: 8px;
-  min-height: 0;
+  min-height: 76px;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -270,7 +271,9 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   overflow: hidden;
 }
 .cmd-actions button span {
-  padding: var(--pad);
+  padding: 4px 8px 8px;
+  flex: 0 0 auto;
+  color: var(--ice);
 }
 .cmd-actions button small {
   display: block;
@@ -280,8 +283,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
 }
 .cmd-thumb {
   width: 100%;
-  height: 56px;
-  flex: 0 0 56px;
+  height: 40px;
+  flex: 0 0 40px;
   object-fit: cover;
   image-rendering: pixelated;
   border: 0;
@@ -303,8 +306,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   color: var(--amber);
 }
 .cmd-actions button[data-id="attack"] .cmd-thumb {
-  height: 72px;
-  flex-basis: 72px;
+  height: 56px;
+  flex-basis: 56px;
 }
 .card h2 {
   margin: 0 0 8px;
@@ -624,7 +627,7 @@ hr {
   .officer-plate { min-height: 112px; }
   .officer-plate .gen-orders { display: none; }
   .cmd-tab img { height: 36px; }
-  .cmd-actions button { min-height: 0; padding: 0; }
-  .cmd-thumb { height: 40px; flex-basis: 40px; }
-  .cmd-actions button[data-id="attack"] .cmd-thumb { height: 52px; flex-basis: 52px; }
+  .cmd-actions button { min-height: 68px; padding: 0; }
+  .cmd-thumb { height: 32px; flex-basis: 32px; }
+  .cmd-actions button[data-id="attack"] .cmd-thumb { height: 40px; flex-basis: 40px; }
 }

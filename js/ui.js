@@ -86,7 +86,7 @@ export async function boot(loaded) {
       home.garrison = 90;
       const fight = act(state, content, "attack", { regionId: "nome" });
       if (fight.battle && state.battle) {
-        state.battle.flash = { x: 3, y: 2, side: "atk" };
+        state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
         openBattle();
       }
     }
@@ -804,13 +804,13 @@ function drawPixelRoad(ctx, a, b) {
   const [x0, y0] = lowPt(a);
   const [x1, y1] = lowPt(b);
   const pulse = mapFx?.kind === "travel" && sameRoad(a, b, mapFx.a, mapFx.b);
-  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 70) % 2 === 0;
+  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
   walkLine(x0, y0, x1, y1, (x, y) => {
-    ctx.fillStyle = on ? "#f8d800" : "#503010";
-    ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = pulse ? (on ? "#f8f8f8" : "#f8d800") : "#503010";
+    ctx.fillRect(x - (pulse ? 2 : 1), y - (pulse ? 2 : 1), pulse ? 5 : 3, pulse ? 5 : 3);
   });
   walkLine(x0, y0, x1, y1, (x, y) => {
-    ctx.fillStyle = on ? "#f8f8f8" : "#c8a038";
+    ctx.fillStyle = pulse ? (on ? "#f8d800" : "#f8f8f8") : "#c8a038";
     ctx.fillRect(x, y, 1, 1);
   });
 }
@@ -830,7 +830,7 @@ function pulseTravel(fromId, toId) {
   mapFx = { kind: "travel", a: cityXY(a), b: cityXY(b), hop: true, t0: performance.now() };
   const tick = () => {
     drawMap();
-    if (mapFx && performance.now() - mapFx.t0 < 720) requestAnimationFrame(tick);
+    if (mapFx && performance.now() - mapFx.t0 < 1600) requestAnimationFrame(tick);
     else mapFx = null;
   };
   requestAnimationFrame(tick);
@@ -935,6 +935,19 @@ function drawMap() {
     o.stroke();
   });
   mapRoads(state.regions).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
+  if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
+    const t = Math.min(1, (performance.now() - mapFx.t0) / 1600);
+    const [x0, y0] = lowPt(mapFx.a);
+    const [x1, y1] = lowPt(mapFx.b);
+    const px = Math.round(x0 + (x1 - x0) * t);
+    const py = Math.round(y0 + (y1 - y0) * t + (Math.floor(t * 16) % 2 ? -3 : 0));
+    o.fillStyle = "#000018";
+    o.fillRect(px - 3, py - 3, 7, 7);
+    o.fillStyle = "#f8d800";
+    o.fillRect(px - 2, py - 2, 5, 5);
+    o.fillStyle = "#f8f8f8";
+    o.fillRect(px - 1, py - 1, 3, 3);
+  }
   state.regions.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -956,6 +969,12 @@ function openBattle() {
 let flashTimer = null;
 
 function scheduleFlashClear(battle) {
+  if (battle.flash?.hold) {
+    requestAnimationFrame(() => {
+      if (state?.battle === battle && battle.flash) drawBattle();
+    });
+    return;
+  }
   if (flashTimer) clearTimeout(flashTimer);
   flashTimer = setTimeout(() => {
     flashTimer = null;
@@ -963,7 +982,7 @@ function scheduleFlashClear(battle) {
       battle.flash = null;
       drawBattle();
     }
-  }, 240);
+  }, 280);
 }
 
 function terrainFrameInk(t) {
