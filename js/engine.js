@@ -611,7 +611,7 @@ export function listActions(state) {
     ap: 1,
     group: "domestic",
     enabled: true,
-    hint: "Slow workshop hours. Calendar still gates the real kit.",
+    hint: "Workshop hours. Calendar still gates 1980s kit — no leapfrog.",
   });
   actions.push({
     id: "spy",
@@ -842,7 +842,7 @@ function doResearch(state, content, stats) {
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const gain = 1 + Math.floor(stats.int / 30) + (chance(state, 0.2) ? 1 : 0);
   state.research.points += gain;
-  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}). Kit still waits on the calendar.`;
+  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}). 1980s kit still waits on the calendar.`;
   pushLog(state, msg, "player");
   tryUnlockTech(state, content, true);
   return { ok: true, message: msg };

@@ -1,16 +1,16 @@
 {
   "meta": {
     "version": "0.1",
-    "feel": "Walking Dead slow salvage — calendar gates plus research points, no leapfrog tree",
-    "notes": "Later unlocks (tracked hulls, relic airframes) are listed so the roster can grow; Alaska v0.1 only reaches early salvage."
+    "feel": "Mid/late-1980s Alaska salvage — calendar gates plus research points, no leapfrog tree",
+    "notes": "Kit stays in 1985–89: hunting rifles, surplus parkas, pintle pickups, cannibalized APCs. Later tracks are rare hulks, not sci-fi."
   },
   "tracks": [
     {
       "id": "small_arms",
-      "name": "Hunting Pattern Rifles",
+      "name": "Hunting Rifles",
       "week": 0,
       "points": 0,
-      "summary": "What people already own. No bonus, no fantasy.",
+      "summary": "30-06 and surplus M16/AK from the gun locker. What people already own.",
       "battle": { "atk": 0, "snowPenalty": 0, "unlockUnit": null }
     },
     {
@@ -18,7 +18,7 @@
       "name": "Workshop Salvage",
       "week": 6,
       "points": 8,
-      "summary": "Filed sights, patched webbing, hand-loaded scraps.",
+      "summary": "Filed sights, ALICE webbing, hand-loaded 7.62 scraps.",
       "battle": { "atk": 1, "snowPenalty": 0, "unlockUnit": null }
     },
     {
@@ -26,31 +26,31 @@
       "name": "Winter Kit",
       "week": 12,
       "points": 16,
-      "summary": "Parkas, stove fuel, whiteout drill — not new weapons.",
+      "summary": "Surplus parkas, Yukon stoves, whiteout drill — not new weapons.",
       "battle": { "atk": 1, "snowPenalty": -1, "unlockUnit": null }
     },
     {
       "id": "technicals",
-      "name": "Improvised Technicals",
+      "name": "Pintle Pickups",
       "week": 18,
       "points": 28,
-      "summary": "Pickups with bolted steel and a scavenged gun.",
+      "summary": "F-series and Soviet GAZ with angle iron and a scavenged 12.7. Gun trucks, not IFVs.",
       "battle": { "atk": 2, "snowPenalty": 0, "unlockUnit": "technical" }
     },
     {
       "id": "tracked_hulls",
-      "name": "Tracked Support Hulls",
+      "name": "APC Hulks",
       "week": 32,
       "points": 48,
-      "summary": "Captured IFV hulks running on cannibalized parts. Rare, loud, late.",
+      "summary": "M113 and BMP wrecks on cannibalized parts. Rare, loud, late.",
       "battle": { "atk": 4, "snowPenalty": 0, "unlockUnit": "ifv" }
     },
     {
       "id": "relic_air",
-      "name": "Carrier Relic Airframe",
+      "name": "Strip Fighter",
       "week": 48,
       "points": 72,
-      "summary": "One flyable naval interceptor from a frozen wreck — not a fleet.",
+      "summary": "One flyable jet off a frozen strip — not a squadron.",
       "battle": { "atk": 6, "snowPenalty": 0, "unlockUnit": "interceptor" }
     }
   ]

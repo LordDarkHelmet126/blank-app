@@ -6,7 +6,7 @@ const ROWS = 6;
 const UNIT_STATS = {
   militia: { hp: 8, atk: 3, def: 2, move: 2, label: "Militia" },
   regular: { hp: 10, atk: 4, def: 3, move: 2, label: "Regulars" },
-  technical: { hp: 12, atk: 6, def: 3, move: 3, label: "Truck" },
+  technical: { hp: 12, atk: 6, def: 3, move: 3, label: "Gun truck" },
 };
 
 function terrainForRegion(region, season, x, y) {

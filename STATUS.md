@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-21 — ROTK7-style command column + event scenes (original art).
+**Last checkpoint:** 2026-09-21 — uniform pixel chrome, a vignette on every command, short ROTK flashes.
 
 ## How to run
 
@@ -17,16 +17,18 @@ node tests/simulate.mjs
 ```
 
 Optional: `/?demo=slice`, `/?demo=orders`, `/?demo=legend`, `/?demo=week`.
-Officers: `/?demo=slice&panel=officers`. Spy event: `/?demo=slice&panel=spy`.
+Domestic photos: `/?demo=slice&cat=domestic`. Spy event: `/?demo=slice&panel=spy`.
+Drill scene: `/?demo=slice&panel=drill`. Road pulse: `/?demo=slice&fx=travel`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Left command column: large commander portrait, name, AP/week/season/city, then city GOLD/FOOD/POP/DEF, then Domestic / Plot / Military tabs
-- Action buttons carry council or spy vignette thumbs. Spy / Hire / Alliance / Seek / plots open an Event Scene (vignette + portrait + copy)
-- Original art wired: `art/portraits/portrait-commander.png`, `art/scenes/scene-council.png`, `art/scenes/scene-spy.png`
-- Pixel HUD, walkable roads, AP loop, orders, custom officers, Yukon/Bering unchanged
+- One chrome token: 4px white pixel border, 8px pad, inset/outset boxes on HUD, dropdowns, modals, scenes, battle bar
+- Every Domestic/Plot/Military action has a vignette (distinct pixel scenes for Drill, Fortify, Commerce, Cultivate, Safety, March/Travel; council/spy photos tinted for meetings/recon)
+- Short motion only: button press flash, event scene step-fade, travel road pulse + pip hop, battle hit blink
+- Kit copy is mid/late-1980s (hunting rifles, ALICE webbing, pintle pickups, APC hulks, strip fighter)
+- Roads, AP loop, orders, custom officers, Yukon/Bering unchanged
 
 ## What’s next (small bursts)
 

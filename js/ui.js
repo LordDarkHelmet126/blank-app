@@ -1,3 +1,4 @@
+import { bakeScenes, sceneUrl } from "./scenes.js";
 import {
   createNewGame,
   listActions,
@@ -40,9 +41,14 @@ let hoverRegion = null;
 
 const $ = (id) => document.getElementById(id);
 
-export function boot(loaded) {
+export async function boot(loaded) {
   content = loaded;
   bindChrome();
+  try {
+    await bakeScenes();
+  } catch (err) {
+    console.warn("scene bake failed", err);
+  }
   $("app").hidden = false;
   $("boot").hidden = true;
   const params = new URLSearchParams(location.search);
@@ -56,6 +62,7 @@ export function boot(loaded) {
     act(state, content, "raise_banner");
     selectedRegion = "bethel";
     hideModal();
+    if (params.get("cat") === "domestic" || params.get("panel") === "drill") commandCat = "domestic";
     render();
     if (params.get("panel") === "officers") showModal(officersHtml(), { kind: "officers" });
     if (params.get("panel") === "spy") {
@@ -65,6 +72,14 @@ export function boot(loaded) {
         text: "Glass on the next ridge. A scout marked the Slope garrison and the watch towers.",
       });
     }
+    if (params.get("panel") === "drill") {
+      showEventScene({
+        id: "drill",
+        title: "Drill",
+        text: "Range time on the snow. Hunting rifles and surplus webbing, not new kit.",
+      });
+    }
+    if (params.get("fx") === "travel") pulseTravel("bethel", "fairbanks");
     afterFonts();
     return;
   }
@@ -242,7 +257,7 @@ function helpHtml() {
       <li>Hire up to 5 generals, then set their standing order. Personality type gates skills (ROTK7-style). March/Attack is under Military.</li>
       <li>Hidden legend: <strong>Seek Legend</strong> on Plot (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
       <li>Spy, rumor, persuade, hide, and alliances are under Plot. Drill and markets are Domestic.</li>
-      <li>Tech is salvage + calendar. No leapfrog.</li>
+      <li>Tech is 1980s salvage + calendar (hunting rifles, parkas, pintle pickups). No leapfrog.</li>
     </ul>
     <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
     <button type="button" data-close>Close</button>
@@ -372,6 +387,7 @@ function pushEphemeral(msg) {
 
 function run(id, extra) {
   if (!state) return;
+  const fromId = playerOf(state).region;
   const res = act(state, content, id, extra || {});
   if (!res.ok) {
     toast(res.message);
@@ -383,6 +399,7 @@ function run(id, extra) {
     openBattle();
     return;
   }
+  if (id === "travel" && extra?.regionId) pulseTravel(fromId, extra.regionId);
   if (res.revealed) {
     showEventScene({
       id: "seek_legend",
@@ -433,8 +450,6 @@ export function render() {
 }
 
 const PORTRAIT_SRC = "art/portraits/portrait-commander.png";
-const SCENE_COUNCIL = "art/scenes/scene-council.png";
-const SCENE_SPY = "art/scenes/scene-spy.png";
 
 function officerHtml() {
   const p = playerOf(state);
@@ -446,7 +461,7 @@ function officerHtml() {
     <div class="officer-meta">
       <h2>${esc(p.name)}</h2>
       <p>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
-      <div class="officer-stats">
+      <div class="plate-stats">
         <span class="pill">AP ${state.ap}/${apMax(state)}</span>
         <span class="pill">W${state.week}</span>
         <span class="pill">${esc(state._season?.name || "")}</span>
@@ -495,7 +510,7 @@ function weekReportHtml(report) {
   const headline = lines[0] || `Week ${state.week}`;
   const ai = lines.filter((l) => /\[[a-z]+\]/.test(l)).slice(0, 6);
   const extra = Math.max(0, lines.length - 1 - ai.length);
-  return `<div class="event-art week-art"><img src="${SCENE_COUNCIL}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
+  return `<div class="event-art week-art"><img src="${sceneUrl("hire")}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
     <h2>Week ${state.week}</h2>
     <p>${esc(headline)}</p>
     <ul class="week-ai">${ai.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
@@ -508,11 +523,28 @@ const ACTION_CATS = {
   plot: ["seek_legend", "spy", "hire", "ally", "break_ally", "rumor", "persuade", "hide"],
   military: ["travel", "attack"],
 };
-const SCENE_ACTIONS = new Set(["spy", "hide", "hire", "ally", "break_ally", "seek_legend", "persuade", "rumor", "raise_banner"]);
+const SCENE_ACTIONS = new Set([
+  "raise_banner",
+  "drill",
+  "commerce",
+  "cultivate",
+  "fortify",
+  "safety",
+  "research",
+  "seek_legend",
+  "spy",
+  "hire",
+  "ally",
+  "break_ally",
+  "rumor",
+  "persuade",
+  "hide",
+  "travel",
+]);
 let commandCat = "plot";
 
 function sceneArt(id) {
-  return id === "spy" || id === "hide" ? SCENE_SPY : SCENE_COUNCIL;
+  return sceneUrl(id);
 }
 
 function actionButton(a) {
@@ -533,14 +565,14 @@ function renderActions() {
   box.innerHTML = "";
   const actions = listActions(state).filter((a) => a.id !== "end_week");
   [
-    ["domestic", "Domestic", SCENE_COUNCIL],
-    ["plot", "Plot", SCENE_SPY],
-    ["military", "Military", SCENE_COUNCIL],
-  ].forEach(([id, label, art]) => {
+    ["domestic", "Domestic", "drill"],
+    ["plot", "Plot", "spy"],
+    ["military", "Military", "attack"],
+  ].forEach(([id, label, artId]) => {
     const t = document.createElement("button");
     t.type = "button";
     t.className = "cmd-tab" + (commandCat === id ? " active" : "");
-    t.innerHTML = `<img src="${art}" alt="" /><span>${label}</span>`;
+    t.innerHTML = `<img src="${sceneArt(artId)}" alt="" /><span>${label}</span>`;
     t.onclick = () => {
       commandCat = id;
       renderActions();
@@ -558,17 +590,22 @@ function showEventScene(ev) {
   $("event-portrait").src = PORTRAIT_SRC;
   $("event-title").textContent = ev.title || "Event";
   $("event-text").textContent = ev.text || "";
-  $("event-scene").hidden = false;
+  const el = $("event-scene");
+  el.hidden = false;
+  el.classList.remove("open");
+  void el.offsetWidth;
+  el.classList.add("open");
 }
 
 function hideEventScene() {
   $("event-scene").hidden = true;
+  $("event-scene").classList.remove("open");
 }
 
 function startAction(a) {
   if (a.needs === "region" || a.needs === "neighbor") {
     const list = a.needs === "neighbor" ? neighborRegions(state) : state.regions;
-    showModal(`<h2>${esc(a.label)}</h2>${list.map((r) => `<button class="list-btn" data-act="${a.id}" data-region="${r.id}">${esc(r.name)}</button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>${esc(a.label)}</h2>${list.map((r) => `<button class="list-btn" data-act="${a.id}" data-region="${r.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(r.name)}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-region]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -580,7 +617,7 @@ function startAction(a) {
   if (a.needs === "hire") {
     const cs = hireCandidates(state);
     if (!cs.length) return toast("No free officers in this region.");
-    showModal(`<h2>Hire</h2>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}">${esc(o.name)} · ${o.personality} · CHR check · ambition ${o.ambition}</button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>Hire</h2>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · CHR check · ambition ${o.ambition}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-hire]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -599,7 +636,7 @@ function startAction(a) {
       return true;
     });
     if (!list.length) return toast("No valid faction.");
-    showModal(`<h2>${esc(a.label)}</h2>${list.map((f) => `<button class="list-btn" data-fac="${f.id}">${esc(f.name)} · rel ${getRelation(state, p.faction, f.id)}</button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>${esc(a.label)}</h2>${list.map((f) => `<button class="list-btn" data-fac="${f.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(f.name)} · rel ${getRelation(state, p.faction, f.id)}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-fac]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -611,7 +648,7 @@ function startAction(a) {
   if (a.needs === "officer") {
     const p = playerOf(state);
     const list = visibleOfficers(state).filter((o) => o.id !== p.id);
-    showModal(`<h2>${esc(a.label)}</h2>${list.map((o) => `<button class="list-btn" data-off="${o.id}">${esc(o.name)} · ${o.personality} · ${o.faction ? factionOf(state, o.faction)?.short : "free"} · loy ${o.loyalty}</button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>${esc(a.label)}</h2>${list.map((o) => `<button class="list-btn" data-off="${o.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${o.faction ? factionOf(state, o.faction)?.short : "free"} · loy ${o.loyalty}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-off]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -626,7 +663,7 @@ function startAction(a) {
     const here = regionOf(state, playerOf(state).region);
     showModal(`<h2>March / Attack</h2>
       <p>Commit troops from ${esc(here.short)} (garrison ${here.garrison}). Battle is a short grid; auto-resolve is allowed.</p>
-      ${list.map((r) => `<button class="list-btn" data-atk="${r.id}">${esc(r.name)} · ${r.owner ? factionOf(state, r.owner)?.short : "open"} · garr ${r.intel || r.owner === playerOf(state).faction ? r.garrison : "?"}</button>`).join("")}
+      ${list.map((r) => `<button class="list-btn" data-atk="${r.id}"><img class="cmd-thumb" src="${sceneArt("attack")}" alt="" /><span>${esc(r.name)} · ${r.owner ? factionOf(state, r.owner)?.short : "open"} · garr ${r.intel || r.owner === playerOf(state).faction ? r.garrison : "?"}</span></button>`).join("")}
       <label class="muted"><input type="checkbox" id="atk-auto" /> Auto-resolve</label>
       <button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-atk]").forEach((btn) => {
@@ -752,14 +789,37 @@ function walkLine(x0, y0, x1, y1, plot) {
 function drawPixelRoad(ctx, a, b) {
   const [x0, y0] = lowPt(a);
   const [x1, y1] = lowPt(b);
+  const pulse = mapFx?.kind === "travel" && sameRoad(a, b, mapFx.a, mapFx.b);
+  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 70) % 2 === 0;
   walkLine(x0, y0, x1, y1, (x, y) => {
-    ctx.fillStyle = "#503010";
+    ctx.fillStyle = on ? "#f8d800" : "#503010";
     ctx.fillRect(x - 1, y - 1, 3, 3);
   });
   walkLine(x0, y0, x1, y1, (x, y) => {
-    ctx.fillStyle = "#c8a038";
+    ctx.fillStyle = on ? "#f8f8f8" : "#c8a038";
     ctx.fillRect(x, y, 1, 1);
   });
+}
+
+function sameRoad(a, b, c, d) {
+  if (!c || !d) return false;
+  const k = (p, q) => `${p[0] | 0},${p[1] | 0}|${q[0] | 0},${q[1] | 0}`;
+  return k(a, b) === k(c, d) || k(a, b) === k(d, c);
+}
+
+let mapFx = null;
+
+function pulseTravel(fromId, toId) {
+  const a = regionOf(state, fromId);
+  const b = regionOf(state, toId);
+  if (!a || !b) return;
+  mapFx = { kind: "travel", a: cityXY(a), b: cityXY(b), hop: true, t0: performance.now() };
+  const tick = () => {
+    drawMap();
+    if (mapFx && performance.now() - mapFx.t0 < 420) requestAnimationFrame(tick);
+    else mapFx = null;
+  };
+  requestAnimationFrame(tick);
 }
 
 function drawCityMark(ctx, r, selected) {
@@ -780,8 +840,9 @@ function drawCityMark(ctx, r, selected) {
   ctx.fillRect(x + 4, y - 5, 2, 2);
   const p = playerOf(state);
   if (p.region === r.id) {
+    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 80) % 2 === 0 ? -2 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 4, y - 5, 2, 2);
+    ctx.fillRect(x - 4, y - 5 + hop, 2, 2);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
@@ -974,7 +1035,7 @@ function drawBattle() {
   if (b.flash) {
     const fx = Math.floor(b.flash.x * gw);
     const fy = Math.floor(b.flash.y * gh);
-    ctx.fillStyle = "#f8d800";
+    ctx.fillStyle = Math.floor(Date.now() / 80) % 2 ? "#f8d800" : "#f8f8f8";
     ctx.fillRect(fx + 4, fy + 4, Math.floor(gw) - 8, Math.floor(gh) - 8);
     scheduleFlashClear(b);
   }
