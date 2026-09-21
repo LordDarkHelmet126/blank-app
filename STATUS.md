@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-21 — parchment/ink PS-strategy look + walkable ink roads on every travel edge.
+**Last checkpoint:** 2026-09-21 — city nameplates, officer/command console chrome, battle counters + terrain frames + brief attack flash.
 
 ## How to run
 
@@ -22,8 +22,9 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- Warm parchment HUD and ink map: city house-markers, double-line roads, period chrome. Battles use a still, banner-on-dirt field (no licensed sprites)
-- Every neighbor pair has a drawn road; every road is a travel edge. Slope↔Yukon now walkable because those polygons share a border
+- City marks are keep + pennant plus a parchment nameplate (faction stripe, short name, garrison or `?`). Roads and travel edges unchanged
+- Officer roster and Command strip use early-2000s console chrome: gold ticks, beveled plates, framed portraits, stat chips. Original art only
+- Short battle view draws ink terrain frames, square unit counters (type + HP), and a 160ms attack flash on strike/ambush. Still low-animation
 - AP loop, Seek Legend, standing orders, custom officers, Yukon/Bering otherwise unchanged
 
 ## What’s next (small bursts)

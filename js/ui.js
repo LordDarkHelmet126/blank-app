@@ -119,7 +119,7 @@ function bindChrome() {
   };
   $("btn-help").onclick = () => showModal(helpHtml());
   $("btn-officers").onclick = () => {
-    showModal(officersHtml());
+    showModal(officersHtml(), { kind: "officers" });
     wireAfterRender();
   };
   $("btn-factions").onclick = () => showModal(factionsHtml());
@@ -194,7 +194,8 @@ function wireTitle() {
 }
 
 function showModal(html, opts = {}) {
-  $("modal-card").className = "modal-card" + (opts.kind === "week" ? " week-card" : "");
+  const extra = opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : "";
+  $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
   wireTitle();
@@ -235,7 +236,7 @@ function officersHtml() {
       const fac = o.faction ? factionOf(state, o.faction)?.short : "free";
       const loc = regionOf(state, o.region)?.short || "?";
       const face = esc(o.portrait || portraitInitials(o.name));
-      return `<button type="button" class="list-btn" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span><strong>${esc(o.name)}</strong> · ${esc(o.title)} · ${fac} · ${loc}<br><span class="muted">${esc(o.personality)} · WAR ${o.war} INT ${o.int} POL ${o.pol} CHR ${o.chr} · loy ${o.loyalty}${o.legend ? " · LEGEND" : ""}${o.custom ? " · CUSTOM" : ""}</span></span></button>`;
+      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.custom ? "<i>CUSTOM</i>" : ""}</span></span></button>`;
     })
     .join("");
   const types = Object.entries(content.officers.personalities || {});
@@ -244,7 +245,7 @@ function officersHtml() {
     .join("");
   const slots = state.contentMeta.customOfficerSlots || 10;
   const full = state.customSlotsUsed >= slots;
-  return `<h2>Officers (${visibleOfficers(state).length} visible)</h2>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
+  return `<div class="chrome-head"><span class="chrome-tick"></span><h2>Officers (${visibleOfficers(state).length} visible)</h2><span class="chrome-tick"></span></div>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
     <hr />
     <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
     <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Type gates skills the way ROTK7 aptitudes did.</p>
@@ -650,26 +651,74 @@ function drawInkRoad(ctx, a, b) {
 function drawCityMark(ctx, r, selected, hover) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
-  ctx.fillStyle = fac ? fac.color : "#6a5a40";
-  ctx.strokeStyle = selected ? "#5a2010" : hover ? "#3a2410" : "#2a1c10";
+  const ink = selected ? "#5a2010" : hover ? "#3a2410" : "#2a1c10";
+  const fill = fac ? fac.color : "#6a5a40";
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = ink;
   ctx.lineWidth = selected ? 2.4 : 1.4;
-  ctx.fillRect(x - 8, y - 8, 16, 12);
-  ctx.strokeRect(x - 8, y - 8, 16, 12);
+  ctx.fillRect(x - 8, y - 10, 16, 13);
+  ctx.strokeRect(x - 8, y - 10, 16, 13);
   ctx.beginPath();
-  ctx.moveTo(x - 9, y - 8);
-  ctx.lineTo(x, y - 16);
-  ctx.lineTo(x + 9, y - 8);
+  ctx.moveTo(x - 10, y - 10);
+  ctx.lineTo(x, y - 19);
+  ctx.lineTo(x + 10, y - 10);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = "#2a1c10";
-  ctx.font = "bold 12px Palatino, Times New Roman, serif";
-  ctx.fillText(r.short, x - ctx.measureText(r.short).width / 2, y + 18);
+  ctx.fillStyle = "#d8c490";
+  ctx.fillRect(x - 5, y - 7, 4, 6);
+  ctx.fillRect(x + 1, y - 7, 4, 6);
+  ctx.strokeStyle = ink;
+  ctx.strokeRect(x - 5, y - 7, 4, 6);
+  ctx.strokeRect(x + 1, y - 7, 4, 6);
+
+  ctx.fillStyle = fill;
+  ctx.fillRect(x + 10, y - 18, 3, 16);
+  ctx.beginPath();
+  ctx.moveTo(x + 13, y - 18);
+  ctx.lineTo(x + 24, y - 14);
+  ctx.lineTo(x + 13, y - 9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
   const p = playerOf(state);
+  const known = r.intel > 0 || (p.faction && r.owner === p.faction);
+  const garr = known ? String(r.garrison) : "?";
+  ctx.font = selected ? "bold 11px Palatino, Times New Roman, serif" : "bold 10px Palatino, Times New Roman, serif";
+  const nameW = ctx.measureText(r.short).width;
+  ctx.font = "9px Palatino, Times New Roman, serif";
+  const garrW = ctx.measureText(garr).width;
+  const pw = Math.max(62, nameW + garrW + 22);
+  const ph = 20;
+  let px = x - pw / 2;
+  let py = y + 8;
+  px = Math.max(4, Math.min(996 - pw, px));
+  if (py + ph > 616) py = y - 40;
+
+  ctx.fillStyle = selected ? "#efe0b8" : hover ? "#e6d4a8" : "#d8c490";
+  ctx.fillRect(px, py, pw, ph);
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = selected ? 2 : 1.3;
+  ctx.strokeRect(px, py, pw, ph);
+  ctx.strokeStyle = "#c4a060";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px + 2, py + 2, pw - 4, ph - 4);
+  ctx.fillStyle = fill;
+  ctx.fillRect(px + 3, py + 3, 4, ph - 6);
+  ctx.fillStyle = "#2a1c10";
+  ctx.font = selected ? "bold 11px Palatino, Times New Roman, serif" : "bold 10px Palatino, Times New Roman, serif";
+  ctx.fillText(r.short, px + 10, py + 13);
+  ctx.font = "9px Palatino, Times New Roman, serif";
+  ctx.fillStyle = "#5a3a18";
+  ctx.fillText(garr, px + pw - 6 - garrW, py + 14);
+
   if (p.region === r.id) {
     ctx.fillStyle = "#c9a227";
     ctx.beginPath();
-    ctx.arc(x + 14, y - 14, 5, 0, Math.PI * 2);
+    ctx.arc(x - 14, y - 16, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#5a2010";
     ctx.lineWidth = 1;
@@ -678,7 +727,7 @@ function drawCityMark(ctx, r, selected, hover) {
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#5a2a68";
     ctx.font = "bold 16px Palatino, serif";
-    ctx.fillText("?", x + 12, y + 4);
+    ctx.fillText("?", x + 26, y - 6);
   }
 }
 
@@ -740,6 +789,63 @@ function openBattle() {
   drawBattle();
 }
 
+let flashTimer = null;
+
+function scheduleFlashClear(battle) {
+  if (flashTimer) clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => {
+    flashTimer = null;
+    if (state?.battle === battle && battle.flash) {
+      battle.flash = null;
+      drawBattle();
+    }
+  }, 160);
+}
+
+function terrainFrameInk(t) {
+  if (t === "forest") return "#3a4a28";
+  if (t === "hills") return "#5a4020";
+  if (t === "urban") return "#4a4038";
+  if (t === "ice") return "#6a7878";
+  return "#7a6840";
+}
+
+function drawTerrainGlyph(ctx, t, x, y) {
+  ctx.strokeStyle = "rgba(42,28,16,0.55)";
+  ctx.fillStyle = "rgba(42,28,16,0.28)";
+  ctx.lineWidth = 1;
+  if (t === "forest") {
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y + 14);
+    ctx.lineTo(x + 14, y + 4);
+    ctx.lineTo(x + 20, y + 14);
+    ctx.closePath();
+    ctx.fill();
+  } else if (t === "hills") {
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + 14);
+    ctx.quadraticCurveTo(x + 12, y + 2, x + 22, y + 14);
+    ctx.stroke();
+  } else if (t === "urban") {
+    ctx.fillRect(x + 6, y + 6, 6, 8);
+    ctx.fillRect(x + 13, y + 4, 5, 10);
+  } else if (t === "ice") {
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y + 6);
+    ctx.lineTo(x + 14, y + 12);
+    ctx.moveTo(x + 14, y + 6);
+    ctx.lineTo(x + 8, y + 12);
+    ctx.stroke();
+  }
+}
+
+function unitAbbrev(u) {
+  if (u.type === "technical") return "TRK";
+  if (u.type === "regular") return "REG";
+  if (u.type === "militia") return "MIL";
+  return (u.label || "UNT").slice(0, 3).toUpperCase();
+}
+
 function drawBattle() {
   const b = state.battle;
   if (!b) return;
@@ -758,38 +864,66 @@ function drawBattle() {
   ctx.fillRect(0, 0, cw, ch);
   for (let y = 0; y < b.rows; y++) {
     for (let x = 0; x < b.cols; x++) {
-      ctx.fillStyle = colors[b.grid[y][x]] || "#a89868";
-      ctx.fillRect(x * gw + 1, y * gh + 1, gw - 3, gh - 3);
+      const t = b.grid[y][x];
+      const rx = x * gw + 2;
+      const ry = y * gh + 2;
+      const rw = gw - 4;
+      const rh = gh - 4;
+      ctx.fillStyle = colors[t] || "#a89868";
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeStyle = terrainFrameInk(t);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rx + 1, ry + 1, rw - 2, rh - 2);
       ctx.strokeStyle = "rgba(42,28,16,0.35)";
-      ctx.strokeRect(x * gw + 1, y * gh + 1, gw - 3, gh - 3);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(rx + 4, ry + 4, rw - 8, rh - 8);
+      drawTerrainGlyph(ctx, t, rx, ry);
     }
+  }
+  if (b.flash) {
+    const fx = b.flash.x * gw;
+    const fy = b.flash.y * gh;
+    ctx.fillStyle = "rgba(240, 208, 144, 0.5)";
+    ctx.fillRect(fx + 3, fy + 3, gw - 6, gh - 6);
+    ctx.strokeStyle = "#f0d090";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(fx + 6, fy + 6, gw - 12, gh - 12);
+    scheduleFlashClear(b);
   }
   b.units.forEach((u) => {
     if (u.hp <= 0) return;
-    const px = u.x * gw + gw / 2;
-    const py = u.y * gh + gh / 2;
+    const cx = u.x * gw + gw / 2;
+    const cy = u.y * gh + gh / 2;
     const col = u.side === "atk" ? "#c9a227" : "#8a3030";
+    const face = u.side === "atk" ? "#3a2a14" : "#2a1010";
+    const cwct = 46;
+    const chct = 38;
+    const ox = cx - cwct / 2;
+    const oy = cy - chct / 2 - 2;
     if (b.selected === u.id) {
-      ctx.strokeStyle = "#5a2010";
+      ctx.strokeStyle = "#f0d090";
       ctx.lineWidth = 2;
-      ctx.strokeRect(u.x * gw + 8, u.y * gh + 8, gw - 16, gh - 16);
+      ctx.strokeRect(ox - 4, oy - 4, cwct + 8, chct + 8);
     }
-    ctx.fillStyle = col;
-    ctx.fillRect(px - 7, py - 18, 14, 22);
+    ctx.fillStyle = face;
+    ctx.fillRect(ox, oy, cwct, chct);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(ox, oy, cwct, chct);
     ctx.strokeStyle = "#2a1c10";
-    ctx.lineWidth = 1.2;
-    ctx.strokeRect(px - 7, py - 18, 14, 22);
-    ctx.beginPath();
-    ctx.moveTo(px + 7, py - 18);
-    ctx.lineTo(px + 18, py - 12);
-    ctx.lineTo(px + 7, py - 6);
-    ctx.closePath();
-    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox + 2, oy + 2, cwct - 4, chct - 4);
+    ctx.fillStyle = col;
+    ctx.fillRect(ox + 3, oy + 3, 5, chct - 6);
+    ctx.fillStyle = "#f3e6c8";
+    ctx.font = "bold 11px Palatino, Times New Roman, serif";
+    ctx.fillText(unitAbbrev(u), ox + 11, oy + 15);
+    ctx.font = "bold 12px Palatino, Times New Roman, serif";
+    ctx.fillText(String(Math.max(0, u.hp)), ox + 11, oy + 28);
     ctx.fillStyle = "#2a1c10";
-    ctx.font = "11px Palatino, serif";
-    ctx.fillText(u.label.slice(0, 4), px - 14, py + 18);
-    ctx.fillStyle = "#4a6a32";
-    ctx.fillRect(px - 16, py + 20, 32 * (u.hp / u.maxHp), 3);
+    ctx.fillRect(ox + 3, oy + chct - 7, cwct - 6, 4);
+    ctx.fillStyle = u.hp / u.maxHp > 0.35 ? "#4a6a32" : "#8a3030";
+    ctx.fillRect(ox + 3, oy + chct - 7, (cwct - 6) * (u.hp / u.maxHp), 4);
   });
 }
 
@@ -875,7 +1009,7 @@ function wireAfterRender() {
         chr: Number(document.getElementById("c-chr")?.value),
       });
       toast(res.ok ? `${name} added to the free roster.` : res.message);
-      showModal(officersHtml());
+      showModal(officersHtml(), { kind: "officers" });
       wireDynamicModals();
       render();
     };

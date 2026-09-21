@@ -46,8 +46,12 @@
             <div id="actions-pinned" class="actions actions-pinned"></div>
             <div id="actions" class="actions actions-more"></div>
           </section>
-          <section class="card command-card">
-            <h2>Command</h2>
+          <section class="card command-card chrome-plate">
+            <div class="chrome-head">
+              <span class="chrome-tick"></span>
+              <h2>Command</h2>
+              <span class="chrome-tick"></span>
+            </div>
             <div id="command-actions" class="command-actions"></div>
           </section>
         </aside>
@@ -81,7 +85,7 @@
           </div>
         </header>
         <canvas id="battle-canvas" width="960" height="520"></canvas>
-        <p id="battle-hint" class="hint">Select a unit, then a hex to step or an adjacent enemy to fire. Low animation by design.</p>
+        <p id="battle-hint" class="hint">Select a counter, then a hex to step or an adjacent enemy to fire. Terrain frames are inked. Attack flash is one beat. Low animation by design.</p>
         <ol id="battle-log" class="log battle-log"></ol>
       </div>
     </div>

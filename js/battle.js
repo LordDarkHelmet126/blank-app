@@ -171,6 +171,7 @@ function strike(state, battle, attacker, defender) {
   const roll = nextInt(state, 1, 6);
   const dmg = Math.max(1, attacker.atk + roll + snow - defender.def - tdef);
   defender.hp -= dmg;
+  battle.flash = { x: defender.x, y: defender.y, side: attacker.side };
   battle.log.push(`${attacker.label} hit ${defender.label} for ${dmg} (${terrain}).`);
   if (defender.hp <= 0) {
     defender.hp = 0;
@@ -226,6 +227,7 @@ export function battlePloy(state, battle, kind, intStat) {
     const t = foes[nextInt(state, 0, foes.length - 1)];
     const dmg = 2 + Math.floor(intStat / 25);
     t.hp -= dmg;
+    battle.flash = { x: t.x, y: t.y, side: "atk" };
     battle.log.push(`Ambush markers hit ${t.label} for ${dmg}.`);
     if (t.hp <= 0) {
       t.hp = 0;
