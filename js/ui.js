@@ -58,6 +58,13 @@ export function boot(loaded) {
     hideModal();
     render();
     if (params.get("panel") === "officers") showModal(officersHtml(), { kind: "officers" });
+    if (params.get("panel") === "spy") {
+      showEventScene({
+        id: "spy",
+        title: "Spy",
+        text: "Glass on the next ridge. A scout marked the Slope garrison and the watch towers.",
+      });
+    }
     afterFonts();
     return;
   }
@@ -144,6 +151,10 @@ function bindChrome() {
   $("ploy-rumor").onclick = () => doBattle("ploy", { kind: "rumor" });
   $("battle-end-turn").onclick = () => doBattle("endTurn");
   $("battle-auto").onclick = () => doBattle("auto");
+  $("event-close").onclick = hideEventScene;
+  $("event-scene").onclick = (e) => {
+    if (e.target.id === "event-scene") hideEventScene();
+  };
   const canvas = $("map");
   canvas.addEventListener("click", onMapClick);
   canvas.addEventListener("mousemove", onMapMove);
@@ -228,9 +239,9 @@ function helpHtml() {
     <p>Each turn is <strong>one week</strong>. Spend AP, then End Week. AI officers act by personality. Your generals follow standing orders on the You card.</p>
     <ul>
       <li>Raise Banner in uncontrolled Bethel to found Northern Front.</li>
-      <li>Hire up to 5 generals, then set their standing order. Personality type gates skills (ROTK7-style). March/Attack stays on Command.</li>
-      <li>Hidden legend: <strong>Seek Legend</strong> (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
-      <li>Spy, rumor, persuade, hide, and alliances are on Town &amp; plots.</li>
+      <li>Hire up to 5 generals, then set their standing order. Personality type gates skills (ROTK7-style). March/Attack is under Military.</li>
+      <li>Hidden legend: <strong>Seek Legend</strong> on Plot (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
+      <li>Spy, rumor, persuade, hide, and alliances are under Plot. Drill and markets are Domestic.</li>
       <li>Tech is salvage + calendar. No leapfrog.</li>
     </ul>
     <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
@@ -373,10 +384,18 @@ function run(id, extra) {
     return;
   }
   if (res.revealed) {
-    showModal(`<h2>Legend listed</h2>
-      <p class="rumor">${esc(res.officerName || "Ilya Karr")} answers on the Arctic Slope.</p>
-      <p>Original character — a hidden free officer, ROTK7-style. Hire him if you share the Slope (Command → Hire).</p>
-      <button type="button" data-close class="primary">Continue</button>`);
+    showEventScene({
+      id: "seek_legend",
+      title: "Legend listed",
+      text: `${res.officerName || "Ilya Karr"} answers on the Arctic Slope. Original character — a hidden free officer. Hire him if you share the Slope.`,
+    });
+  } else if (SCENE_ACTIONS.has(id) && !res.weekEnd) {
+    const a = listActions(state).find((x) => x.id === id);
+    showEventScene({
+      id,
+      title: a?.label || id,
+      text: res.message || "The room goes still.",
+    });
   }
   if (res.weekEnd) {
     showModal(weekReportHtml(res.report || []), { kind: "week" });
@@ -401,8 +420,8 @@ export function render() {
   $("food").textContent = String(state.food);
   $("fame").textContent = String(state.fame);
   $("rank").textContent = rankLabel(rankOf(state, p));
-  $("you-card").innerHTML = youHtml();
-  $("region-card").innerHTML = regionHtml();
+  $("officer-plate").innerHTML = officerHtml();
+  $("city-stats").innerHTML = cityHtml();
   renderActions();
   renderLog();
   renderLegend();
@@ -413,54 +432,60 @@ export function render() {
   else $("battle").hidden = true;
 }
 
-function youHtml() {
+const PORTRAIT_SRC = "art/portraits/portrait-commander.png";
+const SCENE_COUNCIL = "art/scenes/scene-council.png";
+const SCENE_SPY = "art/scenes/scene-spy.png";
+
+function officerHtml() {
   const p = playerOf(state);
   const gens = playerGenerals(state);
   const fac = p.faction ? factionOf(state, p.faction) : null;
+  const here = regionOf(state, p.region);
   return `
-    <h2>You</h2>
-    <p><strong>${esc(p.name)}</strong> · ${esc(p.title)} · ${fac ? fac.short : "no banner"}</p>
-    <div class="statrow">
-      <span class="pill">WAR ${p.war}</span><span class="pill">INT ${p.int}</span>
-      <span class="pill">POL ${p.pol}</span><span class="pill">CHR ${p.chr}</span>
+    <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
+    <div class="officer-meta">
+      <h2>${esc(p.name)}</h2>
+      <p>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
+      <div class="officer-stats">
+        <span class="pill">AP ${state.ap}/${apMax(state)}</span>
+        <span class="pill">W${state.week}</span>
+        <span class="pill">${esc(state._season?.name || "")}</span>
+        <span class="pill">${esc(here?.short || "?")}</span>
+      </div>
+      <p class="muted">WAR ${p.war} INT ${p.int} POL ${p.pol} CHR ${p.chr}</p>
+      ${
+        gens.length
+          ? `<div class="gen-orders">${gens
+              .map(
+                (g) => `<label class="gen-row"><span>${esc(g.name)}</span>
+        <select data-order-gen="${g.id}">${ordersForOfficer(g)
+          .map(
+            (o) =>
+              `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
+          )
+          .join("")}</select></label>`
+              )
+              .join("")}</div>`
+          : `<p class="muted">Hire under Plot.</p>`
+      }
     </div>
-    <p class="muted">Generals ${gens.length}/${MAX_GENERALS} · ${esc(state.difficulty)} · salvage ${state.research.points}</p>
-    ${
-      gens.length
-        ? `<div class="gen-orders">${gens
-            .map(
-              (g) => `<label class="gen-row"><span>${esc(g.name)} <small>${esc(g.personality)}</small></span>
-      <select data-order-gen="${g.id}">${ordersForOfficer(g)
-        .map(
-          (o) =>
-            `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
-        )
-        .join("")}</select></label>`
-            )
-            .join("")}</div>`
-        : `<p class="muted">Hire from Command, then assign orders here.</p>`
-    }
   `;
 }
 
-function regionHtml() {
+function cityHtml() {
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const f = r.owner ? factionOf(state, r.owner) : null;
   const known = r.intel > 0 || (playerOf(state).faction && r.owner === playerOf(state).faction);
   const garr = known ? r.garrison : "???";
-  const present = visibleOfficers(state).filter((o) => o.region === r.id);
+  const walls = known ? r.walls : "?";
   return `
-    <h2>Region</h2>
-    <p><strong>${esc(r.name)}</strong> · ${r.type} · ${f ? f.short : "uncontrolled"}</p>
-    <p class="plus">+ ${r.plus.join(" · ")}</p>
-    <p class="minus">− ${r.minus.join(" · ")}</p>
-    <div class="statrow">
-      <span class="pill">Garrison ${garr}</span>
-      <span class="pill">Walls ${known ? r.walls : "?"}</span>
-      <span class="pill">Order ${known ? r.order : "?"}</span>
-      <span class="pill">Econ ${r.economy}</span>
+    <h2>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
+    <div class="city-grid">
+      <span class="pill"><span>GOLD</span><strong>${state.gold}</strong></span>
+      <span class="pill"><span>FOOD</span><strong>${state.food}</strong></span>
+      <span class="pill"><span>POP</span><strong>${r.population || "?"}</strong></span>
+      <span class="pill"><span>DEF</span><strong>${garr}/${walls}</strong></span>
     </div>
-    <p class="muted">Officers here: ${present.map((o) => o.name).join(", ") || "none visible"}</p>
     ${r.id === "arctic_slope" ? `<p class="rumor">${esc(legendStatus(state).rumor)}</p>` : ""}
   `;
 }
@@ -470,45 +495,74 @@ function weekReportHtml(report) {
   const headline = lines[0] || `Week ${state.week}`;
   const ai = lines.filter((l) => /\[[a-z]+\]/.test(l)).slice(0, 6);
   const extra = Math.max(0, lines.length - 1 - ai.length);
-  return `<h2>Week ${state.week}</h2>
+  return `<div class="event-art week-art"><img src="${SCENE_COUNCIL}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
+    <h2>Week ${state.week}</h2>
     <p>${esc(headline)}</p>
     <ul class="week-ai">${ai.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
     <p class="muted">${extra ? `${extra} more in the field log. ` : ""}Personality tags are in [brackets].</p>
     <button type="button" data-close class="primary">Continue</button>`;
 }
 
-const COMMAND_IDS = ["raise_banner", "travel", "hire", "attack"];
-const PINNED_TOWN_IDS = ["seek_legend", "drill", "commerce", "cultivate"];
+const ACTION_CATS = {
+  domestic: ["raise_banner", "drill", "commerce", "cultivate", "fortify", "safety", "research"],
+  plot: ["seek_legend", "spy", "hire", "ally", "break_ally", "rumor", "persuade", "hide"],
+  military: ["travel", "attack"],
+};
+const SCENE_ACTIONS = new Set(["spy", "hide", "hire", "ally", "break_ally", "seek_legend", "persuade", "rumor", "raise_banner"]);
+let commandCat = "plot";
+
+function sceneArt(id) {
+  return id === "spy" || id === "hide" ? SCENE_SPY : SCENE_COUNCIL;
+}
 
 function actionButton(a) {
   const b = document.createElement("button");
   b.type = "button";
   b.dataset.id = a.id;
   b.disabled = !a.enabled || (a.ap > 0 && state.ap < a.ap);
-  b.innerHTML = `${esc(a.label)} <small>AP ${a.ap}${a.enabled ? "" : " · locked"}</small>`;
+  b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(a.label)}<small>AP ${a.ap}${a.enabled ? "" : " · locked"}</small></span>`;
   b.title = a.hint;
   b.onclick = () => startAction(a);
   return b;
 }
 
 function renderActions() {
-  const pinned = $("actions-pinned");
-  const town = $("actions");
-  const cmd = $("command-actions");
-  pinned.innerHTML = "";
-  town.innerHTML = "";
-  cmd.innerHTML = "";
+  const tabs = $("cmd-tabs");
+  const box = $("cmd-actions");
+  tabs.innerHTML = "";
+  box.innerHTML = "";
   const actions = listActions(state).filter((a) => a.id !== "end_week");
-  COMMAND_IDS.forEach((id) => {
+  [
+    ["domestic", "Domestic", SCENE_COUNCIL],
+    ["plot", "Plot", SCENE_SPY],
+    ["military", "Military", SCENE_COUNCIL],
+  ].forEach(([id, label, art]) => {
+    const t = document.createElement("button");
+    t.type = "button";
+    t.className = "cmd-tab" + (commandCat === id ? " active" : "");
+    t.innerHTML = `<img src="${art}" alt="" /><span>${label}</span>`;
+    t.onclick = () => {
+      commandCat = id;
+      renderActions();
+    };
+    tabs.appendChild(t);
+  });
+  ACTION_CATS[commandCat].forEach((id) => {
     const a = actions.find((x) => x.id === id);
-    if (a) cmd.appendChild(actionButton(a));
+    if (a) box.appendChild(actionButton(a));
   });
-  const townActs = actions.filter((a) => !COMMAND_IDS.includes(a.id));
-  PINNED_TOWN_IDS.forEach((id) => {
-    const a = townActs.find((x) => x.id === id);
-    if (a) pinned.appendChild(actionButton(a));
-  });
-  townActs.filter((a) => !PINNED_TOWN_IDS.includes(a.id)).forEach((a) => town.appendChild(actionButton(a)));
+}
+
+function showEventScene(ev) {
+  $("event-vignette").src = sceneArt(ev.id);
+  $("event-portrait").src = PORTRAIT_SRC;
+  $("event-title").textContent = ev.title || "Event";
+  $("event-text").textContent = ev.text || "";
+  $("event-scene").hidden = false;
+}
+
+function hideEventScene() {
+  $("event-scene").hidden = true;
 }
 
 function startAction(a) {

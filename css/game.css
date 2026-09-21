@@ -122,7 +122,7 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: 392px minmax(0, 1fr);
   gap: 8px;
   padding: 8px;
   flex: 1;
@@ -175,20 +175,104 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   padding: 8px;
   border-radius: 0;
 }
-#you-card {
-  flex: 0 1 auto;
-  min-height: 118px;
-  max-height: 36%;
-  overflow: auto;
+.officer-plate {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  min-height: 148px;
 }
-#region-card {
-  flex: 0 1 auto;
-  min-height: 56px;
-  max-height: 20%;
-  overflow: auto;
+.officer-face {
+  width: 128px;
+  height: 128px;
+  flex: 0 0 128px;
+  border: 4px solid var(--amber);
+  background: #000010;
+  object-fit: cover;
+  image-rendering: pixelated;
 }
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.actions button { text-align: left; font-size: 8px; min-height: 40px; padding: 6px; }
+.officer-meta { min-width: 0; flex: 1; }
+.officer-meta h2 { margin: 0 0 4px; }
+.officer-meta p { margin: 0 0 4px; }
+.officer-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.city-stats { flex: 0 0 auto; }
+.city-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.city-grid .pill { display: flex; justify-content: space-between; gap: 8px; }
+.cmd-card {
+  flex: 1 1 auto;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.cmd-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+.cmd-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  min-height: 0;
+}
+.cmd-tab img {
+  width: 100%;
+  height: 40px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+.cmd-tab span { padding: 4px; text-align: center; }
+.cmd-tab.active {
+  outline: 4px solid var(--amber);
+  color: var(--amber);
+}
+.cmd-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+.cmd-actions button {
+  text-align: left;
+  font-size: 8px;
+  min-height: 48px;
+  padding: 4px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.cmd-actions button small {
+  display: block;
+  color: var(--ice-dim);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+.cmd-thumb {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border: 2px solid #000010;
+}
+.cmd-actions button[data-id="attack"] {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  background: #803010;
+  border-color: var(--amber);
+  color: var(--amber);
+}
 .card h2 {
   margin: 0 0 8px;
   font-size: 8px;
@@ -207,21 +291,6 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
 }
 .plus { color: var(--ok); }
 .minus { color: var(--blood); }
-.actions-card {
-  flex: 1 0 124px;
-  min-height: 124px;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.actions-pinned { flex: 0 0 auto; overflow: visible; }
-.actions-more { flex: 1 1 auto; overflow: auto; min-height: 0; }
-.actions button small, .command-actions button small {
-  display: block;
-  color: var(--ice-dim);
-  font-weight: 400;
-  text-transform: uppercase;
-}
 .gen-orders { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .gen-row {
   display: flex;
@@ -241,34 +310,50 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   max-width: 148px;
   border-radius: 0;
 }
-.command-card { flex: 0 0 auto; flex-shrink: 0; }
-.chrome-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+.event-scene {
+  position: fixed;
+  inset: 0;
+  background: #000010ee;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  padding: 16px;
 }
-.chrome-head h2 { margin: 0; }
-.chrome-tick {
-  width: 16px;
-  height: 8px;
-  background: var(--amber);
+.event-scene[hidden] { display: none !important; }
+.event-card {
+  width: min(720px, 100%);
+  background: var(--panel);
+  border: 4px solid var(--line);
+  box-shadow: 0 0 0 4px #000000;
 }
-.command-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.command-actions button {
-  text-align: left;
-  font-size: 8px;
-  min-height: 40px;
-  padding: 6px;
+.event-art {
+  position: relative;
+  border-bottom: 4px solid var(--line);
+  background: #000010;
 }
-.command-actions button[data-id="attack"] {
-  grid-column: 1 / -1;
-  min-height: 48px;
-  background: #803010;
-  border-color: var(--amber);
-  color: var(--amber);
+.event-art img:first-child,
+.week-art img:first-child {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  image-rendering: pixelated;
 }
+.event-face {
+  position: absolute;
+  left: 8px;
+  bottom: -28px;
+  width: 96px;
+  height: 96px;
+  border: 4px solid var(--amber);
+  background: #000010;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.event-copy { padding: 36px 12px 12px 116px; }
+.event-copy h2 { margin: 0 0 8px; color: var(--amber); font-weight: 400; }
+.event-copy p { margin: 0 0 12px; color: var(--ice); }
+.week-art { position: relative; margin: -16px -16px 16px; }
 .modal-card.week-card {
   width: min(440px, 100%);
   max-height: 70vh;
@@ -456,14 +541,9 @@ button:disabled { opacity: 0.35; cursor: not-allowed; outline: none; }
   .dock { flex-basis: 56px; min-height: 48px; }
   .card { padding: 6px; }
   .card h2 { margin: 0 0 4px; }
-  #you-card { max-height: 42%; min-height: 118px; }
-  #you-card .statrow,
-  #you-card > p.muted { display: none; }
-  #region-card { max-height: 18%; min-height: 56px; }
-  #region-card .statrow,
-  #region-card .plus,
-  #region-card .minus,
-  #region-card .muted { display: none; }
-  .actions-card { flex-basis: 118px; min-height: 118px; }
-  .actions button { min-height: 32px; padding: 4px; }
+  .officer-face { width: 96px; height: 96px; flex-basis: 96px; }
+  .officer-plate { min-height: 112px; }
+  .officer-plate .gen-orders { display: none; }
+  .cmd-tab img { height: 28px; }
+  .cmd-actions button { min-height: 40px; padding: 4px; }
 }

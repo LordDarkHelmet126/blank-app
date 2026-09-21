@@ -34,23 +34,18 @@
       </header>
 
       <main class="workspace">
+        <aside class="side" id="command-col">
+          <section class="card officer-plate" id="officer-plate"></section>
+          <section class="card city-stats" id="city-stats"></section>
+          <section class="card cmd-card">
+            <div class="cmd-tabs" id="cmd-tabs"></div>
+            <div id="cmd-actions" class="cmd-actions"></div>
+          </section>
+        </aside>
         <section class="map-wrap">
           <canvas id="map" width="1000" height="620" aria-label="Alaska theater map"></canvas>
           <div class="map-legend" id="legend"></div>
         </section>
-        <aside class="side">
-          <section class="card" id="you-card"></section>
-          <section class="card" id="region-card"></section>
-          <section class="card actions-card">
-            <h2>Town & plots</h2>
-            <div id="actions-pinned" class="actions actions-pinned"></div>
-            <div id="actions" class="actions actions-more"></div>
-          </section>
-          <section class="card command-card">
-            <h2>Command</h2>
-            <div id="command-actions" class="command-actions"></div>
-          </section>
-        </aside>
       </main>
 
       <section class="dock">
@@ -65,6 +60,20 @@
 
     <div id="modal" class="modal" hidden>
       <div class="modal-card" id="modal-card"></div>
+    </div>
+
+    <div id="event-scene" class="event-scene" hidden>
+      <div class="event-card">
+        <div class="event-art">
+          <img id="event-vignette" alt="" />
+          <img id="event-portrait" class="event-face" alt="" />
+        </div>
+        <div class="event-copy">
+          <h2 id="event-title">Event</h2>
+          <p id="event-text"></p>
+          <button type="button" id="event-close" class="primary">Continue</button>
+        </div>
+      </div>
     </div>
 
     <div id="battle" class="battle" hidden>
