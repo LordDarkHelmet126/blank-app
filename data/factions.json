@@ -58,7 +58,7 @@
       "plus": [
         "Discipline",
         "Captured depots",
-        "Airlift (late)"
+        "C-130s (late)"
       ],
       "minus": [
         "Hated by locals",
@@ -150,7 +150,7 @@
       "alignment": "intel",
       "playerFoundable": false,
       "plus": [
-        "Signals & spies",
+        "Shortwave nets",
         "Hidden caches"
       ],
       "minus": [
@@ -170,7 +170,7 @@
       "sandbox": true,
       "theater": "alaska",
       "personalityLean": "schemer",
-      "bio": "A signals cell on the Nome coast. Few rifles, many frequencies, no public roster."
+      "bio": "A radio shack on the Nome coast. Few rifles, many analog frequencies, no public roster."
     },
     {
       "id": "banner",
@@ -524,7 +524,7 @@
       "personalityLean": "ambitious",
       "plus": [
         "Runway seizure",
-        "Late air"
+        "C-130s, Hueys"
       ],
       "minus": [
         "Weather gated",
@@ -709,7 +709,7 @@
       "alignment": "civilian",
       "personalityLean": "diplomat",
       "plus": [
-        "Labs and radio",
+        "Analog radios",
         "Young labor"
       ],
       "minus": [
@@ -726,7 +726,7 @@
         "chr": 6,
         "upkeep": 0.9
       },
-      "bio": "A university remnant that still prints syllabi and jammers. Later Fairbanks split, not v0.1.",
+      "bio": "A university remnant that still runs mimeographs, CRT labs, and analog jammers. Later Fairbanks split, not v0.1.",
       "sandbox": false,
       "playerFoundable": false
     },
@@ -912,7 +912,7 @@
         "chr": 4,
         "upkeep": 1.05
       },
-      "bio": "Pilots who move envelopes after curfew. Related to AURORA, not the same cell.",
+      "bio": "Pilots who move envelopes after curfew. Related to AURORA, not the same radio hut.",
       "sandbox": false,
       "playerFoundable": false
     },
@@ -1005,7 +1005,7 @@
         "chr": 4,
         "upkeep": 0.75
       },
-      "bio": "A mesh of halls that refuse a single flag. Later rural hexes, not a fake 500 dump.",
+      "bio": "A web of halls that refuse a single flag. Later rural hexes, not a fake 500 dump.",
       "sandbox": false,
       "playerFoundable": false
     },

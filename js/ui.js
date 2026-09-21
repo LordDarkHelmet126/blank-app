@@ -76,7 +76,7 @@ export async function boot(loaded) {
       showEventScene({
         id: "drill",
         title: "Drill",
-        text: "Range time on the snow. Hunting rifles and surplus webbing, not new kit.",
+        text: "Range time on the snow. M16A2, AK-47, surplus webbing — not 2020s kit.",
       });
     }
     if (params.get("fx") === "travel") pulseTravel("bethel", "fairbanks");
@@ -257,7 +257,7 @@ function helpHtml() {
       <li>Hire up to 5 generals, then set their standing order. Personality type gates skills (ROTK7-style). March/Attack is under Military.</li>
       <li>Hidden legend: <strong>Seek Legend</strong> on Plot (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
       <li>Spy, rumor, persuade, hide, and alliances are under Plot. Drill and markets are Domestic.</li>
-      <li>Tech is 1980s salvage + calendar (hunting rifles, parkas, pintle pickups). No leapfrog.</li>
+      <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys, A-10/F-14). No leapfrog, no drones.</li>
     </ul>
     <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
     <button type="button" data-close>Close</button>

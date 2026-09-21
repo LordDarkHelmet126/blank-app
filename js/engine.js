@@ -473,7 +473,7 @@ export function legendStatus(state) {
   let rumor;
   if (revealed) rumor = `${k.name}, ${k.title}, is listed. He still keeps to the Slope.`;
   else if (hunt >= 1) rumor = "Named: Ilya Karr, Slope Ghost. Travel to Arctic Slope (via Fairbanks) and Seek Legend.";
-  else rumor = "Rumor: an unlisted ranging contractor still walks Slope traplines. Seek Legend or Spy the Arctic Slope.";
+  else rumor = "Rumor: an unlisted trapline hand still walks Slope country. Seek Legend or Spy the Arctic Slope.";
   return {
     id: "karr",
     hunt,
@@ -611,7 +611,7 @@ export function listActions(state) {
     ap: 1,
     group: "domestic",
     enabled: true,
-    hint: "Workshop hours. Calendar still gates 1980s kit — no leapfrog.",
+    hint: "Workshop hours. Calendar still gates 1985–89 kit — M16A2, Jeeps, analog radios. No leapfrog.",
   });
   actions.push({
     id: "spy",
@@ -842,7 +842,7 @@ function doResearch(state, content, stats) {
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const gain = 1 + Math.floor(stats.int / 30) + (chance(state, 0.2) ? 1 : 0);
   state.research.points += gain;
-  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}). 1980s kit still waits on the calendar.`;
+  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}). 1985–89 kit still waits on the calendar.`;
   pushLog(state, msg, "player");
   tryUnlockTech(state, content, true);
   return { ok: true, message: msg };
@@ -975,7 +975,7 @@ function doAlly(state, factionId, stats) {
     return { ok: true, message: msg };
   }
   setRelation(state, p.faction, f.id, rel - 4);
-  const msg = `${f.short} tables the talk. ${invader ? "Occupiers do not sign with cells." : "Try again when you look less poor."}`;
+  const msg = `${f.short} tables the talk. ${invader ? "Occupiers do not sign with unnamed halls." : "Try again when you look less poor."}`;
   pushLog(state, msg, "diplomacy");
   return { ok: true, message: msg };
 }

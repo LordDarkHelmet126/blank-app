@@ -354,7 +354,7 @@
       "ambition": 40,
       "hidden": false,
       "legend": false,
-      "bio": "Keeps a civil tongue on an uncivil net. Prefers bargains to ambushes."
+      "bio": "Keeps a civil tongue on an uncivil radio net. Prefers bargains to ambushes."
     },
     {
       "id": "brant",
@@ -439,7 +439,7 @@
       "ambition": 15,
       "hidden": true,
       "legend": true,
-      "bio": "Old ranging contractor. Some maps still have his traplines. He does not answer radios."
+      "bio": "Old trapline hand. Some maps still have his lines. He does not answer radios."
     },
     {
       "id": "kade",
@@ -898,7 +898,7 @@
       "ambition": 35,
       "hidden": false,
       "legend": false,
-      "bio": "Translates threats into bargains. Prefers a handshake on a cold dock."
+      "bio": "One-time pads on a typewriter. Prefers a handshake on a cold dock."
     },
     {
       "id": "york",
@@ -915,7 +915,7 @@
       "ambition": 29,
       "hidden": false,
       "legend": false,
-      "bio": "Reads storms like troop movements. Will not launch a boat into a lie."
+      "bio": "Reads storms on shortwave and a CRT map. Will not launch a boat into a lie."
     },
     {
       "id": "cole",
@@ -1000,7 +1000,7 @@
       "ambition": 54,
       "hidden": false,
       "legend": false,
-      "bio": "Fixes captured trucks under occupation lights. Keeps a second set of wrenches."
+      "bio": "Fixes captured Jeeps and pickups under occupation lights. Keeps a second set of wrenches."
     },
     {
       "id": "faye",
@@ -1085,7 +1085,7 @@
       "ambition": 77,
       "hidden": false,
       "legend": false,
-      "bio": "Pulls radios out of hulks. Wants a crew that pays in parts, not medals."
+      "bio": "Pulls analog radios out of hulks. Wants a crew that pays in parts, not medals."
     },
     {
       "id": "haro",

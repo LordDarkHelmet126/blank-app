@@ -22,6 +22,10 @@ function assert(cond, msg) {
 }
 
 const content = await loadContent();
+const techBlob = `${content.tech.meta?.notes || ""} ${content.tech.tracks.map((t) => `${t.name} ${t.summary}`).join(" ")}`;
+assert(/1985/.test(techBlob) && /M16A2/.test(techBlob) && /Jeep/.test(techBlob) && /Huey/.test(techBlob), "tech copy must name 1985–89 kit");
+assert(content.tech.tracks.every((t) => !/^(F-35|JLTV|MRAP|drone)/i.test(t.name)), "tech track names must not be 2020s kit");
+assert(content.tech.tracks.reduce((s, t) => s + (t.battle?.atk || 0), 0) === 14, "1980s tracks keep the original salvage ATK cap");
 const aiCount = content.officers.officers.length;
 assert(aiCount >= 40 && aiCount <= 60, `AI roster should be 40–60 original officers, got ${aiCount}`);
 const officerIds = content.officers.officers.map((o) => o.id);

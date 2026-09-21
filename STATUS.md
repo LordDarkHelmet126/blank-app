@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-21 — uniform pixel chrome, a vignette on every command, short ROTK flashes.
+**Last checkpoint:** 2026-09-21 — mid/late-1980s authenticity pass (kit, copy, unlocks).
 
 ## How to run
 
@@ -24,11 +24,11 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- One chrome token: 4px white pixel border, 8px pad, inset/outset boxes on HUD, dropdowns, modals, scenes, battle bar
-- Every Domestic/Plot/Military action has a vignette (distinct pixel scenes for Drill, Fortify, Commerce, Cultivate, Safety, March/Travel; council/spy photos tinted for meetings/recon)
-- Short motion only: button press flash, event scene step-fade, travel road pulse + pip hop, battle hit blink
-- Kit copy is mid/late-1980s (hunting rifles, ALICE webbing, pintle pickups, APC hulks, strip fighter)
-- Roads, AP loop, orders, custom officers, Yukon/Bering unchanged
+- Era lock **1985–89**: audited tech, officer/faction/region copy, battle labels, and HUD help
+- Vehicles: Jeeps, F-series pickups, early Humvees, M113s, Bradleys late — no MRAPs/JLTVs
+- Air: Hueys then early Apaches, one A-10 or F-14 — no F-35s/drones
+- Weapons: M16A2, AK-47, M60, TOW, Stinger. Products: analog radios, CRT sets, cassette logs, typewriters, landlines
+- Pixel HUD, roads, AP loop, orders, custom officers, Yukon/Bering unchanged
 
 ## What’s next (small bursts)
 
