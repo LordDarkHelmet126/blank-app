@@ -1106,6 +1106,7 @@ export function render() {
   renderActions();
   renderLog();
   renderLegend();
+  if ($("legend")) $("legend").hidden = !!sealiftLook;
   renderObjective();
   renderMapCaption();
   drawMap();
@@ -1940,8 +1941,73 @@ function drawStateLabels(ctx) {
   ctx.font = PX_FONT;
 }
 
+function plateHits(px, py, pw, ph, box) {
+  if (!box) return false;
+  return px < box.x + box.w && px + pw > box.x && py < box.y + box.h && py + ph > box.y;
+}
+
+/** Selected nameplate plus the same marker halo the Bethel here-chip dodges. */
+function selectionObstacle(selfId) {
+  const sel = regionOf(state, selectedRegion);
+  if (!sel || sel.id === selfId) return null;
+  const [sx, sy] = cityXY(sel);
+  const halo = { x: sx - 76, y: sy - 52, w: 152, h: 120 };
+  const laid = anchorCityPlate(sel);
+  const plate = { x: laid.px - 6, y: laid.py - 6, w: laid.pw + 12, h: laid.ph + 12 };
+  const x = Math.min(halo.x, plate.x);
+  const y = Math.min(halo.y, plate.y);
+  const right = Math.max(halo.x + halo.w, plate.x + plate.w);
+  const bottom = Math.max(halo.y + halo.h, plate.y + plate.h);
+  return { x, y, w: right - x, h: bottom - y };
+}
+
+function dodgeGulfPlate(px, py, pw, ph) {
+  const box = selectionObstacle("gulf_passage");
+  if (!plateHits(px, py, pw, ph, box)) return [px, py];
+  let ny = Math.max(4, Math.round(box.y - ph - 8));
+  if (!plateHits(px, ny, pw, ph, box)) return [px, ny];
+  const nx = Math.max(4, Math.min(996 - pw, Math.round(box.x + box.w + 8)));
+  if (!plateHits(nx, ny, pw, ph, box)) return [nx, ny];
+  return [px, ny];
+}
+
+function anchorCityPlate(r) {
+  const [x, y] = cityXY(r);
+  const p = playerOf(state);
+  const known = r.intel > 0 || (p.faction && r.owner === p.faction);
+  const garr = known ? String(r.garrison) : "?";
+  const nameW = ctxMeasure(r.short);
+  const garrW = ctxMeasure(garr);
+  const pw = Math.max(88, Math.ceil((nameW + garrW + 28) / 4) * 4);
+  const ph = 20;
+  let px = Math.round(x - pw / 2);
+  let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
+  if (r.id === "gulf_passage") {
+    px = Math.round(x + 28);
+    py = Math.round(y - 108);
+  } else if (r.id === "far_cuba") {
+    px = 4;
+    py = Math.round(y - 58);
+  } else if (r.id === "far_nicaragua") {
+    py = Math.round(y - 28);
+  }
+  px = Math.max(4, Math.min(996 - pw, px));
+  if (py < 4) py = Math.round(y + 20);
+  if (py + ph > 618) py = Math.max(4, Math.round(y - 44));
+  return { px, py, pw, ph, garr, garrW };
+}
+
+function ctxMeasure(text) {
+  if (!ctxMeasure.ctx) {
+    const c = document.createElement("canvas");
+    ctxMeasure.ctx = c.getContext("2d");
+  }
+  ctxMeasure.ctx.font = PLATE_FONT;
+  return ctxMeasure.ctx.measureText(text).width;
+}
+
 function plateAwayFromSelected(r, px, py, pw, ph) {
-  if (sealiftLook && (r.id === "gulf_passage" || r.id === "far_cuba" || r.id === "far_nicaragua" || r.id === "st_louis")) {
+  if (sealiftLook && (r.id === "far_cuba" || r.id === "far_nicaragua" || r.id === "st_louis")) {
     return [px, py];
   }
   const sel = regionOf(state, selectedRegion);
@@ -1984,7 +2050,6 @@ function drawHereChip(ctx, r, x, y) {
 }
 
 function drawCityPlate(ctx, r, selected) {
-  const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
   const p = playerOf(state);
   const here = p.region === r.id;
@@ -1994,29 +2059,15 @@ function drawCityPlate(ctx, r, selected) {
     sealiftLook && (r.id === "gulf_passage" || r.id === "far_cuba" || r.id === "far_nicaragua" || r.id === "st_louis");
   if (!selected && !here && r.id !== hoverRegion && !chainPlate) return;
   if (here && !selected) {
-    drawHereChip(ctx, r, x, y);
+    const [hx, hy] = cityXY(r);
+    drawHereChip(ctx, r, hx, hy);
     return;
   }
   ctx.font = PLATE_FONT;
-  const nameW = ctx.measureText(r.short).width;
-  const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(88, Math.ceil((nameW + garrW + 28) / 4) * 4);
-  const ph = 20;
-  let px = Math.round(x - pw / 2);
-  let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
-  if (r.id === "gulf_passage") {
-    px = Math.round(x + 10);
-    py = Math.round(y - 46);
-  } else if (r.id === "far_cuba") {
-    px = 4;
-    py = Math.round(y - 58);
-  } else if (r.id === "far_nicaragua") {
-    py = Math.round(y - 28);
-  }
-  px = Math.max(4, Math.min(996 - pw, px));
-  if (py < 4) py = Math.round(y + 20);
-  if (py + ph > 618) py = Math.max(4, Math.round(y - 44));
-  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+  const laid = anchorCityPlate(r);
+  let { px, py, pw, ph, garrW } = laid;
+  if (r.id === "gulf_passage") [px, py] = dodgeGulfPlate(px, py, pw, ph);
+  else [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
   if (selected) {
@@ -2076,7 +2127,8 @@ function drawMap() {
   }
   painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
   drawStateLabels(ctx);
-  painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  const plateOrder = painted.slice().sort((a, b) => (a.id === selectedRegion ? -1 : b.id === selectedRegion ? 1 : 0));
+  plateOrder.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
 }
 
 function drawCityMarkHi(ctx, r, selected) {
