@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Look-demo paint: Bethel here-chip stays in AK; thicker roads/plates; stronger ownership wash.
+**Last checkpoint:** 2026-09-22 — Gulf Sealift plate sits on gulf water beside the Cuba/Nicaragua strip. Pier/radio mast, gold sea lanes St. Louis → Gulf → Cuba (same lane language as Nome → Bering → Russia). Look: `/?demo=look&focus=gulf`. No St. Louis–Cuba leap. Cuba–Nicaragua stays. Lanes stay hidden until Phase 3.
 
 ## How to run
 
@@ -16,7 +16,7 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Phase 3 sealift: `/?demo=look&focus=gulf` (Gulf Sealift selected, St. Louis–Gulf–Cuba pulse). Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
 
 ## PNW polish (first theater pass)
 

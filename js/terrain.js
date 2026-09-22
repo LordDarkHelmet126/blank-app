@@ -206,7 +206,7 @@ function pickTone(pal, n, high) {
 function cacheKey(state) {
   const season = state._season?.id || "summer";
   const n = (state.regions || []).length;
-  return `v5|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+  return `v6|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
 }
 
 const WET_IDS = new Set(["seattle", "olympia", "portland"]);
@@ -255,6 +255,8 @@ function buildFields(state) {
     let b = biomeOf(r.stateCode, r.terrainBias);
     if (WET_IDS.has(r.id)) b = BIOME.wetforest;
     if (RAIN_SHADOW_IDS.has(r.id)) b = BIOME.pine;
+    const sealift = r.id === "gulf_passage";
+    if (sealift) b = BIOME.sea;
     const band = pnwBandOf(r);
     const geo = r.geo || {};
     const extra = ((geo.mine || 0) + (geo.defense || 0)) * 0.06 - (geo.farm || 0) * 0.03;
@@ -262,8 +264,9 @@ function buildFields(state) {
       if (pix[i * 4] > 20) {
         biome[i] = b;
         land[i] = 1;
-        height[i] += extra;
-        if (band) pnw[i] = band;
+        if (sealift) height[i] = 0.04;
+        else height[i] += extra;
+        if (band && !sealift) pnw[i] = band;
       }
     }
   });
@@ -271,7 +274,7 @@ function buildFields(state) {
   for (let y = 0; y < TH; y++) {
     for (let x = 0; x < TW; x++) {
       const i = y * TW + x;
-      if (!land[i]) {
+      if (!land[i] || biome[i] === BIOME.sea) {
         biome[i] = BIOME.sea;
         height[i] = 0;
         continue;
@@ -314,7 +317,7 @@ function paintBase(fields, seasonId) {
     for (let x = 0; x < TW; x++) {
       const i = y * TW + x;
       const o = i * 4;
-      if (!land[i]) {
+      if (!land[i] || biome[i] === BIOME.sea) {
         const wave = ((x + y + ((x * 3) ^ y)) & 3) === 0;
         data[o] = wave ? 0x3a : 0x2a;
         data[o + 1] = wave ? 0x80 : 0x68;
@@ -529,6 +532,7 @@ export function invalidateTerrain() {
 }
 
 export function markerKind(r) {
+  if (r?.id === "gulf_passage" || r?.type === "sea") return "pier";
   if (r?.id === "seattle") return "street";
   if (r?.id === "olympia" || r?.id === "spokane") return "mill";
   const g = r.geo || {};
@@ -581,6 +585,20 @@ export function draw80sMarker(ctx, kind, x, y, selected, fill, scale) {
     px(ctx, -2, -8, 5, 1, ink);
     px(ctx, -1, -4, 3, 1, ink);
     px(ctx, -1, -20, 3, 2, Math.floor(Date.now() / 400) % 2 ? "#f03030" : gold);
+  } else if (kind === "pier") {
+    const blink = Math.floor(Date.now() / 400) % 2 ? "#f03030" : gold;
+    px(ctx, -8, 0, 16, 3, "#1a4870");
+    px(ctx, -7, -1, 2, 4, "#6a5030");
+    px(ctx, -2, -1, 2, 4, "#6a5030");
+    px(ctx, 3, -1, 2, 4, "#6a5030");
+    px(ctx, -8, -4, 16, 3, "#8a6840");
+    px(ctx, -8, -5, 16, 1, "#c8a060");
+    px(ctx, -5, -9, 7, 5, body);
+    px(ctx, -6, -10, 9, 2, "#4a4038");
+    px(ctx, -3, -7, 2, 2, gold);
+    px(ctx, 5, -16, 1, 12, conc);
+    px(ctx, 3, -13, 5, 1, ink);
+    px(ctx, 4, -18, 3, 2, blink);
   } else if (kind === "bunker") {
     px(ctx, -7, -6, 14, 6, conc);
     px(ctx, -8, -3, 16, 4, "#5a5848");
@@ -621,7 +639,8 @@ export function draw80sMarker(ctx, kind, x, y, selected, fill, scale) {
   ctx.restore();
 }
 
-export function drawPixelRoadFull(ctx, a, b, pulseOn) {
+export function drawPixelRoadFull(ctx, a, b, pulseOn, lane) {
+  const sea = lane === "sea" || lane === "ice";
   const x0 = Math.round(a[0]);
   const y0 = Math.round(a[1]);
   const x1 = Math.round(b[0]);
@@ -635,9 +654,13 @@ export function drawPixelRoadFull(ctx, a, b, pulseOn) {
   let y = y0;
   let i = 0;
   for (;;) {
-    ctx.fillStyle = pulseOn ? "#886028" : "#403830";
+    ctx.fillStyle = pulseOn ? "#886028" : sea ? (lane === "ice" ? "#204058" : "#1a4060") : "#403830";
     ctx.fillRect(x - 2, y - 2, 5, 5);
-    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f8f4e8" : "#e0d8c4";
+    if (sea) {
+      ctx.fillStyle = pulseOn ? "#fff0a0" : i % 4 < 2 ? "#f8d800" : lane === "ice" ? "#d8e8f0" : "#7ec8e8";
+    } else {
+      ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f8f4e8" : "#e0d8c4";
+    }
     ctx.fillRect(x - 1, y - 1, 3, 3);
     if (x === x1 && y === y1) break;
     const e2 = err * 2;

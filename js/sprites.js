@@ -123,23 +123,45 @@ export function drawHorse(ctx, x, y, frame, scale, flip) {
   ]);
 }
 
+function samplePolyline(points, u) {
+  const list = points && points.length ? points : [[0, 0], [0, 0]];
+  const lens = [];
+  let total = 0;
+  for (let i = 0; i < list.length - 1; i++) {
+    const len = Math.hypot(list[i + 1][0] - list[i][0], list[i + 1][1] - list[i][1]) || 1;
+    lens.push(len);
+    total += len;
+  }
+  let dist = Math.max(0, Math.min(1, u)) * total;
+  for (let i = 0; i < lens.length; i++) {
+    const a = list[i];
+    const b = list[i + 1];
+    if (dist <= lens[i] || i === lens.length - 1) {
+      const k = lens[i] ? Math.max(0, Math.min(1, dist / lens[i])) : 0;
+      return {
+        x: Math.round(a[0] + (b[0] - a[0]) * k),
+        y: Math.round(a[1] + (b[1] - a[1]) * k),
+        flip: b[0] < a[0],
+      };
+    }
+    dist -= lens[i];
+  }
+  const last = list[list.length - 1];
+  return { x: last[0], y: last[1], flip: false };
+}
+
 export function drawTravelConvoy(ctx, fromXY, toXY, t, now, scale) {
+  const poly = Array.isArray(fromXY?.[0]) ? fromXY : [fromXY, toXY];
   const s = scale || 1;
-  const x0 = fromXY[0];
-  const y0 = fromXY[1];
-  const x1 = toXY[0];
-  const y1 = toXY[1];
-  const flip = x1 < x0;
   const horseF = frameAt(now, 120, 4);
   const hopF = frameAt(now, 140, 2);
   const kinds = ["horse", "jeep", "m113"];
   for (let i = 0; i < kinds.length; i++) {
     const u = Math.max(0, Math.min(1, t - i * 0.12));
-    const x = Math.round(x0 + (x1 - x0) * u);
-    const y = Math.round(y0 + (y1 - y0) * u);
-    if (kinds[i] === "horse") drawHorse(ctx, x, y, horseF, s, flip);
-    else if (kinds[i] === "jeep") drawJeep(ctx, x, y, hopF, s, flip);
-    else drawM113(ctx, x, y, hopF, s, flip);
+    const p = samplePolyline(poly, u);
+    if (kinds[i] === "horse") drawHorse(ctx, p.x, p.y, horseF, s, p.flip);
+    else if (kinds[i] === "jeep") drawJeep(ctx, p.x, p.y, hopF, s, p.flip);
+    else drawM113(ctx, p.x, p.y, hopF, s, p.flip);
   }
 }
 
