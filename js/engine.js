@@ -278,6 +278,7 @@ export function regionsOfFaction(state, fid) {
 
 export function rankOf(state, off) {
   if (!off.faction) return "free";
+  if (off.id === state.playerOfficerId && ensureCampaign(state).nationalLeader) return "national";
   const fac = factionOf(state, off.faction);
   if (fac && fac.ruler === off.id) {
     const n = regionsOfFaction(state, off.faction).length;
@@ -295,6 +296,7 @@ export function rankLabel(rank) {
     prefect: "Prefect",
     warlord: "Warlord",
     governor: "Governor",
+    national: "National leader",
   }[rank] || rank;
 }
 
@@ -313,9 +315,11 @@ export function apMax(state) {
   if (rank === "prefect") ap = 4;
   if (rank === "warlord") ap = 5;
   if (rank === "governor") ap = 6;
+  if (rank === "national") ap = 7;
   ap += Math.min(MAX_GENERALS, playerGenerals(state).length);
   ap += DIFFICULTY[state.difficulty].apBonus;
-  return Math.min(9, ap);
+  if (ensureCampaign(state).nationalLeader) ap += 1;
+  return Math.min(10, ap);
 }
 
 export function relationKey(a, b) {
@@ -397,6 +401,7 @@ export function createNewGame(content, opts = {}) {
     city: r.city || r.label,
     stateCode: r.state || r.stateCode || null,
     unlockWeek: r.unlockWeek || 0,
+    unlockPhase: r.unlockPhase || 0,
     plate: r.plate || "below",
     prefect: null,
     intel: 0,
@@ -507,6 +512,8 @@ export function createNewGame(content, opts = {}) {
     coast: content.regions.coast,
     mainland: content.regions.mainland || null,
     stateTheaters: content.regions.states || [],
+    campaignSpec: content.regions.campaign || {},
+    campaign: initCampaign(content.regions.campaign || {}),
     contentMeta: {
       rosterCap: content.officers.meta.rosterCap,
       customOfficerSlots: content.officers.meta.customOfficerSlots,
@@ -561,7 +568,9 @@ export function deserialize(raw) {
     if (!r.city) r.city = r.label;
     if (r.stateCode == null && r.state) r.stateCode = r.state;
     if (r.unlockWeek == null) r.unlockWeek = 0;
+    if (r.unlockPhase == null) r.unlockPhase = 0;
   });
+  ensureCampaign(state);
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
     if (!o.skills) o.skills = skillsForPersonality(o.personality);
@@ -905,8 +914,19 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: true,
-    hint: "Move to a neighboring city. Alaska → Juneau/Yukon → PNW → Rockies. No week lock.",
+    hint: "Move to a neighboring city. Alaska → Juneau/Yukon → PNW → Rockies → plains east. US roads open week 0.",
     needs: "neighbor",
+  });
+  const camp = ensureCampaign(state);
+  actions.push({
+    id: "war_council",
+    label: "War Council",
+    ap: 0,
+    group: "plot",
+    enabled: camp.phase >= 2,
+    hint: camp.phase >= 2
+      ? "Foreign theaters: Russia, Cuba, Nicaragua. A sponsor may add another country."
+      : `Liberate ${camp.restoreThreshold} US states (west bloc) to sit as national leader.`,
   });
   const attackOk =
     (hasBanner && ownedByPlayer(state, here) && here.garrison >= 8) ||
@@ -1106,6 +1126,11 @@ export function act(state, content, actionId, extra = {}) {
     return res;
   }
   if (actionId === "travel") return doTravel(state, extra.regionId);
+  if (actionId === "war_council") {
+    const camp = ensureCampaign(state);
+    if (camp.phase < 2) return { ok: false, message: "Liberate the west bloc first." };
+    return { ok: true, council: true, message: "War council. Far-shore desks are on the slate." };
+  }
   if (actionId === "attack") return doAttack(state, content, extra);
   return { ok: false, message: "Not implemented." };
 }
@@ -1125,6 +1150,7 @@ function foundNorthernFront(state, region, absorbRetinue) {
   p.fame += 12;
   state.fame += 12;
   pushLog(state, `Northern Front is declared in ${region.name}. You are warlord of a thin place.`, "alert");
+  tickCampaign(state);
 }
 
 function raiseBanner(state) {
@@ -1497,10 +1523,145 @@ function doPersuade(state, officerId, stats) {
   return { ok: true, message: msg };
 }
 
+export function initCampaign(spec = {}) {
+  return {
+    phase: 1,
+    nationalLeader: false,
+    title: null,
+    liberated: [],
+    restoreThreshold: spec.restoreThreshold || 8,
+    westBloc: spec.westBloc || ["AK", "WA", "OR", "ID", "MT", "WY", "UT", "CO"],
+    eastApproach: spec.eastApproach || ["NE", "KS", "MO"],
+    foreign: (spec.foreignTheaters || []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      short: t.short,
+      unlockPhase: t.unlockPhase || 3,
+      unlocked: false,
+      held: false,
+    })),
+    sponsor: spec.sponsor || {
+      id: "far_korea",
+      name: "Peninsula — Korea",
+      short: "Korea",
+      copy: "A far-shore desk offers crates to the occupation. That country is now a takeable front.",
+    },
+    sponsorAdded: false,
+    restoreWeek: null,
+  };
+}
+
+export function ensureCampaign(state) {
+  if (!state.campaign) state.campaign = initCampaign(state.campaignSpec || {});
+  return state.campaign;
+}
+
+export function theaterVisible(state, region) {
+  if (!region) return false;
+  const need = region.unlockPhase || 0;
+  if (!need) return true;
+  return (ensureCampaign(state).phase || 1) >= need;
+}
+
 export function travelUnlocked(state, region) {
   if (!region) return false;
   const gate = region.unlockWeek || 0;
-  return (state.week || 0) >= gate;
+  if ((state.week || 0) < gate) return false;
+  return theaterVisible(state, region);
+}
+
+export function stateControl(state) {
+  const p = playerOf(state);
+  const theaters = (state.stateTheaters || []).filter((st) => st.kind !== "foreign");
+  return theaters.map((st) => {
+    const code = st.short || String(st.id || "").toUpperCase();
+    const keys = st.keyCities || state.regions.filter((r) => r.stateCode === code).map((r) => r.id);
+    const held = keys.filter((id) => {
+      const r = regionOf(state, id);
+      return !!(r && p?.faction && r.owner === p.faction);
+    });
+    return {
+      id: code,
+      name: st.name,
+      kind: st.kind || "us",
+      held: held.length,
+      need: keys.length,
+      keys,
+      liberated: !!(p?.faction && keys.length && held.length === keys.length),
+    };
+  });
+}
+
+export function tickCampaign(state) {
+  const camp = ensureCampaign(state);
+  const p = playerOf(state);
+  const notes = [];
+  if (!p?.faction) return notes;
+  const ctrl = stateControl(state);
+  ctrl.forEach((row) => {
+    if (row.liberated && !camp.liberated.includes(row.id)) {
+      camp.liberated.push(row.id);
+      notes.push(`Liberated ${row.name} (${row.id}). Key cities are under your color.`);
+    }
+    if (!row.liberated && camp.liberated.includes(row.id)) {
+      camp.liberated = camp.liberated.filter((id) => id !== row.id);
+      notes.push(`${row.name} slips — a key city changed hands.`);
+    }
+  });
+  const usLib = ctrl.filter((r) => r.kind === "us" && camp.liberated.includes(r.id)).length;
+  if (!camp.nationalLeader && usLib >= (camp.restoreThreshold || 8)) {
+    camp.nationalLeader = true;
+    camp.phase = Math.max(camp.phase, 2);
+    camp.title = "National leader";
+    camp.restoreWeek = state.week;
+    p.title = "National Leader";
+    state.gold += 24;
+    state.food += 16;
+    notes.push("West bloc is enough. You are named national leader of the restored United States. A foreign war council sits.");
+    camp.foreign.forEach((f) => {
+      f.unlocked = true;
+    });
+    camp.phase = 3;
+    notes.push("Phase 3: Far-shore desks (Russia, Cuba, Nicaragua) are on the slate.");
+  }
+  camp.foreign.forEach((f) => {
+    const node = regionOf(state, f.id);
+    if (node && p.faction && node.owner === p.faction) f.held = true;
+  });
+  if (camp.sponsorAdded) {
+    const k = regionOf(state, camp.sponsor.id);
+    const row = camp.foreign.find((f) => f.id === camp.sponsor.id);
+    if (k && p.faction && k.owner === p.faction && row) row.held = true;
+  }
+  notes.forEach((n) => pushLog(state, n, "alert"));
+  return notes;
+}
+
+export function fireSponsor(state) {
+  const camp = ensureCampaign(state);
+  if (camp.sponsorAdded || camp.phase < 2) return null;
+  camp.sponsorAdded = true;
+  camp.phase = 4;
+  const spec = camp.sponsor;
+  if (!camp.foreign.some((f) => f.id === spec.id)) {
+    camp.foreign.push({
+      id: spec.id,
+      name: spec.name,
+      short: spec.short,
+      unlockPhase: 4,
+      unlocked: true,
+      held: false,
+    });
+  } else {
+    camp.foreign.forEach((f) => {
+      if (f.id === spec.id) f.unlocked = true;
+    });
+  }
+  const node = regionOf(state, spec.id);
+  if (node) node.unlockPhase = 4;
+  const line = spec.copy || "A sponsor intervenes. A new country is now a takeable front.";
+  pushLog(state, line, "alert");
+  return line;
 }
 
 export function canTravelTo(state, from, regionId) {
@@ -1508,6 +1669,9 @@ export function canTravelTo(state, from, regionId) {
   const dest = regionOf(state, regionId);
   if (!dest) return { ok: false, message: "Unknown city." };
   if (!travelUnlocked(state, dest)) {
+    if ((dest.unlockPhase || 0) > (ensureCampaign(state).phase || 1)) {
+      return { ok: false, message: `${dest.short} is a later foreign front.` };
+    }
     return { ok: false, message: `${dest.short} opens week ${dest.unlockWeek}.` };
   }
   return { ok: true };
@@ -1737,6 +1901,7 @@ function resolveBattle(state, battle) {
         o.region = pickFallbackRegion(state, old, dest.id);
       });
     pushLog(state, `Taken: ${dest.name}. Remaining levy ${dest.garrison}.`, "war");
+    tickCampaign(state);
     checkEnding(state);
   } else {
     const survivors = Math.floor(atkLeft * 0.7);
@@ -1760,11 +1925,14 @@ function pickFallbackRegion(state, factionId, lostId) {
 function checkEnding(state) {
   const p = playerOf(state);
   if (!p.faction) return;
-  const held = regionsOfFaction(state, p.faction).length;
-  const total = state.regions.length;
-  if (held >= total) {
+  const camp = ensureCampaign(state);
+  const us = state.regions.filter((r) => !r.unlockPhase);
+  const usHeld = us.filter((r) => r.owner === p.faction).length;
+  const foreignOpen = state.regions.filter((r) => r.unlockPhase && theaterVisible(state, r));
+  const foreignHeld = foreignOpen.filter((r) => r.owner === p.faction).length;
+  if (camp.phase >= 3 && foreignOpen.length && foreignHeld >= foreignOpen.length && usHeld >= us.length) {
     state.gameOver = "win";
-    state.ending = "Alaska through the Rockies is under one color. The rest of the continent still burns, but this map is done.";
+    state.ending = "The restored United States holds the far-shore desks. The occupation's sponsors have no map left.";
     pushLog(state, state.ending, "alert");
   }
 }
@@ -1885,7 +2053,7 @@ function officerActAI(state, content, off) {
   if (choice === "attack" && region && fac) {
     const targets = region.neighbors
       .map((id) => regionOf(state, id))
-      .filter((r) => r && r.owner !== fac.id);
+      .filter((r) => r && r.owner !== fac.id && travelUnlocked(state, r));
     const grace = DIFFICULTY[state.difficulty].grace;
     const filtered = targets.filter((r) => {
       if (p.faction && r.owner === p.faction && regionsOfFaction(state, p.faction).length <= 1 && state.week < grace) return false;
@@ -1908,6 +2076,7 @@ function officerActAI(state, content, off) {
           t.owner = fac.id;
           t.garrison = Math.max(8, Math.floor(commit * 0.6));
           region.garrison += Math.floor(commit * 0.2);
+          tickCampaign(state);
           return {
             personality: off.personality,
             text: `${off.name} [${off.personality}] takes ${t.short} from ${old ? factionOf(state, old)?.short : "no one"} (war).`,
@@ -2008,6 +2177,16 @@ function randomEvent(state) {
     const h = legendBoard(state).find((x) => x.hunt >= 1 && !x.revealed);
     return h ? `Talk names ${h.short}. Seek Legend when you can travel.` : null;
   }
+  const camp = ensureCampaign(state);
+  if (
+    !camp.sponsorAdded &&
+    camp.phase >= 2 &&
+    camp.restoreWeek != null &&
+    state.week >= camp.restoreWeek + 1 &&
+    roll < 48
+  ) {
+    return fireSponsor(state);
+  }
   return null;
 }
 
@@ -2026,6 +2205,7 @@ export function weekTease(state) {
   if (livingOfficers(state).some((o) => o.wound && (o.id === p.id || o.faction === p.faction))) bits.push("a wound fading");
   const here = regionOf(state, p.region);
   if (here && (here.stateCode === "AK" || here.stateCode === "YT")) bits.push("south-pass roads into Washington and Colorado");
+  if (here && here.stateCode === "CO") bits.push("plains roads east toward Nebraska and the river gate");
   if (!bits.length) bits.push("neighbors moving");
   bits.push("a fresh AP pool");
   return bits.slice(0, 3).join(" · ");
@@ -2083,6 +2263,7 @@ export function endWeek(state, content) {
     if (c.kind !== "season") pushLog(state, c.text, "week");
   });
   pushLog(state, `Calendar: week ${state.week}, ${state._season.name} ${calendarYear(state.week)}.`, "week");
+  tickCampaign(state).forEach((n) => report.push(n));
   checkEnding(state);
   return { ok: true, message: `Week ${state.week} begins.`, report, weekEnd: true, chronicle };
 }

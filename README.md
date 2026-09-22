@@ -60,14 +60,16 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
 | `data/factions.json` | ~40 original groups. **17** are on the current board (Alaska six + Yukon/Bering + eight western banners); the rest stay off-map. |
-| `data/regions.json` | **28 cities** in **9 states/territories** (AK, YT, WA, OR, ID, MT, WY, UT, CO). Always visible; roads walkable week 0. |
+| `data/regions.json` | **12 states/territories** on the mid-step (11 US + Yukon). **33** US/Yukon cities plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
 | `data/tech.json` | Slow 1985–89 salvage unlocks (M16A2, Jeeps, M113s, Hueys; calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.
 
-v0.1 ships **148 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, Jonah Stave, plus Front Range officers Vera Range and Ivy Front. Custom officers still cap at **10**.
+v0.1 ships **153 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, Jonah Stave, plus Front Range officers Vera Range and Ivy Front. Custom officers still cap at **10**.
 
-**Map unlock:** every city is painted from week 0. Travel is neighbor-roads only — no late-week gate. South corridor: Anchorage → Juneau → Seattle (Inside Passage) and Fairbanks → Yukon → Missoula (ALCAN). Colorado is Denver / Colorado Springs / Grand Junction, reached via Salt Lake or Cheyenne. Demo: `/?demo=states` or `/?demo=map`.
+**Liberate the States:** a state is free when you hold its **key cities**. **8 US states** (west bloc AK–CO) names you **national leader** (title, extra AP, war council). Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua — unlock as thin nodes. A late **sponsor intervene** event can add Korea as a takeable front.
+
+**Map unlock:** every US/Yukon city is painted from week 0. Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`.
 
 You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (13 templates, including a **Porch challenge** yard duel) sit on a weekly board — Military → Side Mission, or the Missions dock. Plot/Military → **Challenge** calls out an officer in the same city. Duels last ~**99 seconds** if both stay up (11 exchanges × 9s): Strike / Guard / named Special with a green timing window. Eight arenas (porch, roadhouse, foothills, airstrip, ice ford, gas lot, pine ridge, radio tower), outfit kits, and fighting styles (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals). Underdog (much lower WAR) gets a wider window. Original IP — not a licensed fighting game.
 

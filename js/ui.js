@@ -52,6 +52,9 @@ import {
   duelCmd,
   challengeCandidates,
   weekTease,
+  stateControl,
+  ensureCampaign,
+  theaterVisible,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 
@@ -376,6 +379,7 @@ function bindChrome() {
     wireAfterRender();
   };
   $("btn-factions").onclick = () => showModal(factionsHtml());
+  $("btn-states").onclick = () => showModal(campaignHtml());
   $("btn-missions").onclick = () => {
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
@@ -688,7 +692,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Alaska through Colorado. Click a city. Gold roads are walkable week 0 — Juneau↔Seattle and Yukon↔Missoula open the lower forty-eight (Military → Travel).</li>
+      <li><strong>Theater:</strong> Alaska through the plains. Liberate a state by holding its key cities. 8 US states (west bloc) names you national leader and opens the foreign war council (Russia, Cuba, Nicaragua). A late sponsor can add Korea.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -793,6 +797,31 @@ function missionsHtml() {
   return `<h2>Side missions (${jobs.length} open)</h2>
     <p class="muted">1 AP here, or a general's Side mission at End Week.</p>
     ${empty}${rows}${loot}
+    <button type="button" data-close>Close</button>`;
+}
+
+function campaignHtml() {
+  if (!state) return `<p>No game.</p>`;
+  const camp = ensureCampaign(state);
+  const rows = stateControl(state)
+    .map((s) => {
+      const mark = s.liberated ? "LIB" : `${s.held}/${s.need}`;
+      return `<span class="pill"><span>${esc(s.id)}</span><strong>${mark}</strong></span>`;
+    })
+    .join("");
+  const foreign = (camp.foreign || [])
+    .map((f) => {
+      const lock = f.unlocked ? (f.held ? "held" : "open") : `phase ${f.unlockPhase}`;
+      return `<p>${esc(f.name)} — ${lock}</p>`;
+    })
+    .join("");
+  return `
+    <h2>Liberate the States</h2>
+    <p class="muted">Phase ${camp.phase}${camp.nationalLeader ? " · National leader" : ""}. Hold every key city in a state to liberate it. Threshold: ${camp.restoreThreshold} US states (west bloc AK–CO) to restore the country.</p>
+    <div class="city-grid">${rows}</div>
+    <h2>Foreign war council</h2>
+    <p class="muted">After Phase 2 the far-shore desks unlock. A sponsor may add another country as a takeable front.</p>
+    ${foreign || "<p class='muted'>No foreign desks yet.</p>"}
     <button type="button" data-close>Close</button>`;
 }
 
@@ -918,6 +947,11 @@ function run(id, extra) {
     hideModal({ flush: false });
     maybeAdvanceCoach(id);
     openDuel();
+    return;
+  }
+  if (res.council) {
+    showModal(campaignHtml());
+    render();
     return;
   }
   if (id === "travel" && extra?.regionId) pulseTravel(fromId, extra.regionId);
@@ -1111,6 +1145,7 @@ function cityHtml() {
       </div>
       ${plus ? `<p class="plus">+ ${esc(plus)}</p>` : ""}
       ${minus ? `<p class="minus">− ${esc(minus)}</p>` : ""}
+      ${r.stateCode ? `<p class="plus">${esc(stateControl(state).find((s) => s.id === r.stateCode)?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode} still occupied — hold key cities`)}</p>` : ""}
       ${legendBoard(state)
         .filter((h) => h.regionId === r.id)
         .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
@@ -1523,7 +1558,7 @@ function regionAt(mx, my, canvas) {
   const rect = canvas.getBoundingClientRect();
   const x = ((mx - rect.left) / rect.width) * 1000;
   const y = ((my - rect.top) / rect.height) * 620;
-  return state.regions.find((r) => hitPoly(r.polygon, x, y));
+  return state.regions.find((r) => theaterVisible(state, r) && hitPoly(r.polygon, x, y));
 }
 
 function hitPoly(poly, x, y) {
@@ -1566,7 +1601,9 @@ function renderMapCaption() {
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const you = regionOf(state, playerOf(state).region);
   const st = r?.stateCode ? ` · ${r.stateCode}` : "";
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.short || "?"}${st} selected · you are in ${you?.short || "?"} · AK→YT→WA→CO roads open week 0`;
+  const camp = ensureCampaign(state);
+  const lib = (camp.liberated || []).length;
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.short || "?"}${st} selected · you in ${you?.short || "?"} · liberated ${lib}/${camp.restoreThreshold} · phase ${camp.phase}`;
 }
 
 function cityXY(r) {
@@ -1700,33 +1737,62 @@ function drawCityMark(ctx, r, selected) {
   });
 }
 
+const STATE_FILL = {
+  ak: "#4a7080",
+  yt: "#6a8a50",
+  wa: "#2f8a58",
+  or: "#4a9a40",
+  id: "#6a8a38",
+  mt: "#8a9a58",
+  wy: "#b89440",
+  ut: "#b07a38",
+  co: "#d49838",
+  ne: "#c8b060",
+  ks: "#b8a050",
+  mo: "#9a8850",
+};
+
 function drawStateLabels(ctx) {
   const list = state.stateTheaters || [];
-  ctx.font = PX_FONT;
+  ctx.font = "16px 'Press Start 2P', 'Courier New', monospace";
   list.forEach((st) => {
     if (!st.label) return;
     const [x, y] = st.label;
     const text = st.short || st.id.toUpperCase();
     const w = ctx.measureText(text).width;
-    const px = Math.round(x - w / 2 - 4);
-    const py = Math.round(y - 8);
+    const px = Math.round(x - w / 2 - 6);
+    const py = Math.round(y - 10);
     ctx.fillStyle = "#000018";
-    ctx.fillRect(px, py, w + 8, 14);
-    ctx.fillStyle = st.id === "co" ? "#f8d800" : "#c8d0d8";
-    ctx.fillText(text, px + 4, py + 11);
+    ctx.fillRect(px, py, w + 12, 22);
+    const liberated = (ensureCampaign(state).liberated || []).includes(st.short || st.id.toUpperCase());
+    ctx.fillStyle = liberated ? "#f8d800" : st.id === "co" ? "#f8d800" : "#f0e8c8";
+    ctx.fillText(text, px + 6, py + 17);
   });
+  ctx.font = PX_FONT;
 }
 
 function drawCityPlate(ctx, r, selected) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
   const p = playerOf(state);
+  const here = p.region === r.id;
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? String(r.garrison) : "?";
   ctx.font = PX_FONT;
+  if (!selected && !here) {
+    const nameW = ctx.measureText(r.short).width;
+    let tx = Math.round(x - nameW / 2);
+    let ty = r.plate === "above" ? Math.round(y - 10) : Math.round(y + 18);
+    tx = Math.max(2, Math.min(998 - nameW, tx));
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(tx - 2, ty - 9, nameW + 4, 12);
+    ctx.fillStyle = fac ? fac.color : "#f8d800";
+    ctx.fillText(r.short, tx, ty);
+    return;
+  }
   const nameW = ctx.measureText(r.short).width;
   const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(64, Math.ceil((nameW + garrW + 20) / 4) * 4);
+  const pw = Math.max(72, Math.ceil((nameW + garrW + 20) / 4) * 4);
   const ph = 16;
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 36) : Math.round(y + 16);
@@ -1790,7 +1856,7 @@ function drawMap() {
       i ? o.lineTo(x, y) : o.moveTo(x, y);
     });
     o.closePath();
-    o.fillStyle = dither(o, land[0], land[1]);
+    o.fillStyle = dither(o, "#3a5030", "#5a7040");
     o.fill();
   }
   (state.stateTheaters || []).forEach((st) => {
@@ -1801,12 +1867,14 @@ function drawMap() {
       i ? o.lineTo(x, y) : o.moveTo(x, y);
     });
     o.closePath();
-    o.globalAlpha = 0.22;
-    o.fillStyle = st.id === "co" ? "#8a6840" : st.id === "wa" || st.id === "or" ? "#3a6848" : "#486050";
+    o.fillStyle = STATE_FILL[st.id] || "#6a8a40";
     o.fill();
-    o.globalAlpha = 1;
+    o.strokeStyle = st.id === "co" ? "#f8d800" : "#203028";
+    o.lineWidth = 1;
+    o.stroke();
   });
-  state.regions.forEach((r) => {
+  const painted = state.regions.filter((r) => theaterVisible(state, r));
+  painted.forEach((r) => {
     const fac = r.owner ? factionOf(state, r.owner) : null;
     o.beginPath();
     r.polygon.forEach((p, i) => {
@@ -1820,11 +1888,11 @@ function drawMap() {
     o.strokeStyle = r.id === selectedRegion ? "#f8d800" : r.id === hoverRegion ? "#f8f8f8" : "#203040";
     o.stroke();
   });
-  o.globalAlpha = 0.14;
+  o.globalAlpha = 0.05;
   o.fillStyle = pal.overlay || "#88a040";
   o.fillRect(0, 0, LOW_W, LOW_H);
   o.globalAlpha = 1;
-  mapRoads(state.regions).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
+  mapRoads(painted).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;
@@ -1834,14 +1902,14 @@ function drawMap() {
     const [x1, y1] = lowPt(mapFx.b);
     drawTravelConvoy(o, [x0, y0], [x1, y1], t, now, 2);
   }
-  state.regions.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
+  painted.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
   ctx.imageSmoothingEnabled = false;
   drawStateLabels(ctx);
-  state.regions.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
 }
 
 function ensureMapPulse() {

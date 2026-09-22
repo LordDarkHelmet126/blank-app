@@ -132,6 +132,11 @@ const REGION_ARENA = {
   grand_junction: "foothills",
   denver: "gaslot",
   colorado_springs: "airstrip",
+  omaha: "gaslot",
+  lincoln: "porch",
+  topeka: "porch",
+  wichita: "roadhouse",
+  st_louis: "gaslot",
 };
 
 export function styleOf(id) {

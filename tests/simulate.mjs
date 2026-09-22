@@ -30,6 +30,10 @@ import {
   challengeCandidates,
   actingStats,
   weekTease,
+  stateControl,
+  tickCampaign,
+  fireSponsor,
+  travelUnlocked,
 } from "../js/engine.js";
 import {
   createDuel,
@@ -101,15 +105,19 @@ assert(
 const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
 const cities = content.regions.regions;
-assert(cities.length >= 26 && cities.length <= 36, `Need Alaska + PNW/Mountain West city clusters, got ${cities.length}`);
+assert(cities.length >= 32 && cities.length <= 42, `Need Alaska + west + east-approach + foreign stubs, got ${cities.length}`);
 const stateCodes = [...new Set(cities.map((r) => r.state))].sort();
-assert(["AK", "CO", "ID", "MT", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
+assert(["AK", "CO", "ID", "KS", "MO", "MT", "NE", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
 assert(cities.filter((r) => r.state === "CO").map((r) => r.id).sort().join() === "colorado_springs,denver,grand_junction", "Colorado city cluster");
-assert(cities.every((r) => (r.unlockWeek || 0) === 0), "no week lock on the expanded theater");
+assert(cities.every((r) => (r.unlockWeek || 0) === 0), "no week lock on the US theater");
 assert(cities.find((r) => r.id === "juneau").neighbors.includes("seattle"), "Juneau ferry into Washington");
 assert(cities.find((r) => r.id === "yukon_road").neighbors.includes("missoula"), "ALCAN into Montana");
+assert(cities.find((r) => r.id === "denver").neighbors.includes("omaha"), "Colorado opens the plains east");
+assert(cities.find((r) => r.id === "st_louis"), "east-approach St. Louis");
 assert(content.regions.mainland?.length >= 6, "lower-48 landmass");
-assert((content.regions.states || []).some((s) => s.id === "co"), "Colorado theater tint");
+assert((content.regions.states || []).filter((s) => s.kind === "us").length === 11, "11 US states on this mid-step");
+assert(content.regions.campaign?.restoreThreshold === 8, "Phase 2 at 8 liberated US states");
+assert(["far_russia", "far_cuba", "far_nicaragua", "far_korea"].every((id) => cities.some((r) => r.id === id)), "foreign theater stubs");
 const fairbanks = content.regions.regions.find((r) => r.id === "fairbanks");
 const nome = content.regions.regions.find((r) => r.id === "nome");
 const yukon = content.regions.regions.find((r) => r.id === "yukon_road");
@@ -299,7 +307,44 @@ assert(regionOf(westHop, "denver").stateCode === "CO", "Denver tagged Colorado")
 assert(visibleOfficers(westHop).some((o) => o.id === "front" && o.region === "denver"), "Campus dean in Denver");
 assert(visibleOfficers(westHop).some((o) => o.id === "range" && o.region === "colorado_springs"), "Airlift major in Springs");
 assert(visibleOfficers(westHop).some((o) => o.id === "quay" && o.faction === "red_wharf"), "Wharf clerk in Seattle");
+playerOf(westHop).region = "denver";
+westHop.ap = 2;
+res = act(westHop, content, "travel", { regionId: "omaha" });
+assert(res.ok && playerOf(westHop).region === "omaha", `travel Denver→Omaha: ${res.message}`);
+playerOf(westHop).region = "wichita";
+westHop.ap = 2;
+res = act(westHop, content, "travel", { regionId: "st_louis" });
+assert(res.ok && playerOf(westHop).region === "st_louis", `travel Wichita→St. Louis: ${res.message}`);
+playerOf(westHop).region = "nome";
+westHop.ap = 2;
+res = act(westHop, content, "travel", { regionId: "bering_strait" });
+assert(res.ok, "still walk Bering");
+res = act(westHop, content, "travel", { regionId: "far_russia" });
+assert(!res.ok, "Russia desk locked until Phase 3");
+assert(!travelUnlocked(westHop, regionOf(westHop, "far_korea")), "Korea locked until sponsor");
 console.log("ok Alaska→Colorado corridor");
+
+const lib = createNewGame(content, { seed: 21, difficulty: "easy", name: "Scout", background: "scout" });
+act(lib, content, "raise_banner");
+assert(stateControl(lib).every((s) => !s.liberated), "no state liberated from Bethel alone");
+["denver", "colorado_springs"].forEach((id) => {
+  regionOf(lib, id).owner = "northern_front";
+});
+tickCampaign(lib);
+assert(lib.campaign.liberated.includes("CO"), "Colorado liberated when key cities held");
+assert(!lib.campaign.nationalLeader, "one state is not enough for Phase 2");
+const westKeys = ["anchorage", "fairbanks", "juneau", "seattle", "spokane", "portland", "bend", "boise", "missoula", "cheyenne", "salt_lake", "denver", "colorado_springs"];
+westKeys.forEach((id) => {
+  regionOf(lib, id).owner = "northern_front";
+});
+tickCampaign(lib);
+assert(lib.campaign.nationalLeader && lib.campaign.phase >= 2, "8 west-bloc states name a national leader");
+assert(lib.campaign.phase >= 3, "Phase 3 foreign desks unlock with the council");
+assert(travelUnlocked(lib, regionOf(lib, "far_russia")), "Russia walkable after restore");
+const sponsorLine = fireSponsor(lib);
+assert(sponsorLine && lib.campaign.phase === 4 && lib.campaign.sponsorAdded, "sponsor adds Korea front");
+assert(travelUnlocked(lib, regionOf(lib, "far_korea")), "Korea walkable after sponsor");
+console.log("ok campaign phases 1–4");
 
 const fresh = createNewGame(content, { seed: 1, difficulty: "easy", name: "Casey Flint", background: "scout" });
 const week0 = listActions(fresh);
@@ -569,6 +614,8 @@ assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
 assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
 assert(/selectedRegion = "denver"/.test(uiSrc), "states demo opens on Denver");
+assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States dock + liberation board");
+assert(/id: "war_council"/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "war council action");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
 const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" }));
 assert(typeof tease === "string" && tease.length > 4, `weekTease: ${tease}`);

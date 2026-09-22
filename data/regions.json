@@ -3,13 +3,33 @@
     "theater": "west",
     "version": "0.2-states",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Alaska eight plus Yukon/Bering (3) plus contiguous US city clusters: WA, OR, ID, MT, WY, UT, CO. Always visible. Roads walkable from week 0 — Juneau–Seattle ferry grade and Yukon–Missoula ALCAN. No week lock.",
-    "unlock": "All 28 cities are painted from week 0. Travel uses neighbor roads only. South corridor: Anchorage→Juneau→Seattle (Inside Passage) and Fairbanks→Yukon→Missoula (ALCAN). Colorado is reached via Salt Lake / Grand Junction or Cheyenne.",
+    "notes": "Liberate-the-States mid-step: Alaska → Yukon → PNW / Mountain West → plains east approach (NE, KS, MO). Foreign theaters (Russia, Cuba, Nicaragua) are thin nodes until Phase 2. Korea is a Phase 4 sponsor front.",
+    "unlock": "All US/Yukon cities are painted and walkable from week 0. Foreign nodes unlock at campaign phase 3 (after national leader). Korea appears if a sponsor intervenes.",
     "counts": {
-      "states": 9,
-      "cities": 28,
+      "states": 12,
+      "usStates": 11,
+      "territories": 1,
+      "cities": 37,
       "alaskaPlusSpurs": 11,
-      "lower48": 17
+      "lower48": 22,
+      "foreign": 4
+    }
+  },
+  "campaign": {
+    "westBloc": ["AK", "WA", "OR", "ID", "MT", "WY", "UT", "CO"],
+    "eastApproach": ["NE", "KS", "MO"],
+    "restoreThreshold": 8,
+    "restoreNeed": "westBloc",
+    "foreignTheaters": [
+      { "id": "far_russia", "name": "Far Shore — Russia", "short": "Russia", "unlockPhase": 3 },
+      { "id": "far_cuba", "name": "Caribbean — Cuba", "short": "Cuba", "unlockPhase": 3 },
+      { "id": "far_nicaragua", "name": "Isthmus — Nicaragua", "short": "Nicaragua", "unlockPhase": 3 }
+    ],
+    "sponsor": {
+      "id": "far_korea",
+      "name": "Peninsula — Korea",
+      "short": "Korea",
+      "copy": "A far-shore desk offers crates to the occupation. That country is now a takeable front."
     }
   },
   "coast": [
@@ -18,8 +38,8 @@
     [142, 248], [86, 228], [42, 178], [20, 128]
   ],
   "mainland": [
-    [36, 248], [210, 242], [480, 236], [760, 246], [958, 278],
-    [988, 398], [972, 558], [820, 606], [500, 612], [198, 592],
+    [36, 248], [210, 242], [480, 236], [760, 246], [990, 248],
+    [994, 400], [990, 610], [820, 612], [500, 612], [198, 592],
     [46, 518], [26, 358]
   ],
   "states": [
@@ -27,18 +47,26 @@
       "id": "ak",
       "name": "Alaska",
       "short": "AK",
-      "label": [214, 96]
+      "kind": "us",
+      "keyCities": ["anchorage", "fairbanks", "juneau"],
+      "label": [168, 54],
+      "polygon": [[18, 16], [400, 10], [430, 210], [210, 246], [42, 178]]
     },
     {
       "id": "yt",
       "name": "Yukon",
       "short": "YT",
-      "label": [430, 48]
+      "kind": "territory",
+      "keyCities": ["yukon_road"],
+      "label": [470, 22],
+      "polygon": [[360, 10], [530, 8], [530, 140], [360, 148]]
     },
     {
       "id": "wa",
       "name": "Washington",
       "short": "WA",
+      "kind": "us",
+      "keyCities": ["seattle", "spokane"],
       "label": [168, 238],
       "polygon": [[42, 248], [328, 244], [336, 348], [48, 358]]
     },
@@ -46,6 +74,8 @@
       "id": "or",
       "name": "Oregon",
       "short": "OR",
+      "kind": "us",
+      "keyCities": ["portland", "bend"],
       "label": [148, 500],
       "polygon": [[44, 358], [288, 348], [298, 508], [42, 518]]
     },
@@ -53,6 +83,8 @@
       "id": "id",
       "name": "Idaho",
       "short": "ID",
+      "kind": "us",
+      "keyCities": ["boise"],
       "label": [372, 330],
       "polygon": [[300, 248], [436, 244], [456, 470], [308, 478]]
     },
@@ -60,6 +92,8 @@
       "id": "mt",
       "name": "Montana",
       "short": "MT",
+      "kind": "us",
+      "keyCities": ["missoula"],
       "label": [548, 232],
       "polygon": [[438, 242], [658, 238], [668, 338], [448, 348]]
     },
@@ -67,13 +101,17 @@
       "id": "wy",
       "name": "Wyoming",
       "short": "WY",
+      "kind": "us",
+      "keyCities": ["cheyenne"],
       "label": [700, 298],
-      "polygon": [[540, 318], [858, 308], [868, 400], [548, 412]]
+      "polygon": [[540, 318], [820, 308], [828, 400], [548, 412]]
     },
     {
       "id": "ut",
       "name": "Utah",
       "short": "UT",
+      "kind": "us",
+      "keyCities": ["salt_lake"],
       "label": [298, 500],
       "polygon": [[308, 430], [516, 418], [530, 558], [318, 568]]
     },
@@ -81,8 +119,37 @@
       "id": "co",
       "name": "Colorado",
       "short": "CO",
-      "label": [788, 556],
-      "polygon": [[532, 380], [898, 368], [916, 588], [540, 598]]
+      "kind": "us",
+      "keyCities": ["denver", "colorado_springs"],
+      "label": [760, 568],
+      "polygon": [[532, 380], [820, 368], [828, 588], [540, 598]]
+    },
+    {
+      "id": "ne",
+      "name": "Nebraska",
+      "short": "NE",
+      "kind": "us",
+      "keyCities": ["omaha"],
+      "label": [960, 238],
+      "polygon": [[830, 248], [990, 248], [990, 376], [830, 376]]
+    },
+    {
+      "id": "ks",
+      "name": "Kansas",
+      "short": "KS",
+      "kind": "us",
+      "keyCities": ["topeka"],
+      "label": [960, 368],
+      "polygon": [[830, 376], [990, 376], [990, 506], [830, 506]]
+    },
+    {
+      "id": "mo",
+      "name": "Missouri",
+      "short": "MO",
+      "kind": "us",
+      "keyCities": ["st_louis"],
+      "label": [960, 590],
+      "polygon": [[830, 506], [990, 506], [990, 610], [830, 610]]
     }
   ],
   "regions": [
@@ -335,7 +402,7 @@
       "type": "ice",
       "plus": ["Ice-road trade", "Neutral scrip"],
       "minus": ["No army", "Icebound months"],
-      "neighbors": ["nome"],
+      "neighbors": ["nome", "far_russia"],
       "startOwner": "bering_pact",
       "garrison": 14,
       "economy": 28,
@@ -623,7 +690,7 @@
       "type": "rail",
       "plus": ["Track repair", "Shop tools"],
       "minus": ["Needs a line", "Strike-prone"],
-      "neighbors": ["billings", "jackson", "denver"],
+      "neighbors": ["billings", "jackson", "denver", "omaha"],
       "startOwner": "rail_brotherhood",
       "garrison": 34,
       "economy": 46,
@@ -719,7 +786,7 @@
       "type": "urban",
       "plus": ["Campus radios", "Young labor"],
       "minus": ["No garrison culture", "Argumentative"],
-      "neighbors": ["cheyenne", "grand_junction", "colorado_springs"],
+      "neighbors": ["cheyenne", "grand_junction", "colorado_springs", "omaha", "topeka"],
       "startOwner": "ember_campus",
       "garrison": 40,
       "economy": 68,
@@ -730,9 +797,9 @@
       "terrainBias": "urban",
       "plate": "above",
       "polygon": [
-        [690, 388], [818, 380], [832, 448], [700, 458]
+        [690, 388], [808, 380], [818, 448], [700, 458]
       ],
-      "label": [760, 418]
+      "label": [754, 418]
     },
     {
       "id": "colorado_springs",
@@ -743,7 +810,7 @@
       "type": "air",
       "plus": ["Gravel strips", "C-130 hulks"],
       "minus": ["Weather gated", "Fuel sink"],
-      "neighbors": ["denver", "grand_junction"],
+      "neighbors": ["denver", "grand_junction", "wichita"],
       "startOwner": "pale_airlift",
       "garrison": 64,
       "economy": 52,
@@ -754,9 +821,229 @@
       "terrainBias": "hills",
       "plate": "below",
       "polygon": [
-        [710, 468], [838, 460], [852, 528], [720, 538]
+        [710, 468], [818, 460], [828, 528], [720, 538]
       ],
-      "label": [780, 498]
+      "label": [768, 498]
+    },
+    {
+      "id": "omaha",
+      "name": "Omaha Bluffs",
+      "short": "Omaha",
+      "state": "NE",
+      "unlockWeek": 0,
+      "type": "rail",
+      "plus": ["Yard east", "River lift"],
+      "minus": ["Open plains", "Long supply"],
+      "neighbors": ["cheyenne", "denver", "lincoln"],
+      "startOwner": "rail_brotherhood",
+      "garrison": 32,
+      "economy": 50,
+      "food": 38,
+      "walls": 20,
+      "order": 48,
+      "population": 314000,
+      "terrainBias": "plains",
+      "plate": "above",
+      "polygon": [
+        [840, 258], [930, 254], [940, 308], [848, 314]
+      ],
+      "label": [888, 284]
+    },
+    {
+      "id": "lincoln",
+      "name": "Lincoln Capitol",
+      "short": "Lincoln",
+      "state": "NE",
+      "unlockWeek": 0,
+      "type": "capital",
+      "plus": ["Hall lists", "Grain stores"],
+      "minus": ["Thin levy", "Open ground"],
+      "neighbors": ["omaha", "topeka"],
+      "startOwner": "idle_hour",
+      "garrison": 20,
+      "economy": 36,
+      "food": 40,
+      "walls": 14,
+      "order": 56,
+      "population": 172000,
+      "terrainBias": "plains",
+      "plate": "below",
+      "polygon": [
+        [840, 318], [930, 314], [940, 368], [848, 374]
+      ],
+      "label": [888, 346]
+    },
+    {
+      "id": "topeka",
+      "name": "Topeka Hall",
+      "short": "Topeka",
+      "state": "KS",
+      "unlockWeek": 0,
+      "type": "capital",
+      "plus": ["Capitol minutes", "Grain road"],
+      "minus": ["No heavy kit", "Wind"],
+      "neighbors": ["lincoln", "wichita", "denver"],
+      "startOwner": "idle_hour",
+      "garrison": 22,
+      "economy": 38,
+      "food": 42,
+      "walls": 16,
+      "order": 54,
+      "population": 119000,
+      "terrainBias": "plains",
+      "plate": "above",
+      "polygon": [
+        [840, 388], [930, 382], [940, 436], [848, 444]
+      ],
+      "label": [888, 414]
+    },
+    {
+      "id": "wichita",
+      "name": "Wichita Yards",
+      "short": "Wichita",
+      "state": "KS",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": ["Shop tools", "Plains columns"],
+      "minus": ["Exposed", "Fuel thirsty"],
+      "neighbors": ["topeka", "colorado_springs", "st_louis"],
+      "startOwner": "copper_road",
+      "garrison": 34,
+      "economy": 46,
+      "food": 36,
+      "walls": 18,
+      "order": 46,
+      "population": 280000,
+      "terrainBias": "plains",
+      "plate": "below",
+      "polygon": [
+        [840, 448], [930, 442], [940, 496], [848, 504]
+      ],
+      "label": [888, 472]
+    },
+    {
+      "id": "st_louis",
+      "name": "St. Louis Arch",
+      "short": "St. Louis",
+      "state": "MO",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": ["River gate east", "Civil files"],
+      "minus": ["Occupation desk", "Far from the Front Range"],
+      "neighbors": ["wichita"],
+      "startOwner": "red_wharf",
+      "garrison": 48,
+      "economy": 62,
+      "food": 40,
+      "walls": 28,
+      "order": 34,
+      "population": 429000,
+      "terrainBias": "urban",
+      "plate": "below",
+      "polygon": [
+        [840, 518], [960, 512], [972, 568], [850, 576]
+      ],
+      "label": [904, 546]
+    },
+    {
+      "id": "far_russia",
+      "name": "Far Shore Desk",
+      "short": "Russia",
+      "state": "RU",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": ["Sponsor guns", "Ice charts"],
+      "minus": ["Across the strait", "Long lift"],
+      "neighbors": ["bering_strait", "far_korea"],
+      "startOwner": null,
+      "garrison": 80,
+      "economy": 40,
+      "food": 24,
+      "walls": 36,
+      "order": 50,
+      "population": 0,
+      "terrainBias": "ice",
+      "plate": "above",
+      "polygon": [
+        [4, 4], [72, 4], [72, 38], [4, 38]
+      ],
+      "label": [38, 22]
+    },
+    {
+      "id": "far_cuba",
+      "name": "Caribbean Desk",
+      "short": "Cuba",
+      "state": "CU",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": ["Island guns", "Warm-port talk"],
+      "minus": ["Sea gated", "No inland"],
+      "neighbors": ["far_nicaragua"],
+      "startOwner": null,
+      "garrison": 54,
+      "economy": 32,
+      "food": 28,
+      "walls": 24,
+      "order": 40,
+      "population": 0,
+      "terrainBias": "coast",
+      "plate": "below",
+      "polygon": [
+        [4, 568], [88, 568], [88, 612], [4, 612]
+      ],
+      "label": [46, 592]
+    },
+    {
+      "id": "far_nicaragua",
+      "name": "Isthmus Column",
+      "short": "Nicaragua",
+      "state": "NI",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": ["Jungle cover", "Cadre talk"],
+      "minus": ["No ports on this map", "Thin stores"],
+      "neighbors": ["far_cuba"],
+      "startOwner": null,
+      "garrison": 46,
+      "economy": 22,
+      "food": 26,
+      "walls": 16,
+      "order": 38,
+      "population": 0,
+      "terrainBias": "forest",
+      "plate": "above",
+      "polygon": [
+        [96, 568], [180, 568], [180, 612], [96, 612]
+      ],
+      "label": [138, 592]
+    },
+    {
+      "id": "far_korea",
+      "name": "Peninsula Desk",
+      "short": "Korea",
+      "state": "KR",
+      "unlockWeek": 0,
+      "unlockPhase": 4,
+      "type": "foreign",
+      "plus": ["Night crates", "Hard men"],
+      "minus": ["Poisoned gift", "Far lift"],
+      "neighbors": ["far_russia"],
+      "startOwner": null,
+      "garrison": 60,
+      "economy": 28,
+      "food": 20,
+      "walls": 28,
+      "order": 36,
+      "population": 0,
+      "terrainBias": "hills",
+      "plate": "below",
+      "polygon": [
+        [4, 200], [70, 200], [70, 236], [4, 236]
+      ],
+      "label": [36, 220]
     }
   ]
 }
