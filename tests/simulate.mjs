@@ -512,6 +512,7 @@ assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tile
 assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
 assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
 assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
+assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
 const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" }));
 assert(typeof tease === "string" && tease.length > 4, `weekTease: ${tease}`);

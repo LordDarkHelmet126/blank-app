@@ -182,8 +182,9 @@ export async function boot(loaded) {
     autoplayWeek(state, content);
     autoplayWeek(state, content);
     selectedRegion = playerOf(state).region;
-    hideModal();
+    hideModal({ flush: false });
     render();
+    showModal(weekReportHtml(state.weekReport || []), { kind: "week" });
     afterFonts();
     return;
   }
