@@ -10,15 +10,15 @@
   <body>
     <div id="boot">Loading Alaska theater…</div>
     <div id="app" hidden>
-      <header class="topbar">
-        <div class="brand">
+      <header class="status-bar">
+        <div class="cal-cluster">
           <div class="brand-mark">NF</div>
           <div>
             <h1>Northern Front</h1>
-            <p class="tag">Alaska theater · week <span id="week">0</span> · <span id="season">Winter 1985</span></p>
+            <p class="tag"><span id="season">Winter 1985</span> · WEEK <span id="week">0</span></p>
           </div>
         </div>
-        <div class="meters">
+        <div class="treasury">
           <div class="meter" data-tip="Action Points. Each command tile costs AP. When you are done, End Week."><span>AP</span><strong id="ap">0</strong></div>
           <div class="meter" data-tip="Gold. Commerce raises it. Upkeep and hires spend it."><span>Gold</span><strong id="gold">0</strong></div>
           <div class="meter" data-tip="Food. Cultivate raises it. Empty stores starve the levy."><span>Food</span><strong id="food">0</strong></div>
@@ -46,30 +46,33 @@
           <section class="card officer-plate" id="officer-plate"></section>
           <section class="card city-stats" id="city-stats"></section>
           <section class="card cmd-card">
-            <div class="panel-head">
+            <div class="chrome-head">
               <span class="panel-title">Command</span>
-              <span class="panel-why">Click a tile. Domestic = town. Plot = people. Military = march.</span>
+              <span class="panel-why">Domestic = hall. Plot = people. Military = roads.</span>
             </div>
             <div class="cmd-tabs" id="cmd-tabs"></div>
             <div id="cmd-actions" class="cmd-actions"></div>
           </section>
         </aside>
         <section class="map-wrap">
-          <p class="map-caption" id="map-caption">MAP — click a city to select · gold roads are walkable</p>
+          <header class="chrome-head">
+            <span class="panel-title">Theater</span>
+            <p class="map-caption" id="map-caption">MAP — click a city to select · gold roads are walkable</p>
+          </header>
           <canvas id="map" width="1000" height="620" aria-label="Alaska theater map"></canvas>
           <div class="map-legend" id="legend"></div>
         </section>
       </main>
 
+      <section class="court-strip" id="court-strip"></section>
+
       <section class="dock">
-        <div class="dock-head">
-          <div>
-            <h2>Field log</h2>
-            <p class="panel-why">What just happened. Newest line first.</p>
-          </div>
+        <div class="chrome-head dock-head">
+          <span class="panel-title">Chronicle</span>
+          <span class="panel-why">What the week wrote. Newest line first.</span>
           <button type="button" id="btn-officers">Officers</button>
           <button type="button" id="btn-missions">Missions</button>
-          <button type="button" id="btn-factions">Factions</button>
+          <button type="button" id="btn-factions">Banners</button>
         </div>
         <ol id="log" class="log"></ol>
       </section>

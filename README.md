@@ -87,6 +87,7 @@ Season tint only: `/?demo=season`.
 **Generals (5 slots + ADD empty states):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
+**Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
 
 ## Layout
 

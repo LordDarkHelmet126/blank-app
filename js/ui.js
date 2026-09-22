@@ -272,6 +272,24 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "layout") {
+    startSliceState();
+    ["hart", "cole", "nash"].forEach((id, i) => {
+      const o = state.officers.find((x) => x.id === id);
+      if (!o) return;
+      o.faction = "northern_front";
+      o.region = "bethel";
+      o.loyalty = 80;
+      o.isGeneral = true;
+      o.standingOrder = i === 0 ? "drill" : i === 1 ? "mission" : "commerce";
+    });
+    selectedRegion = "bethel";
+    commandCat = "domestic";
+    hideModal();
+    render();
+    afterFonts();
+    return;
+  }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
   afterFonts();
@@ -534,11 +552,11 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Map:</strong> click a city to select it. Gold roads are walkable (Military → Travel).</li>
-      <li><strong>Command:</strong> Domestic = town (Raise Banner, food, gold). Plot = people. Military = march.</li>
-      <li>Hover a tile for AP cost and why it is locked. Locked tiles are grey; live tiles lift on hover.</li>
-      <li>Hire up to 5 generals (You card slots). Extra hires join court; Plot → Appoint fills an empty slot. Custom officers: Officers → Create (cap 10), then Hire.</li>
-      <li>Side missions: Military → Side Mission or the Missions dock. Optional jobs cost 1 AP or a general's Side mission order. End Week refreshes the board.</li>
+      <li><strong>Theater:</strong> center map. Click a city. Gold roads are walkable (Military → Travel).</li>
+      <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
+      <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
+      <li><strong>Court:</strong> five general chairs under the map. Hire fills a chair; extras wait; Plot → Appoint. Standing orders run at End Week.</li>
+      <li>Side missions: Military → Side Mission or Chronicle → Missions. 1 AP or a general's Side mission order.</li>
       <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
       <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
@@ -784,6 +802,7 @@ export function render() {
   $("rank").textContent = rankLabel(rankOf(state, p));
   $("officer-plate").innerHTML = officerHtml();
   $("city-stats").innerHTML = cityHtml();
+  if ($("court-strip")) $("court-strip").innerHTML = courtHtml();
   renderActions();
   renderLog();
   renderLegend();
@@ -803,56 +822,77 @@ export function render() {
 
 const PORTRAIT_SRC = "art/portraits/portrait-commander.png";
 
+function loyBar(n) {
+  const v = Math.max(0, Math.min(100, Number(n) || 0));
+  const on = Math.round(v / 10);
+  const ticks = Array.from({ length: 10 }, (_, i) => `<i${i < on ? ' class="on"' : ""}></i>`).join("");
+  return `<span class="loy-row"><span>LOY ${v}</span><span class="loy-bar" aria-hidden="true">${ticks}</span></span>`;
+}
+
 function officerHtml() {
   const p = playerOf(state);
-  const gens = playerGenerals(state);
-  const court = playerCourt(state);
   const fac = p.faction ? factionOf(state, p.faction) : null;
   const here = regionOf(state, p.region);
+  const rank = rankLabel(rankOf(state, p));
+  return `
+    <div class="chrome-head">
+      <span class="panel-title">Ruler</span>
+      <span class="panel-why">Name, age, loyalty — who holds this chair.</span>
+    </div>
+    <div class="plate-body">
+      <div class="medallion">
+        <i class="tick tl"></i><i class="tick tr"></i><i class="tick bl"></i><i class="tick br"></i>
+        <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
+      </div>
+      <div class="officer-meta">
+        <h2>${esc(p.name)}</h2>
+        <p>${esc(p.title)} · ${esc(rank)} · ${fac ? esc(fac.short) : "FREE"}</p>
+        <p class="muted">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""} · ${esc(here?.short || "?")} · AP ${state.ap}/${apMax(state)}</p>
+        ${loyBar(p.loyalty)}
+        <div class="stat-row">
+          <span><b>WAR</b><strong>${p.war}</strong></span>
+          <span><b>INT</b><strong>${p.int}</strong></span>
+          <span><b>POL</b><strong>${p.pol}</strong></span>
+          <span><b>CHR</b><strong>${p.chr}</strong></span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function courtHtml() {
+  const p = playerOf(state);
+  const gens = playerGenerals(state);
   const wait = appointCandidates(state);
-  const slots = [];
+  const chairs = [];
   for (let i = 0; i < MAX_GENERALS; i++) {
     const g = gens[i];
     if (g) {
-      slots.push(`<label class="gen-row filled"><span>${i + 1}. ${esc(g.name)}</span>
-        <select data-order-gen="${g.id}">${ordersForOfficer(g)
-          .map(
-            (o) =>
-              `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
-          )
-          .join("")}</select></label>`);
+      chairs.push(`<div class="court-chair">
+        <span class="mini">${esc(g.portrait || portraitInitials(g.name))}</span>
+        <div class="who">
+          <strong>${esc(g.name)}</strong>
+          <small>AGE ${g.age || "?"} · LOY ${g.loyalty}</small>
+          <select data-order-gen="${g.id}">${ordersForOfficer(g)
+            .map(
+              (o) =>
+                `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
+            )
+            .join("")}</select>
+        </div>
+      </div>`);
     } else {
       let hint;
-      if (!p.faction) hint = "ADD — Domestic → Raise Banner, then Plot → Hire.";
-      else if (wait[i - gens.length] || wait[0]) hint = `ADD — Plot → Appoint (${esc((wait[i - gens.length] || wait[0]).name)} in court).`;
-      else hint = "ADD — Plot → Hire a free officer in this city, or Officers → Create (cap 10).";
-      slots.push(`<button type="button" class="gen-row empty" data-add-gen="${i}">${i + 1}. ${hint}</button>`);
+      if (!p.faction) hint = "Raise a banner, then Hire.";
+      else if (wait[0]) hint = `Appoint ${esc(wait[0].name)}.`;
+      else hint = "Hire here, or Create (cap 10).";
+      chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
+        <span class="mini empty-mini">+</span>
+        <div class="who"><strong>${i + 1}. ADD</strong><small>${hint}</small></div>
+      </button>`);
     }
   }
-  return `
-    <div class="panel-head">
-      <span class="panel-title">You</span>
-      <span class="panel-why">5 general slots. Hire fills them; extras wait in court.</span>
-    </div>
-    <div class="plate-body">
-    <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
-    <div class="officer-meta">
-      <h2>${esc(p.name)}</h2>
-      <p>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
-      <div class="plate-stats">
-        <span class="pill">AP ${state.ap}/${apMax(state)}</span>
-        <span class="pill">W${state.week}</span>
-        <span class="pill">${esc(state._season?.name || "")} ${calendarYear(state.week)}</span>
-        <span class="pill">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""}</span>
-        <span class="pill">${esc(here?.short || "?")}</span>
-        <span class="pill">GEN ${gens.length}/${MAX_GENERALS}</span>
-        <span class="pill">COURT ${court.length}</span>
-      </div>
-      <p class="muted">WAR ${p.war} INT ${p.int} POL ${p.pol} CHR ${p.chr}</p>
-      <div class="gen-orders">${slots.join("")}</div>
-    </div>
-    </div>
-  `;
+  return `<div class="chrome-head"><span class="panel-title">Court</span><span class="panel-why">Five chairs. Standing orders fire at End Week.</span></div>${chairs.join("")}`;
 }
 
 function cityHtml() {
@@ -861,22 +901,32 @@ function cityHtml() {
   const known = r.intel > 0 || (playerOf(state).faction && r.owner === playerOf(state).faction);
   const garr = known ? r.garrison : "???";
   const walls = known ? r.walls : "?";
+  const order = known ? r.order : "?";
+  const econ = known ? r.economy : "?";
+  const plus = (r.plus || []).join(" · ");
+  const minus = (r.minus || []).join(" · ");
   return `
-    <div class="panel-head">
-      <span class="panel-title">City</span>
-      <span class="panel-why">Click a map city to inspect it.</span>
+    <div class="chrome-head">
+      <span class="panel-title">City report</span>
+      <span class="panel-why">County seat under the glass.</span>
     </div>
-    <h2>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
-    <div class="city-grid">
-      <span class="pill"><span>GOLD</span><strong>${state.gold}</strong></span>
-      <span class="pill"><span>FOOD</span><strong>${state.food}</strong></span>
-      <span class="pill"><span>POP</span><strong>${r.population || "?"}</strong></span>
-      <span class="pill"><span>DEF</span><strong>${garr}/${walls}</strong></span>
+    <div class="city-body">
+      <h2>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
+      <div class="city-grid">
+        <span class="pill"><span>ECON</span><strong>${econ}</strong></span>
+        <span class="pill"><span>STORES</span><strong>${known ? r.food : "?"}</strong></span>
+        <span class="pill"><span>POP</span><strong>${r.population || "?"}</strong></span>
+        <span class="pill"><span>LEVY</span><strong>${garr}</strong></span>
+        <span class="pill"><span>WALLS</span><strong>${walls}</strong></span>
+        <span class="pill"><span>ORDER</span><strong>${order}</strong></span>
+      </div>
+      ${plus ? `<p class="plus">+ ${esc(plus)}</p>` : ""}
+      ${minus ? `<p class="minus">− ${esc(minus)}</p>` : ""}
+      ${legendBoard(state)
+        .filter((h) => h.regionId === r.id)
+        .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
+        .join("")}
     </div>
-    ${legendBoard(state)
-      .filter((h) => h.regionId === r.id)
-      .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
-      .join("")}
   `;
 }
 

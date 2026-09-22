@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — generals (5 slots), side missions (12 templates), roster jump (~131 AI officers).
+**Last checkpoint:** 2026-09-22 — ROTK7-style layout rhythm (ruler plate, city report, command verbs, court strip, chronicle).
 
 ## How to run
 
@@ -28,24 +28,24 @@ Travel vignette: `/?demo=slice&panel=travel`.
 **Generals (5 slots + ADD):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette:** `/?demo=missions&take=1`.
+**Layout (officer chrome):** `/?demo=layout`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- **5 general slots** on the You card with ADD empty states. Hire fills a slot; extras join court; Plot → Appoint promotes. Custom officers still cap 10 (Create → Hire).
-- **131 original AI officers** (was ~54). New named staff across sandbox factions, more free hires per city (especially Bethel), elites Brack / Lumen / Stave, hidden legends **Nils Silo** (Yukon Road) and **Cal Marsh** (Kenai) plus Ilya Karr.
-- **12 side-mission templates** (scout road, raid depot, escort convoy, rescue officer, sabotage, radio run, cache, ford watch, airstrip, claim survey, ice listen, ranch relay). Board refreshes on End Week. 1 AP or a general’s Side mission standing order. Event vignettes with Alaska + western Rockies copy. Missions dock + Military tile + NEXT-strip hints.
-- Hire / seek / alliance paths still work with the new names. Rescue missions can add a free officer to court.
-- Prior coach, chronicle, travel/battle sprites kept. Original IP (no Wolverines, no Koei names).
+- Officer-game chrome: status bar (calendar + treasury), **Ruler** medallion plate (name/age/loyalty/WAR INT POL CHR), **City report** (econ/stores/levy/walls/order + plus/minus), **Command** Domestic/Plot/Military as compact icon+label tiles, center **Theater** map with caption bar (not an overlay), **Court** strip of 5 general chairs, **Chronicle** dock.
+- Cultural presentation (original IP): officer-first identity, loyalty bar, court appointments, standing orders, city report, year/season on the calendar, banner list. 1980s resistance voice — no Koei names or assets.
+- Prior generals, missions, coach, chronicle, travel/battle sprites kept.
+- Demo: `/?demo=layout`
 
 ## Counts
 
-- General slots: **5**
+- General slots: **5** (court strip)
 - Mission templates: **12**
-- AI officers added this burst: **+77** (total **131**)
+- AI officers: **131**
 - Hidden legends: **3** (karr, silo, marsh)
-- Custom officer cap: **10** (unchanged)
+- Custom officer cap: **10**
 
 ## What’s next (small bursts)
 
