@@ -333,6 +333,8 @@ export async function boot(loaded) {
     hideModal();
     render();
     if (sealiftLook) {
+      const legend = $("legend");
+      if (legend) legend.hidden = true;
       pulseRoadChain([
         ["st_louis", "gulf_passage"],
         ["gulf_passage", "far_cuba"],
@@ -1854,8 +1856,8 @@ function laneKey(fromId, toId) {
 
 function laneKind(fromId, toId) {
   const key = laneKey(fromId, toId);
-  if (key === "nome|bering_strait" || key === "bering_strait|far_russia") return "ice";
-  if (key === "st_louis|gulf_passage" || key === "gulf_passage|far_cuba") return "sea";
+  if (key === laneKey("nome", "bering_strait") || key === laneKey("bering_strait", "far_russia")) return "ice";
+  if (key === laneKey("st_louis", "gulf_passage") || key === laneKey("gulf_passage", "far_cuba")) return "sea";
   return "";
 }
 
@@ -1865,14 +1867,14 @@ function seaLanePoints(fromId, toId) {
   const b = cityXY(regionOf(state, toId));
   const key = laneKey(fromId, toId);
   const at = (id) => cityXY(regionOf(state, id));
-  if (key === "st_louis|gulf_passage") {
+  if (key === laneKey("st_louis", "gulf_passage")) {
     const s = at("st_louis");
     const g = at("gulf_passage");
     const south = 604;
     const pts = [s, [s[0], south], [g[0], south], g];
     return fromId === "st_louis" ? pts : pts.slice().reverse();
   }
-  if (key === "gulf_passage|far_cuba") {
+  if (key === laneKey("gulf_passage", "far_cuba")) {
     const g = at("gulf_passage");
     const c = at("far_cuba");
     const north = 528;
@@ -2006,9 +2008,10 @@ function drawCityPlate(ctx, r, selected) {
     px = Math.round(x + 10);
     py = Math.round(y - 46);
   } else if (r.id === "far_cuba") {
-    py = Math.round(y + 6);
+    px = 4;
+    py = Math.round(y - 58);
   } else if (r.id === "far_nicaragua") {
-    py = Math.round(y - 36);
+    py = Math.round(y - 28);
   }
   px = Math.max(4, Math.min(996 - pw, px));
   if (py < 4) py = Math.round(y + 20);

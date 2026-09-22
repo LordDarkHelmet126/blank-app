@@ -205,8 +205,9 @@ function pickTone(pal, n, high) {
 
 function cacheKey(state) {
   const season = state._season?.id || "summer";
+  const phase = state.campaign?.phase || 1;
   const n = (state.regions || []).length;
-  return `v6|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+  return `v6|${season}|${phase}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
 }
 
 const WET_IDS = new Set(["seattle", "olympia", "portland"]);
@@ -255,7 +256,7 @@ function buildFields(state) {
     let b = biomeOf(r.stateCode, r.terrainBias);
     if (WET_IDS.has(r.id)) b = BIOME.wetforest;
     if (RAIN_SHADOW_IDS.has(r.id)) b = BIOME.pine;
-    const sealift = r.id === "gulf_passage";
+    const sealift = r.id === "gulf_passage" && (state.campaign?.phase || 1) >= (r.unlockPhase || 3);
     if (sealift) b = BIOME.sea;
     const band = pnwBandOf(r);
     const geo = r.geo || {};
@@ -652,16 +653,9 @@ export function drawPixelRoadFull(ctx, a, b, pulseOn, lane) {
   let err = dx - dy;
   let x = x0;
   let y = y0;
-  let i = 0;
+  const pts = [];
   for (;;) {
-    ctx.fillStyle = pulseOn ? "#886028" : sea ? (lane === "ice" ? "#204058" : "#1a4060") : "#403830";
-    ctx.fillRect(x - 2, y - 2, 5, 5);
-    if (sea) {
-      ctx.fillStyle = pulseOn ? "#fff0a0" : i % 4 < 2 ? "#f8d800" : lane === "ice" ? "#d8e8f0" : "#7ec8e8";
-    } else {
-      ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f8f4e8" : "#e0d8c4";
-    }
-    ctx.fillRect(x - 1, y - 1, 3, 3);
+    pts.push([x, y]);
     if (x === x1 && y === y1) break;
     const e2 = err * 2;
     if (e2 > -dy) {
@@ -672,8 +666,25 @@ export function drawPixelRoadFull(ctx, a, b, pulseOn, lane) {
       err += dx;
       y += sy;
     }
-    i += 1;
   }
+  if (!sea) {
+    pts.forEach(([px, py], i) => {
+      ctx.fillStyle = pulseOn ? "#886028" : "#403830";
+      ctx.fillRect(px - 2, py - 2, 5, 5);
+      ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f8f4e8" : "#e0d8c4";
+      ctx.fillRect(px - 1, py - 1, 3, 3);
+    });
+    return;
+  }
+  const casing = pulseOn ? "#886028" : lane === "ice" ? "#204058" : "#1a4060";
+  pts.forEach(([px, py]) => {
+    ctx.fillStyle = casing;
+    ctx.fillRect(px - 2, py - 2, 5, 5);
+  });
+  pts.forEach(([px, py], i) => {
+    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 4 < 2 ? "#f8d800" : lane === "ice" ? "#d8e8f0" : "#7ec8e8";
+    ctx.fillRect(px - 1, py - 1, 3, 3);
+  });
 }
 
 export function drawPixelRoadHi(ctx, a, b, pulseOn) {
