@@ -373,7 +373,11 @@ assert(cubaRoads.join(", ") === "St. Louis, Gulf Sealift", `Cuba approach from B
 assert(!cubaRoads.some((n) => n === "Nome" || n === "Fairbanks" || n === "Anchorage"), `Cuba NEXT must not list AK home roads: ${cubaRoads.join(", ")}`);
 assert(approachRoads(leap, "denver", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "Cuba approach from Denver is the sealift chain");
 assert(approachRoads(leap, "st_louis", "far_cuba").join(", ") === "Gulf Sealift", "Cuba from St. Louis names the sealift, not the city you are in");
-assert(approachRoads(leap, "bethel", "gulf_passage").join(", ") === "St. Louis", "Gulf Sealift approach names St. Louis");
+const gulfRoads = approachRoads(leap, "bethel", "gulf_passage");
+assert(gulfRoads.join(", ") === "St. Louis, Cuba", `Gulf Sealift NEXT names its own roads: ${gulfRoads.join(", ")}`);
+assert(!gulfRoads.some((n) => n === "Nome" || n === "Fairbanks" || n === "Anchorage"), `Gulf NEXT must not list AK home roads: ${gulfRoads.join(", ")}`);
+assert(approachRoads(leap, "denver", "gulf_passage").join(", ") === "St. Louis, Cuba", "Gulf Sealift from Denver is still St. Louis and Cuba");
+assert(approachRoads(leap, "st_louis", "gulf_passage").join(", ") === "St. Louis, Cuba", "Gulf Sealift from St. Louis still names both ends");
 assert(approachRoads(leap, "bethel", "far_russia").join(", ") === "Bering", "Russia approach is the Bering gate");
 leap.campaign.phase = 3;
 assert(approachRoads(leap, "bethel", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "open Phase 3 desks still name the sealift chain");
