@@ -143,6 +143,24 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "coach") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    selectedRegion = "bethel";
+    commandCat = "domestic";
+    coachForced = true;
+    coachOn = true;
+    coachStep = 0;
+    hideModal();
+    render();
+    openCoach();
+    afterFonts();
+    return;
+  }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
   afterFonts();
@@ -163,6 +181,23 @@ function bindChrome() {
     wireAfterRender();
   };
   $("btn-help").onclick = () => showModal(helpHtml());
+  $("btn-coach").onclick = () => {
+    coachOn = true;
+    coachStep = 0;
+    openCoach();
+    render();
+  };
+  $("coach-next").onclick = () => {
+    if (coachStep < COACH_STEPS.length - 1) {
+      coachStep += 1;
+      openCoach();
+      render();
+    } else {
+      finishCoach(false);
+    }
+  };
+  $("coach-skip").onclick = () => finishCoach(true);
+  document.querySelectorAll("[data-tip]").forEach((el) => bindTip(el, el.getAttribute("data-tip")));
   $("btn-officers").onclick = () => {
     showModal(officersHtml(), { kind: "officers" });
     wireAfterRender();
@@ -192,9 +227,10 @@ function bindChrome() {
 
 function titleScreenHtml(hasSave) {
   return `
-    <p class="muted">Original IP. Alaska-first officer sandbox. Not affiliated with any licensed war film or Koei title.</p>
+    <p class="muted">Original IP. Alaska officer sandbox. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
-    <p>Invasion week 0. You are one person in the Kuskokwim Lowlands. Raise a banner, hire up to five generals, or stay a ghost. Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak.</p>
+    <p><strong>Click Begin week 0.</strong> You start alone in Bethel. First job: raise a banner, spend AP, then End Week.</p>
+    <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
     <div class="choices" id="ng-bg">
@@ -234,8 +270,14 @@ function wireTitle() {
       const name = $("modal-card").querySelector("#ng-name").value;
       state = createNewGame(content, { name, background: bg, difficulty: diff });
       selectedRegion = "bethel";
+      commandCat = "domestic";
       hideModal();
       render();
+      if (coachForced || localStorage.getItem(COACH_KEY) !== "skip") {
+        coachOn = true;
+        coachStep = 0;
+        openCoach();
+      }
     };
   }
   const cont = $("modal-card").querySelector("#ng-continue");
@@ -251,6 +293,16 @@ function showModal(html, opts = {}) {
   wireAfterRender();
   const close = $("modal-card").querySelector("[data-close]");
   if (close) close.onclick = hideModal;
+  const helpCoach = $("modal-card").querySelector("#help-coach");
+  if (helpCoach) {
+    helpCoach.onclick = () => {
+      hideModal();
+      coachOn = true;
+      coachStep = 0;
+      openCoach();
+      render();
+    };
+  }
 }
 
 function hideModal() {
@@ -258,18 +310,117 @@ function hideModal() {
   $("modal-card").className = "modal-card";
 }
 
+function nextHint(st) {
+  if (!st || st.gameOver) return "Campaign closed.";
+  if (st.phase === "battle") return "BATTLE: click a yellow unit, then an adjacent tile to step or fire — or Auto-resolve.";
+  const p = playerOf(st);
+  const here = regionOf(st, p.region);
+  const gens = playerGenerals(st);
+  if (!p.faction) return "NEXT: Domestic → Raise Banner. Claims Bethel and founds Northern Front (1 AP).";
+  if (st.ap <= 0) return "NEXT: End Week (top right). Neighbors act, then you get a fresh AP pool.";
+  if (gens.length === 0) return "NEXT: Commerce or Cultivate (Domestic), or Plot → Hire if a free officer is in this city.";
+  if (here && ownedHere(st, here) && here.garrison < 24) return "NEXT: Drill to raise the levy, or Military → Travel a gold road.";
+  return `NEXT: ${st.ap} AP left — click a Command tile, or End Week.`;
+}
+
+function ownedHere(st, here) {
+  const p = playerOf(st);
+  return !!(p.faction && here && here.owner === p.faction);
+}
+
+function renderObjective() {
+  const bar = $("objective");
+  if (!state) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  $("obj-kicker").textContent = `WEEK ${state.week} · AP ${state.ap}/${apMax(state)}`;
+  $("obj-text").textContent = nextHint(state);
+}
+
+function openCoach() {
+  const step = COACH_STEPS[coachStep] || COACH_STEPS[0];
+  if (step.cat) commandCat = step.cat;
+  $("coach").hidden = false;
+  $("coach-title").textContent = step.title;
+  $("coach-text").textContent = step.body;
+  $("coach-next").textContent = coachStep >= COACH_STEPS.length - 1 ? "Start playing" : "Got it";
+  applyCoachRing();
+}
+
+function finishCoach(skipPersist) {
+  $("coach").hidden = true;
+  document.querySelectorAll(".coach-ring").forEach((el) => el.classList.remove("coach-ring"));
+  if (skipPersist && !coachForced) localStorage.setItem(COACH_KEY, "skip");
+  coachOn = !skipPersist;
+  if (skipPersist) coachOn = false;
+}
+
+function applyCoachRing() {
+  document.querySelectorAll(".coach-ring").forEach((el) => el.classList.remove("coach-ring"));
+  if (!coachOn || $("coach").hidden) return;
+  const step = COACH_STEPS[coachStep];
+  if (!step?.target) return;
+  const el = document.querySelector(step.target);
+  if (el) el.classList.add("coach-ring");
+}
+
+function maybeAdvanceCoach(actionId) {
+  if (!coachOn || $("coach").hidden) return;
+  const step = COACH_STEPS[coachStep];
+  if (!step) return;
+  if (step.id === "banner" && actionId === "raise_banner") coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+  else if (step.id === "stores" && (actionId === "commerce" || actionId === "cultivate" || actionId === "drill")) {
+    coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+  } else if (step.id === "end" && actionId === "end_week") {
+    finishCoach(false);
+    return;
+  }
+  openCoach();
+}
+
+function bindTip(el, text) {
+  if (!el || !text) return;
+  const show = (e) => {
+    const tip = $("tip");
+    tip.innerHTML = text;
+    tip.hidden = false;
+    const r = (e.currentTarget || el).getBoundingClientRect();
+    const x = Math.max(8, Math.min(window.innerWidth - 288, r.left));
+    const y = r.bottom + 6;
+    tip.style.left = `${x}px`;
+    tip.style.top = `${Math.min(window.innerHeight - 8, y)}px`;
+  };
+  const hide = () => {
+    $("tip").hidden = true;
+  };
+  el.addEventListener("mouseenter", show);
+  el.addEventListener("mouseleave", hide);
+  el.addEventListener("focus", show);
+  el.addEventListener("blur", hide);
+}
+
+function actionTipHtml(a) {
+  const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
+  const cost = live ? `<span class="tip-ap">${a.ap} AP</span>` : `<span class="tip-lock">${a.enabled ? "Need more AP" : "LOCKED"}</span>`;
+  return `<strong>${esc(a.label)}</strong>${cost}<p>${esc(a.hint || "")}</p>`;
+}
+
 function helpHtml() {
   return `
     <h2>How to play</h2>
-    <p>Each turn is <strong>one week</strong>. Spend AP, then End Week. AI officers act by personality. Your generals follow standing orders on the You card.</p>
+    <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li>Raise Banner in uncontrolled Bethel to found Northern Front.</li>
-      <li>Hire up to 5 generals, then set their standing order. Personality type gates skills (ROTK7-style). March/Attack is under Military.</li>
-      <li>Hidden legend: <strong>Seek Legend</strong> on Plot (or Spy the Arctic Slope) for the rumor, then travel Fairbanks → Slope and Seek again to list Ilya Karr.</li>
-      <li>Spy, rumor, persuade, hide, and alliances are under Plot. Drill and markets are Domestic.</li>
-      <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys, A-10/F-14). No leapfrog, no drones.</li>
+      <li><strong>Map:</strong> click a city to select it. Gold roads are walkable (Military → Travel).</li>
+      <li><strong>Command:</strong> Domestic = town (Raise Banner, food, gold). Plot = people. Military = march.</li>
+      <li>Hover a tile for AP cost and why it is locked. Locked tiles are grey; live tiles lift on hover.</li>
+      <li>Hire up to 5 generals, then set their standing order on the You card. March/Attack is under Military.</li>
+      <li>Hidden legend: Seek Legend on Plot (or Spy the Arctic Slope), then travel Fairbanks → Slope and Seek again.</li>
+      <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
     </ul>
     <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
+    <p><button type="button" id="help-coach" class="primary">Show week-1 coach</button></p>
     <button type="button" data-close>Close</button>
   `;
 }
@@ -404,6 +555,7 @@ function run(id, extra) {
     render();
     return;
   }
+  maybeAdvanceCoach(id);
   if (res.battle) {
     hideModal();
     openBattle();
@@ -452,9 +604,13 @@ export function render() {
   renderActions();
   renderLog();
   renderLegend();
+  renderObjective();
+  renderMapCaption();
   drawMap();
+  ensureMapPulse();
   wireOrders();
   wireAfterRender();
+  applyCoachRing();
   if (state.phase === "battle") openBattle();
   else $("battle").hidden = true;
 }
@@ -467,6 +623,11 @@ function officerHtml() {
   const fac = p.faction ? factionOf(state, p.faction) : null;
   const here = regionOf(state, p.region);
   return `
+    <div class="panel-head">
+      <span class="panel-title">You</span>
+      <span class="panel-why">Your officer. AP is how many commands you can click this week.</span>
+    </div>
+    <div class="plate-body">
     <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
     <div class="officer-meta">
       <h2>${esc(p.name)}</h2>
@@ -491,8 +652,9 @@ function officerHtml() {
           .join("")}</select></label>`
               )
               .join("")}</div>`
-          : `<p class="muted">Hire under Plot.</p>`
+          : `<p class="muted">No generals yet. Plot → Hire after you raise a banner.</p>`
       }
+    </div>
     </div>
   `;
 }
@@ -504,6 +666,10 @@ function cityHtml() {
   const garr = known ? r.garrison : "???";
   const walls = known ? r.walls : "?";
   return `
+    <div class="panel-head">
+      <span class="panel-title">City</span>
+      <span class="panel-why">Click a map city to inspect it. You act in the city your officer occupies.</span>
+    </div>
     <h2>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
     <div class="city-grid">
       <span class="pill"><span>GOLD</span><strong>${state.gold}</strong></span>
@@ -523,6 +689,7 @@ function weekReportHtml(report) {
   return `<div class="event-art week-art"><img src="${sceneUrl("hire")}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
     <h2>Week ${state.week}</h2>
     <p>${esc(headline)}</p>
+    <p class="next-line">${esc(nextHint(state))}</p>
     <ul class="week-ai">${ai.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
     <p class="muted">${extra ? `${extra} more in the field log. ` : ""}Personality tags are in [brackets].</p>
     <button type="button" data-close class="primary">Continue</button>`;
@@ -532,6 +699,11 @@ const ACTION_CATS = {
   domestic: ["raise_banner", "drill", "commerce", "cultivate", "fortify", "safety", "research"],
   plot: ["seek_legend", "spy", "hire", "ally", "break_ally", "rumor", "persuade", "hide"],
   military: ["travel", "attack"],
+};
+const TAB_TIPS = {
+  domestic: "<strong>Domestic</strong><p>Town work: raise a banner, food, gold, walls, salvage.</p>",
+  plot: "<strong>Plot</strong><p>People work: hire, spy, rumor, alliance.</p>",
+  military: "<strong>Military</strong><p>Move on gold roads or march into a neighbor.</p>",
 };
 const SCENE_ACTIONS = new Set([
   "raise_banner",
@@ -551,7 +723,42 @@ const SCENE_ACTIONS = new Set([
   "hide",
   "travel",
 ]);
-let commandCat = "plot";
+let commandCat = "domestic";
+const COACH_KEY = "northern-front-v01-coach";
+let coachForced = false;
+let coachOn = true;
+let coachStep = 0;
+let mapPulseTimer = null;
+
+const COACH_STEPS = [
+  {
+    id: "city",
+    title: "1 / 4  Your city",
+    body: "Yellow nameplate = the city you have selected. Click a city on the map to inspect it. Gold roads between cities are walkable.",
+    target: "#city-stats",
+    cat: "domestic",
+  },
+  {
+    id: "banner",
+    title: "2 / 4  Raise a banner",
+    body: "Domestic is town work. Click RAISE BANNER to claim Bethel as Northern Front. It costs 1 AP.",
+    target: '[data-id="raise_banner"]',
+    cat: "domestic",
+  },
+  {
+    id: "stores",
+    title: "3 / 4  Feed the week",
+    body: "Spend leftover AP on COMMERCE (gold) or CULTIVATE (food). Hover a tile to read what it does and why it might be locked.",
+    target: '[data-id="commerce"]',
+    cat: "domestic",
+  },
+  {
+    id: "end",
+    title: "4 / 4  End the week",
+    body: "When AP is gone — or you are done — click END WEEK at the top right. Neighbors act, then you get a fresh AP pool.",
+    target: "#btn-end",
+  },
+];
 
 function sceneArt(id) {
   return sceneUrl(id);
@@ -561,9 +768,11 @@ function actionButton(a) {
   const b = document.createElement("button");
   b.type = "button";
   b.dataset.id = a.id;
-  b.disabled = !a.enabled || (a.ap > 0 && state.ap < a.ap);
-  b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(a.label)}<small>AP ${a.ap}${a.enabled ? "" : " · locked"}</small></span>`;
-  b.title = a.hint;
+  const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
+  b.disabled = !live;
+  const lock = !a.enabled ? "LOCKED" : state.ap < a.ap ? `NEED ${a.ap} AP` : `AP ${a.ap}`;
+  b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(a.label)}<small>${esc(lock)}</small></span>`;
+  bindTip(b, actionTipHtml(a));
   b.onclick = () => {
     b.classList.add("is-press");
     setTimeout(() => b.classList.remove("is-press"), 140);
@@ -587,6 +796,7 @@ function renderActions() {
     t.type = "button";
     t.className = "cmd-tab" + (commandCat === id ? " active" : "");
     t.innerHTML = `<img src="${sceneArt(artId)}" alt="" /><span>${label}</span>`;
+    bindTip(t, TAB_TIPS[id]);
     t.onclick = () => {
       commandCat = id;
       renderActions();
@@ -604,6 +814,8 @@ function showEventScene(ev) {
   $("event-portrait").src = PORTRAIT_SRC;
   $("event-title").textContent = ev.title || "Event";
   $("event-text").textContent = ev.text || "";
+  const next = $("event-next");
+  if (next) next.textContent = state ? nextHint(state) : "";
   const el = $("event-scene");
   el.hidden = false;
   el.classList.remove("open");
@@ -729,6 +941,10 @@ function onMapClick(e) {
   const r = regionAt(e.clientX, e.clientY, $("map"));
   if (!r) return;
   selectedRegion = r.id;
+  if (coachOn && !$("coach").hidden && COACH_STEPS[coachStep]?.id === "city") {
+    coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+    openCoach();
+  }
   render();
 }
 
@@ -736,10 +952,19 @@ function onMapMove(e) {
   if (!state) return;
   const r = regionAt(e.clientX, e.clientY, $("map"));
   const id = r ? r.id : null;
+  $("map").style.cursor = r ? "pointer" : "crosshair";
   if (id !== hoverRegion) {
     hoverRegion = id;
     drawMap();
   }
+}
+
+function renderMapCaption() {
+  const cap = $("map-caption");
+  if (!cap || !state) return;
+  const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
+  const you = regionOf(state, playerOf(state).region);
+  cap.textContent = `${r?.short || "?"} selected · you are in ${you?.short || "?"} · click a city · gold roads = travel`;
 }
 
 function cityXY(r) {
@@ -881,6 +1106,12 @@ function drawCityPlate(ctx, r, selected) {
   if (py + ph > 616) py = Math.round(y - 36);
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
+  if (selected) {
+    ctx.fillStyle = Math.floor(Date.now() / 240) % 2 === 0 ? "#f8d800" : "#f8f8f8";
+    ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(px - 2, py - 2, pw + 4, ph + 4);
+  }
   ctx.fillStyle = selected ? "#f8d800" : "#f8f8f8";
   ctx.fillRect(px, py, pw, ph);
   ctx.fillStyle = "#101050";
@@ -958,7 +1189,16 @@ function drawMap() {
   ctx.fillStyle = "#f8d800";
   ctx.font = PX_FONT;
   const hunt = legendStatus(state);
-  ctx.fillText(hunt.revealed ? "ROADS = MARCH LINES" : "ROADS = MARCH. ? = LEGEND", 12, 16);
+  ctx.fillText(hunt.revealed ? "ROADS = MARCH LINES" : "CLICK A CITY. GOLD ROADS = TRAVEL", 12, 28);
+}
+
+function ensureMapPulse() {
+  if (mapPulseTimer) return;
+  mapPulseTimer = setInterval(() => {
+    if (!state || state.phase !== "strategy") return;
+    if ($("battle") && !$("battle").hidden) return;
+    drawMap();
+  }, 240);
 }
 
 function openBattle() {

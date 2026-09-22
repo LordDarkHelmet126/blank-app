@@ -19,30 +19,43 @@
           </div>
         </div>
         <div class="meters">
-          <div class="meter"><span>AP</span><strong id="ap">0</strong></div>
-          <div class="meter"><span>Gold</span><strong id="gold">0</strong></div>
-          <div class="meter"><span>Food</span><strong id="food">0</strong></div>
-          <div class="meter"><span>Fame</span><strong id="fame">0</strong></div>
-          <div class="meter"><span>Rank</span><strong id="rank">Free</strong></div>
+          <div class="meter" data-tip="Action Points. Each command tile costs AP. When you are done, End Week."><span>AP</span><strong id="ap">0</strong></div>
+          <div class="meter" data-tip="Gold. Commerce raises it. Upkeep and hires spend it."><span>Gold</span><strong id="gold">0</strong></div>
+          <div class="meter" data-tip="Food. Cultivate raises it. Empty stores starve the levy."><span>Food</span><strong id="food">0</strong></div>
+          <div class="meter" data-tip="Fame. Wins and deeds. Helps rank and talks."><span>Fame</span><strong id="fame">0</strong></div>
+          <div class="meter" data-tip="Rank. Grows as you hold ground. More rank, more AP."><span>Rank</span><strong id="rank">Free</strong></div>
         </div>
         <div class="top-actions">
           <button type="button" id="btn-help">Help</button>
           <button type="button" id="btn-save">Save</button>
           <button type="button" id="btn-load">Load</button>
-          <button type="button" id="btn-end" class="primary">End Week</button>
+          <button type="button" id="btn-end" class="primary" data-tip="Advance the calendar. Neighbors act. You get a fresh AP pool.">End Week</button>
         </div>
       </header>
+
+      <div id="objective" class="objective" hidden>
+        <div class="objective-copy">
+          <strong id="obj-kicker">NEXT</strong>
+          <span id="obj-text">Raise a banner in Bethel.</span>
+        </div>
+        <button type="button" id="btn-coach">Coach</button>
+      </div>
 
       <main class="workspace">
         <aside class="side" id="command-col">
           <section class="card officer-plate" id="officer-plate"></section>
           <section class="card city-stats" id="city-stats"></section>
           <section class="card cmd-card">
+            <div class="panel-head">
+              <span class="panel-title">Command</span>
+              <span class="panel-why">Click a tile to spend AP. Domestic = town. Plot = people. Military = march.</span>
+            </div>
             <div class="cmd-tabs" id="cmd-tabs"></div>
             <div id="cmd-actions" class="cmd-actions"></div>
           </section>
         </aside>
         <section class="map-wrap">
+          <p class="map-caption" id="map-caption">MAP — click a city to select · gold roads are walkable</p>
           <canvas id="map" width="1000" height="620" aria-label="Alaska theater map"></canvas>
           <div class="map-legend" id="legend"></div>
         </section>
@@ -50,7 +63,10 @@
 
       <section class="dock">
         <div class="dock-head">
-          <h2>Field log</h2>
+          <div>
+            <h2>Field log</h2>
+            <p class="panel-why">What just happened. Newest line first.</p>
+          </div>
           <button type="button" id="btn-officers">Officers</button>
           <button type="button" id="btn-factions">Factions</button>
         </div>
@@ -69,8 +85,10 @@
           <img id="event-portrait" class="event-face" alt="" />
         </div>
         <div class="event-copy">
+          <p class="panel-why">Scene — this is the result of your last click.</p>
           <h2 id="event-title">Event</h2>
           <p id="event-text"></p>
+          <p id="event-next" class="next-line"></p>
           <button type="button" id="event-close" class="primary">Continue</button>
         </div>
       </div>
@@ -90,10 +108,23 @@
           </div>
         </header>
         <canvas id="battle-canvas" width="960" height="520"></canvas>
-        <p id="battle-hint" class="hint">Select a unit. Step or fire adjacent. Pixel field. Low animation.</p>
+        <p id="battle-hint" class="hint">BATTLE — click a yellow unit, then an adjacent tile to step or fire. Auto-resolve skips the grid.</p>
         <ol id="battle-log" class="log battle-log"></ol>
       </div>
     </div>
+
+    <div id="coach" class="coach" hidden>
+      <div class="coach-card">
+        <p class="panel-why">Week-1 coach</p>
+        <h2 id="coach-title">1 / 4</h2>
+        <p id="coach-text"></p>
+        <div class="choices">
+          <button type="button" id="coach-next" class="primary">Got it</button>
+          <button type="button" id="coach-skip">Skip coach</button>
+        </div>
+      </div>
+    </div>
+    <div id="tip" class="tip" hidden></div>
 
     <script type="module" src="js/main.js"></script>
   </body>

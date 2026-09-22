@@ -213,6 +213,16 @@ assert(visibleOfficers(spur).some((o) => o.id === "haro"), "Relay clerk on board
 assert(visibleOfficers(spur).some((o) => o.id === "yarrow" && o.faction === "bering_pact"), "Yarrow wired to Ice Pact");
 console.log("ok Yukon/Bering spur");
 
+const fresh = createNewGame(content, { seed: 1, difficulty: "easy", name: "Casey Flint", background: "scout" });
+const week0 = listActions(fresh);
+const banner = week0.find((a) => a.id === "raise_banner");
+const drill = week0.find((a) => a.id === "drill");
+assert(banner && banner.enabled, "week 0 Raise Banner must be clickable");
+assert(banner.hint && /Northern Front|claim/i.test(banner.hint), "Raise Banner needs a plain-English why");
+assert(drill && !drill.enabled && drill.hint, "Drill must explain why it is locked before a banner");
+assert(week0.find((a) => a.id === "end_week")?.enabled, "End Week always available");
+console.log("ok week-0 action hints");
+
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
 console.log("ALL TESTS PASSED");

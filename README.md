@@ -42,15 +42,17 @@ If Python is missing, any static server in this folder works (`npx serve .`, etc
 
 ### First session (what “done” looks like)
 
-1. New game → name + background + difficulty (Easy / Normal / Hard).
-2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**, week 0.
+1. New game → **Begin week 0** (name + background + difficulty). A week-1 coach and a yellow **NEXT** strip name the first click.
+2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**. Command opens on **Domestic**.
 3. **Raise Banner** to found Northern Front (max **5 generals** later via Hire / Persuade).
-4. Spend AP: Drill, Commerce, Cultivate, Fortify, Safety, Salvage/Forge, Spy, Hire, Alliance, Rumor, Persuade, Hide, Travel, March/Attack.
-5. **End Week** — AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
+4. Spend leftover AP (Commerce / Cultivate), then **End Week**.
+5. AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
 6. March into a neighbor (Nome is the usual first fight) for a short grid battle, or check Auto-resolve.
 7. **Save** writes `localStorage` and downloads JSON. **Load** reads the browser slot, a file, or pasted JSON.
 
 Play 10+ weeks without the UI locking: **End Week** is always available in strategy phase. If gold and food both hit 0, a cache event keeps the campaign movable.
+
+Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the coach forced on). Replay from **Help → Show week-1 coach**.
 
 ## Data files (expand later)
 
@@ -73,7 +75,7 @@ node tests/simulate.mjs
 
 or `npm test`. Proves 12 autoplay weeks on Easy/Normal/Hard, save/load, a resolved battle, spy/alliance, and personality-tagged AI logs.
 
-Optional screenshot URLs while the server is running: `/?demo=slice` (banner already raised) and `/?demo=week` (two autoplay weeks).
+Optional screenshot URLs while the server is running: `/?demo=slice` (banner already raised), `/?demo=coach` (week-1 coach on a fresh game), and `/?demo=week` (two autoplay weeks).
 
 ## Layout
 
