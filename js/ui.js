@@ -1950,7 +1950,7 @@ function drawCityMarkHi(ctx, r, selected) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
   const fill = fac ? fac.color : "#607838";
-  draw80sMarker(ctx, markerKind(r), x, y, selected, fill, 2);
+  draw80sMarker(ctx, markerKind(r), x, y, selected, fill, 3);
   const p = playerOf(state);
   if (p.region === r.id) {
     const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -6 : 0;

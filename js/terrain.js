@@ -754,32 +754,38 @@ function paintSiegeWall(ctx, layout, battle, dest) {
 
 function drawFieldUnit(ctx, u, x, y, selected, now) {
   const col = u.side === "atk" ? "#f8d800" : "#f03030";
-  const hop = Math.floor(now / 160) % 2;
+  const hop = Math.floor(now / 160) % 2 * 2;
   if (selected) {
-    diamond(ctx, x, y + 4, 28, 14, "#f8f8f8", "#f8d800");
+    diamond(ctx, x, y + 8, 48, 22, "#f8f8f8", "#f8d800");
   }
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y - hop));
+  ctx.scale(2, 2);
   if (u.type === "technical") {
-    px(ctx, x - 8, y - 4 - hop, 16, 6, "#385028");
-    px(ctx, x + 2, y - 8 - hop, 8, 5, "#2a3820");
-    px(ctx, x - 6, y + 1 - hop, 3, 3, "#201810");
-    px(ctx, x + 5, y + 1 - hop, 3, 3, "#201810");
+    px(ctx, -8, -4, 16, 6, "#385028");
+    px(ctx, 2, -8, 8, 5, "#2a3820");
+    px(ctx, -6, 1, 3, 3, "#201810");
+    px(ctx, 5, 1, 3, 3, "#201810");
+    px(ctx, -8, -5, 2, 2, col);
   } else if (u.type === "regular") {
-    px(ctx, x - 3, y - 14 - hop, 6, 4, "#686860");
-    px(ctx, x - 4, y - 10 - hop, 8, 10, "#385028");
-    px(ctx, x - 3, y - 8 - hop, 6, 3, "#c8a078");
+    px(ctx, -3, -14, 6, 4, "#686860");
+    px(ctx, -4, -10, 8, 10, "#385028");
+    px(ctx, -3, -8, 6, 3, "#c8a078");
+    px(ctx, -5, -10, 2, 10, col);
   } else {
-    px(ctx, x - 3, y - 12 - hop, 6, 3, "#c8a038");
-    px(ctx, x - 4, y - 9 - hop, 8, 9, "#507040");
-    px(ctx, x - 3, y - 7 - hop, 6, 3, "#c8a078");
+    px(ctx, -3, -12, 6, 3, "#c8a038");
+    px(ctx, -4, -9, 8, 9, "#507040");
+    px(ctx, -3, -7, 6, 3, "#c8a078");
+    px(ctx, -5, -9, 2, 9, col);
   }
+  ctx.restore();
   const ratio = Math.max(0, u.hp / u.maxHp);
-  const bw = 22;
-  px(ctx, x - 11, y - 22, bw, 5, "#000018");
-  px(ctx, x - 10, y - 21, Math.floor((bw - 2) * ratio), 3, ratio > 0.35 ? "#30c030" : "#f03030");
+  const bw = 36;
+  px(ctx, x - 18, y - 40, bw, 8, "#000018");
+  px(ctx, x - 16, y - 38, Math.floor((bw - 4) * ratio), 4, ratio > 0.35 ? "#30c030" : "#f03030");
   ctx.fillStyle = col;
   ctx.font = "8px 'Press Start 2P', monospace";
-  const n = String(Math.max(0, u.hp));
-  ctx.fillText(n, x - 6, y - 24);
+  ctx.fillText(String(Math.max(0, u.hp)), x - 8, y - 44);
 }
 
 export function paintBiomeBackdrop(ctx, w, h, now, dest) {
