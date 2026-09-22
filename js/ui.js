@@ -421,7 +421,7 @@ function bindChrome() {
     wireAfterRender();
   };
   $("btn-factions").onclick = () => showModal(factionsHtml());
-  $("btn-states").onclick = () => showModal(campaignHtml());
+  $("btn-states").onclick = () => showModal(campaignHtml(), { kind: "states" });
   $("btn-missions").onclick = () => {
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
@@ -573,7 +573,8 @@ function showModal(html, opts = {}) {
     return;
   }
   parkCoach();
-  const extra = opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : "";
+  const extra =
+    opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : opts.kind === "states" ? " states-card" : "";
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
@@ -864,6 +865,12 @@ function missionsHtml() {
     <button type="button" data-close>Close</button>`;
 }
 
+function yieldSlashHtml(tags) {
+  const labels = (tags || []).map((t) => (typeof t === "string" ? t : t.label)).filter(Boolean);
+  if (!labels.length) return `<span class="yield-tag">—</span>`;
+  return labels.map((label) => `<span class="yield-tag">${esc(label)}</span>`).join("");
+}
+
 function campaignHtml() {
   if (!state) return `<p>No game.</p>`;
   const camp = ensureCampaign(state);
@@ -873,34 +880,33 @@ function campaignHtml() {
       const mark = s.liberated ? "LIB" : `${s.held}/${s.need} key · ${s.heldTerr}/${s.totalTerr} terr`;
       const terr = (s.territories || [])
         .map((t) => {
-          const tags = (t.geo || []).map((g) => g.label).join("/");
           const route = t.here ? "here" : t.adjacent ? "road open" : "route locked";
-          return `<div class="terr-row"><span class="status-chip">${esc(route)}</span> <span class="terr-name">${esc(t.short)}${t.key ? " ★" : ""}</span> <span class="terr-meta">${esc(tags || "—")}</span></div>`;
+          return `<div class="terr-row"><span class="status-chip">${esc(route)}</span><span class="terr-name">${esc(t.short)}${t.key ? " ★" : ""}</span><span class="terr-meta">${yieldSlashHtml(t.geo)}</span></div>`;
         })
         .join("");
-      return `<div class="card" style="margin:8px 0">
-        <h2>${esc(s.name)} · ${esc(s.id)}</h2>
-        <p>${esc(mark)}</p>
-        ${terr}
-      </div>`;
+      const hereState = here?.stateCode === s.id ? " is-here" : "";
+      return `<section class="state-block${hereState}">
+        <h2>${esc(s.name)} <span class="state-code">${esc(s.id)}</span><span class="state-mark">${esc(mark)}</span></h2>
+        <div class="terr-list">${terr}</div>
+      </section>`;
     })
     .join("");
   const foreign = (camp.foreign || [])
     .map((f) => {
       const lock = f.unlocked ? (f.held ? "held" : "open") : `phase ${f.unlockPhase}`;
-      return `<p>${esc(f.name)} — ${lock}</p>`;
+      return `<span class="pill">${esc(f.name)} — ${lock}</span>`;
     })
     .join("");
   return `
     <h2>States → territories</h2>
-    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Liberate a state by holding ★ key territories. No leaping — only adjacent roads. Farm/mine/fuel/water/sun/weather/defense change weekly yields.</p>
-    <div class="city-grid">${stateControl(state)
+    <p class="muted states-lead">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Liberate a state by holding ★ key territories. No leaping — only adjacent roads. Farm/mine/fuel/water/sun/weather/defense change weekly yields.</p>
+    <div class="city-grid states-index">${stateControl(state)
       .map((s) => `<span class="pill"><span>${esc(s.id)}</span><strong>${s.liberated ? "LIB" : `${s.held}/${s.need}`}</strong></span>`)
       .join("")}</div>
-    ${blocks}
+    <div class="states-stack">${blocks}</div>
     <h2>Foreign war council</h2>
     <p class="muted">After Phase 2 the far-shore desks unlock. A sponsor may add another country as a takeable front.</p>
-    ${foreign || "<p class='muted'>No foreign desks yet.</p>"}
+    <div class="foreign-row">${foreign || "<p class='muted'>No foreign desks yet.</p>"}</div>
     <button type="button" data-close>Close</button>`;
 }
 
@@ -1029,7 +1035,7 @@ function run(id, extra) {
     return;
   }
   if (res.council) {
-    showModal(campaignHtml());
+    showModal(campaignHtml(), { kind: "states" });
     render();
     return;
   }
@@ -1241,7 +1247,10 @@ function cityHtml() {
       </div>
       ${plus ? `<p class="plus">+ ${esc(plus)}</p>` : ""}
       ${minus ? `<p class="minus">− ${esc(minus)}</p>` : ""}
-      <p class="plus">Geo: ${geoTags(r).map((t) => `${t.label} ${t.n}`).join(" · ") || "none"}</p>
+      <p class="plus geo-line"><span class="geo-label">Geo:</span> ${(() => {
+        const tags = geoTags(r);
+        return tags.length ? yieldSlashHtml(tags.map((t) => ({ label: `${t.label} ${t.n}` }))) : "none";
+      })()}</p>
       ${(() => {
         const row = stateControl(state).find((s) => s.id === r.stateCode);
         const here = regionOf(state, playerOf(state).region);

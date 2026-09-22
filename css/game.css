@@ -359,6 +359,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .city-stats .city-body { padding: 6px 8px; line-height: 1.5; }
 .city-stats .city-body .plus,
 .city-stats .city-body .minus { margin: 2px 0 0; }
+.geo-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 2px;
+}
+.geo-line .geo-label { margin-right: 6px; }
 .city-stats h2 {
   margin: 0 0 4px;
   padding: 0;
@@ -543,22 +550,122 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 10px;
-  margin: 6px 0;
+  gap: 4px 10px;
+  margin: 2px 0;
 }
 .status-chip {
   display: inline-block;
   flex: 0 0 auto;
   margin: 0;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border: 2px solid var(--amber);
   background: #000030;
   color: var(--amber);
-  line-height: 1.5;
+  line-height: 1.4;
   white-space: nowrap;
 }
 .terr-row .terr-name { color: var(--ice); }
-.terr-row .terr-meta { color: var(--ice-dim); }
+.terr-row .terr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  min-width: 0;
+  color: var(--ice-dim);
+  line-height: 1.55;
+}
+.yield-tag { white-space: nowrap; }
+.yield-tag:not(:last-child)::after {
+  content: "/";
+  margin: 0 10px;
+  color: #d8d8f8;
+}
+.modal-card.states-card {
+  width: min(1040px, 100%);
+  padding: 8px 10px 10px;
+}
+.modal-card.states-card > h2 {
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+.modal-card.states-card p {
+  margin: 0 0 6px;
+  line-height: 1.45;
+}
+.modal-card.states-card .states-lead { margin: 0 0 8px; }
+.modal-card.states-card .states-index {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0 0 8px;
+}
+.modal-card.states-card .states-index .pill:nth-child(3n) { border-right: var(--chrome); }
+.modal-card.states-card .states-index .pill:nth-child(6n) { border-right: 0; }
+.modal-card.states-card .states-index .pill:nth-child(n+4) { border-bottom: var(--chrome); }
+.modal-card.states-card .states-index .pill:nth-child(n+7) { border-bottom: 0; }
+.states-stack {
+  border: var(--chrome);
+  background: #000030;
+  margin: 0 0 8px;
+}
+.state-block {
+  margin: 0;
+  padding: 2px 8px 3px;
+  border-top: 2px solid #4040a0;
+  background: transparent;
+}
+.state-block:first-child { border-top: 0; }
+.state-block.is-here { box-shadow: inset 4px 0 0 var(--amber); }
+.modal-card.states-card .state-block h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 0 0 2px;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.state-block .state-code { color: var(--ice); }
+.state-block .state-mark {
+  margin-left: auto;
+  color: var(--ice-dim);
+  font-size: var(--type);
+  text-transform: none;
+}
+.terr-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 16px;
+}
+.modal-card.states-card .terr-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 3px;
+  margin: 1px 0;
+}
+.modal-card.states-card .terr-name { flex: 0 0 auto; }
+.modal-card.states-card .terr-meta {
+  flex: 1 0 auto;
+  row-gap: 3px;
+}
+.foreign-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.foreign-row .pill {
+  margin: 0;
+  padding: 4px 6px;
+}
+@media (max-width: 720px) {
+  .modal-card.states-card .states-index { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .modal-card.states-card .states-index .pill:nth-child(6n) { border-right: var(--chrome); }
+  .modal-card.states-card .states-index .pill:nth-child(3n) { border-right: 0; }
+  .modal-card.states-card .states-index .pill:nth-child(n+7) { border-bottom: var(--chrome); }
+  .modal-card.states-card .states-index .pill:nth-child(n+10) { border-bottom: 0; }
+  .terr-list { grid-template-columns: 1fr; }
+}
 .plus { color: var(--ok); }
 .minus { color: var(--blood); }
 .gen-orders { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }

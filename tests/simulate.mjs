@@ -671,6 +671,9 @@ assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States 
 assert(/Cannot leap/.test(uiSrc) && /route locked/.test(uiSrc), "NEXT and board explain no-leap");
 assert(/class="status-chip"/.test(uiSrc) && /class="terr-row"/.test(uiSrc) && /class="terr-name"/.test(uiSrc), "states list chip is separated from the city name");
 assert(!/\$\{route\}<\/small>/.test(uiSrc), "route status is not glued onto the next name");
+assert(/kind: "states"/.test(uiSrc) && /class="terr-list"/.test(uiSrc) && /class="yield-tag"/.test(uiSrc), "states board is a compact list with split yield tags");
+const cssSrc = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+assert(/states-card/.test(cssSrc) && /yield-tag:not\(:last-child\)::after/.test(cssSrc) && /grid-template-columns: 1fr 1fr/.test(cssSrc), "states modal tightens layout and spaces yield slashes");
 assert(/Geo:/.test(uiSrc), "city report shows geo tags");
 assert(/id: "war_council"/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "war council action");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
