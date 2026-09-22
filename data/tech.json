@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "version": "0.1",
+    "feel": "Mid/late-1980s Alaska salvage — calendar gates plus research points, no leapfrog tree",
+    "notes": "Era lock 1985–89. Vehicles: Jeeps, civilian pickups, early Humvees, M113s, Bradleys late. Air: Hueys then early Apaches, one A-10 or F-14. Weapons: M16A2, AK-47, M60, TOW, Stinger. Products: analog radios, CRT sets, cassette/VHS, typewriters, landlines. No MRAPs, JLTVs, F-35s, drones, smartphones, or lithium consumer kit."
+  },
+  "tracks": [
+    {
+      "id": "small_arms",
+      "name": "M16A2 and AK-47",
+      "week": 0,
+      "points": 0,
+      "summary": "M16A2, AK-47, and the 30-06 already in the locker. What people own in 1985.",
+      "battle": { "atk": 0, "snowPenalty": 0, "unlockUnit": null }
+    },
+    {
+      "id": "workshop",
+      "name": "Workshop Salvage",
+      "week": 6,
+      "points": 8,
+      "summary": "M60 belts, ALICE webbing, analog radios, typewriter desks, hand-loaded 7.62.",
+      "battle": { "atk": 1, "snowPenalty": 0, "unlockUnit": null }
+    },
+    {
+      "id": "winter_kit",
+      "name": "Winter Kit",
+      "week": 12,
+      "points": 16,
+      "summary": "Surplus parkas, Yukon stoves, landlines, CRT weather sets, cassette logs — not new weapons.",
+      "battle": { "atk": 1, "snowPenalty": -1, "unlockUnit": null }
+    },
+    {
+      "id": "technicals",
+      "name": "Jeeps and Pickups",
+      "week": 18,
+      "points": 28,
+      "summary": "CJ Jeeps, F-series pickups, early Humvees with a pintle M60 or 12.7. No MRAPs, no JLTVs.",
+      "battle": { "atk": 2, "snowPenalty": 0, "unlockUnit": "technical" }
+    },
+    {
+      "id": "tow_stinger",
+      "name": "TOW and Stinger",
+      "week": 24,
+      "points": 36,
+      "summary": "Jeep-mount TOW tubes and shoulder Stingers. Analog sights — no fire-and-forget toys.",
+      "battle": { "atk": 1, "snowPenalty": 0, "unlockUnit": null }
+    },
+    {
+      "id": "tracked_hulls",
+      "name": "M113s, Bradleys late",
+      "week": 32,
+      "points": 48,
+      "summary": "M113 hulks on cannibalized parts. A Bradley only if the shop and the calendar both hold.",
+      "battle": { "atk": 3, "snowPenalty": 0, "unlockUnit": "ifv" }
+    },
+    {
+      "id": "rotary",
+      "name": "Hueys, then Apaches",
+      "week": 40,
+      "points": 58,
+      "summary": "UH-1s first. Early AH-64s if the pad and the JP-4 hold. Not a drone.",
+      "battle": { "atk": 2, "snowPenalty": 0, "unlockUnit": null }
+    },
+    {
+      "id": "relic_air",
+      "name": "A-10 or F-14",
+      "week": 48,
+      "points": 72,
+      "summary": "One A-10 or F-14 off a frozen strip — not a squadron and not an F-35.",
+      "battle": { "atk": 4, "snowPenalty": 0, "unlockUnit": "interceptor" }
+    }
+  ]
+}

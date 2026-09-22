@@ -1,0 +1,11 @@
+{
+  "name": "northern-front",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Northern Front v0.1 — Alaska theater officer sandbox (HTML/Canvas).",
+  "scripts": {
+    "start": "python3 -m http.server 8765",
+    "test": "node tests/simulate.mjs"
+  }
+}

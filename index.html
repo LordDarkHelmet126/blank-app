@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Northern Front</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23000018' width='16' height='16'/%3E%3Crect fill='%23f8d800' x='2' y='2' width='12' height='12'/%3E%3Crect fill='%23101050' x='4' y='4' width='8' height='8'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="css/game.css" />
+  </head>
+  <body>
+    <div id="boot">Loading western theater…</div>
+    <div id="app" hidden>
+      <header class="status-bar">
+        <div class="cal-cluster">
+          <div class="brand-mark">NF</div>
+          <div>
+            <h1>Northern Front</h1>
+            <p class="tag"><span id="season">Winter 1985</span> · WEEK <span id="week">0</span></p>
+          </div>
+        </div>
+        <div class="treasury">
+          <div class="meter" data-tip="Action Points. Each command tile costs AP. When you are done, End Week."><span>AP</span><strong id="ap">0</strong></div>
+          <div class="meter" data-tip="Gold. Commerce raises it. Upkeep and hires spend it."><span>Gold</span><strong id="gold">0</strong></div>
+          <div class="meter" data-tip="Food. Cultivate raises it. Empty stores starve the levy."><span>Food</span><strong id="food">0</strong></div>
+          <div class="meter" data-tip="Fame. Wins and deeds. Helps rank and talks."><span>Fame</span><strong id="fame">0</strong></div>
+          <div class="meter" data-tip="Rank. Grows as you hold ground. More rank, more AP."><span>Rank</span><strong id="rank">Free</strong></div>
+        </div>
+        <div class="top-actions">
+          <button type="button" id="btn-help">Help</button>
+          <button type="button" id="btn-save">Save</button>
+          <button type="button" id="btn-load">Load</button>
+          <button type="button" id="btn-end" class="primary" data-tip="Advance the calendar. Neighbors act. You get a fresh AP pool.">End Week</button>
+        </div>
+      </header>
+
+      <div id="objective" class="objective" hidden>
+        <div class="objective-copy">
+          <strong id="obj-kicker">NEXT</strong>
+          <span id="obj-text">Raise a banner in Bethel.</span>
+        </div>
+        <button type="button" id="btn-coach">Coach</button>
+      </div>
+
+      <main class="workspace">
+        <aside class="side" id="command-col">
+          <section class="card officer-plate" id="officer-plate"></section>
+          <section class="card city-stats" id="city-stats"></section>
+          <section class="card cmd-card">
+            <div class="chrome-head">
+              <span class="panel-title">Command</span>
+              <span class="panel-why">Hall / people / roads.</span>
+            </div>
+            <div class="cmd-tabs" id="cmd-tabs"></div>
+            <div id="cmd-actions" class="cmd-actions"></div>
+          </section>
+        </aside>
+        <section class="map-wrap">
+          <header class="chrome-head">
+            <span class="panel-title">Theater</span>
+            <p class="map-caption" id="map-caption">MAP — topo land · pale roads · node + faction flag · 1980s marks</p>
+          </header>
+          <canvas id="map" width="1000" height="620" aria-label="Western theater map, Alaska through the plains"></canvas>
+          <div class="map-legend" id="legend"></div>
+        </section>
+      </main>
+
+      <section class="court-strip" id="court-strip"></section>
+
+      <section class="dock">
+        <div class="chrome-head dock-head">
+          <span class="panel-title">Chronicle</span>
+          <span class="panel-why">Newest line first.</span>
+          <button type="button" id="btn-officers">Officers</button>
+          <button type="button" id="btn-missions">Missions</button>
+          <button type="button" id="btn-states">States</button>
+          <button type="button" id="btn-factions">Banners</button>
+        </div>
+        <ol id="log" class="log"></ol>
+      </section>
+    </div>
+
+    <div id="modal" class="modal" hidden>
+      <div class="modal-card" id="modal-card"></div>
+    </div>
+
+    <div id="event-scene" class="event-scene" hidden>
+      <div class="event-card">
+        <div class="event-art">
+          <img id="event-vignette" alt="" />
+          <canvas id="scene-fx" width="320" height="90" hidden></canvas>
+          <img id="event-portrait" class="event-face" alt="" />
+        </div>
+        <div class="event-copy">
+          <p class="panel-why">Scene — this is the result of your last click.</p>
+          <h2 id="event-title">Event</h2>
+          <p id="event-text"></p>
+          <p id="event-next" class="next-line"></p>
+          <button type="button" id="event-close" class="primary">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="battle" class="battle" hidden>
+      <div class="battle-inner">
+        <header class="battle-bar">
+          <h2 id="battle-title">Field</h2>
+          <p id="battle-meta"></p>
+          <div class="battle-cmds">
+            <button type="button" id="ploy-rally">Ploy: Rally</button>
+            <button type="button" id="ploy-ambush">Ploy: Ambush</button>
+            <button type="button" id="ploy-rumor">Ploy: Rumor</button>
+            <button type="button" id="battle-end-turn" class="primary">End impulse</button>
+            <button type="button" id="battle-auto">Auto-resolve</button>
+          </div>
+        </header>
+        <div class="battle-stage">
+          <canvas id="battle-sky" width="960" height="64" aria-hidden="true"></canvas>
+          <canvas id="battle-canvas" width="960" height="520"></canvas>
+          <canvas id="battle-charge" width="960" height="96" aria-hidden="true"></canvas>
+        </div>
+        <p id="battle-hint" class="hint">FIELD / SIEGE — isometric strip. Yellow unit, then an adjacent diamond. Strength bars over jeeps and militia. Auto-resolve skips the grid.</p>
+        <ol id="battle-log" class="log battle-log"></ol>
+      </div>
+    </div>
+
+    <div id="duel" class="duel" hidden>
+      <div class="duel-inner">
+        <header class="chrome-head duel-head">
+          <span class="panel-title" id="duel-arena">Yard</span>
+          <span id="duel-exchange">EX 1 / 11</span>
+          <span id="duel-clock" class="duel-clock">99</span>
+          <span id="duel-underdog" class="duel-underdog" hidden>UNDERDOG</span>
+        </header>
+        <p id="duel-cue" class="duel-cue">Green window = bonus. Strike beats Special · Special beats Guard · Guard beats Strike.</p>
+        <div class="duel-fighters">
+          <article class="duel-card" id="duel-you">
+            <div class="medallion"><img id="duel-you-face" alt="" /></div>
+            <div>
+              <h2 id="duel-you-name">You</h2>
+              <p id="duel-you-style" class="duel-style"></p>
+              <p id="duel-you-meta" class="muted"></p>
+              <p id="duel-you-stats"></p>
+              <div class="duel-hp"><i id="duel-you-hp"></i></div>
+              <p id="duel-you-hp-n" class="muted"></p>
+            </div>
+          </article>
+          <article class="duel-card foe" id="duel-foe">
+            <div>
+              <h2 id="duel-foe-name">Foe</h2>
+              <p id="duel-foe-style" class="duel-style"></p>
+              <p id="duel-foe-meta" class="muted"></p>
+              <p id="duel-foe-stats"></p>
+              <div class="duel-hp"><i id="duel-foe-hp"></i></div>
+              <p id="duel-foe-hp-n" class="muted"></p>
+            </div>
+            <div class="medallion"><span id="duel-foe-face" class="mini"></span></div>
+          </article>
+        </div>
+        <canvas id="duel-canvas" width="640" height="180" aria-label="Yard"></canvas>
+        <div class="duel-meter" id="duel-meter">
+          <i id="duel-green" class="duel-green"></i>
+          <i id="duel-needle" class="duel-needle"></i>
+        </div>
+        <div class="duel-moves" id="duel-moves">
+          <button type="button" data-duel-move="strike"><b>1</b> Strike<small>beats Special</small></button>
+          <button type="button" data-duel-move="guard"><b>2</b> Guard<small>beats Strike</small></button>
+          <button type="button" data-duel-move="special" id="duel-special"><b>3</b> Special · Dust Feint<small>beats Guard</small></button>
+        </div>
+        <ol id="duel-log" class="log duel-log"></ol>
+        <div class="duel-foot">
+          <button type="button" id="duel-continue" class="primary" hidden>Back to map</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="coach" class="coach" hidden>
+      <div class="coach-card">
+        <p class="panel-why">Week-1 coach</p>
+        <h2 id="coach-title">1 / 4</h2>
+        <p id="coach-text"></p>
+        <div class="choices">
+          <button type="button" id="coach-next" class="primary">Got it</button>
+          <button type="button" id="coach-skip">Skip coach</button>
+        </div>
+      </div>
+    </div>
+    <div id="tip" class="tip" hidden></div>
+    <div id="ding" class="ding" hidden></div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
