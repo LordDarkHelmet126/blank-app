@@ -70,6 +70,7 @@ import {
   ensureCampaign,
   theaterVisible,
   isAdjacent,
+  approachRoads,
   geoTags,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
@@ -624,7 +625,7 @@ function nextHint(st) {
   const localJob = jobs.find((j) => j.regionId === p.region);
   const wait = appointCandidates(st);
   if (sel && here && sel.id !== here.id && !isAdjacent(st, here, sel)) {
-    const via = (here.neighbors || []).map((id) => regionOf(st, id)?.short).filter(Boolean).slice(0, 3).join(", ");
+    const via = approachRoads(st, here, sel).join(", ");
     return `NEXT: Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Take an adjacent road${via ? ` (${via})` : ""} first.`;
   }
   if (sel && here && sel.id !== here.id && isAdjacent(st, here, sel)) {
