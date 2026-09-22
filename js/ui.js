@@ -316,7 +316,10 @@ export async function boot(loaded) {
   }
   if (params.get("demo") === "states" || params.get("demo") === "map") {
     startSliceState();
-    selectedRegion = "denver";
+    // Report, caption, and the here-overlay share the player's region.
+    // A distant preselect (Denver) made CITY REPORT disagree with Bethel.
+    selectedRegion = playerOf(state).region;
+    state.selectedRegion = selectedRegion;
     hideModal();
     render();
     pulseTravel("juneau", "seattle", { loop: true });
@@ -872,7 +875,7 @@ function campaignHtml() {
         .map((t) => {
           const tags = (t.geo || []).map((g) => g.label).join("/");
           const route = t.here ? "here" : t.adjacent ? "road open" : "route locked";
-          return `<small>${esc(t.short)}${t.key ? " ★" : ""} · ${tags || "—"} · ${route}</small>`;
+          return `<div class="terr-row"><span class="status-chip">${esc(route)}</span> <span class="terr-name">${esc(t.short)}${t.key ? " ★" : ""}</span> <span class="terr-meta">${esc(tags || "—")}</span></div>`;
         })
         .join("");
       return `<div class="card" style="margin:8px 0">
@@ -1220,6 +1223,11 @@ function cityHtml() {
         <p class="oversee-ap">AP <strong>${state.ap}</strong>/${apMax(state)}</p>
         <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.stateCode || "—")} → ${esc(r.short)}</h2>
         <p class="muted">${esc(p.name)} · ${kind} · ${f ? esc(f.short) : "OPEN"}</p>
+        ${(() => {
+          const here = regionOf(state, p.region);
+          if (!here || here.id === r.id) return "";
+          return `<p class="muted">You are in ${esc(here.short)} (${esc(here.stateCode || "—")}).</p>`;
+        })()}
       </div>
     </div>
     <div class="city-body">
@@ -1674,6 +1682,7 @@ function onMapClick(e) {
   const r = regionAt(e.clientX, e.clientY, $("map"));
   if (!r) return;
   selectedRegion = r.id;
+  state.selectedRegion = r.id;
   if (coachOn && !$("coach").hidden && COACH_STEPS[coachStep]?.id === "city") {
     coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
     openCoach();

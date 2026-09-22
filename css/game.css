@@ -539,6 +539,26 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   color: var(--ice);
   background: #000030;
 }
+.terr-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 6px 0;
+}
+.status-chip {
+  display: inline-block;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 3px 8px;
+  border: 2px solid var(--amber);
+  background: #000030;
+  color: var(--amber);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.terr-row .terr-name { color: var(--ice); }
+.terr-row .terr-meta { color: var(--ice-dim); }
 .plus { color: var(--ok); }
 .minus { color: var(--blood); }
 .gen-orders { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
