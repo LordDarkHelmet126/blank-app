@@ -1247,7 +1247,10 @@ function cityHtml() {
       </div>
       ${plus ? `<p class="plus">+ ${esc(plus)}</p>` : ""}
       ${minus ? `<p class="minus">− ${esc(minus)}</p>` : ""}
-      <p class="plus">Geo: ${geoTags(r).map((t) => `${t.label} ${t.n}`).join(" · ") || "none"}</p>
+      <p class="plus geo-line"><span class="geo-label">Geo:</span> ${(() => {
+        const tags = geoTags(r);
+        return tags.length ? yieldSlashHtml(tags.map((t) => ({ label: `${t.label} ${t.n}` }))) : "none";
+      })()}</p>
       ${(() => {
         const row = stateControl(state).find((s) => s.id === r.stateCode);
         const here = regionOf(state, playerOf(state).region);
