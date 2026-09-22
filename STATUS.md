@@ -45,6 +45,7 @@ Theater is a painted topo (olive plains, brown mountains, blue water, coast haze
 - High desert **Salt Lake–Jackson** vs Junction orchards
 - Redrock sun road **Moab–Denver** vs Junction
 - Front Range **Denver–Omaha** / **Denver–Topeka** vs the long river-bluff chain
+- Caribbean **St. Louis → Gulf Sealift → Cuba** (Phase 3). No direct leap. A later southern wire would still use that channel.
 
 ## Geo tags (weekly yields)
 
@@ -54,11 +55,11 @@ Examples: Lincoln/Topeka **Farm 3**; Arctic Slope **Fuel 3 + Weather 3**; Klondi
 
 ## Campaign (unchanged)
 
-Phase 1 liberate states. Phase 2 at **8** west-bloc US states (national leader). Phase 3 Russia/Cuba/Nicaragua stubs. Phase 4 sponsor can add Korea.
+Phase 1 liberate states. Phase 2 at **8** west-bloc US states (national leader). Phase 3 Russia/Cuba/Nicaragua stubs, reached south only through the Gulf Sealift. Phase 4 sponsor can add Korea.
 
 ## Counts (exact)
 
-- **US states: 11** · **Yukon: 1** · **territories on those units: 33** · **foreign stubs: 4** · **total nodes: 37**
+- **US states: 11** · **Yukon: 1** · **territories on those units: 33** · **foreign stubs: 4** · **sea approach: 1** (Gulf Sealift) · **total nodes: 38**
 - On-map factions: **17** · AI officers: **153** · legends: **3**
 - Duel clock: **99s** / **11** exchanges
 
