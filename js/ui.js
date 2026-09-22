@@ -265,6 +265,10 @@ export async function boot(loaded) {
     render();
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
+    if (params.get("take") === "1") {
+      const local = openMissions(state).find((j) => j.regionId === playerOf(state).region);
+      if (local) run("mission", { jobId: local.id });
+    }
     afterFonts();
     return;
   }

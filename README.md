@@ -86,6 +86,7 @@ Between-turn chronicle (season + aging + marriage + child): `/?demo=chronicle`.
 Season tint only: `/?demo=season`.
 **Generals (5 slots + ADD empty states):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
+**Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
 
 ## Layout
 

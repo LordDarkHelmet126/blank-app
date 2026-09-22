@@ -27,6 +27,7 @@ Travel vignette: `/?demo=slice&panel=travel`.
 **Season tint:** `/?demo=season` (Spring 1985 map/vignette).
 **Generals (5 slots + ADD):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
+**Mission vignette:** `/?demo=missions&take=1`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 

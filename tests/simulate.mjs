@@ -355,6 +355,7 @@ console.log("ok Silo/Marsh legend paths");
 const missionSrc = readFileSync(new URL("../js/missions.js", import.meta.url), "utf8");
 assert(!/wolverine/i.test(missionSrc), "mission copy must not use Wolverines");
 assert(/get\("demo"\) === "generals"/.test(uiSrc) && /get\("demo"\) === "missions"/.test(uiSrc), "generals/missions demo hooks");
+assert(/get\("take"\) === "1"/.test(uiSrc), "missions take=1 vignette hook");
 assert(/data-add-gen/.test(uiSrc), "You-card ADD empty general slots");
 console.log("ok generals/missions demos");
 
