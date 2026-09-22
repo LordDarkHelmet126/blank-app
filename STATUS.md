@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Gulf Sealift nameplate sits above the Cuba/Nicaragua selection box (same dodge idea as the Bethel here-chip). Pier/radio mast, gold sea lanes St. Louis → Gulf → Cuba. Look: `/?demo=look&focus=gulf`. No St. Louis–Cuba leap. Cuba–Nicaragua stays. Lanes stay hidden until Phase 3.
+**Last checkpoint:** 2026-09-22 — `/?demo=look&focus=gulf` selects Gulf Sealift (not Bethel). The Gulf Sealift nameplate stays in the Cuba/Nicaragua strip and still draws when Cuba or Nicaragua is selected. Pier/radio mast, gold sea lanes St. Louis → Gulf → Cuba. No St. Louis–Cuba leap. Cuba–Nicaragua stays. Lanes stay hidden until Phase 3.
 
 ## How to run
 

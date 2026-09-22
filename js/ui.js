@@ -325,10 +325,19 @@ export async function boot(loaded) {
   }
   if (params.get("demo") === "look" || params.get("demo") === "terrain") {
     startSliceState();
-    const focusRaw = params.get("focus") || params.get("city") || "seattle";
-    sealiftLook = focusRaw === "gulf" || focusRaw === "gulf_passage" || focusRaw === "sealift";
+    const focusRaw = (params.get("focus") || params.get("city") || "seattle").trim().toLowerCase();
+    const focusAlias = {
+      gulf: "gulf_passage",
+      sealift: "gulf_passage",
+      "gulf-sealift": "gulf_passage",
+      gulfsealift: "gulf_passage",
+      gulf_passage: "gulf_passage",
+    };
+    const focusId = focusAlias[focusRaw] || focusRaw;
+    sealiftLook = focusId === "gulf_passage";
     if (sealiftLook) openForeignDesks();
-    selectedRegion = sealiftLook ? "gulf_passage" : focusRaw;
+    // Region id, not the query alias. "gulf" is not a city, so it used to fall back to Bethel.
+    selectedRegion = focusId;
     commandCat = "domestic";
     hideModal();
     render();
@@ -1964,10 +1973,11 @@ function selectionObstacle(selfId) {
 function dodgeGulfPlate(px, py, pw, ph) {
   const box = selectionObstacle("gulf_passage");
   if (!plateHits(px, py, pw, ph, box)) return [px, py];
-  let ny = Math.max(4, Math.round(box.y - ph - 8));
+  // Nudge just clear of the selected plate. Stay in the sealift strip.
+  let ny = Math.max(430, Math.round(box.y - ph - 6));
   if (!plateHits(px, ny, pw, ph, box)) return [px, ny];
-  const nx = Math.max(4, Math.min(996 - pw, Math.round(box.x + box.w + 8)));
-  if (!plateHits(nx, ny, pw, ph, box)) return [nx, ny];
+  const nx = Math.max(4, Math.min(996 - pw, Math.round(box.x + box.w + 6)));
+  if (!plateHits(nx, py, pw, ph, box)) return [nx, py];
   return [px, ny];
 }
 
@@ -1983,8 +1993,10 @@ function anchorCityPlate(r) {
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
   if (r.id === "gulf_passage") {
-    px = Math.round(x + 28);
-    py = Math.round(y - 108);
+    // Just above the Gulf→Cuba sea lane (y=528) and to the right of the pier,
+    // so the plate stays in the Cuba/Nicaragua strip instead of floating inland.
+    px = Math.round(x + 22);
+    py = Math.round(y - 64);
   } else if (r.id === "far_cuba") {
     px = 4;
     py = Math.round(y - 58);
@@ -2057,7 +2069,10 @@ function drawCityPlate(ctx, r, selected) {
   const garr = known ? String(r.garrison) : "?";
   const chainPlate =
     sealiftLook && (r.id === "gulf_passage" || r.id === "far_cuba" || r.id === "far_nicaragua" || r.id === "st_louis");
-  if (!selected && !here && r.id !== hoverRegion && !chainPlate) return;
+  // Phase 3 paints this node. Always keep its nameplate — selected-only culling
+  // dropped it whenever Cuba or Nicaragua was the selected city.
+  const keepGulf = r.id === "gulf_passage";
+  if (!selected && !here && r.id !== hoverRegion && !chainPlate && !keepGulf) return;
   if (here && !selected) {
     const [hx, hy] = cityXY(r);
     drawHereChip(ctx, r, hx, hy);
@@ -2127,8 +2142,12 @@ function drawMap() {
   }
   painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
   drawStateLabels(ctx);
-  const plateOrder = painted.slice().sort((a, b) => (a.id === selectedRegion ? -1 : b.id === selectedRegion ? 1 : 0));
+  const plateOrder = painted
+    .filter((r) => r.id !== "gulf_passage")
+    .sort((a, b) => (a.id === selectedRegion ? -1 : b.id === selectedRegion ? 1 : 0));
   plateOrder.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  const gulf = painted.find((r) => r.id === "gulf_passage");
+  if (gulf) drawCityPlate(ctx, gulf, gulf.id === selectedRegion);
 }
 
 function drawCityMarkHi(ctx, r, selected) {
