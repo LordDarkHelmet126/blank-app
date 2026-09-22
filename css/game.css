@@ -271,7 +271,16 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   display: flex;
   gap: 8px;
   min-height: 0;
-  padding: 8px;
+  padding: 8px 8px 8px 12px;
+  position: relative;
+}
+.banner-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--amber);
 }
 .medallion {
   position: relative;
@@ -346,7 +355,21 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .city-stats .city-body { padding: 8px; }
 .city-stats .city-body .plus,
 .city-stats .city-body .minus { margin: 4px 0 0; }
-.city-stats h2 { margin: 0 0 4px; padding: 0; }
+.city-stats h2 {
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.banner-tick {
+  display: inline-block;
+  width: 8px;
+  height: 12px;
+  flex: 0 0 8px;
+  border: 2px solid var(--line);
+  background: var(--amber);
+}
 .city-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -363,6 +386,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   margin: 0;
   padding: 4px;
 }
+.city-grid .pill:nth-child(3n) { border-right: 0; }
+.city-grid .pill:nth-child(n+4) { border-bottom: 0; }
 .cmd-card {
   flex: 1 1 auto;
   min-height: 180px;
@@ -432,7 +457,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .cmd-actions button {
   text-align: left;
   font-size: 8px;
-  min-height: 44px;
+  min-height: 32px;
   padding: 0;
   display: flex;
   flex-direction: row;
@@ -443,21 +468,33 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .cmd-actions button span {
   padding: 4px 6px;
   flex: 1;
+  min-width: 0;
   color: var(--ice);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.cmd-actions button b {
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .cmd-actions button small {
-  display: block;
+  display: inline;
   color: var(--ice-dim);
   font-weight: 400;
   text-transform: uppercase;
+  flex: 0 0 auto;
 }
 .cmd-thumb {
-  width: 48px;
-  height: 44px;
-  flex: 0 0 48px;
+  width: 36px;
+  height: 32px;
+  flex: 0 0 36px;
   object-fit: cover;
   image-rendering: pixelated;
   border: 0;
@@ -479,8 +516,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   color: var(--amber);
 }
 .cmd-actions button[data-id="attack"] .cmd-thumb {
-  height: 44px;
-  flex-basis: 48px;
+  height: 32px;
+  flex-basis: 36px;
 }
 .card h2 {
   margin: 0 0 8px;
@@ -528,6 +565,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   min-width: 0;
   background: #000030;
 }
+.court-chair:nth-child(2) { border-left: 0; }
 .court-chair .mini {
   width: 32px;
   height: 32px;
@@ -994,6 +1032,6 @@ hr {
   .cmd-card { min-height: 140px; }
   .officer-plate { min-height: 0; }
   .side .panel-why, .dock .panel-why { display: none; }
-  .cmd-actions button { min-height: 36px; }
-  .cmd-thumb { height: 36px; }
+  .cmd-actions button { min-height: 28px; }
+  .cmd-thumb { height: 28px; }
 }

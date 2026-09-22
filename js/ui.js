@@ -455,7 +455,7 @@ function nextHint(st) {
   if (st.ap <= 0) return "NEXT: End Week (top right). Neighbors act, then you get a fresh AP pool.";
   if (gens.length === 0) return "NEXT: Plot → Hire a free officer in this city. They fill general slot 1 of 5.";
   if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
-    return `NEXT: Plot → Hire (${gens.length}/5 generals). Empty ADD slots sit on the You card.`;
+    return `NEXT: Plot → Hire (${gens.length}/5 generals). Empty ADD chairs sit on the court strip.`;
   }
   if (localJob) return `NEXT: Military → Side Mission: ${localJob.name} in this city (1 AP).`;
   if (jobs.length) return `NEXT: ${jobs.length} side missions on the board — Travel to the city, or set a general to Side mission.`;
@@ -800,6 +800,7 @@ export function render() {
   $("food").textContent = String(state.food);
   $("fame").textContent = String(state.fame);
   $("rank").textContent = rankLabel(rankOf(state, p));
+  $("app").dataset.season = state._season?.id || "";
   $("officer-plate").innerHTML = officerHtml();
   $("city-stats").innerHTML = cityHtml();
   if ($("court-strip")) $("court-strip").innerHTML = courtHtml();
@@ -834,12 +835,14 @@ function officerHtml() {
   const fac = p.faction ? factionOf(state, p.faction) : null;
   const here = regionOf(state, p.region);
   const rank = rankLabel(rankOf(state, p));
+  const stripe = fac?.color || "#607838";
   return `
     <div class="chrome-head">
       <span class="panel-title">Ruler</span>
       <span class="panel-why">Name, age, loyalty — who holds this chair.</span>
     </div>
     <div class="plate-body">
+      <i class="banner-stripe" style="background:${esc(stripe)}"></i>
       <div class="medallion">
         <i class="tick tl"></i><i class="tick tr"></i><i class="tick bl"></i><i class="tick br"></i>
         <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
@@ -864,15 +867,17 @@ function courtHtml() {
   const p = playerOf(state);
   const gens = playerGenerals(state);
   const wait = appointCandidates(state);
+  const fac = p.faction ? factionOf(state, p.faction) : null;
+  const stripe = fac?.color || "#a0a0d0";
   const chairs = [];
   for (let i = 0; i < MAX_GENERALS; i++) {
     const g = gens[i];
     if (g) {
       chairs.push(`<div class="court-chair">
-        <span class="mini">${esc(g.portrait || portraitInitials(g.name))}</span>
+        <span class="mini" style="border-color:${esc(stripe)}">${esc(g.portrait || portraitInitials(g.name))}</span>
         <div class="who">
-          <strong>${esc(g.name)}</strong>
-          <small>AGE ${g.age || "?"} · LOY ${g.loyalty}</small>
+          <strong>${i + 1}. ${esc(g.name)}</strong>
+          <small>AGE ${g.age || "?"} · LOY ${g.loyalty} · ${esc(g.title || "officer")}</small>
           <select data-order-gen="${g.id}">${ordersForOfficer(g)
             .map(
               (o) =>
@@ -911,7 +916,7 @@ function cityHtml() {
       <span class="panel-why">County seat under the glass.</span>
     </div>
     <div class="city-body">
-      <h2>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
+      <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
       <div class="city-grid">
         <span class="pill"><span>ECON</span><strong>${econ}</strong></span>
         <span class="pill"><span>STORES</span><strong>${known ? r.food : "?"}</strong></span>
@@ -1039,8 +1044,8 @@ function actionButton(a) {
   b.dataset.id = a.id;
   const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
   b.disabled = !live;
-  const lock = !a.enabled ? "LOCKED" : state.ap < a.ap ? `NEED ${a.ap} AP` : `AP ${a.ap}`;
-  b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(a.label)}<small>${esc(lock)}</small></span>`;
+  const lock = !a.enabled ? "LOCK" : state.ap < a.ap ? `${a.ap}AP` : `${a.ap}`;
+  b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span><b>${esc(a.label)}</b><small>${esc(lock)}</small></span>`;
   bindTip(b, actionTipHtml(a));
   b.onclick = () => {
     b.classList.add("is-press");
@@ -1211,7 +1216,7 @@ function startAction(a) {
   if (a.needs === "appoint") {
     const cs = appointCandidates(state);
     if (!cs.length) return toast("Court empty. Plot → Hire, or Officers → Create then Hire.");
-    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Promote a court officer into an empty You-card slot. Standing orders live on generals.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Promote a court officer into an empty court-strip chair. Standing orders live on generals.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-appoint]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -1583,16 +1588,6 @@ function drawMap() {
   ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
   ctx.imageSmoothingEnabled = false;
   state.regions.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
-  ctx.fillStyle = "#f8d800";
-  ctx.font = PX_FONT;
-  const hunt = legendStatus(state);
-  ctx.fillText(
-    hunt.revealed
-      ? `${(state._season?.name || "SEASON").toUpperCase()} ${calendarYear(state.week)} · ROADS = MARCH LINES`
-      : `${(state._season?.name || "SEASON").toUpperCase()} ${calendarYear(state.week)} · GOLD ROADS = TRAVEL`,
-    12,
-    28
-  );
 }
 
 function ensureMapPulse() {

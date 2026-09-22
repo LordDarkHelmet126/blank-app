@@ -358,7 +358,8 @@ assert(/get\("demo"\) === "generals"/.test(uiSrc) && /get\("demo"\) === "mission
 assert(/get\("demo"\) === "layout"/.test(uiSrc), "layout demo hook");
 assert(/panel-title">Ruler/.test(uiSrc) && /court-strip/.test(uiSrc), "ruler plate + court strip");
 assert(/get\("take"\) === "1"/.test(uiSrc), "missions take=1 vignette hook");
-assert(/data-add-gen/.test(uiSrc), "You-card ADD empty general slots");
+assert(/data-add-gen/.test(uiSrc), "court-strip ADD empty general slots");
+assert(!/You card/.test(uiSrc), "layout copy uses court strip, not You card");
 console.log("ok generals/missions demos");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));

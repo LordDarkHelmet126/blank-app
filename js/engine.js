@@ -1153,7 +1153,7 @@ function doHire(state, officerId, stats) {
   p.fame += 4;
   const msg = madeGeneral
     ? `${t.name} takes your color as general ${playerGenerals(state).length}/${MAX_GENERALS}.`
-    : `${t.name} joins the court. Appoint them on the You card when a general slot opens (5 max).`;
+    : `${t.name} joins the court. Appoint them to the court strip when a general slot opens (5 max).`;
   pushLog(state, msg, "alert");
   if (madeGeneral) state.ap = Math.min(apMax(state), state.ap + 1);
   return { ok: true, message: msg };
@@ -1169,7 +1169,7 @@ function doAppoint(state, officerId) {
   t.isGeneral = true;
   t.standingOrder = t.standingOrder || "auto";
   const n = playerGenerals(state).length;
-  const msg = `${t.name} is appointed general ${n}/${MAX_GENERALS}. Set a standing order on the You card.`;
+  const msg = `${t.name} is appointed general ${n}/${MAX_GENERALS}. Set a standing order on the court strip.`;
   pushLog(state, msg, "alert");
   state.ap = Math.min(apMax(state), state.ap);
   return { ok: true, message: msg };

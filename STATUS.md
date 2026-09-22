@@ -34,10 +34,10 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- Officer-game chrome: status bar (calendar + treasury), **Ruler** medallion plate (name/age/loyalty/WAR INT POL CHR), **City report** (econ/stores/levy/walls/order + plus/minus), **Command** Domestic/Plot/Military as compact icon+label tiles, center **Theater** map with caption bar (not an overlay), **Court** strip of 5 general chairs, **Chronicle** dock.
-- Cultural presentation (original IP): officer-first identity, loyalty bar, court appointments, standing orders, city report, year/season on the calendar, banner list. 1980s resistance voice — no Koei names or assets.
+- Officer-game chrome: status bar (calendar + treasury), **Ruler** medallion plate (name/age/loyalty/WAR INT POL CHR + faction banner stripe), **City report** (econ/stores/levy/walls/order + plus/minus + banner tick), **Command** Domestic/Plot/Military as compact icon+label tiles (one-line verb + AP/LOCK), center **Theater** map with caption bar (canvas overlay removed), **Court** strip of 5 numbered general chairs, **Chronicle** dock. Season tint stays on the map; caption bars stay gold SNES chrome.
+- Cultural presentation (original IP): officer-first identity, loyalty bar, court appointments, standing orders, city report, year/season on the calendar, banner list. 1980s resistance voice — no Koei names or assets. Hire/appoint copy points at the **court strip**, not a buried You card.
 - Prior generals, missions, coach, chronicle, travel/battle sprites kept.
-- Demo: `/?demo=layout`
+- Demo: `/?demo=layout` (Hart / Cole / Nash seated, Domestic open). Screenshots: `layout_before.png` (old You-card layout) vs `layout_after.png`.
 
 ## Counts
 
