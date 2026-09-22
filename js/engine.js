@@ -1068,6 +1068,96 @@ export function isAdjacent(state, fromId, toId) {
   return !!(from.neighbors || []).includes(to.id) && travelUnlocked(state, to);
 }
 
+function distancesFrom(state, originId) {
+  const dist = new Map([[originId, 0]]);
+  const q = [originId];
+  while (q.length) {
+    const id = q.shift();
+    const node = regionOf(state, id);
+    for (const n of node?.neighbors || []) {
+      if (dist.has(n)) continue;
+      dist.set(n, dist.get(id) + 1);
+      q.push(n);
+    }
+  }
+  return dist;
+}
+
+function shortestPath(state, fromId, toId) {
+  if (fromId === toId) return [fromId];
+  const prev = new Map([[fromId, null]]);
+  const q = [fromId];
+  while (q.length) {
+    const id = q.shift();
+    const node = regionOf(state, id);
+    for (const n of node?.neighbors || []) {
+      if (prev.has(n)) continue;
+      prev.set(n, id);
+      if (n === toId) {
+        const path = [];
+        let cur = toId;
+        while (cur) {
+          path.push(cur);
+          cur = prev.get(cur);
+        }
+        path.reverse();
+        return path;
+      }
+      q.push(n);
+    }
+  }
+  return null;
+}
+
+function approachChain(state, from, to) {
+  const path = shortestPath(state, from.id, to.id);
+  if (!path || path.length < 2) {
+    return (to.neighbors || [])
+      .map((id) => regionOf(state, id))
+      .filter((r) => r && r.id !== from.id)
+      .slice(0, 3);
+  }
+  const chain = [];
+  for (let i = path.length - 2; i >= 1; i--) {
+    const node = regionOf(state, path[i]);
+    if (!node) break;
+    chain.push(node);
+    if (!(node.unlockPhase > 0)) break;
+  }
+  return chain.reverse().slice(0, 3);
+}
+
+function pathNeighbors(state, from, to) {
+  const dist = distancesFrom(state, to.id);
+  const goal = dist.get(from.id);
+  if (goal == null || goal <= 1) return [];
+  const hops = [];
+  for (const id of from.neighbors || []) {
+    if (dist.get(id) !== goal - 1) continue;
+    const node = regionOf(state, id);
+    if (node && travelUnlocked(state, node)) hops.push(node);
+  }
+  return hops;
+}
+
+// Names for the no-leap NEXT line. Foreign and sea desks use the destination
+// approach (St. Louis → Gulf Sealift → Cuba). Domestic cities use the adjacent
+// hop that actually shortens the road — not every neighbor of the player.
+export function approachRoads(state, fromId, toId) {
+  const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
+  const to = typeof toId === "string" ? regionOf(state, toId) : toId;
+  if (!from || !to || from.id === to.id) return [];
+  if (to.type === "foreign" || to.type === "sea" || (to.unlockPhase || 0) > 0) {
+    return approachChain(state, from, to).map((r) => r.short);
+  }
+  const hops = pathNeighbors(state, from, to);
+  if (hops.length) return hops.slice(0, 3).map((r) => r.short);
+  return (from.neighbors || [])
+    .map((id) => regionOf(state, id)?.short)
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
 export function attackCandidates(state) {
   const here = currentRegion(state);
   const p = playerOf(state);

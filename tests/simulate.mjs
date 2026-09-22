@@ -35,6 +35,7 @@ import {
   fireSponsor,
   travelUnlocked,
   isAdjacent,
+  approachRoads,
   geoOf,
   geoYield,
   geoTags,
@@ -367,6 +368,20 @@ res = act(leap, content, "attack", { regionId: "denver", auto: true });
 assert(!res.ok && /leap|adjacent|neighbor/i.test(res.message), `no leap attack: ${res.message}`);
 assert(!isAdjacent(leap, "bethel", "denver"), "engine marks Denver non-adjacent from Bethel");
 assert(isAdjacent(leap, "bethel", "anchorage"), "Anchorage is an adjacent road");
+const cubaRoads = approachRoads(leap, "bethel", "far_cuba");
+assert(cubaRoads.join(", ") === "St. Louis, Gulf Sealift", `Cuba approach from Bethel: ${cubaRoads.join(", ")}`);
+assert(!cubaRoads.some((n) => n === "Nome" || n === "Fairbanks" || n === "Anchorage"), `Cuba NEXT must not list AK home roads: ${cubaRoads.join(", ")}`);
+assert(approachRoads(leap, "denver", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "Cuba approach from Denver is the sealift chain");
+assert(approachRoads(leap, "st_louis", "far_cuba").join(", ") === "Gulf Sealift", "Cuba from St. Louis names the sealift, not the city you are in");
+assert(approachRoads(leap, "bethel", "gulf_passage").join(", ") === "St. Louis", "Gulf Sealift approach names St. Louis");
+assert(approachRoads(leap, "bethel", "far_russia").join(", ") === "Bering", "Russia approach is the Bering gate");
+leap.campaign.phase = 3;
+assert(approachRoads(leap, "bethel", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "open Phase 3 desks still name the sealift chain");
+leap.campaign.phase = 1;
+const seattleRoads = approachRoads(leap, "bethel", "seattle");
+assert(seattleRoads.includes("Anchorage") && !seattleRoads.includes("Nome"), `Seattle adjacent road: ${seattleRoads.join(", ")}`);
+const denverRoads = approachRoads(leap, "bethel", "denver");
+assert(denverRoads.includes("Fairbanks") && denverRoads.includes("Anchorage") && !denverRoads.includes("Nome"), `Denver adjacent roads: ${denverRoads.join(", ")}`);
 res = act(leap, content, "travel", { regionId: "anchorage" });
 assert(res.ok, `adjacent travel Bethel→Anchorage: ${res.message}`);
 const farmY = geoYield(regionOf(leap, "lincoln"), { food: 1, commerce: 1 });
@@ -699,6 +714,7 @@ assert(/city-oversee/.test(uiSrc), "city oversee portrait + AP");
 assert(/selectedRegion = "denver"/.test(uiSrc), "states demo opens on Denver");
 assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States dock + liberation board");
 assert(/Cannot leap/.test(uiSrc) && /route locked/.test(uiSrc), "NEXT and board explain no-leap");
+assert(/approachRoads\(st, here, sel\)/.test(uiSrc), "NEXT leap copy uses destination approach roads");
 assert(/Geo:/.test(uiSrc), "city report shows geo tags");
 assert(/id: "war_council"/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "war council action");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
