@@ -34,7 +34,7 @@ html, body {
   color: var(--ice);
   font-family: "Press Start 2P", "Courier New", monospace;
   font-size: var(--type);
-  line-height: 1.9;
+  line-height: 1.65;
   image-rendering: pixelated;
 }
 
@@ -245,7 +245,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 6px 10px;
+  padding: 4px 8px;
   background: #000030;
   border-bottom: 4px solid var(--amber);
   flex: 0 0 auto;
@@ -269,12 +269,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 .plate-body {
   display: flex;
   gap: 8px;
   min-height: 0;
-  padding: 8px 8px 8px 12px;
+  padding: 6px 8px 6px 10px;
   position: relative;
 }
 .banner-stripe {
@@ -287,9 +288,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 }
 .medallion {
   position: relative;
-  width: 80px;
-  height: 80px;
-  flex: 0 0 80px;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
   border: 4px solid var(--amber);
   background: #000010;
   box-shadow: inset 0 0 0 4px #000018, 0 0 0 2px #f8f8f8;
@@ -314,14 +315,14 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .medallion .tick.tr { top: -6px; right: -6px; }
 .medallion .tick.bl { bottom: -6px; left: -6px; }
 .medallion .tick.br { bottom: -6px; right: -6px; }
-.officer-meta { min-width: 0; flex: 1; }
-.officer-meta h2 { margin: 0 0 4px; color: var(--amber); font-size: var(--type-lg); text-transform: uppercase; }
-.officer-meta p { margin: 0 0 4px; }
+.officer-meta { min-width: 0; flex: 1; line-height: 1.55; }
+.officer-meta h2 { margin: 0 0 2px; color: var(--amber); font-size: var(--type-lg); text-transform: uppercase; }
+.officer-meta p { margin: 0 0 2px; }
 .stat-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0;
-  margin-top: 4px;
+  margin-top: 2px;
   border: var(--chrome);
 }
 .stat-row span {
@@ -337,7 +338,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 0 0;
+  margin: 2px 0 0;
 }
 .loy-bar {
   display: flex;
@@ -355,9 +356,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .loy-bar i.on { background: var(--amber); }
 .plate-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .city-stats { flex: 0 0 auto; }
-.city-stats .city-body { padding: 8px; }
+.city-stats .city-body { padding: 6px 8px; line-height: 1.5; }
 .city-stats .city-body .plus,
-.city-stats .city-body .minus { margin: 4px 0 0; }
+.city-stats .city-body .minus { margin: 2px 0 0; }
 .city-stats h2 {
   margin: 0 0 4px;
   padding: 0;
@@ -392,8 +393,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .city-grid .pill:nth-child(3n) { border-right: 0; }
 .city-grid .pill:nth-child(n+4) { border-bottom: 0; }
 .cmd-card {
-  flex: 1 1 auto;
-  min-height: 200px;
+  flex: 1 1 0;
+  min-height: 140px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -550,7 +551,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   background: var(--panel);
   box-shadow: var(--chrome-out);
   flex: 0 0 auto;
-  min-height: 80px;
+  min-height: 0;
 }
 .court-strip .chrome-head {
   grid-column: 1 / -1;
@@ -563,7 +564,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
+  padding: 4px 8px;
   border-left: var(--chrome);
   min-width: 0;
   background: #000030;
@@ -601,7 +602,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   background: #000018;
   color: var(--ice);
   border: var(--chrome);
-  padding: 4px;
+  padding: 2px 4px;
   max-width: 100%;
   border-radius: 0;
 }
@@ -716,7 +717,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 }
 .event-copy { padding: 40px 12px 12px 116px; }
 .event-copy h2 { margin: 0 0 10px; color: var(--amber); font-weight: 400; font-size: var(--type-lg); }
-.event-copy p { margin: 0 0 12px; color: var(--ice); line-height: 1.9; }
+.event-copy p { margin: 0 0 12px; color: var(--ice); line-height: 1.85; }
 .week-art { position: relative; margin: calc(var(--pad) * -1) calc(var(--pad) * -1) var(--pad); }
 .modal-card.week-card {
   width: min(440px, 100%);
@@ -730,8 +731,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   margin: 0 6px 6px;
   border: var(--chrome);
   background: var(--panel);
-  flex: 0 0 120px;
-  min-height: 88px;
+  flex: 0 0 80px;
+  min-height: 64px;
   display: flex;
   flex-direction: column;
   box-shadow: var(--chrome-out);
@@ -751,9 +752,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   flex: 1;
   overflow: auto;
   margin: 0;
-  padding: 10px 10px 12px 28px;
+  padding: 8px 10px 10px 26px;
   color: var(--ice);
-  line-height: 1.9;
+  line-height: 1.75;
 }
 .log li { margin: 6px 0; }
 .log .w { color: var(--ice-dim); font-variant-numeric: tabular-nums; margin-right: 6px; }
@@ -793,7 +794,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   line-height: 1.7;
 }
 .modal-card p, .modal-card li {
-  line-height: 1.9;
+  line-height: 1.85;
   color: var(--ice);
 }
 .choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }
@@ -1107,7 +1108,7 @@ hr {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   margin: 6px 6px 0;
   background: #803010;
   border: var(--chrome);
@@ -1138,7 +1139,7 @@ hr {
   padding: 12px;
 }
 .coach-card h2 { margin: 0 0 10px; color: var(--amber); font-weight: 400; font-size: var(--type-lg); }
-.coach-card p { line-height: 1.9; color: var(--ice); }
+.coach-card p { line-height: 1.85; color: var(--ice); }
 .coach-ring {
   outline: 4px solid #f8d800;
   outline-offset: 2px;
@@ -1175,8 +1176,8 @@ hr {
 }
 
 @media (max-height: 820px) {
-  .dock { flex-basis: 96px; min-height: 80px; }
-  .cmd-card { min-height: 160px; }
+  .dock { flex-basis: 56px; min-height: 52px; }
+  .cmd-card { min-height: 140px; }
   .officer-plate { min-height: 0; }
   .side .panel-why,
   .dock .panel-why,
@@ -1184,8 +1185,12 @@ hr {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 48%;
+    max-width: 42%;
   }
-  .cmd-actions button { min-height: 36px; }
-  .cmd-thumb { height: 32px; }
+  .cmd-actions button { min-height: 32px; }
+  .cmd-thumb { height: 28px; }
+  .court-chair { padding: 2px 6px; }
+  .court-strip .chrome-head { padding: 4px 8px; }
+  .city-stats .plus,
+  .city-stats .minus { display: none; }
 }
