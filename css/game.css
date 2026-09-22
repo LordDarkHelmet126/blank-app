@@ -667,7 +667,7 @@ hr {
   border: none;
   box-shadow: none;
 }
-#battle-charge { height: 72px; background: #8a7840; }
+#battle-charge { height: 96px; background: #8a7840; }
 .hint { color: var(--ice-dim); text-align: center; }
 .battle-log { max-height: 120px; }
 

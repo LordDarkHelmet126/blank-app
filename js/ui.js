@@ -1097,11 +1097,11 @@ function drawPixelRoad(ctx, a, b) {
   const pulse = mapFx?.kind === "travel" && sameRoad(a, b, mapFx.a, mapFx.b);
   const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
   walkLine(x0, y0, x1, y1, (x, y) => {
-    ctx.fillStyle = pulse ? (on ? "#f8f8f8" : "#f8d800") : "#503010";
-    ctx.fillRect(x - (pulse ? 2 : 1), y - (pulse ? 2 : 1), pulse ? 5 : 3, pulse ? 5 : 3);
+    ctx.fillStyle = pulse ? (on ? "#f8d800" : "#886028") : "#503010";
+    ctx.fillRect(x - 1, y - 1, 3, 3);
   });
   walkLine(x0, y0, x1, y1, (x, y) => {
-    ctx.fillStyle = pulse ? (on ? "#f8d800" : "#f8f8f8") : "#c8a038";
+    ctx.fillStyle = pulse ? (on ? "#fff0a0" : "#c8a038") : "#c8a038";
     ctx.fillRect(x, y, 1, 1);
   });
 }
@@ -1243,7 +1243,7 @@ function drawMap() {
     t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
     const [x0, y0] = lowPt(mapFx.a);
     const [x1, y1] = lowPt(mapFx.b);
-    drawTravelConvoy(o, [x0, y0], [x1, y1], t, now, 1);
+    drawTravelConvoy(o, [x0, y0], [x1, y1], t, now, 2);
   }
   state.regions.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
 

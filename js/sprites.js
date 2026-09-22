@@ -134,7 +134,7 @@ export function drawTravelConvoy(ctx, fromXY, toXY, t, now, scale) {
   const hopF = frameAt(now, 140, 2);
   const kinds = ["horse", "jeep", "m113"];
   for (let i = 0; i < kinds.length; i++) {
-    const u = Math.max(0, Math.min(1, t - i * 0.08));
+    const u = Math.max(0, Math.min(1, t - i * 0.12));
     const x = Math.round(x0 + (x1 - x0) * u);
     const y = Math.round(y0 + (y1 - y0) * u);
     if (kinds[i] === "horse") drawHorse(ctx, x, y, horseF, s, flip);
@@ -159,6 +159,8 @@ function mountainRow(ctx, w, baseY, height, color, shift) {
     ctx.fillStyle = color;
     ctx.fillRect(x + 4, baseY - height, span - 8, height);
     ctx.fillRect(x + span / 4, baseY - height - 6, span / 2, 8);
+    ctx.fillStyle = "#e8e8e0";
+    ctx.fillRect(x + span / 3, baseY - height - 6, 4, 3);
   }
 }
 
@@ -166,14 +168,14 @@ function mountainRow(ctx, w, baseY, height, color, shift) {
 export function paintWestBackdrop(ctx, w, h, now, mood) {
   const t = now || 0;
   const dusk = mood === "dusk";
-  ctx.fillStyle = dusk ? C.dusk : C.sky;
+  ctx.fillStyle = dusk ? C.dusk : "#4a88c8";
   ctx.fillRect(0, 0, w, h);
   if (!dusk) {
-    ctx.fillStyle = C.sky2;
+    ctx.fillStyle = "#98c0e0";
     ctx.fillRect(0, Math.floor(h * 0.22), w, Math.floor(h * 0.4));
     ctx.fillStyle = C.gold;
     ctx.fillRect(w - 10, 4, 3, 3);
-    ctx.fillStyle = "#e8e0d0";
+    ctx.fillStyle = "#f0e8d8";
     ctx.fillRect(8 + Math.floor((t / 180) % 12), 5, 10, 2);
   }
   const far = Math.floor(t / 220) % w;
@@ -224,8 +226,8 @@ export function paintArcticBackdrop(ctx, w, h, now) {
 
 export function paintChargeVignette(dest, now, arctic) {
   const w = 160;
-  const h = 45;
-  if (!paintChargeVignette.off) {
+  const h = 50;
+  if (!paintChargeVignette.off || paintChargeVignette.off.width !== w || paintChargeVignette.off.height !== h) {
     paintChargeVignette.off = document.createElement("canvas");
     paintChargeVignette.off.width = w;
     paintChargeVignette.off.height = h;
@@ -236,15 +238,15 @@ export function paintChargeVignette(dest, now, arctic) {
   if (arctic) paintArcticBackdrop(ctx, w, h, now);
   else paintWestBackdrop(ctx, w, h, now);
   const t = now / 1000;
-  const roadY = Math.floor(h * 0.62) + Math.floor((h * 0.38) * 0.45) + 4;
-  const horseX = Math.floor(((t * 28) % (w + 36)) - 12);
-  const jeepX = Math.floor(((t * 28 + 36) % (w + 36)) - 12);
-  const apcX = Math.floor(((t * 28 + 70) % (w + 36)) - 12);
+  const roadY = Math.floor(h * 0.62) + Math.floor((h * 0.38) * 0.45) + 6;
+  const horseX = Math.floor(((t * 28) % (w + 48)) - 16);
+  const jeepX = Math.floor(((t * 28 + 48) % (w + 48)) - 16);
+  const apcX = Math.floor(((t * 28 + 88) % (w + 48)) - 16);
   const hf = frameAt(now, 120, 4);
   const vf = frameAt(now, 140, 2);
-  drawHorse(ctx, horseX, roadY, hf, 1, false);
-  drawJeep(ctx, jeepX, roadY, vf, 1, false);
-  drawM113(ctx, apcX, roadY, vf, 1, false);
+  drawHorse(ctx, horseX, roadY, hf, 2, false);
+  drawJeep(ctx, jeepX, roadY, vf, 2, false);
+  drawM113(ctx, apcX, roadY, vf, 2, false);
   dest.imageSmoothingEnabled = false;
   dest.clearRect(0, 0, dest.canvas.width, dest.canvas.height);
   dest.drawImage(c, 0, 0, dest.canvas.width, dest.canvas.height);
@@ -268,8 +270,8 @@ export function paintBattleSky(dest, now, arctic) {
 
 export function paintBattleCharge(dest, now, arctic) {
   const w = 240;
-  const h = 18;
-  if (!paintBattleCharge.off) {
+  const h = 24;
+  if (!paintBattleCharge.off || paintBattleCharge.off.width !== w || paintBattleCharge.off.height !== h) {
     paintBattleCharge.off = document.createElement("canvas");
     paintBattleCharge.off.width = w;
     paintBattleCharge.off.height = h;
@@ -282,9 +284,9 @@ export function paintBattleCharge(dest, now, arctic) {
   const gy = h - 3;
   const hf = frameAt(now, 120, 4);
   const vf = frameAt(now, 140, 2);
-  drawHorse(ctx, Math.floor(((t * 32) % (w + 40)) - 10), gy, hf, 1, false);
-  drawJeep(ctx, Math.floor(((t * 32 + 40) % (w + 40)) - 10), gy, vf, 1, false);
-  drawM113(ctx, Math.floor(((t * 32 + 80) % (w + 40)) - 10), gy, vf, 1, false);
+  drawHorse(ctx, Math.floor(((t * 32) % (w + 50)) - 12), gy, hf, 2, false);
+  drawJeep(ctx, Math.floor(((t * 32 + 50) % (w + 50)) - 12), gy, vf, 2, false);
+  drawM113(ctx, Math.floor(((t * 32 + 96) % (w + 50)) - 12), gy, vf, 2, false);
   dest.imageSmoothingEnabled = false;
   dest.drawImage(paintBattleCharge.off, 0, 0, dest.canvas.width, dest.canvas.height);
 }
