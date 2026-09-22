@@ -29,6 +29,7 @@ import {
   duelCmd,
   challengeCandidates,
   actingStats,
+  weekTease,
 } from "../js/engine.js";
 import {
   createDuel,
@@ -505,6 +506,23 @@ assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
 assert(/function parkCoach/.test(uiSrc) && /function flushOverlays/.test(uiSrc), "overlays queue: park coach, one at a time");
 assert(/--type:\s*10px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 10px");
 assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
+assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
+assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 3 is hire into ADD chair");
+assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tiles lead with hire/appoint");
+assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
+assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
+assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
+assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
+const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" }));
+assert(typeof tease === "string" && tease.length > 4, `weekTease: ${tease}`);
+const hired = createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(hired, content, "raise_banner");
+const free = hired.officers.find((o) => !o.faction && o.region === "bethel" && !o.hidden);
+if (free) {
+  hired.gold = 200;
+  const hr = act(hired, content, "hire", { officerId: free.id });
+  assert(hr.ok && hr.dings && hr.dings.length, `hire dings: ${hr.message}`);
+}
 console.log("ok yard duel 99s");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));

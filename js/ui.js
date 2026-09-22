@@ -51,6 +51,7 @@ import {
   missionCopy,
   duelCmd,
   challengeCandidates,
+  weekTease,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 
@@ -542,31 +543,40 @@ function hideModal(opts = {}) {
   if (opts.flush !== false) flushOverlays();
 }
 
+const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
+
 function nextHint(st) {
   if (!st || st.gameOver) return "Campaign closed.";
   if (st.phase === "duel") {
     const spec = st.duel?.you?.style?.specialLabel;
     return spec
-      ? `YARD: pick Strike / Guard / Special · ${spec} in the green window. Clock ~99s if both stand.`
-      : "YARD: pick Strike / Guard / Special in the green window. Clock ~99s if both stand.";
+      ? `YARD: Strike / Guard / Special · ${spec}. Green window. Clock ~99s.`
+      : "YARD: Strike / Guard / Special. Green window. Clock ~99s.";
   }
   const p = playerOf(st);
   const here = regionOf(st, p.region);
   const gens = playerGenerals(st);
   const jobs = openMissions(st);
   const localJob = jobs.find((j) => j.regionId === p.region);
-  if (!p.faction) return "NEXT: Domestic → Raise Banner. Claims Bethel and founds Northern Front (1 AP).";
-  if (st.ap <= 0) return "NEXT: End Week (top right). Neighbors act, then you get a fresh AP pool.";
-  if (gens.length === 0) return "NEXT: Plot → Hire a free officer in this city. They fill general slot 1 of 5.";
+  const wait = appointCandidates(st);
+  if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.";
+  if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
+  if (gens.length === 0) return `NEXT: ${HIRE_LINE}`;
   if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
-    return `NEXT: Plot → Hire (${gens.length}/5 generals). Empty ADD chairs sit on the court strip.`;
+    return `NEXT: Plot → Hire (${gens.length}/5). Same path as the ADD chairs.`;
   }
-  if (localJob) return `NEXT: Military → Side Mission: ${localJob.name} in this city (1 AP).`;
-  if (jobs.length) return `NEXT: ${jobs.length} side missions on the board — Travel to the city, or set a general to Side mission.`;
+  if (gens.length < MAX_GENERALS && wait.length) {
+    return `NEXT: Plot → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
+  }
+  if (localJob) return `NEXT: ${st.ap} AP left — Military → Side Mission: ${localJob.name}, or one more tile.`;
+  if (jobs.length) return `NEXT: ${st.ap} AP left — ${jobs.length} jobs on the board, or one more tile.`;
   const rivals = challengeCandidates(st);
-  if (rivals.length) return `NEXT: Plot → Challenge ${rivals[0].name} in this city (yard duel, ~99s).`;
-  if (here && ownedHere(st, here) && here.garrison < 24) return "NEXT: Drill to raise the levy, or Military → Travel a gold road.";
-  return `NEXT: ${st.ap} AP left — click a Command tile, or End Week.`;
+  if (rivals.length) return `NEXT: ${st.ap} AP left — Plot → Challenge ${rivals[0].name}, or one more tile.`;
+  if (here && ownedHere(st, here) && here.garrison < 24) {
+    return `NEXT: ${st.ap} AP left — Drill, or one more tile before the week turns.`;
+  }
+  if (st.ap > 0) return `NEXT: ${st.ap} AP left — one more tile before the week turns.`;
+  return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
 }
 
 function ownedHere(st, here) {
@@ -583,6 +593,8 @@ function renderObjective() {
   bar.hidden = false;
   $("obj-kicker").textContent = `WEEK ${state.week} · AP ${state.ap}/${apMax(state)}`;
   $("obj-text").textContent = nextHint(state);
+  const end = $("btn-end");
+  if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
 }
 
 function openCoach() {
@@ -625,7 +637,7 @@ function maybeAdvanceCoach(actionId) {
   const step = COACH_STEPS[coachStep];
   if (!step) return;
   if (step.id === "banner" && actionId === "raise_banner") coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
-  else if (step.id === "stores" && (actionId === "commerce" || actionId === "cultivate" || actionId === "drill")) {
+  else if (step.id === "hire" && (actionId === "hire" || actionId === "appoint")) {
     coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
   } else if (step.id === "end" && actionId === "end_week") {
     finishCoach(false);
@@ -669,7 +681,7 @@ function helpHtml() {
       <li><strong>Theater:</strong> center map. Click a city. Gold roads are walkable (Military → Travel).</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
-      <li><strong>Court:</strong> five general chairs under the map. Hire fills a chair; extras wait; Plot → Appoint. Standing orders run at End Week.</li>
+      <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
       <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Keys 1/2/3: Strike / Guard / Special · style move (e.g. Special · Dust Feint). Press in the green window. Clock ~99s if both stay up.</li>
       <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
@@ -713,7 +725,7 @@ function officersHtml() {
   const emptyAdd = visible.length
     ? ""
     : `<p class="muted">No listed officers here yet. Plot → Seek Legend, or Create below.</p>`;
-  const addHow = `<p class="muted">ADD: Plot → Hire a free officer in this city · Appoint court into 5 general slots (${gens.length}/5) · Create custom (cap 10) · Rescue via side missions. Court ${court.length}.</p>`;
+  const addHow = `<p class="muted">${HIRE_LINE} Create custom (cap 10). Court ${court.length} · generals ${gens.length}/5.</p>`;
   const types = Object.entries(content.officers.personalities || {});
   const typeOpts = types
     .map(([id, per]) => `<option value="${esc(id)}"${id === "loyalist" ? " selected" : ""}>${esc(per.label || id)}</option>`)
@@ -842,6 +854,32 @@ function toast(msg) {
   pushEphemeral(msg);
 }
 
+let chairFlashId = "";
+let dingTimer = 0;
+
+function markChairFlash(officerId) {
+  chairFlashId = officerId || playerGenerals(state).slice(-1)[0]?.id || "";
+  setTimeout(() => {
+    chairFlashId = "";
+    document.querySelectorAll(".court-chair.just-in").forEach((el) => el.classList.remove("just-in"));
+  }, 1600);
+}
+
+function flashDing(text) {
+  const el = $("ding");
+  if (!el || !text) return;
+  el.textContent = text;
+  el.hidden = false;
+  el.classList.remove("pop");
+  void el.offsetWidth;
+  el.classList.add("pop");
+  if (dingTimer) clearTimeout(dingTimer);
+  dingTimer = setTimeout(() => {
+    el.hidden = true;
+    el.classList.remove("pop");
+  }, 1400);
+}
+
 function pushEphemeral(msg) {
   if (!state) {
     $("boot").textContent = msg;
@@ -889,11 +927,19 @@ function run(id, extra) {
     });
   } else if (SCENE_ACTIONS.has(id) && !res.weekEnd) {
     const a = listActions(state).find((x) => x.id === id);
+    const title = res.chairFilled
+      ? "Chair filled"
+      : res.married
+        ? "House bound"
+        : res.courting
+          ? "Bond ticks"
+          : a?.label || id;
     showEventScene({
       id: res.sceneId || id,
-      title: a?.label || id,
+      title,
       text: res.message || "The room goes still.",
       regionId: extra?.regionId || playerOf(state).region,
+      celebrate: !!(res.chairFilled || res.married || res.dings),
     });
   }
   if (res.weekEnd) {
@@ -905,6 +951,8 @@ function run(id, extra) {
   }
   maybeAdvanceCoach(id);
   render();
+  if (res.dings?.length) flashDing(res.dings.join("  ·  "));
+  if (res.chairFilled) markChairFlash(extra?.officerId);
 }
 
 function esc(s) {
@@ -999,7 +1047,7 @@ function courtHtml() {
   for (let i = 0; i < MAX_GENERALS; i++) {
     const g = gens[i];
     if (g) {
-      chairs.push(`<div class="court-chair">
+      chairs.push(`<div class="court-chair${chairFlashId === g.id ? " just-in" : ""}">
         <span class="mini" style="border-color:${esc(stripe)}">${esc(g.portrait || portraitInitials(g.name))}</span>
         <div class="who">
           <strong>${i + 1}. ${esc(g.name)}</strong>
@@ -1014,9 +1062,9 @@ function courtHtml() {
       </div>`);
     } else {
       let hint;
-      if (!p.faction) hint = "Raise a banner, then Hire.";
-      else if (wait[0]) hint = `Appoint ${esc(wait[0].name)}.`;
-      else hint = "Hire here, or Create (cap 10).";
+      if (!p.faction) hint = "Raise Banner, then Plot → Hire.";
+      else if (wait[0]) hint = `Plot → Appoint ${esc(wait[0].name)}.`;
+      else hint = "Plot → Hire fills this ADD chair.";
       chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
         <span class="mini empty-mini">+</span>
         <div class="who"><strong>${i + 1}. ADD</strong><small>${hint}</small></div>
@@ -1063,21 +1111,25 @@ function cityHtml() {
 
 function weekReportHtml(report) {
   const lines = report || [];
-  const headline = lines[0] || `Week ${state.week}`;
-  const ai = lines.filter((l) => /\[[a-z]+\]/.test(l)).slice(0, 6);
+  const headline = lines[0] || `Week ${state.week} turns.`;
+  const payoff = lines.find((l) => /blizzard|scrip|pamphlets|legend|Seek|stores|gold|order/i.test(l) && l !== headline);
+  const ai = lines.filter((l) => /\[[a-z]+\]/.test(l)).slice(0, 5);
   const extra = Math.max(0, lines.length - 1 - ai.length);
+  const tease = weekTease(state);
   return `<div class="event-art week-art"><img src="${sceneUrl("season")}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
-    <h2>Week ${state.week} · ${esc(state._season?.name || "")} ${calendarYear(state.week)}</h2>
-    <p>${esc(headline)}</p>
-    <p class="next-line">${esc(nextHint(state))}</p>
+    <h2>Week ${state.week} turns</h2>
+    <p class="week-payoff">${esc(headline)}</p>
+    ${payoff ? `<p>${esc(payoff)}</p>` : ""}
     <ul class="week-ai">${ai.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
-    <p class="muted">${extra ? `${extra} more in the field log. ` : ""}Personality tags are in [brackets].</p>
-    <button type="button" data-close class="primary">Continue</button>`;
+    <p class="week-tease">Next week may bring ${esc(tease)}.</p>
+    <p class="next-line">${esc(nextHint(state))}</p>
+    <p class="muted">${extra ? `${extra} more in the field log. ` : ""}One more week?</p>
+    <button type="button" data-close class="primary">Begin week ${state.week}</button>`;
 }
 
 const ACTION_CATS = {
   domestic: ["raise_banner", "drill", "commerce", "cultivate", "fortify", "safety", "research"],
-  plot: ["seek_legend", "spy", "hire", "appoint", "court", "ally", "break_ally", "rumor", "persuade", "hide", "challenge"],
+  plot: ["hire", "appoint", "court", "challenge", "spy", "seek_legend", "ally", "rumor", "persuade", "hide", "break_ally"],
   military: ["travel", "attack", "mission", "challenge"],
 };
 const TAB_TIPS = {
@@ -1148,11 +1200,11 @@ const COACH_STEPS = [
     cat: "domestic",
   },
   {
-    id: "stores",
-    title: "3 / 4  Feed the week",
-    body: "Spend leftover AP on COMMERCE (gold) or CULTIVATE (food). Hover a tile to read what it does and why it might be locked.",
-    target: '[data-id="commerce"]',
-    cat: "domestic",
+    id: "hire",
+    title: "3 / 4  Fill an ADD chair",
+    body: "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint. Same words on the court strip.",
+    target: '[data-id="hire"]',
+    cat: "plot",
   },
   {
     id: "end",
@@ -1260,6 +1312,8 @@ function showEventScene(ev) {
   const next = $("event-next");
   if (next) next.textContent = ev.chronicle ? "CONTINUE for the next chronicle beat." : state ? nextHint(state) : "";
   const el = $("event-scene");
+  const card = el.querySelector(".event-card");
+  if (card) card.classList.toggle("celebrate", !!ev.celebrate);
   el.hidden = false;
   el.classList.remove("open");
   void el.offsetWidth;
@@ -1339,7 +1393,7 @@ function startAction(a) {
   if (a.needs === "hire") {
     const cs = hireCandidates(state);
     if (!cs.length) return toast("No free officers in this region. Travel, or Officers → Create (cap 10).");
-    showModal(`<h2>Hire into court / generals</h2><p class="muted">A free officer here joins your color. Empty general slots (5) fill first; extras wait in court for Appoint.</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>Hire into court / generals</h2><p class="muted">${HIRE_LINE}</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-hire]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -1350,8 +1404,8 @@ function startAction(a) {
   }
   if (a.needs === "appoint") {
     const cs = appointCandidates(state);
-    if (!cs.length) return toast("Court empty. Plot → Hire, or Officers → Create then Hire.");
-    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Promote a court officer into an empty court-strip chair. Standing orders live on generals.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    if (!cs.length) return toast("Court empty. " + HIRE_LINE);
+    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Plot → Appoint puts a court officer in an ADD chair (5 max). Standing orders fire at End Week.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-appoint]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -2097,13 +2151,13 @@ function paintDuelStatic() {
   $("duel-you-face").src = PORTRAIT_SRC;
   $("duel-you-name").textContent = you.name;
   $("duel-you-style").textContent = `${you.style?.label || "Style"} · ${you.outfit?.label || "kit"}`;
-  $("duel-you-meta").textContent = `AGE ${you.age} · ${you.title}`;
-  $("duel-you-stats").textContent = `WAR ${you.stats.war}  INT ${you.stats.int}  POL ${you.stats.pol}  CHR ${you.stats.chr}`;
+  $("duel-you-meta").textContent = `AGE ${you.age} · ${you.title} · WAR ${you.stats.war}`;
+  $("duel-you-stats").textContent = you.wound ? "WOUND — WAR cut" : `INT ${you.stats.int}  POL ${you.stats.pol}  CHR ${you.stats.chr}`;
   $("duel-foe-face").textContent = foe.portrait || portraitInitials(foe.name);
   $("duel-foe-name").textContent = foe.name;
   $("duel-foe-style").textContent = `${foe.style?.label || "Style"} · ${foe.outfit?.label || "kit"}`;
-  $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""}`;
-  $("duel-foe-stats").textContent = `WAR ${foe.stats.war}  INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
+  $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""} · WAR ${foe.stats.war}`;
+  $("duel-foe-stats").textContent = foe.wound ? "WOUND — WAR cut" : `INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
   if ($("duel-arena")) $("duel-arena").textContent = d.arena?.label || "Yard";
 }
 
@@ -2121,16 +2175,17 @@ function paintDuelHud() {
   if (!d) return;
   $("duel-exchange").textContent = `EX ${Math.min(d.exchange, d.maxExchanges)} / ${d.maxExchanges}`;
   const specName = d.you.style?.specialLabel || "Special";
-  $("duel-cue").textContent = d.result
-    ? d.log[d.log.length - 1]
-    : d.underdog
-      ? `UNDERDOG — Strike / Guard / Special · ${specName}. ${d.you.style?.flavor || "Wider green window."}`
-      : `Strike / Guard / Special · ${specName}. Strike beats Special · Special beats Guard · Guard beats Strike.`;
+  const stakes = d.underdog
+    ? `UNDERDOG — wider green. Winner: gold + fame.`
+    : d.you?.wound
+      ? `Wound cuts WAR. Special · ${specName}.`
+      : `Stakes: gold, fame, a wound. Special · ${specName}.`;
+  $("duel-cue").textContent = d.result ? d.log[d.log.length - 1] : stakes;
   const spec = $("duel-special");
   if (spec) {
-    spec.innerHTML = `<b>3</b> Special · ${esc(specName)}<small>${esc(d.you.style?.flavor || "beats Guard")}</small>`;
+    spec.innerHTML = `<b>3</b> Special · ${esc(specName)}<small>beats Guard</small>`;
   }
-  $("duel-log").innerHTML = d.log.slice(-6).map((l) => `<li>${esc(l)}</li>`).join("");
+  $("duel-log").innerHTML = d.log.slice(-2).map((l) => `<li>${esc(l)}</li>`).join("");
   document.querySelectorAll("[data-duel-move]").forEach((b) => {
     b.disabled = d.beat !== "pick" || !!d.result;
     if (d.beat !== "pick") b.classList.remove("is-pick");
@@ -2304,7 +2359,7 @@ function wireOrders() {
         startAction(listActions(state).find((a) => a.id === "hire") || { id: "hire", needs: "hire", label: "Hire" });
         return;
       }
-      toast(playerOf(state).faction ? "No free officer in this city. Travel, or Officers → Create (cap 10)." : "Raise a banner first, then Plot → Hire.");
+      toast(playerOf(state).faction ? "No free officer here. Travel, or Officers → Create, then Plot → Hire." : "Raise Banner, then Plot → Hire fills an ADD chair.");
     };
   });
 }

@@ -1066,7 +1066,12 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "persuade") return doPersuade(state, extra.officerId, stats);
   if (actionId === "court") {
     if (!spend(state, 1)) return { ok: false, message: "No AP." };
-    return doCourt(state, extra.officerId, stats);
+    const res = doCourt(state, extra.officerId, stats);
+    if (res.ok && (res.courting || res.married)) {
+      addBond(state, extra.officerId, res.married ? 16 : 8);
+      res.dings = res.married ? ["HOUSE BOUND", "+BOND"] : ["BOND TICK"];
+    }
+    return res;
   }
   if (actionId === "travel") return doTravel(state, extra.regionId);
   if (actionId === "attack") return doAttack(state, content, extra);
@@ -1249,19 +1254,25 @@ function doHire(state, officerId, stats) {
     addBond(state, t.id, 4);
     const msg = `${t.name} declines (${roll} vs ${dc}). A little gold is spent on the attempt.`;
     pushLog(state, msg, "player");
-    return { ok: true, message: msg };
+    return { ok: true, message: msg, dings: ["+BOND"] };
   }
   state.gold -= cost;
   const madeGeneral = joinBanner(state, t, true);
   t.loyalty = Math.min(90, 55 + Math.floor(stats.chr / 8));
   addBond(state, t.id, 12);
   p.fame += 4;
+  const n = playerGenerals(state).length;
   const msg = madeGeneral
-    ? `${t.name} takes your color as general ${playerGenerals(state).length}/${MAX_GENERALS}.`
-    : `${t.name} joins the court. Appoint them to the court strip when a general slot opens (5 max).`;
+    ? `${t.name} takes your color as general ${n}/${MAX_GENERALS}.`
+    : `${t.name} joins the court. Plot → Appoint puts them in an ADD chair (5 max).`;
   pushLog(state, msg, "alert");
   if (madeGeneral) state.ap = Math.min(apMax(state), state.ap + 1);
-  return { ok: true, message: msg };
+  return {
+    ok: true,
+    message: msg,
+    chairFilled: madeGeneral,
+    dings: madeGeneral ? ["CHAIR FILLED", "+4 FAME", "+BOND"] : ["COURT JOINS", "+4 FAME", "+BOND"],
+  };
 }
 
 function doAppoint(state, officerId) {
@@ -1277,7 +1288,7 @@ function doAppoint(state, officerId) {
   const msg = `${t.name} is appointed general ${n}/${MAX_GENERALS}. Set a standing order on the court strip.`;
   pushLog(state, msg, "alert");
   state.ap = Math.min(apMax(state), state.ap);
-  return { ok: true, message: msg };
+  return { ok: true, message: msg, chairFilled: true, dings: ["CHAIR FILLED"] };
 }
 
 function missionHelpers() {
@@ -1951,6 +1962,24 @@ function randomEvent(state) {
   return null;
 }
 
+export function weekTease(state) {
+  const bits = [];
+  const p = playerOf(state);
+  if ((state.week + 1) % 13 === 0) bits.push("a season turn");
+  const jobs = openMissions(state);
+  if (jobs.length) bits.push(`${jobs.length} side job${jobs.length === 1 ? "" : "s"}`);
+  const empty = MAX_GENERALS - playerGenerals(state).length;
+  if (p.faction && empty > 0 && hireCandidates(state).length) bits.push("a free officer for an ADD chair");
+  if (p.courtingId) bits.push("another visit that may bind the house");
+  const hunts = legendBoard(state);
+  if (hunts.some((h) => !h.revealed && h.hunt >= 1)) bits.push("a name in the static");
+  else if (hunts.some((h) => !h.revealed)) bits.push("a hidden name if you Seek Legend");
+  if (livingOfficers(state).some((o) => o.wound && (o.id === p.id || o.faction === p.faction))) bits.push("a wound fading");
+  if (!bits.length) bits.push("neighbors moving");
+  bits.push("a fresh AP pool");
+  return bits.slice(0, 2).join(" · ");
+}
+
 export function endWeek(state, content) {
   if (state.phase === "battle") return { ok: false, message: "Battle still open." };
   if (state.phase === "duel") return { ok: false, message: "Yard still open." };
@@ -1995,7 +2024,7 @@ export function endWeek(state, content) {
     p.region = refuge.id;
   }
 
-  report.unshift(`Week ${state.week} — ${state._season.name} ${calendarYear(state.week)}. AP restored to ${state.ap}.`);
+  report.unshift(`Week ${state.week} turns. ${state._season.name} ${calendarYear(state.week)}. AP ${state.ap}.`);
   state.weekReport = report;
   notes.forEach((n) => pushLog(state, n, "week"));
   if (ev) pushLog(state, ev, "week");

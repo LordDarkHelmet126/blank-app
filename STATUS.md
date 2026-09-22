@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — readability polish: bigger HUD type, one overlay at a time, Special · style-move labels.
+**Last checkpoint:** 2026-09-22 — addiction polish: duel-in-viewport, hire/ADD copy, week tease + chair fanfare.
 
 ## How to run
 
@@ -38,10 +38,11 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- **Readability:** Press Start 2P HUD is 10px (titles 12–14px), brighter ice contrast, more line-height. Mission board copy shortened. Court + Chronicle keep space at 1280×800 instead of collapsing.
-- **One overlay at a time:** Coach parks when a result scene, modal, duel, or battle opens; it returns after Continue. No coach card stacked on a result.
-- **Special labels:** Duel button and cue both say `3 Special · Dust Feint` (or the style move). Help / Challenge / NEXT match.
-- Prior duel variety (8 arenas / outfits / styles, 99s clock) kept. Demos: `/?demo=layout`, `/?demo=duel`.
+- **Duel-in-viewport:** yard chrome (timer, HP, moves, 2-line log) fits 1280×800. Short stakes line. 99s clock kept.
+- **Command:** 3-column tiles; Plot leads with Hire / Appoint / Court / Challenge so primary actions show without scroll.
+- **One hire path:** coach, NEXT, ADD chairs, and Hire modal all say `Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.`
+- **Juice:** End Week / NEXT tease “Next week may bring…”, punchier week report, chair-fill fanfare + ding (+FAME / +BOND / CHAIR FILLED), leftover AP “one more tile” hook, Court/Marry bond tick.
+- Demos: `/?demo=layout`, `/?demo=coach`, `/?demo=duel`, `/?demo=week`.
 
 ## Counts
 

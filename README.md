@@ -88,7 +88,7 @@ Season tint only: `/?demo=season`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
-**Yard duel (~99s):** `/?demo=duel`. Underdog: `/?demo=duel&goliath=1`. Style: `/?demo=duel&style=brawler` (also marksman, grappler, cavalry, guerrilla, drill, trapper, signals, or `cycle`). Arena: `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower). HUD uses `3 Special · Dust Feint` (style name on the Special). Coach parks while a result scene is open.
+**Yard duel (~99s):** `/?demo=duel`. Underdog: `/?demo=duel&goliath=1`. Style: `/?demo=duel&style=brawler` (also marksman, grappler, cavalry, guerrilla, drill, trapper, signals, or `cycle`). Arena: `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower). HUD uses `3 Special · Dust Feint`. Coach / NEXT / ADD chairs share one hire path. End Week teases the next week. Coach parks while a result scene is open.
 
 ## Layout
 
