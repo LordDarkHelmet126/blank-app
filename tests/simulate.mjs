@@ -34,6 +34,10 @@ import {
   tickCampaign,
   fireSponsor,
   travelUnlocked,
+  isAdjacent,
+  geoOf,
+  geoYield,
+  geoTags,
 } from "../js/engine.js";
 import {
   createDuel,
@@ -132,6 +136,17 @@ assert(nome.neighbors.includes("bering_strait") && bering.neighbors.includes("no
 assert(!fairbanks.neighbors.includes("klondike"), "Klondike must not skip the Yukon spur");
 assert(content.regions.regions.find((r) => r.id === "arctic_slope").neighbors.includes("yukon_road"), "Slope shares an edge with Yukon and must be walkable");
 assert(!content.regions.regions.find((r) => r.id === "bethel").neighbors.includes("yukon_road"), "Bethel must not neighbor Yukon");
+assert(cities.every((r) => r.geo && typeof r.geo.farm === "number"), "every territory needs geo tags");
+assert(cities.find((r) => r.id === "lincoln").geo.farm >= 3, "Lincoln is a farm belt");
+assert(cities.find((r) => r.id === "arctic_slope").geo.fuel >= 3 && cities.find((r) => r.id === "arctic_slope").geo.weather >= 3, "Slope is fuel + harsh ice");
+assert(cities.find((r) => r.id === "grand_junction").geo.farm >= 3, "Junction orchards");
+assert(cities.find((r) => r.id === "klondike").geo.mine >= 3, "Klondike mining");
+const jackson = cities.find((r) => r.id === "jackson");
+const denver = cities.find((r) => r.id === "denver");
+assert(jackson.neighbors.includes("denver") && denver.neighbors.includes("jackson"), "Rockies pass Jackson–Denver");
+assert(cities.find((r) => r.id === "billings").neighbors.includes("omaha"), "plains alternate Billings–Omaha");
+assert(cities.find((r) => r.id === "anchorage").neighbors.includes("yukon_road"), "interior cut-off Anchorage–Yukon");
+assert((content.regions.alternateRoutes || []).length >= 6, "documented alternate routes");
 content.regions.regions.forEach((r) => {
   r.neighbors.forEach((n) => {
     const o = content.regions.regions.find((x) => x.id === n);
@@ -323,6 +338,29 @@ res = act(westHop, content, "travel", { regionId: "far_russia" });
 assert(!res.ok, "Russia desk locked until Phase 3");
 assert(!travelUnlocked(westHop, regionOf(westHop, "far_korea")), "Korea locked until sponsor");
 console.log("ok Alaska→Colorado corridor");
+
+const leap = createNewGame(content, { seed: 12, difficulty: "easy", name: "Scout", background: "scout" });
+act(leap, content, "raise_banner");
+leap.ap = 6;
+res = act(leap, content, "travel", { regionId: "denver" });
+assert(!res.ok && /leap|adjacent/i.test(res.message), `no leap Bethel→Denver: ${res.message}`);
+res = act(leap, content, "travel", { regionId: "seattle" });
+assert(!res.ok, "no leap Bethel→Seattle");
+res = act(leap, content, "attack", { regionId: "denver", auto: true });
+assert(!res.ok && /leap|adjacent|neighbor/i.test(res.message), `no leap attack: ${res.message}`);
+assert(!isAdjacent(leap, "bethel", "denver"), "engine marks Denver non-adjacent from Bethel");
+assert(isAdjacent(leap, "bethel", "anchorage"), "Anchorage is an adjacent road");
+res = act(leap, content, "travel", { regionId: "anchorage" });
+assert(res.ok, `adjacent travel Bethel→Anchorage: ${res.message}`);
+const farmY = geoYield(regionOf(leap, "lincoln"), { food: 1, commerce: 1 });
+const iceY = geoYield(regionOf(leap, "arctic_slope"), { food: 1, commerce: 1 });
+assert(farmY.food > iceY.food, `farm belt out-yields ice food (${farmY.food} vs ${iceY.food})`);
+assert(iceY.gold >= farmY.gold, "Slope fuel/mine beats Lincoln gold");
+assert(geoTags(regionOf(leap, "topeka")).some((t) => t.id === "farm"), "Topeka shows Farm tag");
+const board = stateControl(leap);
+const ak = board.find((s) => s.id === "AK");
+assert(ak && ak.totalTerr >= 8 && ak.territories.some((t) => t.key && t.id === "anchorage"), "States board lists AK territories");
+console.log("ok adjacency / geo yields");
 
 const lib = createNewGame(content, { seed: 21, difficulty: "easy", name: "Scout", background: "scout" });
 act(lib, content, "raise_banner");
@@ -615,6 +653,8 @@ assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
 assert(/selectedRegion = "denver"/.test(uiSrc), "states demo opens on Denver");
 assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States dock + liberation board");
+assert(/Cannot leap/.test(uiSrc) && /route locked/.test(uiSrc), "NEXT and board explain no-leap");
+assert(/Geo:/.test(uiSrc), "city report shows geo tags");
 assert(/id: "war_council"/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "war council action");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
 const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" }));

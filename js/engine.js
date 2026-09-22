@@ -403,6 +403,7 @@ export function createNewGame(content, opts = {}) {
     unlockWeek: r.unlockWeek || 0,
     unlockPhase: r.unlockPhase || 0,
     plate: r.plate || "below",
+    geo: r.geo || { farm: 0, mine: 0, fuel: 0, water: 0, sun: 0, weather: 0, defense: 0 },
     prefect: null,
     intel: 0,
   }));
@@ -569,6 +570,7 @@ export function deserialize(raw) {
     if (r.stateCode == null && r.state) r.stateCode = r.state;
     if (r.unlockWeek == null) r.unlockWeek = 0;
     if (r.unlockPhase == null) r.unlockPhase = 0;
+    if (!r.geo) r.geo = { farm: 0, mine: 0, fuel: 0, water: 0, sun: 0, weather: 0, defense: 0 };
   });
   ensureCampaign(state);
   (state.officers || []).forEach((o) => {
@@ -1059,12 +1061,62 @@ function doChallenge(state, extra = {}) {
   return { ok: true, duel: true, message: msg };
 }
 
+export function isAdjacent(state, fromId, toId) {
+  const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
+  const to = typeof toId === "string" ? regionOf(state, toId) : toId;
+  if (!from || !to) return false;
+  return !!(from.neighbors || []).includes(to.id) && travelUnlocked(state, to);
+}
+
 export function attackCandidates(state) {
   const here = currentRegion(state);
   const p = playerOf(state);
   return here.neighbors
     .map((id) => regionOf(state, id))
-    .filter((r) => r && r.owner !== p.faction);
+    .filter((r) => r && r.owner !== p.faction && travelUnlocked(state, r));
+}
+
+export function GEO_LABELS() {
+  return {
+    farm: "Farm",
+    mine: "Mine",
+    fuel: "Fuel",
+    water: "Water",
+    sun: "Sun",
+    weather: "Weather",
+    defense: "Defense",
+  };
+}
+
+export function geoOf(region) {
+  const g = region?.geo || {};
+  return {
+    farm: g.farm || 0,
+    mine: g.mine || 0,
+    fuel: g.fuel || 0,
+    water: g.water || 0,
+    sun: g.sun || 0,
+    weather: g.weather || 0,
+    defense: g.defense || 0,
+  };
+}
+
+export function geoTags(region) {
+  const g = geoOf(region);
+  const labels = GEO_LABELS();
+  return Object.keys(labels)
+    .filter((k) => g[k] > 0)
+    .map((k) => ({ id: k, label: labels[k], n: g[k] }));
+}
+
+export function geoYield(region, season) {
+  const g = geoOf(region);
+  const harsh = Math.max(0.4, 1 - g.weather * 0.14);
+  const foodMul = season?.food ?? 1;
+  const goldMul = season?.commerce ?? 1;
+  const food = Math.round((g.farm * 2 + g.water + g.sun) * foodMul * harsh);
+  const gold = Math.round((g.mine * 2 + g.fuel * 2 + g.water) * goldMul * harsh);
+  return { food, gold, harsh };
 }
 
 export function neighborRegions(state) {
@@ -1170,22 +1222,27 @@ function domestic(state, kind, stats) {
   const season = state._season;
   let msg = "";
   if (kind === "drill") {
-    const gain = 3 + Math.floor(stats.war / 18) + nextInt(state, 0, 3);
+    const g = geoOf(here);
+    const gain = 3 + Math.floor(stats.war / 18) + (g.sun ? 1 : 0) + nextInt(state, 0, 3);
     here.garrison = Math.min(280, here.garrison + gain);
     here.order = Math.min(100, here.order + 1);
     msg = `Drill in ${here.short}: garrison +${gain} (now ${here.garrison}).`;
   } else if (kind === "commerce") {
-    const gain = Math.max(2, Math.round((4 + stats.pol / 12) * season.commerce) + nextInt(state, 0, 3));
+    const g = geoOf(here);
+    const gain = Math.max(2, Math.round((4 + stats.pol / 12 + g.mine * 2 + g.fuel + g.water) * season.commerce) + nextInt(state, 0, 3));
     state.gold += gain;
     here.economy = Math.min(100, here.economy + 1);
     msg = `Commerce in ${here.short}: +${gain} gold (treasury ${state.gold}).`;
   } else if (kind === "cultivate") {
-    const gain = Math.max(2, Math.round((5 + stats.pol / 14) * season.food) + nextInt(state, 0, 2));
+    const g = geoOf(here);
+    const harsh = Math.max(0.4, 1 - g.weather * 0.14);
+    const gain = Math.max(2, Math.round((5 + stats.pol / 14 + g.farm * 2 + g.sun + g.water) * season.food * harsh) + nextInt(state, 0, 2));
     state.food += gain;
-    here.food = Math.min(100, here.food + 2);
+    here.food = Math.min(100, here.food + 2 + g.farm);
     msg = `Cultivate in ${here.short}: +${gain} stores (food ${state.food}).`;
   } else if (kind === "fortify") {
-    const gain = 2 + Math.floor(stats.war / 25) + (here.type === "naval" ? 1 : 0);
+    const g = geoOf(here);
+    const gain = 2 + Math.floor(stats.war / 25) + (here.type === "naval" ? 1 : 0) + g.defense;
     here.walls = Math.min(90, here.walls + gain);
     msg = `Fortify ${here.short}: walls ${here.walls}.`;
   } else if (kind === "safety") {
@@ -1572,22 +1629,36 @@ export function travelUnlocked(state, region) {
 
 export function stateControl(state) {
   const p = playerOf(state);
+  const here = currentRegion(state);
   const theaters = (state.stateTheaters || []).filter((st) => st.kind !== "foreign");
   return theaters.map((st) => {
     const code = st.short || String(st.id || "").toUpperCase();
     const keys = st.keyCities || state.regions.filter((r) => r.stateCode === code).map((r) => r.id);
-    const held = keys.filter((id) => {
+    const terrs = state.regions.filter((r) => r.stateCode === code && !(r.unlockPhase > 0));
+    const heldKeys = keys.filter((id) => {
       const r = regionOf(state, id);
       return !!(r && p?.faction && r.owner === p.faction);
     });
+    const heldTerr = terrs.filter((r) => p?.faction && r.owner === p.faction);
     return {
       id: code,
       name: st.name,
       kind: st.kind || "us",
-      held: held.length,
+      held: heldKeys.length,
       need: keys.length,
       keys,
-      liberated: !!(p?.faction && keys.length && held.length === keys.length),
+      territories: terrs.map((r) => ({
+        id: r.id,
+        short: r.short,
+        key: keys.includes(r.id),
+        owner: r.owner,
+        geo: geoTags(r),
+        adjacent: !!(here && isAdjacent(state, here, r)),
+        here: here?.id === r.id,
+      })),
+      heldTerr: heldTerr.length,
+      totalTerr: terrs.length,
+      liberated: !!(p?.faction && keys.length && heldKeys.length === keys.length),
     };
   });
 }
@@ -1665,7 +1736,9 @@ export function fireSponsor(state) {
 }
 
 export function canTravelTo(state, from, regionId) {
-  if (!from?.neighbors?.includes(regionId)) return { ok: false, message: "Not adjacent." };
+  if (!from?.neighbors?.includes(regionId)) {
+    return { ok: false, message: "Cannot leap — take an adjacent road." };
+  }
   const dest = regionOf(state, regionId);
   if (!dest) return { ok: false, message: "Unknown city." };
   if (!travelUnlocked(state, dest)) {
@@ -1830,7 +1903,8 @@ function doAttack(state, content, extra) {
   const p = playerOf(state);
   const here = currentRegion(state);
   const dest = regionOf(state, extra.regionId);
-  if (!dest || !here.neighbors.includes(dest.id)) return { ok: false, message: "Pick a neighboring region." };
+  const leap = canTravelTo(state, here, dest?.id);
+  if (!leap.ok) return { ok: false, message: leap.message || "Cannot leap — take an adjacent road." };
   if (p.faction && dest.owner === p.faction) return { ok: false, message: "Already yours." };
   if (p.faction && dest.owner && getRelation(state, p.faction, dest.owner) >= 70) {
     return { ok: false, message: "Pact forbids it. Break the alliance first." };
@@ -2118,10 +2192,18 @@ function upkeep(state) {
     notes.push("Pay in arrears.");
     state.gold = 0;
   }
+  let yieldFood = 0;
+  let yieldGold = 0;
   held.forEach((r) => {
-    r.food = Math.min(100, r.food + Math.round(2 * season.food));
+    const y = geoYield(r, season);
+    yieldFood += y.food;
+    yieldGold += y.gold;
+    r.food = Math.min(100, r.food + Math.round((2 + geoOf(r).farm) * season.food * y.harsh));
     if (r.order < 30) r.garrison = Math.max(0, r.garrison - 1);
   });
+  if (yieldFood) state.food += yieldFood;
+  if (yieldGold) state.gold += yieldGold;
+  if (yieldFood || yieldGold) notes.push(`Ground yields +${yieldFood} food, +${yieldGold} gold from held territories.`);
   if (state.gold === 0 && state.food === 0) {
     const found = nextInt(state, 4, 12);
     state.food += found;

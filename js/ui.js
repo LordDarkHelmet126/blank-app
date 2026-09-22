@@ -55,6 +55,8 @@ import {
   stateControl,
   ensureCampaign,
   theaterVisible,
+  isAdjacent,
+  geoTags,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 
@@ -569,10 +571,18 @@ function nextHint(st) {
   }
   const p = playerOf(st);
   const here = regionOf(st, p.region);
+  const sel = regionOf(st, selectedRegion);
   const gens = playerGenerals(st);
   const jobs = openMissions(st);
   const localJob = jobs.find((j) => j.regionId === p.region);
   const wait = appointCandidates(st);
+  if (sel && here && sel.id !== here.id && !isAdjacent(st, here, sel)) {
+    const via = (here.neighbors || []).map((id) => regionOf(st, id)?.short).filter(Boolean).slice(0, 3).join(", ");
+    return `NEXT: Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Take an adjacent road${via ? ` (${via})` : ""} first.`;
+  }
+  if (sel && here && sel.id !== here.id && isAdjacent(st, here, sel)) {
+    return `NEXT: ${sel.short} is adjacent — Military → Travel or March. No leaping past it.`;
+  }
   if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.";
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
   if (gens.length === 0) return `NEXT: ${HIRE_LINE}`;
@@ -692,7 +702,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Alaska through the plains. Liberate a state by holding its key cities. 8 US states (west bloc) names you national leader and opens the foreign war council (Russia, Cuba, Nicaragua). A late sponsor can add Korea.</li>
+      <li><strong>Theater:</strong> STATE → territories. Liberate a state by holding its key territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -780,14 +790,17 @@ function missionsHtml() {
     : `<p class="muted">No jobs. Raise a banner, then End Week. Scout, raid, escort, radio, cache, ford, strip, claim, ice, ranch, porch.</p>`;
   const rows = jobs
     .map((j) => {
+      const dest = regionOf(state, j.regionId);
       const here = j.regionId === p.region;
-      const loc = regionOf(state, j.regionId)?.short || j.regionId;
+      const adj = dest && isAdjacent(state, p.region, dest);
+      const loc = dest?.short || j.regionId;
       const copy = missionCopy(j, j.regionId);
-      return `<button type="button" class="list-btn mission-row" data-job="${j.id}" ${here ? "" : "data-travel='1'"}>
+      const lock = !here && !adj;
+      return `<button type="button" class="list-btn mission-row" data-job="${j.id}" ${here ? "" : adj ? "data-travel='1'" : "data-locked='1'"} ${lock ? "disabled" : ""}>
         <img class="cmd-thumb" src="${sceneArt(j.templateId)}" alt="" />
-        <span><strong>${esc(j.name)}</strong> · ${esc(loc)} · 1 AP
+        <span><strong>${esc(j.name)}</strong> · ${esc(loc)}${dest?.stateCode ? ` · ${esc(dest.stateCode)}` : ""} · 1 AP
         <small>${esc(copy)}</small>
-        ${here ? "<small>Here — take it.</small>" : "<small>Travel first, or set a general to Side mission.</small>"}
+        ${here ? "<small>Here — take it.</small>" : adj ? "<small>Adjacent — travel the road first.</small>" : "<small>Route locked — not adjacent. Cannot leap.</small>"}
         </span></button>`;
     })
     .join("");
@@ -803,10 +816,22 @@ function missionsHtml() {
 function campaignHtml() {
   if (!state) return `<p>No game.</p>`;
   const camp = ensureCampaign(state);
-  const rows = stateControl(state)
+  const here = regionOf(state, playerOf(state).region);
+  const blocks = stateControl(state)
     .map((s) => {
-      const mark = s.liberated ? "LIB" : `${s.held}/${s.need}`;
-      return `<span class="pill"><span>${esc(s.id)}</span><strong>${mark}</strong></span>`;
+      const mark = s.liberated ? "LIB" : `${s.held}/${s.need} key · ${s.heldTerr}/${s.totalTerr} terr`;
+      const terr = (s.territories || [])
+        .map((t) => {
+          const tags = (t.geo || []).map((g) => g.label).join("/");
+          const route = t.here ? "here" : t.adjacent ? "road open" : "route locked";
+          return `<small>${esc(t.short)}${t.key ? " ★" : ""} · ${tags || "—"} · ${route}</small>`;
+        })
+        .join("");
+      return `<div class="card" style="margin:8px 0">
+        <h2>${esc(s.name)} · ${esc(s.id)}</h2>
+        <p>${esc(mark)}</p>
+        ${terr}
+      </div>`;
     })
     .join("");
   const foreign = (camp.foreign || [])
@@ -816,9 +841,12 @@ function campaignHtml() {
     })
     .join("");
   return `
-    <h2>Liberate the States</h2>
-    <p class="muted">Phase ${camp.phase}${camp.nationalLeader ? " · National leader" : ""}. Hold every key city in a state to liberate it. Threshold: ${camp.restoreThreshold} US states (west bloc AK–CO) to restore the country.</p>
-    <div class="city-grid">${rows}</div>
+    <h2>States → territories</h2>
+    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Liberate a state by holding ★ key territories. No leaping — only adjacent roads. Farm/mine/fuel/water/sun/weather/defense change weekly yields.</p>
+    <div class="city-grid">${stateControl(state)
+      .map((s) => `<span class="pill"><span>${esc(s.id)}</span><strong>${s.liberated ? "LIB" : `${s.held}/${s.need}`}</strong></span>`)
+      .join("")}</div>
+    ${blocks}
     <h2>Foreign war council</h2>
     <p class="muted">After Phase 2 the far-shore desks unlock. A sponsor may add another country as a takeable front.</p>
     ${foreign || "<p class='muted'>No foreign desks yet.</p>"}
@@ -1134,7 +1162,7 @@ function cityHtml() {
       <span class="panel-why">Selected city.</span>
     </div>
     <div class="city-body">
-      <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.short)}${r.stateCode ? ` · ${esc(r.stateCode)}` : ""} · ${f ? esc(f.short) : "OPEN"}</h2>
+      <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
       <div class="city-grid">
         <span class="pill"><span>ECON</span><strong>${econ}</strong></span>
         <span class="pill"><span>STORES</span><strong>${known ? r.food : "?"}</strong></span>
@@ -1145,7 +1173,16 @@ function cityHtml() {
       </div>
       ${plus ? `<p class="plus">+ ${esc(plus)}</p>` : ""}
       ${minus ? `<p class="minus">− ${esc(minus)}</p>` : ""}
-      ${r.stateCode ? `<p class="plus">${esc(stateControl(state).find((s) => s.id === r.stateCode)?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode} still occupied — hold key cities`)}</p>` : ""}
+      <p class="plus">Geo: ${geoTags(r).map((t) => `${t.label} ${t.n}`).join(" · ") || "none"}</p>
+      ${(() => {
+        const row = stateControl(state).find((s) => s.id === r.stateCode);
+        const here = regionOf(state, playerOf(state).region);
+        const adj = here && isAdjacent(state, here, r);
+        const at = here?.id === r.id;
+        const route = at ? "You are here" : adj ? "Adjacent road open" : "Route locked — not adjacent";
+        const lib = row?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode || "—"} ${row ? `${row.heldTerr}/${row.totalTerr} territories · ${row.held}/${row.need} key` : ""}`;
+        return `<p class="plus">${esc(lib)}</p><p class="minus">${esc(route)}</p>`;
+      })()}
       ${legendBoard(state)
         .filter((h) => h.regionId === r.id)
         .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
@@ -1426,7 +1463,7 @@ function stopSceneFx() {
 function startAction(a) {
   if (a.needs === "region" || a.needs === "neighbor") {
     const list = a.needs === "neighbor" ? neighborRegions(state) : state.regions;
-    showModal(`<h2>${esc(a.label)}</h2>${list.map((r) => `<button class="list-btn" data-act="${a.id}" data-region="${r.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(r.name)}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>${esc(a.label)}</h2><p class="muted">Adjacent roads only. No leaping.</p>${list.map((r) => `<button class="list-btn" data-act="${a.id}" data-region="${r.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${geoTags(r).map((t) => t.label).join("/") || "—"}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-region]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -1525,7 +1562,7 @@ function startAction(a) {
     const here = regionOf(state, playerOf(state).region);
     showModal(`<h2>March / Attack</h2>
       <p>Commit troops from ${esc(here.short)} (garrison ${here.garrison}). Battle is a short grid; auto-resolve is allowed.</p>
-      ${list.map((r) => `<button class="list-btn" data-atk="${r.id}"><img class="cmd-thumb" src="${sceneArt("attack")}" alt="" /><span>${esc(r.name)} · ${r.owner ? factionOf(state, r.owner)?.short : "open"} · garr ${r.intel || r.owner === playerOf(state).faction ? r.garrison : "?"}</span></button>`).join("")}
+      ${list.map((r) => `<button class="list-btn" data-atk="${r.id}"><img class="cmd-thumb" src="${sceneArt("attack")}" alt="" /><span>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${r.owner ? factionOf(state, r.owner)?.short : "open"} · ${geoTags(r).map((t) => t.label).join("/") || "—"}</span></button>`).join("")}
       <label class="muted"><input type="checkbox" id="atk-auto" /> Auto-resolve</label>
       <button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-atk]").forEach((btn) => {
@@ -1600,10 +1637,14 @@ function renderMapCaption() {
   if (!cap || !state) return;
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const you = regionOf(state, playerOf(state).region);
-  const st = r?.stateCode ? ` · ${r.stateCode}` : "";
   const camp = ensureCampaign(state);
-  const lib = (camp.liberated || []).length;
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.short || "?"}${st} selected · you in ${you?.short || "?"} · liberated ${lib}/${camp.restoreThreshold} · phase ${camp.phase}`;
+  const row = stateControl(state).find((s) => s.id === r?.stateCode);
+  const here = you;
+  const adj = r && here && isAdjacent(state, here, r);
+  const at = r && here && r.id === here.id;
+  const route = !r ? "" : at ? "here" : adj ? "adjacent" : "route locked";
+  const hold = row ? `${row.heldTerr}/${row.totalTerr} terr · ${row.held}/${row.need} key` : "";
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${route} · phase ${camp.phase}`;
 }
 
 function cityXY(r) {

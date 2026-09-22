@@ -67,7 +67,7 @@ Add objects; the engine does not assume a fixed officer count.
 
 v0.1 ships **153 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, Jonah Stave, plus Front Range officers Vera Range and Ivy Front. Custom officers still cap at **10**.
 
-**Liberate the States:** a state is free when you hold its **key cities**. **8 US states** (west bloc AK–CO) names you **national leader** (title, extra AP, war council). Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua — unlock as thin nodes. A late **sponsor intervene** event can add Korea as a takeable front.
+**Liberate the States:** hierarchy is **STATE → territories**. A state is free when you hold its **key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail). Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields. **8 US states** (west bloc AK–CO) names you **national leader**. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua. A late **sponsor** event can add Korea.
 
 **Map unlock:** every US/Yukon city is painted from week 0. Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`.
 

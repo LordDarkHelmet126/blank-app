@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Liberate the States mid-step + Phase 2–4 hooks.
+**Last checkpoint:** 2026-09-22 — STATE → territories, no leaping, alternate routes, geo yields.
 
 ## How to run
 
@@ -16,42 +16,42 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Expanded theater:** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle pulses).
-**States board:** dock → States.
+**Theater:** `/?demo=states` or `/?demo=map` (Denver selected from Bethel — route locked).
+**States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 
-Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
+## Hierarchy
 
-## What landed (this burst)
+**STATE → territories** (cities/nodes). Every territory is takeable and tagged with its state. Liberating a state still means holding its **key territories** (★ on the States board).
 
-- **Playable US mid-step:** Alaska → Yukon → PNW / Mountain West → plains east (Nebraska, Kansas, Missouri).
-- **State control:** a US state is liberated when the player holds its key cities (not every hamlet). Gold state tags on the map; dock **States** board.
-- **Phase 1** — Liberate the States (current play).
-- **Phase 2** — **8 US states** (west bloc AK, WA, OR, ID, MT, WY, UT, CO) → national leader title, +AP, gold/food, war council unlock.
-- **Phase 3** — Foreign thin nodes unlock: Russia (via Bering), Cuba, Nicaragua.
-- **Phase 4** — Sponsor intervene event can add **Korea** as a takeable front.
-- US/Yukon roads walkable week 0. Foreign nodes stay hidden until the matching phase.
+**No leaping.** Travel, attack, and mission travel only along **adjacent** roads. Seeing a city does not let you jump there. NEXT explains “Cannot leap — take an adjacent road (X, Y).”
+
+## Alternate routes (examples)
+
+- Inside Passage **Juneau–Seattle** vs ALCAN **Yukon–Missoula**
+- Interior cut-off **Anchorage–Yukon** vs the Fairbanks hub
+- High Rockies pass **Jackson–Denver** vs Cheyenne rail
+- Plains grade **Billings–Omaha** vs Cheyenne yards
+- High desert **Salt Lake–Jackson** vs Junction orchards
+- Redrock sun road **Moab–Denver** vs Junction
+- Front Range **Denver–Omaha** / **Denver–Topeka** vs the long river-bluff chain
+
+## Geo tags (weekly yields)
+
+Each territory has farm / mine / fuel / water / sun / weather / defense (0–3). Held ground pays food and gold at End Week. Cultivate hits harder on farm/sun/water; commerce on mine/fuel/water; drill gets a sun bonus; fortify uses defense; harsh weather cuts yields. City report and States board show the tags.
+
+Examples: Lincoln/Topeka **Farm 3**; Arctic Slope **Fuel 3 + Weather 3**; Klondike **Mine 3**; Grand Junction **Farm 3 + Sun 2**; Kodiak **Water 3 + Defense 2**.
+
+## Campaign (unchanged)
+
+Phase 1 liberate states. Phase 2 at **8** west-bloc US states (national leader). Phase 3 Russia/Cuba/Nicaragua stubs. Phase 4 sponsor can add Korea.
 
 ## Counts (exact)
 
-- **US states on the board: 11** (AK, WA, OR, ID, MT, WY, UT, CO, NE, KS, MO)
-- **Territories: 1** (Yukon)
-- **Political units labeled on-map: 12**
-- **US/Yukon cities: 33** (Alaska 8 + Yukon 2 + Bering 1 + WA 3 + OR 3 + ID 2 + MT 2 + WY 2 + UT 2 + CO 3 + NE 2 + KS 2 + MO 1)
-- **Foreign stub nodes: 4** (Russia, Cuba, Nicaragua, Korea)
-- **Total map nodes: 37**
-- On-map factions: **17**
-- AI officers: **153**
-- Hidden legends: **3**
-- Phase 2 threshold: **8** US states
+- **US states: 11** · **Yukon: 1** · **territories on those units: 33** · **foreign stubs: 4** · **total nodes: 37**
+- On-map factions: **17** · AI officers: **153** · legends: **3**
 - Duel clock: **99s** / **11** exchanges
-
-## What’s next (small bursts)
-
-1. Flesh foreign theaters into their own maps
-2. Later: keep growing the roster toward ~500 named officers
 
 ## Blockers
 
 - None for running v0.1
-- Godot 4 still not installed — stay on HTML/Canvas until that’s explicit
 - No licensed IP names (no Wolverines / Koei assets)
