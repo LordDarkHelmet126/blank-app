@@ -1,5 +1,12 @@
 import { bakeScenes, sceneUrl } from "./scenes.js";
 import {
+  drawTravelConvoy,
+  isArcticRegion,
+  paintBattleCharge,
+  paintBattleSky,
+  paintChargeVignette,
+} from "./sprites.js";
+import {
   createNewGame,
   listActions,
   act,
@@ -41,6 +48,26 @@ let hoverRegion = null;
 
 const $ = (id) => document.getElementById(id);
 
+function parseDemoFx(params) {
+  const demo = params.get("demo") || "";
+  const fx = params.get("fx") || "";
+  if (fx === "travel" || demo === "travel" || demo === "fx=travel") return "travel";
+  if (fx === "battle" || demo === "battle" || demo === "fx=battle") return "battle";
+  return "";
+}
+
+function startSliceState() {
+  state = createNewGame(content, {
+    name: "Alex Rourke",
+    background: "scout",
+    difficulty: "normal",
+    seed: 7,
+  });
+  act(state, content, "raise_banner");
+  selectedRegion = "bethel";
+  hideModal();
+}
+
 export async function boot(loaded) {
   content = loaded;
   bindChrome();
@@ -52,16 +79,9 @@ export async function boot(loaded) {
   $("app").hidden = false;
   $("boot").hidden = true;
   const params = new URLSearchParams(location.search);
-  if (params.get("demo") === "slice") {
-    state = createNewGame(content, {
-      name: "Alex Rourke",
-      background: "scout",
-      difficulty: "normal",
-      seed: 7,
-    });
-    act(state, content, "raise_banner");
-    selectedRegion = "bethel";
-    hideModal();
+  const fxKind = parseDemoFx(params);
+  if (params.get("demo") === "slice" || fxKind) {
+    startSliceState();
     if (params.get("cat") === "domestic" || params.get("panel") === "drill") commandCat = "domestic";
     if (params.get("cat") === "military") commandCat = "military";
     render();
@@ -71,17 +91,26 @@ export async function boot(loaded) {
         id: "spy",
         title: "Spy",
         text: "Glass on the next ridge. A scout marked the Slope garrison and the watch towers.",
+        regionId: "arctic_slope",
       });
     }
     if (params.get("panel") === "drill") {
       showEventScene({
         id: "drill",
         title: "Drill",
-        text: "Range time on the snow. M16A2, AK-47, surplus webbing — not 2020s kit.",
+        text: "Range time on dry grass. M16A2, AK-47, surplus webbing — not 2020s kit.",
       });
     }
-    if (params.get("fx") === "travel") pulseTravel("bethel", "fairbanks");
-    if (params.get("fx") === "battle") {
+    if (params.get("panel") === "travel") {
+      showEventScene({
+        id: "travel",
+        title: "March",
+        text: "Jeep pickups and militia horse scouts take the ranch road. Original partisan column — 1980s kit.",
+        regionId: "bethel",
+      });
+    }
+    if (fxKind === "travel") pulseTravel("bethel", "fairbanks", { loop: true });
+    if (fxKind === "battle") {
       const home = regionOf(state, "bethel");
       home.garrison = 90;
       const fight = act(state, content, "attack", { regionId: "nome" });
@@ -418,6 +447,7 @@ function helpHtml() {
       <li>Hire up to 5 generals, then set their standing order on the You card. March/Attack is under Military.</li>
       <li>Hidden legend: Seek Legend on Plot (or Spy the Arctic Slope), then travel Fairbanks → Slope and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
+      <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
     </ul>
     <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
     <p><button type="button" id="help-coach" class="primary">Show week-1 coach</button></p>
@@ -567,6 +597,7 @@ function run(id, extra) {
       id: "seek_legend",
       title: "Legend listed",
       text: `${res.officerName || "Ilya Karr"} answers on the Arctic Slope. Original character — a hidden free officer. Hire him if you share the Slope.`,
+      regionId: "arctic_slope",
     });
   } else if (SCENE_ACTIONS.has(id) && !res.weekEnd) {
     const a = listActions(state).find((x) => x.id === id);
@@ -574,6 +605,7 @@ function run(id, extra) {
       id,
       title: a?.label || id,
       text: res.message || "The room goes still.",
+      regionId: extra?.regionId || playerOf(state).region,
     });
   }
   if (res.weekEnd) {
@@ -612,7 +644,10 @@ export function render() {
   wireAfterRender();
   applyCoachRing();
   if (state.phase === "battle") openBattle();
-  else $("battle").hidden = true;
+  else {
+    $("battle").hidden = true;
+    stopBattleLoop();
+  }
 }
 
 const PORTRAIT_SRC = "art/portraits/portrait-commander.png";
@@ -809,6 +844,9 @@ function renderActions() {
   });
 }
 
+const CHARGE_SCENE_IDS = new Set(["travel", "attack"]);
+let sceneFxRaf = 0;
+
 function showEventScene(ev) {
   $("event-vignette").src = sceneArt(ev.id);
   $("event-portrait").src = PORTRAIT_SRC;
@@ -821,11 +859,39 @@ function showEventScene(ev) {
   el.classList.remove("open");
   void el.offsetWidth;
   el.classList.add("open");
+  const region = regionOf(state, ev.regionId || playerOf(state)?.region);
+  startSceneFx(CHARGE_SCENE_IDS.has(ev.id), isArcticRegion(region));
 }
 
 function hideEventScene() {
   $("event-scene").hidden = true;
   $("event-scene").classList.remove("open");
+  stopSceneFx();
+}
+
+function startSceneFx(on, arctic) {
+  stopSceneFx();
+  const fx = $("scene-fx");
+  if (!fx) return;
+  fx.hidden = !on;
+  if (!on) return;
+  const ctx = fx.getContext("2d");
+  const tick = (now) => {
+    if ($("event-scene").hidden || fx.hidden) {
+      sceneFxRaf = 0;
+      return;
+    }
+    paintChargeVignette(ctx, now, arctic);
+    sceneFxRaf = requestAnimationFrame(tick);
+  };
+  sceneFxRaf = requestAnimationFrame(tick);
+}
+
+function stopSceneFx() {
+  if (sceneFxRaf) cancelAnimationFrame(sceneFxRaf);
+  sceneFxRaf = 0;
+  const fx = $("scene-fx");
+  if (fx) fx.hidden = true;
 }
 
 function startAction(a) {
@@ -1048,14 +1114,18 @@ function sameRoad(a, b, c, d) {
 
 let mapFx = null;
 
-function pulseTravel(fromId, toId) {
+function pulseTravel(fromId, toId, opts = {}) {
   const a = regionOf(state, fromId);
   const b = regionOf(state, toId);
   if (!a || !b) return;
-  mapFx = { kind: "travel", a: cityXY(a), b: cityXY(b), hop: true, t0: performance.now() };
+  const duration = opts.loop ? 2800 : 2400;
+  const t0 = performance.now();
+  mapFx = { kind: "travel", a: cityXY(a), b: cityXY(b), hop: true, t0, duration, loop: !!opts.loop };
   const tick = () => {
+    if (!mapFx || mapFx.t0 !== t0) return;
     drawMap();
-    if (mapFx && performance.now() - mapFx.t0 < 1600) requestAnimationFrame(tick);
+    const elapsed = performance.now() - mapFx.t0;
+    if (mapFx.loop || elapsed < duration) requestAnimationFrame(tick);
     else mapFx = null;
   };
   requestAnimationFrame(tick);
@@ -1167,17 +1237,13 @@ function drawMap() {
   });
   mapRoads(state.regions).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
-    const t = Math.min(1, (performance.now() - mapFx.t0) / 1600);
+    const now = performance.now();
+    const dur = mapFx.duration || 2400;
+    let t = (now - mapFx.t0) / dur;
+    t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
     const [x0, y0] = lowPt(mapFx.a);
     const [x1, y1] = lowPt(mapFx.b);
-    const px = Math.round(x0 + (x1 - x0) * t);
-    const py = Math.round(y0 + (y1 - y0) * t + (Math.floor(t * 16) % 2 ? -3 : 0));
-    o.fillStyle = "#000018";
-    o.fillRect(px - 3, py - 3, 7, 7);
-    o.fillStyle = "#f8d800";
-    o.fillRect(px - 2, py - 2, 5, 5);
-    o.fillStyle = "#f8f8f8";
-    o.fillRect(px - 1, py - 1, 3, 3);
+    drawTravelConvoy(o, [x0, y0], [x1, y1], t, now, 1);
   }
   state.regions.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
 
@@ -1203,7 +1269,27 @@ function ensureMapPulse() {
 
 function openBattle() {
   $("battle").hidden = false;
-  drawBattle();
+  startBattleLoop();
+}
+
+let battleRaf = 0;
+
+function startBattleLoop() {
+  if (battleRaf) return;
+  const tick = (now) => {
+    if (!state?.battle || $("battle").hidden) {
+      battleRaf = 0;
+      return;
+    }
+    drawBattle(now);
+    battleRaf = requestAnimationFrame(tick);
+  };
+  battleRaf = requestAnimationFrame(tick);
+}
+
+function stopBattleLoop() {
+  if (battleRaf) cancelAnimationFrame(battleRaf);
+  battleRaf = 0;
 }
 
 let flashTimer = null;
@@ -1257,13 +1343,26 @@ function unitAbbrev(u) {
   return (u.label || "UNT").slice(0, 3).toUpperCase();
 }
 
-function drawBattle() {
+function drawBattle(now = performance.now()) {
   const b = state.battle;
   if (!b) return;
   const dest = regionOf(state, b.toId);
+  const arctic = isArcticRegion(dest);
   $("battle-title").textContent = `Field — ${dest.name}`;
   $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
+  const sky = $("battle-sky");
+  if (sky) {
+    const sctx = sky.getContext("2d");
+    sctx.imageSmoothingEnabled = false;
+    paintBattleSky(sctx, now, arctic);
+  }
+  const charge = $("battle-charge");
+  if (charge) {
+    const cctx = charge.getContext("2d");
+    cctx.imageSmoothingEnabled = false;
+    paintBattleCharge(cctx, now, arctic);
+  }
   const canvas = $("battle-canvas");
   const ctx = canvas.getContext("2d");
   const cw = canvas.width;
@@ -1271,9 +1370,9 @@ function drawBattle() {
   const gw = cw / b.cols;
   const gh = ch / b.rows;
   const colors = {
-    plains: ["#c0a050", "#887838"],
+    plains: arctic ? ["#c0a050", "#887838"] : ["#c8a048", "#8a7840"],
     forest: ["#306830", "#184818"],
-    hills: ["#886838", "#503018"],
+    hills: arctic ? ["#886838", "#503018"] : ["#a07840", "#684828"],
     urban: ["#686868", "#404040"],
     ice: ["#80a0b0", "#487088"],
   };
@@ -1375,6 +1474,7 @@ function doBattle(cmd, extra) {
   if (!res.ok) toast(res.message);
   if (state.phase !== "battle") {
     $("battle").hidden = true;
+    stopBattleLoop();
     render();
     if (res.battleEnd) toast(res.message);
     return;

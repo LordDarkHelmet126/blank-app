@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { loadContent } from "../js/content.js";
 import {
   createNewGame,
@@ -222,6 +223,19 @@ assert(banner.hint && /Northern Front|claim/i.test(banner.hint), "Raise Banner n
 assert(drill && !drill.enabled && drill.hint, "Drill must explain why it is locked before a banner");
 assert(week0.find((a) => a.id === "end_week")?.enabled, "End Week always available");
 console.log("ok week-0 action hints");
+
+const spriteSrc = readFileSync(new URL("../js/sprites.js", import.meta.url), "utf8");
+const uiSrc = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+const sceneSrc = readFileSync(new URL("../js/scenes.js", import.meta.url), "utf8");
+const hudSrc = spriteSrc + uiSrc + sceneSrc;
+assert(!/wolverine/i.test(hudSrc), "copy must not use Wolverines trademark");
+assert(/militia horse scout/.test(spriteSrc), "horse framed as militia scout");
+assert(/drawJeep/.test(spriteSrc) && /drawM113/.test(spriteSrc) && /drawHorse/.test(spriteSrc), "jeep / M113 / horse painters");
+assert(/paintWestBackdrop/.test(spriteSrc) && /paintChargeVignette/.test(spriteSrc), "west backdrop + charge strip");
+assert(/parseDemoFx/.test(uiSrc) && /demo === "fx=travel"/.test(uiSrc), "demo=fx=travel alias");
+assert(/arctic_slope/.test(spriteSrc) && /bering_strait/.test(spriteSrc), "arctic nodes keep ice look");
+assert(/paintWestBackdrop/.test(sceneSrc), "event painters use west backdrop");
+console.log("ok travel/battle fx + west vignettes");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");

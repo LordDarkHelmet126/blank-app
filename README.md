@@ -12,7 +12,7 @@ Godot 4 is the long-term target, but this environment has no Godot editor/export
 - keeps officers/factions/regions/tech as plain JSON you can grow toward ~500 officers
 - is easy to headlessly simulate (see tests) so a 10+ week loop can be proven without a GPU
 
-The combat layer is a short, low-animation grid between strategy weeks — the same scope a Godot 2D port would keep.
+The combat layer is a short grid between strategy weeks with cheap 2–4 frame jeep / M113 / militia-horse loops — the same scope a Godot 2D port would keep.
 
 ## Run (exact)
 
@@ -76,6 +76,10 @@ node tests/simulate.mjs
 or `npm test`. Proves 12 autoplay weeks on Easy/Normal/Hard, save/load, a resolved battle, spy/alliance, and personality-tagged AI logs.
 
 Optional screenshot URLs while the server is running: `/?demo=slice` (banner already raised), `/?demo=coach` (week-1 coach on a fresh game), and `/?demo=week` (two autoplay weeks).
+
+Travel column (jeep pickup, M113, militia horse scout on gold roads): `/?demo=fx=travel` or `/?demo=travel` or `/?demo=slice&fx=travel`.
+Battle charge strip (Rockies foothills + looping sprites): `/?demo=fx=battle` or `/?demo=battle` or `/?demo=slice&fx=battle`.
+Travel event vignette: `/?demo=slice&panel=travel`.
 
 ## Layout
 

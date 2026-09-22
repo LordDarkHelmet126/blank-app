@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — playability pass (coach, labels, click feedback).
+**Last checkpoint:** 2026-09-22 — low-grade travel/battle loops + western Colorado Rockies vignettes.
 
 ## How to run
 
@@ -20,19 +20,20 @@ Optional: `/?demo=slice`, `/?demo=orders`, `/?demo=legend`, `/?demo=week`.
 **Week-1 coach (forced):** `/?demo=coach`
 Domestic photos: `/?demo=slice&cat=domestic`. Military tiles: `/?demo=slice&cat=military`.
 Spy event: `/?demo=slice&panel=spy`. Drill scene: `/?demo=slice&panel=drill`.
-Road pulse: `/?demo=slice&fx=travel`. Hit flash: `/?demo=slice&fx=battle`.
+Travel column (jeep / M113 / militia horse scout): `/?demo=fx=travel`, `/?demo=travel`, or `/?demo=slice&fx=travel`.
+Battle charge (Rockies strip + 2–4 frame loops): `/?demo=fx=battle`, `/?demo=battle`, or `/?demo=slice&fx=battle`.
+Travel vignette: `/?demo=slice&panel=travel`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Sticky **NEXT** strip names the next click (Raise Banner → spend AP → End Week)
-- Dismissible week-1 coach with highlight rings; Help → Show week-1 coach. QA: `/?demo=coach`
-- Panel titles + one-line purpose on You / City / Command / Map / Log / Scene / Battle
-- Hover tooltips on command tiles (AP cost + lock reason). Live tiles lift; locked tiles grey
-- Map caption + blinking selected city: click a city, gold roads are walkable
-- After each action, the scene (and week report) suggests the next click
-- 1985–89 kit lock kept. Roads, AP loop, orders unchanged
+- Map travel: 2–4 frame jeep pickup, M113 APC, and militia horse scout hop along gold roads (~2.4s; demo loops)
+- Battle + travel event scenes: scrolling ranch-road charge strip over a western Colorado foothills backdrop (mountains, pine, dry grass). Arctic Slope / Bering keep ice vignettes
+- Pixel scene painters default to Rockies/West; spy/seek/hide stay arctic. Alaska map nodes unchanged
+- Demo aliases `demo=fx=travel` / `demo=fx=battle` (malformed query still works) plus `demo=travel` / `demo=battle`
+- Copy is original IP: partisan/militia cavalry and jeep columns. No licensed film unit names
+- 1985–89 kit lock, pixel HUD, weekly AP loop, coach/playability kept
 
 ## What’s next (small bursts)
 

@@ -1,3 +1,5 @@
+import { paintArcticBackdrop, paintWestBackdrop } from "./sprites.js";
+
 const W = 80;
 const H = 45;
 const cache = {};
@@ -18,6 +20,8 @@ const PAL = {
   red: "#a03020",
   blue: "#304878",
   crate: "#c8a038",
+  wheat: "#c8a038",
+  wheat2: "#e0c060",
 };
 
 function px(ctx, x, y, w, h, c) {
@@ -25,15 +29,9 @@ function px(ctx, x, y, w, h, c) {
   ctx.fillRect(x, y, w, h);
 }
 
-function skyGround(ctx, sky, ground, ground2) {
-  px(ctx, 0, 0, W, H, sky);
-  for (let x = 0; x < W; x += 2) {
-    px(ctx, x, 4 + (x % 6), 1, 1, "#f8f8f8");
-  }
-  px(ctx, 0, 28, W, 17, ground);
-  for (let x = 0; x < W; x += 2) {
-    px(ctx, x, 28 + ((x + 1) % 2), 2, 2, ground2);
-  }
+function skyGround(ctx, arctic, mood) {
+  if (arctic) paintArcticBackdrop(ctx, W, H, 0);
+  else paintWestBackdrop(ctx, W, H, 0, mood);
 }
 
 function pine(ctx, x, y) {
@@ -59,7 +57,7 @@ function frame(ctx) {
 
 const PAINT = {
   drill(ctx) {
-    skyGround(ctx, "#203040", "#c8d0d0", "#a0b0b0");
+    skyGround(ctx);
     pine(ctx, 4, 16);
     pine(ctx, 68, 14);
     px(ctx, 50, 20, 10, 12, PAL.wood);
@@ -70,7 +68,7 @@ const PAINT = {
     px(ctx, 24, 22, 8, 1, PAL.ink);
   },
   fortify(ctx) {
-    skyGround(ctx, "#283848", "#6a6048", "#504838");
+    skyGround(ctx);
     pine(ctx, 62, 12);
     px(ctx, 8, 24, 64, 6, PAL.wood);
     px(ctx, 10, 20, 60, 4, "#887868");
@@ -81,7 +79,7 @@ const PAINT = {
     px(ctx, 30, 20, 2, 8, PAL.wood2);
   },
   commerce(ctx) {
-    skyGround(ctx, "#304058", "#486038", "#607848");
+    skyGround(ctx);
     px(ctx, 18, 12, 44, 4, PAL.wood);
     px(ctx, 20, 16, 40, 16, PAL.wood2);
     px(ctx, 22, 18, 8, 6, PAL.crate);
@@ -91,19 +89,19 @@ const PAINT = {
     fig(ctx, 58, 16, PAL.olive, PAL.olive2);
   },
   cultivate(ctx) {
-    skyGround(ctx, "#203838", "#2a5030", "#386838");
+    skyGround(ctx);
     pine(ctx, 6, 14);
     pine(ctx, 70, 12);
     px(ctx, 22, 18, 36, 4, PAL.wood);
-    px(ctx, 24, 14, 4, 12, PAL.snow);
-    px(ctx, 32, 12, 4, 14, PAL.snow2);
-    px(ctx, 40, 14, 4, 12, PAL.snow);
-    px(ctx, 48, 13, 4, 13, PAL.snow2);
+    px(ctx, 24, 14, 4, 12, PAL.wheat);
+    px(ctx, 32, 12, 4, 14, PAL.wheat2);
+    px(ctx, 40, 14, 4, 12, PAL.wheat);
+    px(ctx, 48, 13, 4, 13, PAL.wheat2);
     fig(ctx, 16, 16, PAL.olive2, PAL.olive);
     px(ctx, 28, 26, 12, 6, PAL.wood);
   },
   safety(ctx) {
-    skyGround(ctx, "#101828", "#3a4048", "#505860");
+    skyGround(ctx, false, "dusk");
     px(ctx, 10, 22, 60, 2, PAL.ink);
     px(ctx, 14, 18, 4, 12, PAL.ink);
     px(ctx, 38, 18, 4, 12, PAL.ink);
@@ -114,7 +112,7 @@ const PAINT = {
     fig(ctx, 48, 14, PAL.olive, PAL.olive2);
   },
   attack(ctx) {
-    skyGround(ctx, "#402018", "#504830", "#686040");
+    skyGround(ctx);
     px(ctx, 0, 30, W, 4, "#503010");
     px(ctx, 0, 31, W, 1, PAL.crate);
     px(ctx, 28, 18, 22, 10, PAL.olive);
@@ -124,7 +122,7 @@ const PAINT = {
     fig(ctx, 56, 14, PAL.red, PAL.ink);
   },
   travel(ctx) {
-    skyGround(ctx, "#182848", "#2a5028", "#386830");
+    skyGround(ctx);
     pine(ctx, 8, 12);
     pine(ctx, 64, 10);
     px(ctx, 0, 30, W, 4, "#503010");
@@ -143,7 +141,7 @@ const PAINT = {
     fig(ctx, 8, 14, PAL.olive, PAL.olive2);
   },
   raise_banner(ctx) {
-    skyGround(ctx, "#203050", "#486038", "#607848");
+    skyGround(ctx);
     px(ctx, 36, 6, 3, 28, PAL.wood);
     px(ctx, 39, 6, 18, 12, PAL.gold);
     px(ctx, 41, 8, 14, 8, PAL.navy);
@@ -151,7 +149,7 @@ const PAINT = {
     fig(ctx, 48, 16, PAL.olive2, PAL.olive);
   },
   seek_legend(ctx) {
-    skyGround(ctx, "#101028", "#203040", "#304858");
+    skyGround(ctx, true);
     pine(ctx, 58, 10);
     px(ctx, 50, 20, 18, 10, PAL.blue);
     fig(ctx, 14, 14, PAL.ink, PAL.snow);
@@ -159,48 +157,52 @@ const PAINT = {
     px(ctx, 62, 8, 4, 4, "#d080f8");
   },
   hire(ctx) {
-    skyGround(ctx, "#201810", PAL.wood, PAL.wood2);
+    px(ctx, 0, 0, W, H, "#201810");
+    px(ctx, 0, 28, W, 17, PAL.wood);
     px(ctx, 20, 16, 40, 16, PAL.wood2);
     fig(ctx, 16, 12, PAL.olive, PAL.gold);
     fig(ctx, 48, 12, PAL.blue, PAL.olive2);
     px(ctx, 34, 20, 10, 6, PAL.crate);
   },
   ally(ctx) {
-    skyGround(ctx, "#181828", PAL.wood, PAL.wood2);
+    px(ctx, 0, 0, W, H, "#181828");
+    px(ctx, 0, 28, W, 17, PAL.wood);
     px(ctx, 18, 18, 44, 14, PAL.wood2);
     fig(ctx, 14, 12, PAL.gold, PAL.navy);
     fig(ctx, 50, 12, PAL.red, PAL.ink);
     px(ctx, 36, 8, 8, 8, PAL.gold);
   },
   break_ally(ctx) {
-    skyGround(ctx, "#280808", PAL.wood, "#502018");
+    px(ctx, 0, 0, W, H, "#280808");
+    px(ctx, 0, 28, W, 17, "#502018");
     px(ctx, 18, 18, 44, 14, PAL.wood2);
     fig(ctx, 14, 12, PAL.olive, PAL.gold);
     fig(ctx, 50, 12, PAL.red, PAL.ink);
     px(ctx, 34, 8, 12, 2, PAL.red);
   },
   rumor(ctx) {
-    skyGround(ctx, "#101018", PAL.wood, PAL.wood2);
+    skyGround(ctx, false, "dusk");
     px(ctx, 24, 16, 8, 10, PAL.gold);
     fig(ctx, 18, 14, PAL.olive, PAL.olive2);
     fig(ctx, 46, 14, PAL.blue, PAL.ink);
-    px(ctx, 40, 20, 6, 2, PAL.snow);
+    px(ctx, 40, 20, 6, 2, PAL.wheat);
   },
   persuade(ctx) {
-    skyGround(ctx, "#201828", PAL.wood, PAL.wood2);
+    px(ctx, 0, 0, W, H, "#201828");
+    px(ctx, 0, 28, W, 17, PAL.wood);
     px(ctx, 22, 18, 36, 12, PAL.wood2);
     fig(ctx, 16, 12, PAL.olive, PAL.gold);
     fig(ctx, 50, 12, PAL.blue, PAL.snow);
   },
   hide(ctx) {
-    skyGround(ctx, "#081018", "#102028", "#183040");
+    skyGround(ctx, true);
     pine(ctx, 50, 10);
     pine(ctx, 62, 14);
     fig(ctx, 12, 16, PAL.ink, PAL.snow2);
     px(ctx, 8, 28, 16, 6, PAL.ink);
   },
   spy(ctx) {
-    skyGround(ctx, "#081020", "#102030", "#203848");
+    skyGround(ctx, true);
     pine(ctx, 58, 10);
     px(ctx, 46, 22, 22, 10, PAL.blue);
     px(ctx, 52, 16, 8, 10, PAL.wood);

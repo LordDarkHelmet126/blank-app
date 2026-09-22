@@ -82,6 +82,7 @@
       <div class="event-card">
         <div class="event-art">
           <img id="event-vignette" alt="" />
+          <canvas id="scene-fx" width="320" height="90" hidden></canvas>
           <img id="event-portrait" class="event-face" alt="" />
         </div>
         <div class="event-copy">
@@ -107,8 +108,12 @@
             <button type="button" id="battle-auto">Auto-resolve</button>
           </div>
         </header>
-        <canvas id="battle-canvas" width="960" height="520"></canvas>
-        <p id="battle-hint" class="hint">BATTLE — click a yellow unit, then an adjacent tile to step or fire. Auto-resolve skips the grid.</p>
+        <div class="battle-stage">
+          <canvas id="battle-sky" width="960" height="64" aria-hidden="true"></canvas>
+          <canvas id="battle-canvas" width="960" height="520"></canvas>
+          <canvas id="battle-charge" width="960" height="72" aria-hidden="true"></canvas>
+        </div>
+        <p id="battle-hint" class="hint">BATTLE — jeep pickups and militia horse scouts on the strip. Click a yellow unit, then an adjacent tile. Auto-resolve skips the grid.</p>
         <ol id="battle-log" class="log battle-log"></ol>
       </div>
     </div>
