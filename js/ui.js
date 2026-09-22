@@ -1844,7 +1844,7 @@ const STATE_FILL = {
 
 function drawStateLabels(ctx) {
   const list = state.stateTheaters || [];
-  ctx.font = "10px 'Press Start 2P', 'Courier New', monospace";
+  ctx.font = "12px 'Press Start 2P', 'Courier New', monospace";
   list.forEach((st) => {
     if (!st.label) return;
     const [x, y] = st.label;

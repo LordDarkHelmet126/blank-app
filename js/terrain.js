@@ -632,12 +632,12 @@ export function drawCityNode(ctx, x, y, selected) {
 }
 
 export function drawFactionFlag(ctx, x, y, color, selected) {
-  const pole = selected ? "#f8d800" : "#e8e0d0";
-  const fly = color || "#607838";
-  px(ctx, x + 5, y - 20, 2, 20, pole);
-  px(ctx, x + 7, y - 20, 11, 8, fly);
-  px(ctx, x + 7, y - 20, 11, 1, "#fff8e0");
-  px(ctx, x + 16, y - 17, 2, 2, fly);
+  const pole = selected ? "#f8d800" : "#d8d0c0";
+  const fly = color || "#9aa7b0";
+  px(ctx, x + 4, y - 24, 2, 24, pole);
+  px(ctx, x + 6, y - 24, 16, 11, "#201810");
+  px(ctx, x + 7, y - 23, 14, 9, fly);
+  px(ctx, x + 7, y - 23, 14, 2, "#fff8e0");
 }
 
 export function terrainSize() {
