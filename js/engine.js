@@ -964,6 +964,7 @@ function beginDuel(state, actor, foe, extra = {}) {
   const youStats = actingStats(state, actor);
   const foeStats = actingStats(state, foe);
   const kind = extra.kind || (actor.faction && foe.faction === actor.faction ? "spar" : "challenge");
+  const regionId = extra.regionId || actor.region || playerOf(state).region;
   state.phase = "duel";
   state.duel = createDuel({
     you: actor,
@@ -972,19 +973,32 @@ function beginDuel(state, actor, foe, extra = {}) {
     foeStats,
     jobId: extra.jobId || null,
     kind,
+    regionId,
+    seasonId: state._season?.id || "winter",
+    arenaId: extra.arenaId || null,
+    youStyleId: extra.youStyleId || extra.styleId || null,
+    foeStyleId: extra.foeStyleId || null,
+    jobTemplateId: extra.jobTemplateId || null,
   });
   state.duel.actorId = actor.id;
   return state.duel;
 }
 
-function doChallenge(state, officerId) {
+function doChallenge(state, extra = {}) {
+  const officerId = extra.officerId || extra;
   const p = playerOf(state);
   const foe = officerOf(state, officerId);
   if (!foe) return { ok: false, message: "No such officer." };
   if (foe.region !== p.region) return { ok: false, message: "They are not in this city." };
   if (foe.id === p.id) return { ok: false, message: "Not yourself." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
-  beginDuel(state, p, foe, { kind: p.faction && foe.faction === p.faction ? "spar" : "challenge" });
+  beginDuel(state, p, foe, {
+    kind: p.faction && foe.faction === p.faction ? "spar" : "challenge",
+    arenaId: extra.arenaId,
+    youStyleId: extra.youStyleId || extra.styleId,
+    foeStyleId: extra.foeStyleId,
+    regionId: extra.regionId || p.region,
+  });
   const d = state.duel;
   const msg = d.underdog
     ? `David vs Goliath — ${foe.name} (WAR ${d.foe.stats.war}) vs you (WAR ${d.you.stats.war}). Green window is wider.`
@@ -1045,7 +1059,7 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "hire") return doHire(state, extra.officerId, stats);
   if (actionId === "appoint") return doAppoint(state, extra.officerId);
   if (actionId === "mission") return doMission(state, extra.jobId, extra.officerId);
-  if (actionId === "challenge") return doChallenge(state, extra.officerId);
+  if (actionId === "challenge") return doChallenge(state, extra);
   if (actionId === "ally") return doAlly(state, extra.factionId, stats);
   if (actionId === "break_ally") return doBreak(state, extra.factionId);
   if (actionId === "rumor") return doRumor(state, extra.officerId, stats);
@@ -1318,7 +1332,7 @@ function doMission(state, jobId, officerId) {
       pushLog(state, res.report || res.message, "player");
       return { ...res, sceneId: res.sceneId || "mission" };
     }
-    beginDuel(state, actor, foe, { jobId: job.id, kind: "mission" });
+    beginDuel(state, actor, foe, { jobId: job.id, kind: "mission", jobTemplateId: t.id, regionId: job.regionId });
     const msg = `Porch challenge: ${foe.name} in ${regionOf(state, job.regionId)?.short || "town"}.`;
     pushLog(state, msg, "war");
     return { ok: true, duel: true, message: msg, sceneId: "porch_challenge" };
@@ -1347,6 +1361,9 @@ function runStandingMission(state, off) {
       foeStats: actingStats(state, foe),
       jobId: job.id,
       kind: "mission",
+      regionId: job.regionId,
+      seasonId: state._season?.id || "winter",
+      jobTemplateId: t.id,
     });
     duel.actorId = off.id;
     autoResolveDuel(duel, () => nextFloat(state));

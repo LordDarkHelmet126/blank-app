@@ -296,6 +296,8 @@ export async function boot(loaded) {
   if (params.get("demo") === "duel") {
     startSliceState();
     const goliath = params.get("goliath") === "1";
+    const style = params.get("style");
+    const arena = params.get("arena");
     let foe;
     if (goliath) {
       foe = state.officers.find((o) => o.id === "marsh");
@@ -309,7 +311,11 @@ export async function boot(loaded) {
       foe = state.officers.find((o) => o.id === "hart");
     }
     if (foe) {
-      const res = act(state, content, "challenge", { officerId: foe.id });
+      const res = act(state, content, "challenge", {
+        officerId: foe.id,
+        youStyleId: style || undefined,
+        arenaId: arena || undefined,
+      });
       if (!res.ok) toast(res.message);
     }
     hideModal();
@@ -595,7 +601,7 @@ function helpHtml() {
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> five general chairs under the map. Hire fills a chair; extras wait; Plot → Appoint. Standing orders run at End Week.</li>
-      <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Strike / Guard / Special; press in the green window. Clock is ~99 seconds if both stay up. Underdog (much lower WAR) gets a wider window.</li>
+      <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Strike / Guard / named Special; press in the green window. Clock ~99s if both stay up. Arena follows region/season. Each officer has a kit and a fighting style (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals).</li>
       <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
       <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
@@ -2002,12 +2008,15 @@ function paintDuelStatic() {
   const foe = d.foe;
   $("duel-you-face").src = PORTRAIT_SRC;
   $("duel-you-name").textContent = you.name;
+  $("duel-you-style").textContent = `${you.style?.label || "Style"} · ${you.outfit?.label || "kit"}`;
   $("duel-you-meta").textContent = `AGE ${you.age} · ${you.title}`;
   $("duel-you-stats").textContent = `WAR ${you.stats.war}  INT ${you.stats.int}  POL ${you.stats.pol}  CHR ${you.stats.chr}`;
   $("duel-foe-face").textContent = foe.portrait || portraitInitials(foe.name);
   $("duel-foe-name").textContent = foe.name;
+  $("duel-foe-style").textContent = `${foe.style?.label || "Style"} · ${foe.outfit?.label || "kit"}`;
   $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""}`;
   $("duel-foe-stats").textContent = `WAR ${foe.stats.war}  INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
+  if ($("duel-arena")) $("duel-arena").textContent = d.arena?.label || "Yard";
 }
 
 function paintDuelHp() {
@@ -2026,8 +2035,12 @@ function paintDuelHud() {
   $("duel-cue").textContent = d.result
     ? d.log[d.log.length - 1]
     : d.underdog
-      ? "UNDERDOG — wider green window. Strike beats Special · Special beats Guard · Guard beats Strike."
-      : "Green window = bonus. Strike beats Special · Special beats Guard · Guard beats Strike.";
+      ? `UNDERDOG — ${d.you.style?.flavor || "wider green window."}`
+      : `${d.you.style?.flavor || "Green window = bonus."} Strike beats Special · Special beats Guard · Guard beats Strike.`;
+  const spec = $("duel-special");
+  if (spec && d.you.style) {
+    spec.innerHTML = `<b>3</b> ${esc(d.you.style.specialLabel)}<small>${esc(d.you.style.flavor)}</small>`;
+  }
   $("duel-log").innerHTML = d.log.slice(-6).map((l) => `<li>${esc(l)}</li>`).join("");
   document.querySelectorAll("[data-duel-move]").forEach((b) => {
     b.disabled = d.beat !== "pick" || !!d.result;
@@ -2044,37 +2057,139 @@ function drawDuelYard(now) {
   const w = canvas.width;
   const h = canvas.height;
   ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "#3a68a0";
-  ctx.fillRect(0, 0, w, 48);
-  ctx.fillStyle = "#486030";
-  ctx.fillRect(0, 48, w, h);
-  ctx.fillStyle = "#503010";
-  ctx.fillRect(0, 100, w, 40);
-  ctx.fillStyle = "#f8d800";
-  ctx.fillRect(0, 100, w, 3);
+  paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
   const bob = Math.floor(now / 280) % 2;
   const flash = state.duel.last && state.duel.beat === "resolve";
-  drawYardFighter(ctx, 160, 70 + bob, "#507040", "#f8d800", false, flash && state.duel.last.youDmg > 0);
-  drawYardFighter(ctx, 440, 70 + (1 - bob), "#304878", "#f03030", true, flash && state.duel.last.foeDmg > 0);
+  const youHit = flash && state.duel.last.youDmg > 0;
+  const foeHit = flash && state.duel.last.foeDmg > 0;
+  drawDuelFighter(ctx, 150, 78 + bob, state.duel.you.outfit, false, youHit, state.duel.last?.youMove);
+  drawDuelFighter(ctx, 430, 78 + (1 - bob), state.duel.foe.outfit, true, foeHit, state.duel.last?.foeMove);
   if (flash) {
-    ctx.fillStyle = "#f8f8f8";
-    ctx.globalAlpha = 0.25;
+    const fx = state.duel.last.youFx || state.duel.last.foeFx || "#f8f8f8";
+    ctx.fillStyle = fx;
+    ctx.globalAlpha = 0.28;
     ctx.fillRect(0, 0, w, h);
     ctx.globalAlpha = 1;
   }
 }
 
-function drawYardFighter(ctx, x, y, coat, hat, flip, hit) {
+function px(ctx, x, y, w, h, c) {
+  ctx.fillStyle = c;
+  ctx.fillRect(x, y, w, h);
+}
+
+function paintDuelArena(ctx, w, h, id, now) {
+  const twinkle = Math.floor(now / 400) % 2;
+  if (id === "roadhouse") {
+    px(ctx, 0, 0, w, 56, "#203040");
+    px(ctx, 0, 56, w, h, "#d0d8e0");
+    px(ctx, 40, 20, 120, 70, "#684028");
+    px(ctx, 50, 30, 24, 20, "#88b0c8");
+    px(ctx, 90, 40, 18, 50, "#3a2010");
+    px(ctx, 200, 8, 80, 12, "#f8d800");
+    px(ctx, 0, 120, w, 8, "#f8f8f8");
+    px(ctx, 12, 64, 6, 6, "#f8f8f8");
+    px(ctx, 400, 70, 8, 8, "#f8f8f8");
+    return;
+  }
+  if (id === "foothills") {
+    px(ctx, 0, 0, w, 50, "#5a88b8");
+    px(ctx, 0, 36, w, 40, "#4a5868");
+    px(ctx, 80, 20, 200, 50, "#3a4858");
+    px(ctx, 0, 70, w, h, "#8a7840");
+    px(ctx, 20, 50, 10, 40, "#184828");
+    px(ctx, 30, 40, 18, 20, "#306830");
+    px(ctx, 540, 48, 10, 40, "#184828");
+    px(ctx, 0, 130, w, 50, "#6a5030");
+    px(ctx, 0, 130, w, 3, "#c8a048");
+    return;
+  }
+  if (id === "airstrip") {
+    px(ctx, 0, 0, w, 48, "#78a0c8");
+    px(ctx, 0, 48, w, h, "#887868");
+    px(ctx, 40, 90, w, 16, "#c8c8a0");
+    px(ctx, 40, 96, w, 4, "#f8d800");
+    px(ctx, 480, 40, 80, 28, "#686860");
+    px(ctx, 500, 28, 8, 20, "#f8d800");
+    px(ctx, 120, 70, 36, 16, "#2a3820");
+    return;
+  }
+  if (id === "iceford") {
+    px(ctx, 0, 0, w, 52, "#103048");
+    px(ctx, 0, 52, w, 40, "#4a6888");
+    px(ctx, 0, 90, w, h, "#d0d8e0");
+    px(ctx, 0, 100, w, 12, "#88b0c8");
+    px(ctx, 200, 108, 80, 6, "#f8f8f8");
+    px(ctx, 40, 60, 16, 16, "#a0b0c0");
+    return;
+  }
+  if (id === "gaslot") {
+    px(ctx, 0, 0, w, 44, "#3a3028");
+    px(ctx, 0, 44, w, h, "#404038");
+    px(ctx, 0, 110, w, 70, "#2a2820");
+    px(ctx, 60, 20, 90, 50, "#c8a038");
+    px(ctx, 70, 28, 20, 16, "#f8d800");
+    px(ctx, 400, 30, 70, 40, "#101050");
+    px(ctx, 80, 70, 12, 40, "#686860");
+    px(ctx, 200, 70, 12, 40, "#686860");
+    if (twinkle) px(ctx, 78, 24, 8, 8, "#f8d800");
+    return;
+  }
+  if (id === "pineridge") {
+    px(ctx, 0, 0, w, 50, "#3a68a0");
+    px(ctx, 80, 16, 180, 40, "#4a5868");
+    px(ctx, 0, 50, w, h, "#486030");
+    for (const x of [16, 48, 520, 560, 600]) {
+      px(ctx, x, 40, 6, 50, "#3a2010");
+      px(ctx, x - 8, 28, 22, 24, "#184828");
+      px(ctx, x - 4, 16, 14, 16, "#306830");
+    }
+    px(ctx, 0, 130, w, 50, "#3a4820");
+    return;
+  }
+  if (id === "radiotower") {
+    px(ctx, 0, 0, w, 70, "#101028");
+    px(ctx, 0, 70, w, h, "#181830");
+    px(ctx, 300, 8, 8, 90, "#686860");
+    px(ctx, 280, 20, 48, 6, "#686860");
+    px(ctx, 304, 6, 4, 8, twinkle ? "#f03030" : "#f8d800");
+    px(ctx, 40, 80, 70, 40, "#304878");
+    px(ctx, 48, 88, 16, 12, "#80c0f8");
+    px(ctx, 0, 128, w, 52, "#000018");
+    if (twinkle) px(ctx, 80, 20, 2, 2, "#f8f8f8");
+    px(ctx, 500, 24, 2, 2, "#f8f8f8");
+    return;
+  }
+  px(ctx, 0, 0, w, 52, "#5a88b8");
+  px(ctx, 0, 52, w, h, "#8a7840");
+  px(ctx, 24, 20, 100, 70, "#684028");
+  px(ctx, 34, 30, 22, 18, "#88b0c8");
+  px(ctx, 70, 50, 16, 40, "#3a2010");
+  px(ctx, 0, 120, w, 60, "#503010");
+  px(ctx, 0, 120, w, 3, "#f8d800");
+}
+
+function drawDuelFighter(ctx, x, y, outfit, flip, hit, pose) {
+  const o = outfit || { coat: "#507040", hat: "#f8d800", pants: "#3a2010", accent: "#c8a038" };
   const s = flip ? -1 : 1;
-  ctx.fillStyle = hit ? "#f8f8f8" : hat;
-  ctx.fillRect(x + s * 4, y, 16, 8);
-  ctx.fillStyle = "#c8a078";
-  ctx.fillRect(x + s * 4, y + 8, 16, 10);
-  ctx.fillStyle = hit ? "#f03030" : coat;
-  ctx.fillRect(x, y + 18, 24, 28);
-  ctx.fillStyle = "#000018";
-  ctx.fillRect(x + 4, y + 46, 6, 16);
-  ctx.fillRect(x + 14, y + 46, 6, 16);
+  const hat = hit ? "#f8f8f8" : o.hat;
+  const coat = hit ? "#f03030" : o.coat;
+  if (o.brim) px(ctx, x + s * 0, y + 4, 24, 4, hat);
+  if (o.helmet) px(ctx, x + s * 2, y - 2, 20, 10, hat);
+  else px(ctx, x + s * 4, y, 16, 8, hat);
+  px(ctx, x + s * 4, y + 8, 16, 10, "#c8a078");
+  if (o.headset) {
+    px(ctx, x + s * 2, y + 10, 4, 6, o.accent);
+    px(ctx, x + s * 18, y + 10, 4, 6, o.accent);
+  }
+  const wide = o.helmet || o.id === "parka" ? 4 : 0;
+  px(ctx, x - wide, y + 18, 24 + wide * 2, 28, coat);
+  px(ctx, x + 2, y + 22, 4, 16, o.accent);
+  if (pose === "guard") px(ctx, x + s * 20, y + 22, 10, 6, o.accent);
+  if (pose === "strike") px(ctx, x + s * 22, y + 20, 12, 4, hat);
+  if (pose === "special") px(ctx, x + s * 18, y + 8, 8, 8, o.accent);
+  px(ctx, x + 4, y + 46, 6, 16, o.pants || "#201810");
+  px(ctx, x + 14, y + 46, 6, 16, o.pants || "#201810");
 }
 
 function wireOrders() {

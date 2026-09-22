@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — yard duel v0 (~99s clock, Strike/Guard/Special, David vs Goliath).
+**Last checkpoint:** 2026-09-22 — duel variety: 8 arenas, 8 outfits, 8 fighting styles with named specials.
 
 ## How to run
 
@@ -31,16 +31,17 @@ Travel vignette: `/?demo=slice&panel=travel`.
 **Layout (officer chrome):** `/?demo=layout`.
 **Yard duel (~99s):** `/?demo=duel`.
 **Underdog (Marsh):** `/?demo=duel&goliath=1`.
+**Style:** `/?demo=duel&style=brawler` (or marksman, grappler, cavalry, guerrilla, drill, trapper, signals, cycle).
+**Arena:** `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower).
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- **Yard duel v0:** two officer cards (portrait, name/age/title, WAR-weighted stats, HP), Strike / Guard / Special with a green timing window, visible **99s countdown**. 11 exchanges × 9s (7.5s pick + 1.5s resolve) when both stay up. KO or clock → back to map with gold/fame/wound/loyalty.
-- **David vs Goliath:** if foe WAR is much higher, UNDERDOG banner and a wider green window so skill can upset a legend.
-- Entry: Plot/Military → **Challenge** (same city); mission template **Porch challenge** opens the yard instead of a roll. Standing orders auto-resolve the duel.
-- Pixel navy HUD, original IP (no Tekken/SF/Koei/Wolverines). Coach, chronicle, missions, generals, layout chrome kept.
-- Demo: `/?demo=duel` (Hart), `/?demo=duel&goliath=1` (Marsh). Tests auto-resolve (no 99s wait).
+- **Duel variety:** 8 arenas rotate by region/season/mission (ranch porch, snowy roadhouse, Colorado foothills, gravel airstrip, ice ford, gas-station lot, pine ridge, night radio tower). Not one repeated yard.
+- **Outfits:** scout coat, gun-truck crew, APC crew, radio tech, ranch militia, officer dress, winter parka, fatigues — tied to title / type / region.
+- **Fighting styles (8):** Brawler (Haymaker), Marksman (Aimed Shot pierce), Grappler (Throw stun), Cavalry (Spur Charge), Guerrilla (Dust Feint heal), Drill-Sergeant (Dress-Right), Trapper (Snare Line), Signals (Static Burst underdog finisher). Shown on the HUD; Special button uses the style name.
+- Clock still **99s** / 11 exchanges. Underdog mode kept. Demos: `/?demo=duel`, `&style=brawler`, `&arena=foothills`, `&goliath=1`.
 
 ## Counts
 

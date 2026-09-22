@@ -67,7 +67,7 @@ Add objects; the engine does not assume a fixed officer count.
 
 v0.1 ships **131 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, and Jonah Stave. Custom officers still cap at **10**.
 
-You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (13 templates, including a **Porch challenge** yard duel) sit on a weekly board — Military → Side Mission, or the Missions dock. Plot/Military → **Challenge** calls out an officer in the same city. Duels last ~**99 seconds** if both stay up (11 exchanges × 9s): Strike / Guard / Special with a green timing window. Underdog (much lower WAR) gets a wider window. Original IP — not a licensed fighting game.
+You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (13 templates, including a **Porch challenge** yard duel) sit on a weekly board — Military → Side Mission, or the Missions dock. Plot/Military → **Challenge** calls out an officer in the same city. Duels last ~**99 seconds** if both stay up (11 exchanges × 9s): Strike / Guard / named Special with a green timing window. Eight arenas (porch, roadhouse, foothills, airstrip, ice ford, gas lot, pine ridge, radio tower), outfit kits, and fighting styles (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals). Underdog (much lower WAR) gets a wider window. Original IP — not a licensed fighting game.
 
 ## Tests
 
@@ -88,7 +88,7 @@ Season tint only: `/?demo=season`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
-**Yard duel (~99s):** `/?demo=duel`. Underdog showcase: `/?demo=duel&goliath=1`.
+**Yard duel (~99s):** `/?demo=duel`. Underdog: `/?demo=duel&goliath=1`. Style: `/?demo=duel&style=brawler` (also marksman, grappler, cavalry, guerrilla, drill, trapper, signals, or `cycle`). Arena: `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower).
 
 ## Layout
 

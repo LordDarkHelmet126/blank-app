@@ -125,7 +125,7 @@
     <div id="duel" class="duel" hidden>
       <div class="duel-inner">
         <header class="chrome-head duel-head">
-          <span class="panel-title">Yard</span>
+          <span class="panel-title" id="duel-arena">Yard</span>
           <span id="duel-exchange">EX 1 / 11</span>
           <span id="duel-clock" class="duel-clock">99</span>
           <span id="duel-underdog" class="duel-underdog" hidden>UNDERDOG</span>
@@ -136,6 +136,7 @@
             <div class="medallion"><img id="duel-you-face" alt="" /></div>
             <div>
               <h2 id="duel-you-name">You</h2>
+              <p id="duel-you-style" class="duel-style"></p>
               <p id="duel-you-meta" class="muted"></p>
               <p id="duel-you-stats"></p>
               <div class="duel-hp"><i id="duel-you-hp"></i></div>
@@ -145,6 +146,7 @@
           <article class="duel-card foe" id="duel-foe">
             <div>
               <h2 id="duel-foe-name">Foe</h2>
+              <p id="duel-foe-style" class="duel-style"></p>
               <p id="duel-foe-meta" class="muted"></p>
               <p id="duel-foe-stats"></p>
               <div class="duel-hp"><i id="duel-foe-hp"></i></div>
@@ -153,7 +155,7 @@
             <div class="medallion"><span id="duel-foe-face" class="mini"></span></div>
           </article>
         </div>
-        <canvas id="duel-canvas" width="640" height="140" aria-label="Yard"></canvas>
+        <canvas id="duel-canvas" width="640" height="180" aria-label="Yard"></canvas>
         <div class="duel-meter" id="duel-meter">
           <i id="duel-green" class="duel-green"></i>
           <i id="duel-needle" class="duel-needle"></i>
@@ -161,7 +163,7 @@
         <div class="duel-moves" id="duel-moves">
           <button type="button" data-duel-move="strike"><b>1</b> Strike<small>beats Special</small></button>
           <button type="button" data-duel-move="guard"><b>2</b> Guard<small>beats Strike</small></button>
-          <button type="button" data-duel-move="special"><b>3</b> Special<small>beats Guard</small></button>
+          <button type="button" data-duel-move="special" id="duel-special"><b>3</b> Special<small>beats Guard</small></button>
         </div>
         <ol id="duel-log" class="log duel-log"></ol>
         <div class="duel-foot">

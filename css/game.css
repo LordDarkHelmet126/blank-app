@@ -1023,10 +1023,15 @@ hr {
   width: 100%;
 }
 .duel-card.foe .duel-hp i { background: var(--blood); margin-left: auto; }
+.duel-style {
+  margin: 0 0 4px;
+  color: var(--amber);
+  text-transform: uppercase;
+}
 #duel-canvas {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 180px;
   image-rendering: pixelated;
   background: #082038;
   border-top: var(--chrome);

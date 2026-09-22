@@ -41,6 +41,12 @@ import {
   expectedDuelSeconds,
   greenWindow,
   inGreen,
+  DUEL_STYLES,
+  DUEL_ARENAS,
+  DUEL_OUTFITS,
+  pickStyle,
+  pickArena,
+  pickOutfit,
 } from "../js/duel.js";
 
 function assert(cond, msg) {
@@ -454,6 +460,47 @@ assert(!/wolverine|tekken|street fighter/i.test(duelSrc + uiSrc), "duel copy is 
 assert(/get\("demo"\) === "duel"/.test(uiSrc), "demo=duel hook");
 assert(/goliath/.test(uiSrc), "demo=duel&goliath=1 hook");
 assert(MISSION_TEMPLATES.some((t) => t.id === "porch_challenge" && t.duel), "porch_challenge mission is a duel");
+assert(DUEL_STYLES.length >= 8, "at least 8 fighting styles");
+assert(new Set(DUEL_STYLES.map((s) => s.id)).size === DUEL_STYLES.length, "unique style ids");
+assert(new Set(DUEL_STYLES.map((s) => s.special.label)).size === DUEL_STYLES.length, "distinct special names");
+assert(Object.keys(DUEL_ARENAS).length >= 8, "at least 8 arenas");
+assert(Object.keys(DUEL_OUTFITS).length >= 8, "at least 8 outfits");
+assert(pickArena("bethel", "winter").id === "roadhouse", "Bethel winter uses snowy roadhouse");
+assert(pickArena("kenai", "summer").id === "foothills", "Kenai summer is foothills");
+assert(pickArena("yukon_road", "winter").id === "radiotower", "Yukon is night radio tower");
+assert(pickStyle({ title: "Ranch Marshal", personality: "loyalist" }).id === "cavalry", "Marsh-type is cavalry");
+assert(pickStyle({ title: "Bush Scout", background: "scout", personality: "loyalist" }).id === "guerrilla", "scout is guerrilla");
+assert(pickOutfit({ title: "Signals Hand" }, "nome").id === "radio", "signals kit");
+assert(pickOutfit({ title: "Slope Ghost", personality: "recluse" }, "arctic_slope", "winter").id === "parka", "arctic parka");
+
+const dPierce = createDuel({
+  you: { id: "a", name: "A", title: "Scout", personality: "schemer" },
+  youStats: { war: 60, int: 80, pol: 40, chr: 40 },
+  foe: { id: "b", name: "B", title: "Volunteer", personality: "loyalist" },
+  foeStats: { war: 60, int: 50, pol: 50, chr: 50 },
+  youStyleId: "marksman",
+});
+assert(dPierce.you.style.effect === "pierce", "marksman Aimed Shot");
+const hpBefore = dPierce.foeHp;
+resolveExchange(dPierce, "special", 0.5, "strike");
+assert(dPierce.foeHp < hpBefore, "Aimed Shot still chips when Strike beats Special");
+
+const dStun = createDuel({
+  you: { id: "a", name: "A", title: "Volunteer", personality: "loyalist" },
+  youStats: { war: 70, int: 50, pol: 50, chr: 72 },
+  foe: { id: "b", name: "B", title: "Scout", personality: "cautious" },
+  foeStats: { war: 60, int: 50, pol: 50, chr: 50 },
+  youStyleId: "grappler",
+});
+resolveExchange(dStun, "special", 0.5, "guard");
+assert(dStun.foeStun, "Throw stuns next beat");
+const foeHp = dStun.foeHp;
+resolveExchange(dStun, "strike", 0.5, "strike");
+assert(!dStun.foeStun, "stun consumed");
+assert(dStun.foeHp < foeHp, "stunned foe ate the Strike");
+
+assert(/get\("style"\)/.test(uiSrc) && /get\("arena"\)/.test(uiSrc), "demo=duel&style= and arena= hooks");
+assert(/style=brawler|youStyleId/.test(uiSrc), "brawler demo style override");
 console.log("ok yard duel 99s");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
