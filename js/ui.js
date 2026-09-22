@@ -625,7 +625,7 @@ function officerHtml() {
   return `
     <div class="panel-head">
       <span class="panel-title">You</span>
-      <span class="panel-why">Your officer. AP is how many commands you can click this week.</span>
+      <span class="panel-why">AP = clicks this week.</span>
     </div>
     <div class="plate-body">
     <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
@@ -668,7 +668,7 @@ function cityHtml() {
   return `
     <div class="panel-head">
       <span class="panel-title">City</span>
-      <span class="panel-why">Click a map city to inspect it. You act in the city your officer occupies.</span>
+      <span class="panel-why">Click a map city to inspect it.</span>
     </div>
     <h2>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
     <div class="city-grid">

@@ -196,7 +196,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   border: var(--chrome);
 }
 
-.side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; }
+.side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
 .card {
   background: var(--panel);
   border: var(--chrome);
@@ -217,9 +217,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   min-height: 0;
 }
 .officer-face {
-  width: 128px;
-  height: 128px;
-  flex: 0 0 128px;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
   border: var(--chrome);
   background: #000010;
   object-fit: cover;
@@ -238,7 +238,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .city-grid .pill { display: flex; justify-content: space-between; gap: 8px; }
 .cmd-card {
   flex: 1 1 auto;
-  min-height: 160px;
+  min-height: 220px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -261,7 +261,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 }
 .cmd-tab img {
   width: 100%;
-  height: 48px;
+  height: 28px;
   object-fit: cover;
   image-rendering: pixelated;
   display: block;
@@ -451,8 +451,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   margin: 0 8px 8px;
   border: var(--chrome);
   background: var(--panel);
-  flex: 0 1 148px;
-  min-height: 72px;
+  flex: 0 0 96px;
+  min-height: 64px;
   display: flex;
   flex-direction: column;
   box-shadow: var(--chrome-out);
@@ -676,7 +676,7 @@ hr {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: var(--pad);
+  padding: 4px 8px;
   margin: 8px 8px 0;
   background: #803010;
   border: var(--chrome);
@@ -742,7 +742,8 @@ hr {
   .dock { flex-basis: 56px; min-height: 48px; }
   .card { padding: var(--pad); }
   .card h2 { margin: 0 0 4px; }
-  .officer-face { width: 96px; height: 96px; flex-basis: 96px; }
+  .officer-face { width: 64px; height: 64px; flex-basis: 64px; }
+  .cmd-card { min-height: 180px; }
   .officer-plate { min-height: 0; }
   .officer-plate .gen-orders { display: none; }
   .side .panel-why, .dock .panel-why { display: none; }
