@@ -113,13 +113,15 @@ const PAINT = {
   },
   attack(ctx) {
     skyGround(ctx);
+    px(ctx, 36, 8, 40, 22, "#686860");
+    px(ctx, 38, 6, 36, 4, "#888880");
+    px(ctx, 48, 16, 10, 14, PAL.ink);
     px(ctx, 0, 30, W, 4, "#503010");
     px(ctx, 0, 31, W, 1, PAL.crate);
-    px(ctx, 28, 18, 22, 10, PAL.olive);
-    px(ctx, 30, 20, 6, 4, PAL.ink);
-    px(ctx, 46, 20, 4, 8, PAL.red);
+    px(ctx, 10, 22, 16, 8, PAL.olive);
+    px(ctx, 20, 18, 8, 6, PAL.olive2);
     fig(ctx, 12, 14, PAL.olive2, PAL.gold);
-    fig(ctx, 56, 14, PAL.red, PAL.ink);
+    fig(ctx, 56, 10, PAL.red, PAL.ink);
   },
   travel(ctx) {
     skyGround(ctx);

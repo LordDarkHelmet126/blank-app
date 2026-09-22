@@ -69,7 +69,7 @@ v0.1 ships **153 original AI officers** with distinct personalities (aggressive,
 
 **Liberate the States:** hierarchy is **STATE → territories**. A state is free when you hold its **key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail). Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields. **8 US states** (west bloc AK–CO) names you **national leader**. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua. A late **sponsor** event can add Korea.
 
-**Map unlock:** every US/Yukon city is painted from week 0. Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`.
+**Map unlock:** every US/Yukon city is painted from week 0. Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`. Visual look: `/?demo=look` or `/?demo=terrain` — elevated biomes (WA forest, Rockies, UT desert, plains, AK ice) and 1980s American city markers. Original art only.
 
 You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (13 templates, including a **Porch challenge** yard duel) sit on a weekly board — Military → Side Mission, or the Missions dock. Plot/Military → **Challenge** calls out an officer in the same city. Duels last ~**99 seconds** if both stay up (11 exchanges × 9s): Strike / Guard / named Special with a green timing window. Eight arenas (porch, roadhouse, foothills, airstrip, ice ford, gas lot, pine ridge, radio tower), outfit kits, and fighting styles (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals). Underdog (much lower WAR) gets a wider window. Original IP — not a licensed fighting game.
 
@@ -93,6 +93,7 @@ Season tint only: `/?demo=season`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
 **Expanded theater (AK→CO):** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle road pulses).
+**Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (painterly biomes + 80s markers). Officers face grid: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`.
 **Yard duel (~99s):** `/?demo=duel`. Underdog: `/?demo=duel&goliath=1`. Style: `/?demo=duel&style=brawler` (also marksman, grappler, cavalry, guerrilla, drill, trapper, signals, or `cycle`). Arena: `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower). HUD uses `3 Special · Dust Feint`. Coach / NEXT / ADD chairs share one hire path. End Week teases the next week. Coach parks while a result scene is open.
 
 ## Layout

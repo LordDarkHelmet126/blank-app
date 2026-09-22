@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — STATE → territories, no leaping, alternate routes, geo yields.
+**Last checkpoint:** 2026-09-22 — Visual pivot: painterly biomes, 1980s markers, isometric field/siege. Gameplay (states / no-leap / geo / chronicle / missions / duel / phases) unchanged.
 
 ## How to run
 
@@ -16,8 +16,13 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater:** `/?demo=states` or `/?demo=map` (Denver selected from Bethel — route locked).
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver + Jackson–Denver pulse). Officers grid: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
+**States demo:** `/?demo=states` or `/?demo=map` still works.
+
+## Visual pivot (not licensed art)
+
+Theater is no longer a flat node diagram. Cached painterly terrain in `js/terrain.js`: elevated heightfield, WA evergreen, CO/WY Rockies, UT desert mesas, plains farms, AK ice/coast. City marks are 1980s American kit (ranch, grain elevator, oil pump, radio tower, bunker, main street, mill) — not Chinese roofs. Field battles draw isometric diamonds with strength bars; urban/high-wall fights get a concrete siege wall. City report echoes a portrait + AP oversee strip. Create-officer uses an original face grid.
 
 ## Hierarchy
 

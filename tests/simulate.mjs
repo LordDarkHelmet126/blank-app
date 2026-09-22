@@ -651,6 +651,13 @@ assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.me
 assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
 assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
+assert(/get\("demo"\) === "look"/.test(uiSrc) && /demo"\) === "terrain"/.test(uiSrc), "demo=look / demo=terrain hook");
+const terrainSrc = readFileSync(new URL("../js/terrain.js", import.meta.url), "utf8");
+assert(/paintTheaterTerrain/.test(terrainSrc) && /draw80sMarker/.test(terrainSrc), "painterly terrain + 80s markers");
+assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
+assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");
+assert(/originalFaceGrid/.test(terrainSrc) && /face-grid/.test(uiSrc), "original officer face grid");
+assert(/city-oversee/.test(uiSrc), "city oversee portrait + AP");
 assert(/selectedRegion = "denver"/.test(uiSrc), "states demo opens on Denver");
 assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States dock + liberation board");
 assert(/Cannot leap/.test(uiSrc) && /route locked/.test(uiSrc), "NEXT and board explain no-leap");

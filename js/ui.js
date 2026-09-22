@@ -8,6 +8,18 @@ import {
   paintSeasonVignette,
 } from "./sprites.js";
 import {
+  draw80sMarker,
+  drawPixelRoadHi,
+  faceSrc,
+  isoToCell,
+  markerKind,
+  originalFaceGrid,
+  isoLayout,
+  paintIsoField,
+  paintTheaterTerrain,
+  terrainSize,
+} from "./terrain.js";
+import {
   createNewGame,
   listActions,
   act,
@@ -42,7 +54,6 @@ import {
   courtCandidates,
   sampleChronicle,
   calendarYear,
-  seasonPalette,
   playerCourt,
   appointCandidates,
   legendBoard,
@@ -306,6 +317,29 @@ export async function boot(loaded) {
     hideModal();
     render();
     pulseTravel("juneau", "seattle", { loop: true });
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "look" || params.get("demo") === "terrain") {
+    startSliceState();
+    selectedRegion = params.get("city") || "denver";
+    commandCat = "domestic";
+    hideModal();
+    render();
+    pulseTravel("jackson", "denver", { loop: true });
+    if (params.get("panel") === "officers") {
+      showModal(officersHtml(), { kind: "officers" });
+      wireAfterRender();
+    }
+    if (params.get("fx") === "battle") {
+      const home = regionOf(state, "bethel");
+      home.garrison = 90;
+      const fight = act(state, content, "attack", { regionId: "nome" });
+      if (fight.battle && state.battle) {
+        state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
+        openBattle();
+      }
+    }
     afterFonts();
     return;
   }
@@ -702,7 +736,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> STATE → territories. Liberate a state by holding its key territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
+      <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -737,13 +771,14 @@ function officersHtml() {
       const fac = o.faction ? factionOf(state, o.faction)?.short : "free";
       const loc = regionOf(state, o.region)?.short || "?";
       const face = esc(o.portrait || portraitInitials(o.name));
+      const faceImg = faceSrc(o.portrait);
       const staff =
         o.faction === p.faction && o.id !== p.id
           ? o.isGeneral
             ? " · GENERAL"
             : " · COURT"
           : "";
-      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · AGE ${o.age || "?"} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}${staff}${o.spouseId ? " · bound" : ""}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.elite ? "<i>ELITE</i>" : ""}${o.custom ? "<i>CUSTOM</i>" : ""}${o.frail ? "<i>FRAIL</i>" : ""}</span></span></button>`;
+      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${faceImg ? `<img src="${faceImg}" alt="" />` : face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · AGE ${o.age || "?"} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}${staff}${o.spouseId ? " · bound" : ""}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.elite ? "<i>ELITE</i>" : ""}${o.custom ? "<i>CUSTOM</i>" : ""}${o.frail ? "<i>FRAIL</i>" : ""}</span></span></button>`;
     })
     .join("");
   const emptyAdd = visible.length
@@ -760,8 +795,16 @@ function officersHtml() {
     <hr />
     <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
     <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Adds to the free roster here; Plot → Hire to put them in court / a general slot.</p>
+    <p class="muted">Set the portrait — original faces only.</p>
+    <div class="face-grid" id="c-faces">${originalFaceGrid()
+      .map(
+        (f, i) =>
+          `<button type="button" class="face-tile${i === 0 ? " is-on" : ""}" data-face="${f.id}"><img src="${f.src}" alt="${f.id}" /></button>`
+      )
+      .join("")}</div>
+    <input type="hidden" id="c-face" value="F0" />
     <div class="creator">
-      <div class="portrait portrait-lg" id="c-portrait" aria-hidden="true">RC</div>
+      <div class="portrait portrait-lg" id="c-portrait" aria-hidden="true"><img id="c-portrait-img" src="${faceSrc("F0")}" alt="" /></div>
       <div class="creator-fields">
         <div class="field"><label>Name</label><input id="c-name" maxlength="28" value="Riley Cho" /></div>
         <div class="field"><label>Title</label><input id="c-title" maxlength="24" value="Volunteer" /></div>
@@ -1148,6 +1191,7 @@ function courtHtml() {
 
 function cityHtml() {
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
+  const p = playerOf(state);
   const f = r.owner ? factionOf(state, r.owner) : null;
   const known = r.intel > 0 || (playerOf(state).faction && r.owner === playerOf(state).faction);
   const garr = known ? r.garrison : "???";
@@ -1156,13 +1200,24 @@ function cityHtml() {
   const econ = known ? r.economy : "?";
   const plus = (r.plus || []).join(" · ");
   const minus = (r.minus || []).join(" · ");
+  const kind = markerKind(r);
   return `
     <div class="chrome-head">
       <span class="panel-title">City report</span>
       <span class="panel-why">Selected city.</span>
     </div>
+    <div class="city-oversee">
+      <div class="medallion">
+        <i class="tick tl"></i><i class="tick tr"></i><i class="tick bl"></i><i class="tick br"></i>
+        <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
+      </div>
+      <div class="oversee-meta">
+        <p class="oversee-ap">AP <strong>${state.ap}</strong>/${apMax(state)}</p>
+        <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.stateCode || "—")} → ${esc(r.short)}</h2>
+        <p class="muted">${esc(p.name)} · ${kind} · ${f ? esc(f.short) : "OPEN"}</p>
+      </div>
+    </div>
     <div class="city-body">
-      <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
       <div class="city-grid">
         <span class="pill"><span>ECON</span><strong>${econ}</strong></span>
         <span class="pill"><span>STORES</span><strong>${known ? r.food : "?"}</strong></span>
@@ -1652,9 +1707,9 @@ function cityXY(r) {
   return [p[0], p[1]];
 }
 
-const MAP_S = 4;
-const LOW_W = 250;
-const LOW_H = 155;
+const MAP_S = terrainSize().scale;
+const LOW_W = terrainSize().w;
+const LOW_H = terrainSize().h;
 const PX_FONT = "8px 'Press Start 2P', 'Courier New', monospace";
 const ditherCache = new Map();
 
@@ -1749,32 +1804,21 @@ function drawCityMark(ctx, r, selected) {
   const [x, y] = lowPt(cityXY(r));
   const fac = r.owner ? factionOf(state, r.owner) : null;
   const fill = fac ? fac.color : "#607838";
-  const ink = selected ? "#f8d800" : "#f8f8f8";
-  ctx.fillStyle = "#000018";
-  ctx.fillRect(x - 3, y - 4, 7, 7);
-  ctx.fillStyle = fill;
-  ctx.fillRect(x - 2, y - 3, 5, 5);
-  ctx.fillStyle = ink;
-  ctx.fillRect(x - 1, y - 2, 1, 1);
-  ctx.fillRect(x + 1, y - 2, 1, 1);
-  ctx.fillRect(x, y, 1, 1);
-  ctx.fillStyle = fill;
-  ctx.fillRect(x + 3, y - 5, 1, 4);
-  ctx.fillRect(x + 4, y - 5, 2, 2);
+  draw80sMarker(ctx, markerKind(r), x, y, selected, fill);
   const p = playerOf(state);
   if (p.region === r.id) {
     const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 4, y - 5 + hop, 2, 2);
+    ctx.fillRect(x - 8, y - 18 + hop, 3, 3);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
-    ctx.fillRect(x + 4, y - 1, 2, 2);
+    ctx.fillRect(x + 8, y - 4, 2, 2);
   }
   legendBoard(state).forEach((h) => {
     if (h.regionId !== r.id || !h.mapMark) return;
     ctx.fillStyle = "#d080f8";
-    ctx.fillRect(x + 4, y - 1, 2, 2);
+    ctx.fillRect(x + 8, y - 4, 2, 2);
   });
 }
 
@@ -1864,76 +1908,25 @@ function drawMap() {
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  if (!drawMap.off) {
+  if (!drawMap.off || drawMap.off.width !== LOW_W) {
     drawMap.off = document.createElement("canvas");
     drawMap.off.width = LOW_W;
     drawMap.off.height = LOW_H;
   }
   const o = drawMap.off.getContext("2d");
   o.imageSmoothingEnabled = false;
-  const pal = seasonPalette(state._season?.id);
-  const sea = pal.sea || ["#082038", "#103058"];
-  const land = pal.land || ["#486030", "#607838"];
-  for (let y = 0; y < LOW_H; y += 2) {
-    for (let x = 0; x < LOW_W; x += 2) {
-      o.fillStyle = ((x + y) >> 1) % 2 ? sea[0] : sea[1];
-      o.fillRect(x, y, 2, 2);
-    }
-  }
-  if (state.coast) {
-    o.beginPath();
-    state.coast.forEach((p, i) => {
-      const [x, y] = lowPt(p);
-      i ? o.lineTo(x, y) : o.moveTo(x, y);
-    });
-    o.closePath();
-    o.fillStyle = dither(o, land[0], land[1]);
-    o.fill();
-  }
-  if (state.mainland) {
-    o.beginPath();
-    state.mainland.forEach((p, i) => {
-      const [x, y] = lowPt(p);
-      i ? o.lineTo(x, y) : o.moveTo(x, y);
-    });
-    o.closePath();
-    o.fillStyle = dither(o, "#3a5030", "#5a7040");
-    o.fill();
-  }
-  (state.stateTheaters || []).forEach((st) => {
-    if (!st.polygon) return;
-    o.beginPath();
-    st.polygon.forEach((p, i) => {
-      const [x, y] = lowPt(p);
-      i ? o.lineTo(x, y) : o.moveTo(x, y);
-    });
-    o.closePath();
-    o.fillStyle = STATE_FILL[st.id] || "#6a8a40";
-    o.fill();
-    o.strokeStyle = st.id === "co" ? "#f8d800" : "#203028";
-    o.lineWidth = 1;
-    o.stroke();
-  });
   const painted = state.regions.filter((r) => theaterVisible(state, r));
-  painted.forEach((r) => {
-    const fac = r.owner ? factionOf(state, r.owner) : null;
-    o.beginPath();
-    r.polygon.forEach((p, i) => {
-      const [x, y] = lowPt(p);
-      i ? o.lineTo(x, y) : o.moveTo(x, y);
-    });
-    o.closePath();
-    o.fillStyle = dither(o, fac ? fac.colorDark : land[0], fac ? fac.color : land[1]);
-    o.fill();
-    o.lineWidth = 1;
-    o.strokeStyle = r.id === selectedRegion ? "#f8d800" : r.id === hoverRegion ? "#f8f8f8" : "#203040";
-    o.stroke();
+  paintTheaterTerrain(o, state, {
+    painted,
+    selectedId: selectedRegion,
+    hoverId: hoverRegion,
+    factionOf: (r) => (r.owner ? factionOf(state, r.owner) : null),
   });
-  o.globalAlpha = 0.05;
-  o.fillStyle = pal.overlay || "#88a040";
-  o.fillRect(0, 0, LOW_W, LOW_H);
-  o.globalAlpha = 1;
-  mapRoads(painted).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
+  mapRoads(painted).forEach((rd) => {
+    const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
+    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
+    drawPixelRoadHi(o, rd.a, rd.b, on);
+  });
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;
@@ -2046,7 +2039,8 @@ function drawBattle(now = performance.now()) {
   if (!b) return;
   const dest = regionOf(state, b.toId);
   const arctic = isArcticRegion(dest);
-  $("battle-title").textContent = `Field — ${dest.name}`;
+  const siege = (dest.walls || 0) >= 12 || dest.terrainBias === "urban";
+  $("battle-title").textContent = `${siege ? "Siege" : "Field"} — ${dest.name}`;
   $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
   const sky = $("battle-sky");
@@ -2063,97 +2057,21 @@ function drawBattle(now = performance.now()) {
   }
   const canvas = $("battle-canvas");
   const ctx = canvas.getContext("2d");
-  const cw = canvas.width;
-  const ch = canvas.height;
-  const gw = cw / b.cols;
-  const gh = ch / b.rows;
-  const colors = {
-    plains: arctic ? ["#c0a050", "#887838"] : ["#c8a048", "#8a7840"],
-    forest: ["#306830", "#184818"],
-    hills: arctic ? ["#886838", "#503018"] : ["#a07840", "#684828"],
-    urban: ["#686868", "#404040"],
-    ice: ["#80a0b0", "#487088"],
-  };
   ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "#000018";
-  ctx.fillRect(0, 0, cw, ch);
-  for (let y = 0; y < b.rows; y++) {
-    for (let x = 0; x < b.cols; x++) {
-      const t = b.grid[y][x];
-      const pair = colors[t] || ["#607838", "#304018"];
-      const rx = Math.floor(x * gw);
-      const ry = Math.floor(y * gh);
-      const rw = Math.floor(gw);
-      const rh = Math.floor(gh);
-      for (let ty = 4; ty < rh - 4; ty += 8) {
-        for (let tx = 4; tx < rw - 4; tx += 8) {
-          ctx.fillStyle = ((tx + ty) >> 3) % 2 ? pair[0] : pair[1];
-          ctx.fillRect(rx + tx, ry + ty, 8, 8);
-        }
-      }
-      ctx.fillStyle = "#000018";
-      ctx.fillRect(rx, ry, rw, 4);
-      ctx.fillRect(rx, ry, 4, rh);
-      ctx.fillRect(rx + rw - 4, ry, 4, rh);
-      ctx.fillRect(rx, ry + rh - 4, rw, 4);
-      ctx.fillStyle = terrainFrameInk(t);
-      ctx.fillRect(rx + 4, ry + 4, rw - 8, 4);
-      ctx.fillRect(rx + 4, ry + 4, 4, rh - 8);
-      drawTerrainGlyph(ctx, t, rx, ry);
-    }
-  }
-  if (b.flash) {
-    const fx = Math.floor(b.flash.x * gw);
-    const fy = Math.floor(b.flash.y * gh);
-    const fw = Math.floor(gw);
-    const fh = Math.floor(gh);
-    ctx.fillStyle = Math.floor(Date.now() / 70) % 2 ? "#f8d800" : "#f8f8f8";
-    ctx.fillRect(fx, fy, fw, fh);
-    ctx.fillStyle = "#000018";
-    ctx.fillRect(fx + 4, fy + 4, fw - 8, fh - 8);
-    ctx.fillStyle = Math.floor(Date.now() / 70) % 2 ? "#f8f8f8" : "#f03030";
-    ctx.fillRect(fx + 8, fy + 8, fw - 16, fh - 16);
-    scheduleFlashClear(b);
-  }
-  b.units.forEach((u) => {
-    if (u.hp <= 0) return;
-    const cx = u.x * gw + gw / 2;
-    const cy = u.y * gh + gh / 2;
-    const col = u.side === "atk" ? "#f8d800" : "#f03030";
-    const face = "#000030";
-    const cwct = 48;
-    const chct = 40;
-    const ox = Math.round(cx - cwct / 2);
-    const oy = Math.round(cy - chct / 2);
-    if (b.selected === u.id) {
-      ctx.fillStyle = "#f8f8f8";
-      ctx.fillRect(ox - 8, oy - 8, cwct + 16, chct + 16);
-    }
-    ctx.fillStyle = "#000018";
-    ctx.fillRect(ox - 4, oy - 4, cwct + 8, chct + 8);
-    ctx.fillStyle = col;
-    ctx.fillRect(ox, oy, cwct, chct);
-    ctx.fillStyle = face;
-    ctx.fillRect(ox + 4, oy + 4, cwct - 8, chct - 8);
-    ctx.fillStyle = col;
-    ctx.fillRect(ox + 4, oy + 4, 4, chct - 8);
-    ctx.fillStyle = "#f8f8f8";
-    ctx.font = PX_FONT;
-    ctx.fillText(unitAbbrev(u), ox + 12, oy + 16);
-    ctx.fillText(String(Math.max(0, u.hp)), ox + 12, oy + 28);
-    ctx.fillStyle = "#000018";
-    ctx.fillRect(ox + 4, oy + chct - 10, cwct - 8, 6);
-    ctx.fillStyle = u.hp / u.maxHp > 0.35 ? "#30c030" : "#f03030";
-    ctx.fillRect(ox + 4, oy + chct - 10, Math.floor((cwct - 8) * (u.hp / u.maxHp)), 6);
-  });
+  paintIsoField(ctx, b, dest, now);
+  if (b.flash) scheduleFlashClear(b);
 }
 
 function onBattleClick(e) {
   if (!state?.battle) return;
   const canvas = $("battle-canvas");
   const rect = canvas.getBoundingClientRect();
-  const x = Math.floor(((e.clientX - rect.left) / rect.width) * state.battle.cols);
-  const y = Math.floor(((e.clientY - rect.top) / rect.height) * state.battle.rows);
+  const px = ((e.clientX - rect.left) / rect.width) * canvas.width;
+  const py = ((e.clientY - rect.top) / rect.height) * canvas.height;
+  const layout = isoLayout(state.battle.cols, state.battle.rows, canvas.width, canvas.height);
+  const cell = isoToCell(px, py, layout, state.battle.cols, state.battle.rows);
+  const x = cell ? cell[0] : Math.floor(((e.clientX - rect.left) / rect.width) * state.battle.cols);
+  const y = cell ? cell[1] : Math.floor(((e.clientY - rect.top) / rect.height) * state.battle.rows);
   const unit = state.battle.units.find((u) => u.hp > 0 && u.x === x && u.y === y && u.side === "atk");
   if (unit && (!state.battle.selected || unit.id !== state.battle.selected && !enemyAt(x, y))) {
     battleCmd(state, content, "select", { unitId: unit.id });
@@ -2538,8 +2456,11 @@ function wireMissionButtons() {
 
 function refreshCreator() {
   const name = document.getElementById("c-name")?.value;
+  const faceId = document.getElementById("c-face")?.value || "F0";
+  const img = document.getElementById("c-portrait-img");
+  if (img) img.src = faceSrc(faceId);
   const port = document.getElementById("c-portrait");
-  if (port) port.textContent = portraitInitials(name);
+  if (port && !img) port.textContent = portraitInitials(name);
   const sel = document.getElementById("c-type");
   const hint = document.getElementById("c-skills");
   if (sel && hint) {
@@ -2565,12 +2486,21 @@ function wireAfterRender() {
         el.addEventListener("change", refreshCreator);
       }
     });
+    document.querySelectorAll("[data-face]").forEach((btn) => {
+      btn.onclick = () => {
+        const hid = document.getElementById("c-face");
+        if (hid) hid.value = btn.dataset.face;
+        document.querySelectorAll("[data-face]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        refreshCreator();
+      };
+    });
     add.onclick = () => {
       const name = document.getElementById("c-name").value;
       const res = createCustomOfficer(state, {
         name,
         title: document.getElementById("c-title")?.value,
         personality: document.getElementById("c-type")?.value,
+        portrait: document.getElementById("c-face")?.value || portraitInitials(name),
         war: Number(document.getElementById("c-war")?.value),
         int: Number(document.getElementById("c-int")?.value),
         pol: Number(document.getElementById("c-pol")?.value),
