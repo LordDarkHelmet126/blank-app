@@ -1006,12 +1006,13 @@ hr {
 }
 .duel-head { justify-content: flex-start; }
 .duel-clock {
-  margin-left: 8px;
+  margin-left: auto;
   color: var(--amber);
   font-size: 18px;
   min-width: 52px;
   text-align: right;
 }
+.duel-underdog:not([hidden]) + .duel-clock { margin-left: 8px; }
 .duel-clock.is-low { color: var(--ice); }
 .duel-clock.is-critical { color: var(--blood); }
 .duel-exchange.is-late { color: var(--amber); }
@@ -1093,7 +1094,7 @@ hr {
 }
 .duel-meter {
   position: relative;
-  height: 16px;
+  height: 22px;
   margin: 6px 8px;
   flex: 0 0 auto;
   background:
