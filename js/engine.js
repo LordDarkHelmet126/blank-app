@@ -1140,14 +1140,23 @@ function pathNeighbors(state, from, to) {
   return hops;
 }
 
-// Names for the no-leap NEXT line. Foreign and sea desks use the destination
-// approach (St. Louis → Gulf Sealift → Cuba). Domestic cities use the adjacent
-// hop that actually shortens the road — not every neighbor of the player.
+// Names for the no-leap NEXT line. A sea desk names its own roads (Gulf
+// Sealift touches St. Louis and Cuba), not the player's home neighbors.
+// Foreign desks use the destination approach (St. Louis → Gulf Sealift →
+// Cuba). Domestic cities use the adjacent hop that actually shortens the
+// road — not every neighbor of the player.
 export function approachRoads(state, fromId, toId) {
   const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
   const to = typeof toId === "string" ? regionOf(state, toId) : toId;
   if (!from || !to || from.id === to.id) return [];
-  if (to.type === "foreign" || to.type === "sea" || (to.unlockPhase || 0) > 0) {
+  if (to.type === "sea") {
+    return (to.neighbors || [])
+      .map((id) => regionOf(state, id))
+      .filter(Boolean)
+      .slice(0, 3)
+      .map((r) => r.short);
+  }
+  if (to.type === "foreign" || (to.unlockPhase || 0) > 0) {
     return approachChain(state, from, to).map((r) => r.short);
   }
   const hops = pathNeighbors(state, from, to);
