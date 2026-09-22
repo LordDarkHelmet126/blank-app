@@ -77,12 +77,39 @@ assert(
 const sandboxIds = content.factions.factions.filter((f) => f.sandbox).map((f) => f.id).sort();
 assert(sandboxIds.includes("yukon_relay") && sandboxIds.includes("klondike_watch") && sandboxIds.includes("bering_pact"), "Yukon/Bering factions must be sandbox");
 assert(
-  ["aurora", "banner", "bering_pact", "compact", "interior", "klondike_watch", "northern_front", "pof", "yukon_relay"].join() === sandboxIds.join(),
+  [
+    "aurora",
+    "banner",
+    "bering_pact",
+    "compact",
+    "copper_road",
+    "ember_campus",
+    "idle_hour",
+    "interior",
+    "klondike_watch",
+    "northern_front",
+    "pacific_spine",
+    "pale_airlift",
+    "pof",
+    "rail_brotherhood",
+    "red_wharf",
+    "timberline",
+    "yukon_relay",
+  ].join() === sandboxIds.join(),
   `sandbox set mismatch: ${sandboxIds}`
 );
 const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
-assert(content.regions.regions.length >= 10 && content.regions.regions.length <= 12, `Need Alaska + 2–4 new nodes, got ${content.regions.regions.length}`);
+const cities = content.regions.regions;
+assert(cities.length >= 26 && cities.length <= 36, `Need Alaska + PNW/Mountain West city clusters, got ${cities.length}`);
+const stateCodes = [...new Set(cities.map((r) => r.state))].sort();
+assert(["AK", "CO", "ID", "MT", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
+assert(cities.filter((r) => r.state === "CO").map((r) => r.id).sort().join() === "colorado_springs,denver,grand_junction", "Colorado city cluster");
+assert(cities.every((r) => (r.unlockWeek || 0) === 0), "no week lock on the expanded theater");
+assert(cities.find((r) => r.id === "juneau").neighbors.includes("seattle"), "Juneau ferry into Washington");
+assert(cities.find((r) => r.id === "yukon_road").neighbors.includes("missoula"), "ALCAN into Montana");
+assert(content.regions.mainland?.length >= 6, "lower-48 landmass");
+assert((content.regions.states || []).some((s) => s.id === "co"), "Colorado theater tint");
 const fairbanks = content.regions.regions.find((r) => r.id === "fairbanks");
 const nome = content.regions.regions.find((r) => r.id === "nome");
 const yukon = content.regions.regions.find((r) => r.id === "yukon_road");
@@ -125,7 +152,7 @@ for (const diff of ["easy", "normal", "hard"]) {
   assert(!playerOf(state).faction, "start alone / no banner");
   assert(listActions(state).some((a) => a.id === "end_week" && a.enabled), "End Week always available");
   assert(state.factions.length === content.factions.factions.length, "unused factions still load into state");
-  assert(state.factions.filter((f) => f.onMap).length === 9, "Alaska six plus Yukon/Bering three on-map");
+  assert(state.factions.filter((f) => f.onMap).length === 17, "Alaska/Yukon/Bering plus eight western banners on-map");
   assert(state.regions.every((r) => !r.owner || state.factions.find((f) => f.id === r.owner && f.onMap)), "no off-map region owner");
 
   for (let i = 0; i < 12; i++) {
@@ -248,6 +275,31 @@ assert(res.ok && playerOf(spur).region === "bering_strait", `travel Bering: ${re
 assert(visibleOfficers(spur).some((o) => o.id === "haro"), "Relay clerk on board");
 assert(visibleOfficers(spur).some((o) => o.id === "yarrow" && o.faction === "bering_pact"), "Yarrow wired to Ice Pact");
 console.log("ok Yukon/Bering spur");
+
+const westHop = createNewGame(content, { seed: 11, difficulty: "easy", name: "Scout", background: "scout" });
+act(westHop, content, "raise_banner");
+const hops = [
+  ["bethel", "anchorage"],
+  ["anchorage", "juneau"],
+  ["juneau", "seattle"],
+  ["seattle", "portland"],
+  ["portland", "bend"],
+  ["bend", "boise"],
+  ["boise", "salt_lake"],
+  ["salt_lake", "grand_junction"],
+  ["grand_junction", "denver"],
+];
+for (const [from, to] of hops) {
+  playerOf(westHop).region = from;
+  westHop.ap = Math.max(westHop.ap, 2);
+  res = act(westHop, content, "travel", { regionId: to });
+  assert(res.ok && playerOf(westHop).region === to, `travel ${from}→${to}: ${res.message}`);
+}
+assert(regionOf(westHop, "denver").stateCode === "CO", "Denver tagged Colorado");
+assert(visibleOfficers(westHop).some((o) => o.id === "front" && o.region === "denver"), "Campus dean in Denver");
+assert(visibleOfficers(westHop).some((o) => o.id === "range" && o.region === "colorado_springs"), "Airlift major in Springs");
+assert(visibleOfficers(westHop).some((o) => o.id === "quay" && o.faction === "red_wharf"), "Wharf clerk in Seattle");
+console.log("ok Alaska→Colorado corridor");
 
 const fresh = createNewGame(content, { seed: 1, difficulty: "easy", name: "Casey Flint", background: "scout" });
 const week0 = listActions(fresh);
@@ -469,6 +521,8 @@ assert(Object.keys(DUEL_OUTFITS).length >= 8, "at least 8 outfits");
 assert(pickArena("bethel", "winter").id === "roadhouse", "Bethel winter uses snowy roadhouse");
 assert(pickArena("kenai", "summer").id === "foothills", "Kenai summer is foothills");
 assert(pickArena("yukon_road", "winter").id === "radiotower", "Yukon is night radio tower");
+assert(pickArena("denver", "summer").id === "gaslot", "Denver yard is a gas-station lot");
+assert(pickArena("colorado_springs", "summer").id === "airstrip", "Springs yard is the gravel strip");
 assert(pickStyle({ title: "Ranch Marshal", personality: "loyalist" }).id === "cavalry", "Marsh-type is cavalry");
 assert(pickStyle({ title: "Bush Scout", background: "scout", personality: "loyalist" }).id === "guerrilla", "scout is guerrilla");
 assert(pickOutfit({ title: "Signals Hand" }, "nome").id === "radio", "signals kit");
@@ -513,6 +567,8 @@ assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
 assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
 assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
 assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
+assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
+assert(/selectedRegion = "denver"/.test(uiSrc), "states demo opens on Denver");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
 const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" }));
 assert(typeof tease === "string" && tease.length > 4, `weekTease: ${tease}`);

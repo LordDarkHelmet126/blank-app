@@ -52,7 +52,7 @@ export {
   aiMove,
 };
 
-export const GAME_VERSION = 1;
+export const GAME_VERSION = 2;
 export const MAX_GENERALS = 5;
 export const GENERAL_ORDERS = [
   { id: "auto", label: "By personality" },
@@ -395,6 +395,9 @@ export function createNewGame(content, opts = {}) {
     polygon: r.polygon,
     label: r.label,
     city: r.city || r.label,
+    stateCode: r.state || r.stateCode || null,
+    unlockWeek: r.unlockWeek || 0,
+    plate: r.plate || "below",
     prefect: null,
     intel: 0,
   }));
@@ -450,6 +453,22 @@ export function createNewGame(content, opts = {}) {
   if (relay) relay.ruler = "haro";
   if (watch) watch.ruler = "tagg";
   if (pact) pact.ruler = "yarrow";
+  const wharf = factions.find((f) => f.id === "red_wharf");
+  const spine = factions.find((f) => f.id === "pacific_spine");
+  const timber = factions.find((f) => f.id === "timberline");
+  const copper = factions.find((f) => f.id === "copper_road");
+  const rail = factions.find((f) => f.id === "rail_brotherhood");
+  const airlift = factions.find((f) => f.id === "pale_airlift");
+  const idle = factions.find((f) => f.id === "idle_hour");
+  const ember = factions.find((f) => f.id === "ember_campus");
+  if (wharf) wharf.ruler = "quay";
+  if (spine) spine.ruler = "volta";
+  if (timber) timber.ruler = "saw";
+  if (copper) copper.ruler = "cim";
+  if (rail) rail.ruler = "duran";
+  if (airlift) airlift.ruler = "range";
+  if (idle) idle.ruler = "jct";
+  if (ember) ember.ruler = "front";
   front.ruler = null;
   front.alive = false;
 
@@ -486,6 +505,8 @@ export function createNewGame(content, opts = {}) {
     ending: null,
     customSlotsUsed: 0,
     coast: content.regions.coast,
+    mainland: content.regions.mainland || null,
+    stateTheaters: content.regions.states || [],
     contentMeta: {
       rosterCap: content.officers.meta.rosterCap,
       customOfficerSlots: content.officers.meta.customOfficerSlots,
@@ -507,8 +528,17 @@ export function createNewGame(content, opts = {}) {
   setRelation(state, "compact", "aurora", 64);
   setRelation(state, "banner", "compact", 20);
   setRelation(state, "banner", "interior", 14);
+  setRelation(state, "pof", "red_wharf", 70);
+  setRelation(state, "pof", "pale_airlift", 66);
+  setRelation(state, "red_wharf", "pale_airlift", 60);
+  setRelation(state, "pacific_spine", "timberline", 48);
+  setRelation(state, "timberline", "interior", 52);
+  setRelation(state, "rail_brotherhood", "idle_hour", 56);
+  setRelation(state, "ember_campus", "idle_hour", 58);
+  setRelation(state, "copper_road", "timberline", 28);
+  setRelation(state, "copper_road", "pof", 16);
 
-  pushLog(state, `Week 0. Invasion landings at Anchorage and the Slope. You are alone in the Kuskokwim Lowlands.`, "alert");
+  pushLog(state, `Week 0. Invasion landings at Anchorage and the Slope. The map already shows Washington through Colorado — roads south of Juneau and the Yukon are open.`, "alert");
   pushLog(state, `${name} (${bg.name}) — WAR ${player.war} INT ${player.int} POL ${player.pol} CHR ${player.chr}.`, "info");
   return state;
 }
@@ -529,6 +559,8 @@ export function deserialize(raw) {
   if (!state.log) state.log = [];
   (state.regions || []).forEach((r) => {
     if (!r.city) r.city = r.label;
+    if (r.stateCode == null && r.state) r.stateCode = r.state;
+    if (r.unlockWeek == null) r.unlockWeek = 0;
   });
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
@@ -873,7 +905,7 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: true,
-    hint: "Move to a neighboring region.",
+    hint: "Move to a neighboring city. Alaska → Juneau/Yukon → PNW → Rockies. No week lock.",
     needs: "neighbor",
   });
   const attackOk =
@@ -1017,7 +1049,7 @@ export function attackCandidates(state) {
 
 export function neighborRegions(state) {
   const here = currentRegion(state);
-  return here.neighbors.map((id) => regionOf(state, id)).filter(Boolean);
+  return here.neighbors.map((id) => regionOf(state, id)).filter((r) => r && travelUnlocked(state, r));
 }
 
 function alliedFactions(state) {
@@ -1465,9 +1497,26 @@ function doPersuade(state, officerId, stats) {
   return { ok: true, message: msg };
 }
 
+export function travelUnlocked(state, region) {
+  if (!region) return false;
+  const gate = region.unlockWeek || 0;
+  return (state.week || 0) >= gate;
+}
+
+export function canTravelTo(state, from, regionId) {
+  if (!from?.neighbors?.includes(regionId)) return { ok: false, message: "Not adjacent." };
+  const dest = regionOf(state, regionId);
+  if (!dest) return { ok: false, message: "Unknown city." };
+  if (!travelUnlocked(state, dest)) {
+    return { ok: false, message: `${dest.short} opens week ${dest.unlockWeek}.` };
+  }
+  return { ok: true };
+}
+
 function doTravel(state, regionId) {
   const here = currentRegion(state);
-  if (!here.neighbors.includes(regionId)) return { ok: false, message: "Not adjacent." };
+  const gate = canTravelTo(state, here, regionId);
+  if (!gate.ok) return gate;
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const dest = regionOf(state, regionId);
   playerOf(state).region = dest.id;
@@ -1715,7 +1764,7 @@ function checkEnding(state) {
   const total = state.regions.length;
   if (held >= total) {
     state.gameOver = "win";
-    state.ending = "Alaska theater is under one color. The rest of the west still burns, but this map is done.";
+    state.ending = "Alaska through the Rockies is under one color. The rest of the continent still burns, but this map is done.";
     pushLog(state, state.ending, "alert");
   }
 }
@@ -1975,9 +2024,11 @@ export function weekTease(state) {
   if (hunts.some((h) => !h.revealed && h.hunt >= 1)) bits.push("a name in the static");
   else if (hunts.some((h) => !h.revealed)) bits.push("a hidden name if you Seek Legend");
   if (livingOfficers(state).some((o) => o.wound && (o.id === p.id || o.faction === p.faction))) bits.push("a wound fading");
+  const here = regionOf(state, p.region);
+  if (here && (here.stateCode === "AK" || here.stateCode === "YT")) bits.push("south-pass roads into Washington and Colorado");
   if (!bits.length) bits.push("neighbors moving");
   bits.push("a fresh AP pool");
-  return bits.slice(0, 2).join(" · ");
+  return bits.slice(0, 3).join(" · ");
 }
 
 export function endWeek(state, content) {

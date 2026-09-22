@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — addiction polish: duel-in-viewport, hire/ADD copy, week tease + chair fanfare.
+**Last checkpoint:** 2026-09-22 — expand states: Alaska → Yukon → PNW / Mountain West (Colorado).
 
 ## How to run
 
@@ -33,22 +33,28 @@ Travel vignette: `/?demo=slice&panel=travel`.
 **Underdog (Marsh):** `/?demo=duel&goliath=1`.
 **Style:** `/?demo=duel&style=brawler` (or marksman, grappler, cavalry, guerrilla, drill, trapper, signals, cycle).
 **Arena:** `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower).
+**Expanded theater:** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle pulses).
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- **Duel-in-viewport:** yard chrome (timer, HP, moves, 2-line log) fits 1280×800. Short stakes line. 99s clock kept.
-- **Command:** 3-column tiles; Plot leads with Hire / Appoint / Court / Challenge so primary actions show without scroll.
-- **One hire path:** coach, NEXT, ADD chairs, and Hire modal all say `Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.`
-- **Juice:** End Week / NEXT tease “Next week may bring…”, punchier week report, chair-fill fanfare + ding (+FAME / +BOND / CHAIR FILLED), leftover AP “one more tile” hook, Court/Marry bond tick.
-- Demos: `/?demo=layout`, `/?demo=coach`, `/?demo=duel`, `/?demo=week`.
+- **Multi-state theater:** 28 cities in 9 states/territories — Alaska 8 + Yukon 2 + Bering 1 + WA 3 + OR 3 + ID 2 + MT 2 + WY 2 + UT 2 + CO 3.
+- **Unlock:** all cities visible and walkable from week 0. No late-week gate. South roads: Anchorage → Juneau → Seattle (Inside Passage) and Fairbanks → Yukon → Missoula (ALCAN). Colorado via Salt Lake / Grand Junction or Cheyenne.
+- **On-map banners:** 17 (prior 9 plus Pacific Spine, Timberline, Red Wharf, Pale Airlift, Rail Brotherhood, Copper Road, Idle Hour, Ember Campus).
+- **Officers:** +17 western names (148 AI). Elites Vera Range (Springs) and Ivy Front (Denver). Three legends unchanged.
+- Map paint: Alaska coast + lower-48 mainland, state tints/abbreviations, city plates, gold roads.
+- Missions/duel arenas keyed for Seattle, Portland, Denver, Springs, Missoula, and other new cities.
+- Demo: `/?demo=states` or `/?demo=map`.
 
 ## Counts
 
+- States / territories on the board: **9** (AK, YT, WA, OR, ID, MT, WY, UT, CO)
+- Cities / nodes: **28** (was 11; **+17**)
+- On-map factions: **17** (was 9)
 - General slots: **5** (court strip)
 - Mission templates: **13** (12 jobs + porch challenge duel)
-- AI officers: **131**
+- AI officers: **148**
 - Hidden legends: **3** (karr, silo, marsh)
 - Custom officer cap: **10**
 - Duel clock: **99s** / **11** exchanges

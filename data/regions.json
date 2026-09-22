@@ -1,21 +1,97 @@
 {
   "meta": {
-    "theater": "alaska",
-    "version": "0.1",
+    "theater": "west",
+    "version": "0.2-states",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Alaska eight plus Yukon spur (2) and Bering ice (1). Coordinate space 1000x620."
+    "notes": "Alaska eight plus Yukon/Bering (3) plus contiguous US city clusters: WA, OR, ID, MT, WY, UT, CO. Always visible. Roads walkable from week 0 — Juneau–Seattle ferry grade and Yukon–Missoula ALCAN. No week lock.",
+    "unlock": "All 28 cities are painted from week 0. Travel uses neighbor roads only. South corridor: Anchorage→Juneau→Seattle (Inside Passage) and Fairbanks→Yukon→Missoula (ALCAN). Colorado is reached via Salt Lake / Grand Junction or Cheyenne.",
+    "counts": {
+      "states": 9,
+      "cities": 28,
+      "alaskaPlusSpurs": 11,
+      "lower48": 17
+    }
   },
   "coast": [
-    [40, 210], [70, 140], [160, 70], [280, 30], [520, 18], [740, 40],
-    [820, 90], [880, 180], [960, 250], [990, 360], [970, 500], [900, 560],
-    [780, 540], [700, 500], [620, 560], [500, 590], [360, 570], [240, 520],
-    [140, 470], [70, 380], [40, 280]
+    [18, 92], [48, 38], [132, 16], [280, 10], [400, 26], [458, 72],
+    [442, 132], [398, 178], [352, 214], [292, 232], [210, 246],
+    [142, 248], [86, 228], [42, 178], [20, 128]
+  ],
+  "mainland": [
+    [36, 248], [210, 242], [480, 236], [760, 246], [958, 278],
+    [988, 398], [972, 558], [820, 606], [500, 612], [198, 592],
+    [46, 518], [26, 358]
+  ],
+  "states": [
+    {
+      "id": "ak",
+      "name": "Alaska",
+      "short": "AK",
+      "label": [214, 96]
+    },
+    {
+      "id": "yt",
+      "name": "Yukon",
+      "short": "YT",
+      "label": [430, 48]
+    },
+    {
+      "id": "wa",
+      "name": "Washington",
+      "short": "WA",
+      "label": [168, 238],
+      "polygon": [[42, 248], [328, 244], [336, 348], [48, 358]]
+    },
+    {
+      "id": "or",
+      "name": "Oregon",
+      "short": "OR",
+      "label": [148, 500],
+      "polygon": [[44, 358], [288, 348], [298, 508], [42, 518]]
+    },
+    {
+      "id": "id",
+      "name": "Idaho",
+      "short": "ID",
+      "label": [372, 330],
+      "polygon": [[300, 248], [436, 244], [456, 470], [308, 478]]
+    },
+    {
+      "id": "mt",
+      "name": "Montana",
+      "short": "MT",
+      "label": [548, 232],
+      "polygon": [[438, 242], [658, 238], [668, 338], [448, 348]]
+    },
+    {
+      "id": "wy",
+      "name": "Wyoming",
+      "short": "WY",
+      "label": [700, 298],
+      "polygon": [[540, 318], [858, 308], [868, 400], [548, 412]]
+    },
+    {
+      "id": "ut",
+      "name": "Utah",
+      "short": "UT",
+      "label": [298, 500],
+      "polygon": [[308, 430], [516, 418], [530, 558], [318, 568]]
+    },
+    {
+      "id": "co",
+      "name": "Colorado",
+      "short": "CO",
+      "label": [788, 556],
+      "polygon": [[532, 380], [898, 368], [916, 588], [540, 598]]
+    }
   ],
   "regions": [
     {
       "id": "arctic_slope",
       "name": "Arctic Slope",
       "short": "Slope",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "oil",
       "plus": ["Fuel stocks", "Pipeline pumps"],
       "minus": ["Brutal weather", "Exposed to air"],
@@ -28,15 +104,18 @@
       "order": 35,
       "population": 9000,
       "terrainBias": "ice",
+      "plate": "above",
       "polygon": [
-        [180, 24], [720, 20], [740, 110], [560, 128], [300, 132], [170, 96]
+        [132, 12], [310, 8], [338, 54], [248, 68], [132, 62]
       ],
-      "label": [430, 72]
+      "label": [220, 40]
     },
     {
       "id": "fairbanks",
       "name": "Fairbanks Interior",
       "short": "Fairbanks",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "interior",
       "plus": ["Training grounds", "Rail spur"],
       "minus": ["Long winters", "Fuel scarce"],
@@ -49,15 +128,18 @@
       "order": 62,
       "population": 32000,
       "terrainBias": "forest",
+      "plate": "above",
       "polygon": [
-        [300, 132], [560, 128], [590, 250], [400, 268], [250, 240], [240, 170]
+        [132, 62], [248, 68], [278, 128], [186, 148], [118, 126]
       ],
-      "label": [420, 190]
+      "label": [198, 104]
     },
     {
       "id": "nome",
       "name": "Nome Coast",
       "short": "Nome",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "port",
       "plus": ["Sea lift", "Quiet inlets"],
       "minus": ["Icebound months", "Thin roads"],
@@ -70,15 +152,18 @@
       "order": 50,
       "population": 3800,
       "terrainBias": "coast",
+      "plate": "above",
       "polygon": [
-        [48, 150], [240, 170], [250, 240], [180, 310], [60, 290], [40, 200]
+        [52, 88], [128, 80], [140, 138], [78, 162], [40, 138]
       ],
-      "label": [130, 230]
+      "label": [92, 118]
     },
     {
       "id": "bethel",
       "name": "Kuskokwim Lowlands",
       "short": "Bethel",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "rural",
       "plus": ["Easy to hide", "Local guides"],
       "minus": ["Sparse levy", "No industry"],
@@ -91,15 +176,18 @@
       "order": 44,
       "population": 6200,
       "terrainBias": "tundra",
+      "plate": "below",
       "polygon": [
-        [180, 310], [400, 268], [430, 390], [300, 450], [150, 420], [120, 340]
+        [78, 162], [186, 148], [208, 206], [128, 228], [58, 198]
       ],
-      "label": [270, 360]
+      "label": [136, 186]
     },
     {
       "id": "anchorage",
       "name": "Anchorage Bowl",
       "short": "Anchorage",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "urban",
       "plus": ["Depots", "Roads", "Runway hulks"],
       "minus": ["Occupation HQ", "High unrest"],
@@ -112,15 +200,18 @@
       "order": 28,
       "population": 290000,
       "terrainBias": "urban",
+      "plate": "above",
       "polygon": [
-        [400, 268], [590, 250], [620, 360], [520, 410], [430, 390]
+        [186, 148], [278, 128], [308, 176], [238, 198], [198, 186]
       ],
-      "label": [510, 330]
+      "label": [248, 164]
     },
     {
       "id": "kenai",
       "name": "Kenai Peninsula",
       "short": "Kenai",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "resource",
       "plus": ["Fisheries", "Old drill pads"],
       "minus": ["Bottleneck roads", "Split loyalties"],
@@ -133,15 +224,18 @@
       "order": 32,
       "population": 58000,
       "terrainBias": "forest",
+      "plate": "below",
       "polygon": [
-        [430, 390], [520, 410], [560, 500], [470, 540], [390, 500], [400, 430]
+        [198, 186], [238, 198], [252, 238], [192, 250], [166, 218]
       ],
-      "label": [475, 460]
+      "label": [214, 218]
     },
     {
       "id": "kodiak",
       "name": "Kodiak Island",
       "short": "Kodiak",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "naval",
       "plus": ["Harbor guns", "Hard to storm"],
       "minus": ["Needs the sea", "Food imports"],
@@ -154,19 +248,22 @@
       "order": 40,
       "population": 13000,
       "terrainBias": "coast",
+      "plate": "below",
       "polygon": [
-        [300, 500], [430, 490], [460, 560], [350, 590], [270, 560]
+        [118, 226], [182, 220], [200, 256], [142, 268], [102, 250]
       ],
-      "label": [365, 545]
+      "label": [152, 246]
     },
     {
       "id": "juneau",
       "name": "Southeast Panhandle",
       "short": "Juneau",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "capital",
       "plus": ["Civil records", "Ferry routes"],
       "minus": ["Far from Interior", "Rain-rot stores"],
-      "neighbors": ["anchorage"],
+      "neighbors": ["anchorage", "seattle"],
       "startOwner": "compact",
       "garrison": 30,
       "economy": 58,
@@ -175,19 +272,22 @@
       "order": 70,
       "population": 32000,
       "terrainBias": "forest",
+      "plate": "below",
       "polygon": [
-        [760, 280], [980, 270], [990, 470], [820, 510], [740, 400]
+        [308, 146], [400, 136], [428, 188], [358, 210], [298, 182]
       ],
-      "label": [870, 380]
+      "label": [362, 172]
     },
     {
       "id": "yukon_road",
       "name": "Whitehorse Road",
       "short": "Yukon",
+      "state": "YT",
+      "unlockWeek": 0,
       "type": "road",
       "plus": ["South-pass talk", "Fuel favors"],
       "minus": ["Thin levy", "Long supply"],
-      "neighbors": ["fairbanks", "klondike", "arctic_slope"],
+      "neighbors": ["fairbanks", "klondike", "arctic_slope", "missoula"],
       "startOwner": "yukon_relay",
       "garrison": 26,
       "economy": 32,
@@ -196,15 +296,18 @@
       "order": 58,
       "population": 14000,
       "terrainBias": "forest",
+      "plate": "below",
       "polygon": [
-        [560, 128], [740, 110], [800, 190], [760, 268], [590, 250]
+        [248, 50], [368, 36], [402, 90], [348, 128], [278, 128]
       ],
-      "label": [680, 188]
+      "label": [328, 86]
     },
     {
       "id": "klondike",
       "name": "Klondike Interior",
       "short": "Klondike",
+      "state": "YT",
+      "unlockWeek": 0,
       "type": "interior",
       "plus": ["Mine-road ambushes", "Cold storage"],
       "minus": ["Far from the sea", "Few rifles"],
@@ -217,15 +320,18 @@
       "order": 55,
       "population": 8500,
       "terrainBias": "forest",
+      "plate": "above",
       "polygon": [
-        [740, 110], [910, 48], [992, 130], [975, 240], [800, 190]
+        [368, 18], [478, 12], [518, 70], [458, 108], [402, 90]
       ],
-      "label": [870, 145]
+      "label": [438, 56]
     },
     {
       "id": "bering_strait",
       "name": "Bering Ice",
       "short": "Bering",
+      "state": "AK",
+      "unlockWeek": 0,
       "type": "ice",
       "plus": ["Ice-road trade", "Neutral scrip"],
       "minus": ["No army", "Icebound months"],
@@ -238,10 +344,419 @@
       "order": 48,
       "population": 2100,
       "terrainBias": "ice",
+      "plate": "above",
       "polygon": [
-        [14, 68], [155, 78], [48, 150], [40, 200], [10, 160]
+        [6, 48], [58, 40], [72, 90], [42, 128], [8, 108]
       ],
-      "label": [58, 118]
+      "label": [36, 78]
+    },
+    {
+      "id": "seattle",
+      "name": "Seattle Sound",
+      "short": "Seattle",
+      "state": "WA",
+      "unlockWeek": 0,
+      "type": "port",
+      "plus": ["Deep harbor", "Civil files"],
+      "minus": ["Occupation desks", "Rain-rot stores"],
+      "neighbors": ["juneau", "olympia", "spokane", "portland"],
+      "startOwner": "red_wharf",
+      "garrison": 72,
+      "economy": 74,
+      "food": 40,
+      "walls": 36,
+      "order": 30,
+      "population": 494000,
+      "terrainBias": "urban",
+      "plate": "below",
+      "polygon": [
+        [88, 258], [178, 254], [190, 308], [98, 316]
+      ],
+      "label": [138, 284]
+    },
+    {
+      "id": "olympia",
+      "name": "Olympia Capitol",
+      "short": "Olympia",
+      "state": "WA",
+      "unlockWeek": 0,
+      "type": "capital",
+      "plus": ["Haul desks", "Spare parts"],
+      "minus": ["Thin garrison", "Needs open road"],
+      "neighbors": ["seattle", "portland"],
+      "startOwner": "pacific_spine",
+      "garrison": 28,
+      "economy": 48,
+      "food": 36,
+      "walls": 18,
+      "order": 58,
+      "population": 28000,
+      "terrainBias": "forest",
+      "plate": "below",
+      "polygon": [
+        [52, 318], [132, 314], [142, 352], [58, 356]
+      ],
+      "label": [96, 336]
+    },
+    {
+      "id": "spokane",
+      "name": "Spokane Falls",
+      "short": "Spokane",
+      "state": "WA",
+      "unlockWeek": 0,
+      "type": "interior",
+      "plus": ["Pine cover", "Local food"],
+      "minus": ["No artillery", "Suspicious of ports"],
+      "neighbors": ["seattle", "coeur_dalene", "missoula"],
+      "startOwner": "timberline",
+      "garrison": 34,
+      "economy": 40,
+      "food": 38,
+      "walls": 22,
+      "order": 54,
+      "population": 172000,
+      "terrainBias": "forest",
+      "plate": "above",
+      "polygon": [
+        [210, 256], [318, 252], [328, 308], [218, 314]
+      ],
+      "label": [268, 282]
+    },
+    {
+      "id": "portland",
+      "name": "Portland Bridges",
+      "short": "Portland",
+      "state": "OR",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": ["Truck yards", "River lift"],
+      "minus": ["Will sell to anyone", "Split bridges"],
+      "neighbors": ["seattle", "olympia", "eugene", "bend"],
+      "startOwner": "pacific_spine",
+      "garrison": 44,
+      "economy": 66,
+      "food": 42,
+      "walls": 26,
+      "order": 46,
+      "population": 388000,
+      "terrainBias": "urban",
+      "plate": "below",
+      "polygon": [
+        [70, 366], [168, 360], [180, 414], [80, 422]
+      ],
+      "label": [124, 390]
+    },
+    {
+      "id": "eugene",
+      "name": "Eugene Mills",
+      "short": "Eugene",
+      "state": "OR",
+      "unlockWeek": 0,
+      "type": "rural",
+      "plus": ["Mill towns", "Weekend drill"],
+      "minus": ["No heavy kit", "Argumentative halls"],
+      "neighbors": ["portland", "bend"],
+      "startOwner": "timberline",
+      "garrison": 26,
+      "economy": 36,
+      "food": 40,
+      "walls": 16,
+      "order": 52,
+      "population": 106000,
+      "terrainBias": "forest",
+      "plate": "below",
+      "polygon": [
+        [58, 432], [152, 426], [164, 486], [66, 494]
+      ],
+      "label": [110, 460]
+    },
+    {
+      "id": "bend",
+      "name": "Bend High Desert",
+      "short": "Bend",
+      "state": "OR",
+      "unlockWeek": 0,
+      "type": "resource",
+      "plus": ["Ranch grade", "Pine ridges"],
+      "minus": ["Thin water", "Long haul to the sea"],
+      "neighbors": ["portland", "eugene", "boise"],
+      "startOwner": "timberline",
+      "garrison": 30,
+      "economy": 38,
+      "food": 34,
+      "walls": 18,
+      "order": 50,
+      "population": 18000,
+      "terrainBias": "hills",
+      "plate": "above",
+      "polygon": [
+        [188, 368], [278, 362], [290, 416], [196, 424]
+      ],
+      "label": [238, 394]
+    },
+    {
+      "id": "coeur_dalene",
+      "name": "Coeur d'Alene Lakes",
+      "short": "Coeur",
+      "state": "ID",
+      "unlockWeek": 0,
+      "type": "resource",
+      "plus": ["Lake cover", "Mine-road scrap"],
+      "minus": ["Bandit rumor", "Few towns"],
+      "neighbors": ["spokane", "missoula", "boise"],
+      "startOwner": "copper_road",
+      "garrison": 24,
+      "economy": 30,
+      "food": 32,
+      "walls": 14,
+      "order": 44,
+      "population": 22000,
+      "terrainBias": "forest",
+      "plate": "below",
+      "polygon": [
+        [332, 256], [418, 252], [430, 306], [340, 312]
+      ],
+      "label": [380, 282]
+    },
+    {
+      "id": "boise",
+      "name": "Boise Bench",
+      "short": "Boise",
+      "state": "ID",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": ["Highway raids", "Desert benches"],
+      "minus": ["Exposed grades", "Thin levy"],
+      "neighbors": ["coeur_dalene", "bend", "salt_lake"],
+      "startOwner": "copper_road",
+      "garrison": 38,
+      "economy": 50,
+      "food": 36,
+      "walls": 22,
+      "order": 48,
+      "population": 108000,
+      "terrainBias": "urban",
+      "plate": "below",
+      "polygon": [
+        [318, 360], [418, 352], [432, 418], [328, 426]
+      ],
+      "label": [372, 388]
+    },
+    {
+      "id": "missoula",
+      "name": "Missoula Gates",
+      "short": "Missoula",
+      "state": "MT",
+      "unlockWeek": 0,
+      "type": "road",
+      "plus": ["ALCAN talk", "Forest fighting"],
+      "minus": ["Long supply", "Winter gates"],
+      "neighbors": ["yukon_road", "spokane", "coeur_dalene", "billings", "jackson"],
+      "startOwner": "timberline",
+      "garrison": 32,
+      "economy": 36,
+      "food": 38,
+      "walls": 20,
+      "order": 56,
+      "population": 34000,
+      "terrainBias": "forest",
+      "plate": "below",
+      "polygon": [
+        [448, 252], [538, 248], [550, 300], [456, 308]
+      ],
+      "label": [498, 276]
+    },
+    {
+      "id": "billings",
+      "name": "Billings Rim",
+      "short": "Billings",
+      "state": "MT",
+      "unlockWeek": 0,
+      "type": "interior",
+      "plus": ["Plains columns", "Scrap metal"],
+      "minus": ["Open ground", "Fuel thirsty"],
+      "neighbors": ["missoula", "cheyenne", "jackson"],
+      "startOwner": "copper_road",
+      "garrison": 36,
+      "economy": 44,
+      "food": 40,
+      "walls": 18,
+      "order": 46,
+      "population": 72000,
+      "terrainBias": "plains",
+      "plate": "above",
+      "polygon": [
+        [560, 250], [658, 246], [668, 300], [568, 308]
+      ],
+      "label": [612, 276]
+    },
+    {
+      "id": "jackson",
+      "name": "Jackson Hole",
+      "short": "Jackson",
+      "state": "WY",
+      "unlockWeek": 0,
+      "type": "rural",
+      "plus": ["Ranch halls", "High passes"],
+      "minus": ["Season gated", "Tiny crews"],
+      "neighbors": ["missoula", "billings", "cheyenne", "grand_junction"],
+      "startOwner": "idle_hour",
+      "garrison": 18,
+      "economy": 28,
+      "food": 30,
+      "walls": 12,
+      "order": 60,
+      "population": 4500,
+      "terrainBias": "hills",
+      "plate": "below",
+      "polygon": [
+        [548, 322], [638, 316], [650, 368], [556, 376]
+      ],
+      "label": [598, 348]
+    },
+    {
+      "id": "cheyenne",
+      "name": "Cheyenne Yards",
+      "short": "Cheyenne",
+      "state": "WY",
+      "unlockWeek": 0,
+      "type": "rail",
+      "plus": ["Track repair", "Shop tools"],
+      "minus": ["Needs a line", "Strike-prone"],
+      "neighbors": ["billings", "jackson", "denver"],
+      "startOwner": "rail_brotherhood",
+      "garrison": 34,
+      "economy": 46,
+      "food": 34,
+      "walls": 24,
+      "order": 50,
+      "population": 51000,
+      "terrainBias": "plains",
+      "plate": "above",
+      "polygon": [
+        [720, 318], [830, 312], [842, 366], [728, 374]
+      ],
+      "label": [780, 344]
+    },
+    {
+      "id": "salt_lake",
+      "name": "Salt Lake Bench",
+      "short": "Salt Lake",
+      "state": "UT",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": ["Rail shops", "Valley stores"],
+      "minus": ["Basin weather", "Long desert grades"],
+      "neighbors": ["boise", "moab", "grand_junction"],
+      "startOwner": "rail_brotherhood",
+      "garrison": 48,
+      "economy": 58,
+      "food": 40,
+      "walls": 28,
+      "order": 62,
+      "population": 163000,
+      "terrainBias": "urban",
+      "plate": "above",
+      "polygon": [
+        [328, 438], [438, 430], [452, 486], [338, 494]
+      ],
+      "label": [388, 462]
+    },
+    {
+      "id": "moab",
+      "name": "Moab Redrock",
+      "short": "Moab",
+      "state": "UT",
+      "unlockWeek": 0,
+      "type": "rural",
+      "plus": ["Dead-drop canyons", "Quiet food"],
+      "minus": ["No garrison culture", "Hard water"],
+      "neighbors": ["salt_lake", "grand_junction"],
+      "startOwner": "idle_hour",
+      "garrison": 16,
+      "economy": 24,
+      "food": 28,
+      "walls": 10,
+      "order": 48,
+      "population": 3800,
+      "terrainBias": "hills",
+      "plate": "below",
+      "polygon": [
+        [348, 500], [458, 492], [470, 548], [358, 556]
+      ],
+      "label": [408, 524]
+    },
+    {
+      "id": "grand_junction",
+      "name": "Grand Junction Orchards",
+      "short": "Junction",
+      "state": "CO",
+      "unlockWeek": 0,
+      "type": "resource",
+      "plus": ["Orchard stores", "West-slope grade"],
+      "minus": ["Far from the Front Range", "Thin walls"],
+      "neighbors": ["jackson", "salt_lake", "moab", "denver", "colorado_springs"],
+      "startOwner": "idle_hour",
+      "garrison": 22,
+      "economy": 36,
+      "food": 42,
+      "walls": 14,
+      "order": 56,
+      "population": 28000,
+      "terrainBias": "hills",
+      "plate": "above",
+      "polygon": [
+        [548, 400], [650, 392], [664, 452], [556, 460]
+      ],
+      "label": [602, 426]
+    },
+    {
+      "id": "denver",
+      "name": "Denver Mile",
+      "short": "Denver",
+      "state": "CO",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": ["Campus radios", "Young labor"],
+      "minus": ["No garrison culture", "Argumentative"],
+      "neighbors": ["cheyenne", "grand_junction", "colorado_springs"],
+      "startOwner": "ember_campus",
+      "garrison": 40,
+      "economy": 68,
+      "food": 38,
+      "walls": 26,
+      "order": 44,
+      "population": 493000,
+      "terrainBias": "urban",
+      "plate": "above",
+      "polygon": [
+        [690, 388], [818, 380], [832, 448], [700, 458]
+      ],
+      "label": [760, 418]
+    },
+    {
+      "id": "colorado_springs",
+      "name": "Colorado Springs Strip",
+      "short": "Springs",
+      "state": "CO",
+      "unlockWeek": 0,
+      "type": "air",
+      "plus": ["Gravel strips", "C-130 hulks"],
+      "minus": ["Weather gated", "Fuel sink"],
+      "neighbors": ["denver", "grand_junction"],
+      "startOwner": "pale_airlift",
+      "garrison": 64,
+      "economy": 52,
+      "food": 30,
+      "walls": 32,
+      "order": 36,
+      "population": 247000,
+      "terrainBias": "hills",
+      "plate": "below",
+      "polygon": [
+        [710, 468], [838, 460], [852, 528], [720, 538]
+      ],
+      "label": [780, 498]
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "meta": {
-    "theater": "alaska",
-    "version": "0.1",
-    "notes": "About 40 original groups. sandbox:true are on the current board (Alaska six plus Yukon/Bering nodes). The rest load for later theaters.",
+    "theater": "west",
+    "version": "0.2-states",
+    "notes": "About 40 original groups. sandbox:true are on the current board (Alaska six plus Yukon/Bering plus PNW/Mountain West). The rest stay off-map.",
     "sandboxIds": [
       "northern_front",
       "pof",
@@ -12,7 +12,15 @@
       "banner",
       "yukon_relay",
       "klondike_watch",
-      "bering_pact"
+      "bering_pact",
+      "pacific_spine",
+      "timberline",
+      "red_wharf",
+      "pale_airlift",
+      "rail_brotherhood",
+      "copper_road",
+      "idle_hour",
+      "ember_campus"
     ]
   },
   "factions": [
@@ -292,8 +300,8 @@
         "chr": 6,
         "upkeep": 1.05
       },
-      "bio": "Haulers who treat the highway as a country. Their depot is off this theater.",
-      "sandbox": false,
+      "bio": "Haulers who treat I-5 as a country. Portland yards and Olympia desks; they sell to whoever keeps the grade open.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -323,8 +331,8 @@
         "chr": 0,
         "upkeep": 0.9
       },
-      "bio": "Mill towns that drilled on weekends and then the weekends did not stop. Later forest hexes.",
-      "sandbox": false,
+      "bio": "Mill towns that drilled on weekends and then the weekends did not stop. Spokane, Eugene, Bend, and the Missoula gates.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -478,8 +486,8 @@
         "chr": -10,
         "upkeep": 1.15
       },
-      "bio": "Occupation civil arm. They annex with stamps. Their desks are still south and west of this map.",
-      "sandbox": false,
+      "bio": "Occupation civil arm. They annex with stamps. Seattle Sound is their first lower-48 desk.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -540,8 +548,8 @@
         "chr": -4,
         "upkeep": 1.35
       },
-      "bio": "An air corridor cadre waiting on calendar and concrete. Not based in the Bowl yet.",
-      "sandbox": false,
+      "bio": "An air corridor cadre on the Front Range strip. Colorado Springs gravel and leftover C-130 hulks.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -695,8 +703,8 @@
         "chr": 2,
         "upkeep": 1.0
       },
-      "bio": "Gandy dancers who still own their tools. They attach when a later rail region exists.",
-      "sandbox": false,
+      "bio": "Gandy dancers who still own their tools. Cheyenne yards and the Salt Lake bench.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -726,8 +734,8 @@
         "chr": 6,
         "upkeep": 0.9
       },
-      "bio": "A university remnant that still runs mimeographs, CRT labs, and analog jammers. Later Fairbanks split, not v0.1.",
-      "sandbox": false,
+      "bio": "A university remnant that still runs mimeographs, CRT labs, and analog jammers. Denver mile, not a licensed campus.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -1067,8 +1075,8 @@
         "chr": 6,
         "upkeep": 0.85
       },
-      "bio": "Volunteer committees that still post minutes. They become a levy when a town hex exists for them.",
-      "sandbox": false,
+      "bio": "Volunteer committees that still post minutes. Jackson halls, Moab barns, Grand Junction orchards.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {
@@ -1222,8 +1230,8 @@
         "chr": 0,
         "upkeep": 1.05
       },
-      "bio": "Road people on a copper corridor this eight-region map skipped. Kept off so they cannot raid Bethel.",
-      "sandbox": false,
+      "bio": "Road people on a copper corridor through Coeur d'Alene, Boise, and the Billings rim. They raid grades, not Bethel.",
+      "sandbox": true,
       "playerFoundable": false
     },
     {

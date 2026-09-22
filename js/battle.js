@@ -17,6 +17,8 @@ function terrainForRegion(region, season, x, y) {
   if (bias === "ice") return y < 2 || (x + y) % 2 === 0 ? "ice" : "hills";
   if (bias === "coast") return y === ROWS - 1 || x === 0 ? "ice" : "hills";
   if (bias === "tundra") return (x + y) % 4 === 0 ? "hills" : "plains";
+  if (bias === "hills") return (x + y) % 2 === 0 ? "hills" : "forest";
+  if (bias === "plains") return (x + y) % 5 === 0 ? "hills" : "plains";
   return (x + y) % 5 === 0 ? "hills" : "plains";
 }
 

@@ -295,6 +295,15 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "states" || params.get("demo") === "map") {
+    startSliceState();
+    selectedRegion = "denver";
+    hideModal();
+    render();
+    pulseTravel("juneau", "seattle", { loop: true });
+    afterFonts();
+    return;
+  }
   if (params.get("demo") === "duel") {
     startSliceState();
     const goliath = params.get("goliath") === "1";
@@ -405,7 +414,7 @@ function bindChrome() {
 
 function titleScreenHtml(hasSave) {
   return `
-    <p class="muted">Original IP. Alaska officer sandbox. Not a licensed war film or Koei title.</p>
+    <p class="muted">Original IP. Alaska-first western theater. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
     <p><strong>Click Begin week 0.</strong> You start alone in Bethel. First job: raise a banner, spend AP, then End Week.</p>
     <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
@@ -679,7 +688,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> center map. Click a city. Gold roads are walkable (Military → Travel).</li>
+      <li><strong>Theater:</strong> Alaska through Colorado. Click a city. Gold roads are walkable week 0 — Juneau↔Seattle and Yukon↔Missoula open the lower forty-eight (Military → Travel).</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1091,7 +1100,7 @@ function cityHtml() {
       <span class="panel-why">Selected city.</span>
     </div>
     <div class="city-body">
-      <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
+      <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.short)}${r.stateCode ? ` · ${esc(r.stateCode)}` : ""} · ${f ? esc(f.short) : "OPEN"}</h2>
       <div class="city-grid">
         <span class="pill"><span>ECON</span><strong>${econ}</strong></span>
         <span class="pill"><span>STORES</span><strong>${known ? r.food : "?"}</strong></span>
@@ -1556,7 +1565,8 @@ function renderMapCaption() {
   if (!cap || !state) return;
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const you = regionOf(state, playerOf(state).region);
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.short || "?"} selected · you are in ${you?.short || "?"} · gold roads = travel`;
+  const st = r?.stateCode ? ` · ${r.stateCode}` : "";
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.short || "?"}${st} selected · you are in ${you?.short || "?"} · AK→YT→WA→CO roads open week 0`;
 }
 
 function cityXY(r) {
@@ -1690,6 +1700,23 @@ function drawCityMark(ctx, r, selected) {
   });
 }
 
+function drawStateLabels(ctx) {
+  const list = state.stateTheaters || [];
+  ctx.font = PX_FONT;
+  list.forEach((st) => {
+    if (!st.label) return;
+    const [x, y] = st.label;
+    const text = st.short || st.id.toUpperCase();
+    const w = ctx.measureText(text).width;
+    const px = Math.round(x - w / 2 - 4);
+    const py = Math.round(y - 8);
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(px, py, w + 8, 14);
+    ctx.fillStyle = st.id === "co" ? "#f8d800" : "#c8d0d8";
+    ctx.fillText(text, px + 4, py + 11);
+  });
+}
+
 function drawCityPlate(ctx, r, selected) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
@@ -1699,11 +1726,12 @@ function drawCityPlate(ctx, r, selected) {
   ctx.font = PX_FONT;
   const nameW = ctx.measureText(r.short).width;
   const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(72, Math.ceil((nameW + garrW + 20) / 4) * 4);
+  const pw = Math.max(64, Math.ceil((nameW + garrW + 20) / 4) * 4);
   const ph = 16;
   let px = Math.round(x - pw / 2);
-  let py = Math.round(y + 16);
+  let py = r.plate === "above" ? Math.round(y - 36) : Math.round(y + 16);
   px = Math.max(4, Math.min(996 - pw, px));
+  if (py < 4) py = Math.round(y + 16);
   if (py + ph > 616) py = Math.round(y - 36);
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
@@ -1755,6 +1783,29 @@ function drawMap() {
     o.fillStyle = dither(o, land[0], land[1]);
     o.fill();
   }
+  if (state.mainland) {
+    o.beginPath();
+    state.mainland.forEach((p, i) => {
+      const [x, y] = lowPt(p);
+      i ? o.lineTo(x, y) : o.moveTo(x, y);
+    });
+    o.closePath();
+    o.fillStyle = dither(o, land[0], land[1]);
+    o.fill();
+  }
+  (state.stateTheaters || []).forEach((st) => {
+    if (!st.polygon) return;
+    o.beginPath();
+    st.polygon.forEach((p, i) => {
+      const [x, y] = lowPt(p);
+      i ? o.lineTo(x, y) : o.moveTo(x, y);
+    });
+    o.closePath();
+    o.globalAlpha = 0.22;
+    o.fillStyle = st.id === "co" ? "#8a6840" : st.id === "wa" || st.id === "or" ? "#3a6848" : "#486050";
+    o.fill();
+    o.globalAlpha = 1;
+  });
   state.regions.forEach((r) => {
     const fac = r.owner ? factionOf(state, r.owner) : null;
     o.beginPath();
@@ -1789,6 +1840,7 @@ function drawMap() {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
   ctx.imageSmoothingEnabled = false;
+  drawStateLabels(ctx);
   state.regions.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
 }
 

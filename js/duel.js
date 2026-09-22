@@ -115,6 +115,23 @@ const REGION_ARENA = {
   kodiak: "gaslot",
   juneau: "pineridge",
   klondike: "pineridge",
+  seattle: "gaslot",
+  olympia: "pineridge",
+  spokane: "pineridge",
+  portland: "gaslot",
+  eugene: "pineridge",
+  bend: "foothills",
+  coeur_dalene: "pineridge",
+  boise: "gaslot",
+  missoula: "pineridge",
+  billings: "roadhouse",
+  jackson: "foothills",
+  cheyenne: "gaslot",
+  salt_lake: "gaslot",
+  moab: "foothills",
+  grand_junction: "foothills",
+  denver: "gaslot",
+  colorado_springs: "airstrip",
 };
 
 export function styleOf(id) {
