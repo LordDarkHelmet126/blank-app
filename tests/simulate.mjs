@@ -501,6 +501,10 @@ assert(dStun.foeHp < foeHp, "stunned foe ate the Strike");
 
 assert(/get\("style"\)/.test(uiSrc) && /get\("arena"\)/.test(uiSrc), "demo=duel&style= and arena= hooks");
 assert(/style=brawler|youStyleId/.test(uiSrc), "brawler demo style override");
+assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
+assert(/function parkCoach/.test(uiSrc) && /function flushOverlays/.test(uiSrc), "overlays queue: park coach, one at a time");
+assert(/--type:\s*10px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 10px");
+assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
 console.log("ok yard duel 99s");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));

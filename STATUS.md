@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — duel variety: 8 arenas, 8 outfits, 8 fighting styles with named specials.
+**Last checkpoint:** 2026-09-22 — readability polish: bigger HUD type, one overlay at a time, Special · style-move labels.
 
 ## How to run
 
@@ -38,10 +38,10 @@ Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need 
 
 ## What landed (this burst)
 
-- **Duel variety:** 8 arenas rotate by region/season/mission (ranch porch, snowy roadhouse, Colorado foothills, gravel airstrip, ice ford, gas-station lot, pine ridge, night radio tower). Not one repeated yard.
-- **Outfits:** scout coat, gun-truck crew, APC crew, radio tech, ranch militia, officer dress, winter parka, fatigues — tied to title / type / region.
-- **Fighting styles (8):** Brawler (Haymaker), Marksman (Aimed Shot pierce), Grappler (Throw stun), Cavalry (Spur Charge), Guerrilla (Dust Feint heal), Drill-Sergeant (Dress-Right), Trapper (Snare Line), Signals (Static Burst underdog finisher). Shown on the HUD; Special button uses the style name.
-- Clock still **99s** / 11 exchanges. Underdog mode kept. Demos: `/?demo=duel`, `&style=brawler`, `&arena=foothills`, `&goliath=1`.
+- **Readability:** Press Start 2P HUD is 10px (titles 12–14px), brighter ice contrast, more line-height. Mission board copy shortened. Court + Chronicle keep space at 1280×800 instead of collapsing.
+- **One overlay at a time:** Coach parks when a result scene, modal, duel, or battle opens; it returns after Continue. No coach card stacked on a result.
+- **Special labels:** Duel button and cue both say `3 Special · Dust Feint` (or the style move). Help / Challenge / NEXT match.
+- Prior duel variety (8 arenas / outfits / styles, 99s clock) kept. Demos: `/?demo=layout`, `/?demo=duel`.
 
 ## Counts
 

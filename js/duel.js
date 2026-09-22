@@ -23,7 +23,7 @@ export const DUEL_STYLES = [
   {
     id: "brawler",
     label: "Brawler",
-    flavor: "Closes the gap. Haymaker is the special.",
+    flavor: "Closes the gap. Special · Haymaker.",
     special: { label: "Haymaker", verb: "haymakers", fx: "#f03030", effect: "extra" },
     bias: { strike: 0.48, guard: 0.18, special: 0.34 },
     strikeBonus: 2,
@@ -31,21 +31,21 @@ export const DUEL_STYLES = [
   {
     id: "marksman",
     label: "Marksman",
-    flavor: "Keeps a lane. Aimed Shot still chips through a Guard.",
+    flavor: "Keeps a lane. Special · Aimed Shot chips Guard.",
     special: { label: "Aimed Shot", verb: "aims through", fx: "#f8d800", effect: "pierce" },
     bias: { strike: 0.28, guard: 0.28, special: 0.44 },
   },
   {
     id: "grappler",
     label: "Grappler",
-    flavor: "Hands on cloth. Throw stuns the next beat.",
+    flavor: "Hands on cloth. Special · Throw stuns the next beat.",
     special: { label: "Throw", verb: "throws", fx: "#c8a038", effect: "stun" },
     bias: { strike: 0.3, guard: 0.4, special: 0.3 },
   },
   {
     id: "cavalry",
     label: "Cavalry",
-    flavor: "Horse-scout spur. Charge hits harder after a win.",
+    flavor: "Horse-scout spur. Special · Spur Charge after a win.",
     special: { label: "Spur Charge", verb: "charges", fx: "#886038", effect: "charge" },
     bias: { strike: 0.42, guard: 0.22, special: 0.36 },
     strikeBonus: 1,
@@ -53,14 +53,14 @@ export const DUEL_STYLES = [
   {
     id: "guerrilla",
     label: "Guerrilla",
-    flavor: "Dust and a feint. Dust Feint steals a little HP.",
+    flavor: "Dust and a feint. Special · Dust Feint steals a little HP.",
     special: { label: "Dust Feint", verb: "feints through", fx: "#88a040", effect: "heal" },
     bias: { strike: 0.32, guard: 0.36, special: 0.32 },
   },
   {
     id: "drill",
     label: "Drill-Sergeant",
-    flavor: "Dress-right. Rally Guard chips less and mends.",
+    flavor: "Dress-right. Special · Dress-Right mends on Guard.",
     special: { label: "Dress-Right", verb: "dresses the line", fx: "#f8d800", effect: "rally" },
     bias: { strike: 0.28, guard: 0.48, special: 0.24 },
     guardBonus: 2,
@@ -68,14 +68,14 @@ export const DUEL_STYLES = [
   {
     id: "trapper",
     label: "Trapper",
-    flavor: "Snare on the porch. Their next Strike walks into it.",
+    flavor: "Snare on the porch. Special · Snare Line.",
     special: { label: "Snare Line", verb: "snares", fx: "#80d0f8", effect: "snare" },
     bias: { strike: 0.22, guard: 0.4, special: 0.38 },
   },
   {
     id: "signals",
     label: "Signals",
-    flavor: "Analog burst. Static Burst is an underdog finisher.",
+    flavor: "Analog burst. Special · Static Burst (underdog finisher).",
     special: { label: "Static Burst", verb: "bursts static", fx: "#80c0f8", effect: "finisher" },
     bias: { strike: 0.22, guard: 0.3, special: 0.48 },
   },
@@ -314,7 +314,7 @@ export function createDuel({
       `${arena.label} — ${youSnap.name} [${youSnap.style.label}] vs ${foeSnap.name} [${foeSnap.style.label}].`,
       underdog
         ? `UNDERDOG — ${you.name} (WAR ${youStats.war}) vs ${foe.name} (WAR ${foeStats.war}). Wider green window.`
-        : `Strike beats Special, Special beats Guard, Guard beats Strike. Specials: ${youSnap.style.specialLabel} / ${foeSnap.style.specialLabel}.`,
+        : `Strike beats Special, Special beats Guard, Guard beats Strike. Special · ${youSnap.style.specialLabel} / Special · ${foeSnap.style.specialLabel}.`,
     ],
     last: null,
     result: null,

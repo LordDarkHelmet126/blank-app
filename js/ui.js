@@ -460,7 +460,62 @@ function wireTitle() {
   if (cont) cont.onclick = () => loadFromStorage();
 }
 
+let parkedCoach = false;
+let queuedModal = null;
+
+function overlayBusy() {
+  const modal = $("modal");
+  const scene = $("event-scene");
+  const duel = $("duel");
+  const battle = $("battle");
+  return Boolean(
+    (modal && !modal.hidden) ||
+      (scene && !scene.hidden) ||
+      (duel && !duel.hidden) ||
+      (battle && !battle.hidden)
+  );
+}
+
+function parkCoach() {
+  const el = $("coach");
+  if (el && !el.hidden) {
+    el.hidden = true;
+    parkedCoach = true;
+    document.querySelectorAll(".coach-ring").forEach((n) => n.classList.remove("coach-ring"));
+  } else if (coachOn && parkedCoach) {
+    parkedCoach = true;
+  }
+}
+
+function silentHideEvent() {
+  const el = $("event-scene");
+  if (!el) return;
+  el.hidden = true;
+  el.classList.remove("open");
+  stopSceneFx();
+}
+
+function flushOverlays() {
+  if (overlayBusy()) return;
+  if (queuedModal) {
+    const next = queuedModal;
+    queuedModal = null;
+    showModal(next.html, next.opts);
+    return;
+  }
+  if (parkedCoach && coachOn) {
+    parkedCoach = false;
+    openCoach();
+  }
+}
+
 function showModal(html, opts = {}) {
+  const scene = $("event-scene");
+  if (scene && !scene.hidden) {
+    queuedModal = { html, opts };
+    return;
+  }
+  parkCoach();
   const extra = opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : "";
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
@@ -481,14 +536,20 @@ function showModal(html, opts = {}) {
   }
 }
 
-function hideModal() {
+function hideModal(opts = {}) {
   $("modal").hidden = true;
   $("modal-card").className = "modal-card";
+  if (opts.flush !== false) flushOverlays();
 }
 
 function nextHint(st) {
   if (!st || st.gameOver) return "Campaign closed.";
-  if (st.phase === "duel") return "YARD: pick Strike / Guard / Special in the green window. Clock ~99s if both stand.";
+  if (st.phase === "duel") {
+    const spec = st.duel?.you?.style?.specialLabel;
+    return spec
+      ? `YARD: pick Strike / Guard / Special · ${spec} in the green window. Clock ~99s if both stand.`
+      : "YARD: pick Strike / Guard / Special in the green window. Clock ~99s if both stand.";
+  }
   const p = playerOf(st);
   const here = regionOf(st, p.region);
   const gens = playerGenerals(st);
@@ -525,8 +586,15 @@ function renderObjective() {
 }
 
 function openCoach() {
+  if (overlayBusy()) {
+    parkedCoach = true;
+    const el = $("coach");
+    if (el) el.hidden = true;
+    return;
+  }
   const step = COACH_STEPS[coachStep] || COACH_STEPS[0];
   if (step.cat) commandCat = step.cat;
+  parkedCoach = false;
   $("coach").hidden = false;
   $("coach-title").textContent = step.title;
   $("coach-text").textContent = step.body;
@@ -536,6 +604,7 @@ function openCoach() {
 
 function finishCoach(skipPersist) {
   $("coach").hidden = true;
+  parkedCoach = false;
   document.querySelectorAll(".coach-ring").forEach((el) => el.classList.remove("coach-ring"));
   if (skipPersist && !coachForced) localStorage.setItem(COACH_KEY, "skip");
   coachOn = !skipPersist;
@@ -601,7 +670,7 @@ function helpHtml() {
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> five general chairs under the map. Hire fills a chair; extras wait; Plot → Appoint. Standing orders run at End Week.</li>
-      <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Strike / Guard / named Special; press in the green window. Clock ~99s if both stay up. Arena follows region/season. Each officer has a kit and a fighting style (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals).</li>
+      <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Keys 1/2/3: Strike / Guard / Special · style move (e.g. Special · Dust Feint). Press in the green window. Clock ~99s if both stay up.</li>
       <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
       <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
@@ -680,9 +749,9 @@ function missionsHtml() {
   const p = playerOf(state);
   const jobs = openMissions(state);
   const stash = (state.stash || []).slice(-8);
-  const empty = jobs.length
+    const empty = jobs.length
     ? ""
-    : `<p class="muted">No jobs on the board. Raise a banner, then End Week to refresh. Optional: scout road, raid depot, escort convoy, rescue officer, sabotage, radio run, cache, ford watch, airstrip, claim survey, ice listen, ranch relay.</p>`;
+    : `<p class="muted">No jobs. Raise a banner, then End Week. Scout, raid, escort, radio, cache, ford, strip, claim, ice, ranch, porch.</p>`;
   const rows = jobs
     .map((j) => {
       const here = j.regionId === p.region;
@@ -692,15 +761,15 @@ function missionsHtml() {
         <img class="cmd-thumb" src="${sceneArt(j.templateId)}" alt="" />
         <span><strong>${esc(j.name)}</strong> · ${esc(loc)} · 1 AP
         <small>${esc(copy)}</small>
-        ${here ? "<small>You are here — click to take it.</small>" : "<small>Travel to this city first, or set a general to Side mission.</small>"}
+        ${here ? "<small>Here — take it.</small>" : "<small>Travel first, or set a general to Side mission.</small>"}
         </span></button>`;
     })
     .join("");
   const loot = stash.length
     ? `<p class="muted">Stash: ${stash.map((s) => esc(s.name)).join(" · ")}</p>`
-    : `<p class="muted">Stash empty. Missions can grant depot scrip, analog pads, ranch tokens.</p>`;
+    : `<p class="muted">Stash empty. Jobs can grant scrip, pads, ranch tokens.</p>`;
   return `<h2>Side missions (${jobs.length} open)</h2>
-    <p class="muted">Optional jobs. Cost 1 AP here, or a general's standing order (Side mission) at End Week. Alaska + western Rockies copy on the vignette.</p>
+    <p class="muted">1 AP here, or a general's Side mission at End Week.</p>
     ${empty}${rows}${loot}
     <button type="button" data-close>Close</button>`;
 }
@@ -791,14 +860,15 @@ function run(id, extra) {
     render();
     return;
   }
-  maybeAdvanceCoach(id);
   if (res.battle) {
-    hideModal();
+    hideModal({ flush: false });
+    maybeAdvanceCoach(id);
     openBattle();
     return;
   }
   if (res.duel) {
-    hideModal();
+    hideModal({ flush: false });
+    maybeAdvanceCoach(id);
     openDuel();
     return;
   }
@@ -833,6 +903,7 @@ function run(id, extra) {
   if (state.gameOver) {
     showModal(`<h2>Campaign closed</h2><p>${esc(state.ending || state.gameOver)}</p><button type="button" data-close>Close</button>`);
   }
+  maybeAdvanceCoach(id);
   render();
 }
 
@@ -894,7 +965,7 @@ function officerHtml() {
   return `
     <div class="chrome-head">
       <span class="panel-title">Ruler</span>
-      <span class="panel-why">Name, age, loyalty — who holds this chair.</span>
+      <span class="panel-why">Who holds this chair.</span>
     </div>
     <div class="plate-body">
       <i class="banner-stripe" style="background:${esc(stripe)}"></i>
@@ -952,7 +1023,7 @@ function courtHtml() {
       </button>`);
     }
   }
-  return `<div class="chrome-head"><span class="panel-title">Court</span><span class="panel-why">Five chairs. Standing orders fire at End Week.</span></div>${chairs.join("")}`;
+  return `<div class="chrome-head"><span class="panel-title">Court</span><span class="panel-why">Five chairs. Orders at End Week.</span></div>${chairs.join("")}`;
 }
 
 function cityHtml() {
@@ -968,7 +1039,7 @@ function cityHtml() {
   return `
     <div class="chrome-head">
       <span class="panel-title">City report</span>
-      <span class="panel-why">County seat under the glass.</span>
+      <span class="panel-why">Selected city.</span>
     </div>
     <div class="city-body">
       <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.short)} · ${f ? esc(f.short) : "OPEN"}</h2>
@@ -1177,6 +1248,11 @@ function showNextChronicle() {
 }
 
 function showEventScene(ev) {
+  if ($("modal") && !$("modal").hidden) {
+    $("modal").hidden = true;
+    $("modal-card").className = "modal-card";
+  }
+  parkCoach();
   $("event-vignette").src = sceneArt(ev.id);
   $("event-portrait").src = PORTRAIT_SRC;
   $("event-title").textContent = ev.title || "Event";
@@ -1197,10 +1273,12 @@ function showEventScene(ev) {
 }
 
 function hideEventScene() {
-  $("event-scene").hidden = true;
-  $("event-scene").classList.remove("open");
-  stopSceneFx();
-  if (chronicleQueue.length || pendingWeekReport) showNextChronicle();
+  silentHideEvent();
+  if (chronicleQueue.length || pendingWeekReport) {
+    showNextChronicle();
+    return;
+  }
+  flushOverlays();
 }
 
 function startSeasonFx(seasonId) {
@@ -1290,7 +1368,7 @@ function startAction(a) {
   if (a.needs === "challenge") {
     const cs = challengeCandidates(state);
     if (!cs.length) return toast("No listed officer in this city.");
-    showModal(`<h2>Challenge</h2><p class="muted">Yard duel in this city. Strike / Guard / Special. Clock ~99s if both stay up. Green window is a timing bonus — not a combo game.</p>${cs.map((o) => `<button class="list-btn" data-challenge="${o.id}"><img class="cmd-thumb" src="${sceneArt("challenge")}" alt="" /><span>${esc(o.name)} · ${esc(o.title)} · AGE ${o.age || "?"} · WAR ${o.war}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>Challenge</h2><p class="muted">Yard duel in this city. Keys: 1 Strike, 2 Guard, 3 Special · your style move. Clock ~99s if both stay up. Green window is a timing bonus — not a combo game.</p>${cs.map((o) => `<button class="list-btn" data-challenge="${o.id}"><img class="cmd-thumb" src="${sceneArt("challenge")}" alt="" /><span>${esc(o.name)} · ${esc(o.title)} · AGE ${o.age || "?"} · WAR ${o.war}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-challenge]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -1670,6 +1748,8 @@ function ensureMapPulse() {
 }
 
 function openBattle() {
+  parkCoach();
+  silentHideEvent();
   $("battle").hidden = false;
   startBattleLoop();
 }
@@ -1888,6 +1968,12 @@ let duelRaf = 0;
 
 function openDuel() {
   if (!state?.duel) return;
+  parkCoach();
+  if ($("modal") && !$("modal").hidden) {
+    $("modal").hidden = true;
+    $("modal-card").className = "modal-card";
+  }
+  silentHideEvent();
   $("duel").hidden = false;
   const d = state.duel;
   if (!d.t0) d.t0 = performance.now();
@@ -1999,6 +2085,8 @@ function closeDuel() {
       text: res.message,
       regionId: playerOf(state).region,
     });
+  } else {
+    flushOverlays();
   }
 }
 
@@ -2032,14 +2120,15 @@ function paintDuelHud() {
   const d = state.duel;
   if (!d) return;
   $("duel-exchange").textContent = `EX ${Math.min(d.exchange, d.maxExchanges)} / ${d.maxExchanges}`;
+  const specName = d.you.style?.specialLabel || "Special";
   $("duel-cue").textContent = d.result
     ? d.log[d.log.length - 1]
     : d.underdog
-      ? `UNDERDOG — ${d.you.style?.flavor || "wider green window."}`
-      : `${d.you.style?.flavor || "Green window = bonus."} Strike beats Special · Special beats Guard · Guard beats Strike.`;
+      ? `UNDERDOG — Strike / Guard / Special · ${specName}. ${d.you.style?.flavor || "Wider green window."}`
+      : `Strike / Guard / Special · ${specName}. Strike beats Special · Special beats Guard · Guard beats Strike.`;
   const spec = $("duel-special");
-  if (spec && d.you.style) {
-    spec.innerHTML = `<b>3</b> ${esc(d.you.style.specialLabel)}<small>${esc(d.you.style.flavor)}</small>`;
+  if (spec) {
+    spec.innerHTML = `<b>3</b> Special · ${esc(specName)}<small>${esc(d.you.style?.flavor || "beats Guard")}</small>`;
   }
   $("duel-log").innerHTML = d.log.slice(-6).map((l) => `<li>${esc(l)}</li>`).join("");
   document.querySelectorAll("[data-duel-move]").forEach((b) => {

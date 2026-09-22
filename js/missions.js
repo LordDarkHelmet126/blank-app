@@ -3,8 +3,7 @@ import { nextInt, chance, pick } from "./rng.js";
 export const MISSION_CAP = 4;
 export const MISSION_TTL = 2;
 
-const WEST =
-  "Western foothills dust — ranch grade, jeep column, militia horse scouts. Original partisan kit.";
+const WEST = "Ranch grade, jeep column, horse scouts.";
 
 export const MISSION_TEMPLATES = [
   {
@@ -15,7 +14,7 @@ export const MISSION_TEMPLATES = [
     dc: 40,
     order: true,
     flavor: {
-      default: `Glass the next gold-road washout. ${WEST}`,
+      default: `Glass the next washout. ${WEST}`,
       arctic_slope: "Trapline on the ice road. Mark drum caches before a column uses them.",
       yukon_road: "Whitehorse spur. Count southbound trucks that still think a border means something.",
       kenai: "Ranch grade in the western foothills. Horse scouts and pickups share the same dust.",
@@ -51,7 +50,7 @@ export const MISSION_TEMPLATES = [
     dc: 44,
     order: true,
     flavor: {
-      default: `Jeep pickups and a militia horse scout take a ranch grade. Keep them on the gold road. ${WEST}`,
+      default: `Keep the column on the gold road. ${WEST}`,
       yukon_road: "Relay trucks on the spur. Analog radios, no drones.",
       fairbanks: "Mill scrip and flour on the Interior road. Glass the next ridge.",
       kenai: "Ranch column — horse scouts on the flank, Jeeps in the dust.",
@@ -223,7 +222,7 @@ export const MISSION_TEMPLATES = [
     order: true,
     duel: true,
     flavor: {
-      default: `A yard behind the hall. No levy — two officers, Strike / Guard / Special, about ninety-nine seconds if both stay up. ${WEST}`,
+      default: `Yard behind the hall. Strike / Guard / Special · style move. ~99s if both stay up.`,
       bethel: "River-hall porch. Call out whoever is in Bethel. Original partisan kit — not a licensed bout.",
       kenai: "Ranch yard in the western foothills. Horse scouts keep the circle.",
       nome: "Spit gravel. Aurora watches; you still throw the first Strike.",
