@@ -658,7 +658,9 @@ assert(/BIOME\.wetforest/.test(terrainSrc) && /WET_IDS/.test(terrainSrc) && /RAI
 assert(/id === "seattle"/.test(terrainSrc) && /olympia/.test(terrainSrc) && /spokane/.test(terrainSrc), "PNW city marker kinds");
 assert(/paintTheaterTerrain/.test(terrainSrc) && /draw80sMarker/.test(terrainSrc), "painterly terrain + 80s markers");
 assert(/drawFactionFlag/.test(terrainSrc) && /drawCityNode/.test(terrainSrc), "city node + faction flag overlay");
-assert(/#f0ece0/.test(terrainSrc) && /hazeCoast/.test(terrainSrc), "pale topo roads and coast haze");
+assert(/#f8f4e8/.test(terrainSrc) && /hazeCoast/.test(terrainSrc), "pale topo roads and coast haze");
+assert(/0\.36/.test(terrainSrc), "ownership wash contrast");
+assert(/function drawHereChip/.test(uiSrc) && /plateAwayFromSelected/.test(uiSrc), "here chip stays off selected city");
 assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
 assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");
 assert(/originalFaceGrid/.test(terrainSrc) && /face-grid/.test(uiSrc), "original officer face grid");

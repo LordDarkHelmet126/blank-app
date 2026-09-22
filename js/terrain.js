@@ -635,10 +635,10 @@ export function drawPixelRoadFull(ctx, a, b, pulseOn) {
   let y = y0;
   let i = 0;
   for (;;) {
-    ctx.fillStyle = pulseOn ? "#886028" : "#6a6860";
+    ctx.fillStyle = pulseOn ? "#886028" : "#403830";
+    ctx.fillRect(x - 2, y - 2, 5, 5);
+    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f8f4e8" : "#e0d8c4";
     ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f0ece0" : "#d8d4c8";
-    ctx.fillRect(x, y, 1, 1);
     if (x === x1 && y === y1) break;
     const e2 = err * 2;
     if (e2 > -dy) {
@@ -688,10 +688,11 @@ export function paintTheaterTerrain(o, state, opts) {
   painted.forEach((r) => {
     const fac = opts.factionOf ? opts.factionOf(r) : null;
     if (!r.polygon) return;
-    o.globalAlpha = fac ? 0.22 : 0.08;
+    o.globalAlpha = fac ? 0.36 : 0.1;
     o.fillStyle = fac ? fac.color : "#607838";
     fillPoly(o, r.polygon);
     o.globalAlpha = 1;
+    if (fac) strokePoly(o, r.polygon, fac.color, 1);
     if (r.id === opts.selectedId || r.id === opts.hoverId) {
       strokePoly(o, r.polygon, r.id === opts.selectedId ? "#f8d800" : "#f8f8f8", 2);
     }

@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — PNW first theater polish: wet Sound forest, Cascades climb, Spokane rain-shadow. Gameplay unchanged.
+**Last checkpoint:** 2026-09-22 — Look-demo paint: Bethel here-chip stays in AK; thicker roads/plates; stronger ownership wash.
 
 ## How to run
 
@@ -21,6 +21,8 @@ node tests/simulate.mjs
 ## PNW polish (first theater pass)
 
 WA–PNW is the hero biome on the look demo. West of the Cascades (Seattle / Olympia / Portland) is darker wet evergreen with Sound mist. A height ridge sits between the Sound and Spokane so the west→east road reads as a climb (no new leap edges). East WA is drier pine, still forest-family. Seattle mark is main-street; Olympia and Spokane are mills.
+
+Look-demo paint fix: the “you are here” nameplate is a compact chip anchored above the home city (Bethel stays in AK, not on the Seattle box). Roads and selected plates are larger; ownership wash/edge is stronger.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 **States demo:** `/?demo=states` or `/?demo=map` still works.
 

@@ -1716,6 +1716,7 @@ const MAP_S = terrainSize().scale;
 const LOW_W = terrainSize().w;
 const LOW_H = terrainSize().h;
 const PX_FONT = "8px 'Press Start 2P', 'Courier New', monospace";
+const PLATE_FONT = "10px 'Press Start 2P', 'Courier New', monospace";
 const ditherCache = new Map();
 
 function lowPt(p) {
@@ -1861,6 +1862,46 @@ function drawStateLabels(ctx) {
   ctx.font = PX_FONT;
 }
 
+function plateAwayFromSelected(r, px, py, pw, ph) {
+  const sel = regionOf(state, selectedRegion);
+  if (!sel || sel.id === r.id) return [px, py];
+  const [sx, sy] = cityXY(sel);
+  const box = {
+    x: px - 2,
+    y: py - 2,
+    w: pw + 4,
+    h: ph + 4,
+  };
+  const hit =
+    box.x < sx + 70 &&
+    box.x + box.w > sx - 70 &&
+    box.y < sy + 56 &&
+    box.y + box.h > sy - 40;
+  if (!hit) return [px, py];
+  const [cx, cy] = cityXY(r);
+  return [px, Math.max(4, Math.round(cy - ph - 14))];
+}
+
+function drawHereChip(ctx, r, x, y) {
+  ctx.font = PLATE_FONT;
+  const nameW = ctx.measureText(r.short).width;
+  const pw = Math.max(48, Math.ceil((nameW + 16) / 4) * 4);
+  const ph = 16;
+  let px = Math.round(x - pw / 2);
+  let py = Math.round(y - ph - 12);
+  px = Math.max(4, Math.min(996 - pw, px));
+  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+  if (py < 4) py = Math.round(y + 18);
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(px - 3, py - 3, pw + 6, ph + 6);
+  ctx.fillStyle = "#f8f8f8";
+  ctx.fillRect(px, py, pw, ph);
+  ctx.fillStyle = "#101050";
+  ctx.fillRect(px + 3, py + 3, pw - 6, ph - 6);
+  ctx.fillStyle = "#f8d800";
+  ctx.fillText(r.short, px + 8, py + 12);
+}
+
 function drawCityPlate(ctx, r, selected) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
@@ -1868,17 +1909,22 @@ function drawCityPlate(ctx, r, selected) {
   const here = p.region === r.id;
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? String(r.garrison) : "?";
-  ctx.font = PX_FONT;
   if (!selected && !here && r.id !== hoverRegion) return;
+  if (here && !selected) {
+    drawHereChip(ctx, r, x, y);
+    return;
+  }
+  ctx.font = PLATE_FONT;
   const nameW = ctx.measureText(r.short).width;
   const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(72, Math.ceil((nameW + garrW + 20) / 4) * 4);
-  const ph = 16;
+  const pw = Math.max(88, Math.ceil((nameW + garrW + 28) / 4) * 4);
+  const ph = 20;
   let px = Math.round(x - pw / 2);
-  let py = r.plate === "above" ? Math.round(y - 36) : Math.round(y + 16);
+  let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
   px = Math.max(4, Math.min(996 - pw, px));
-  if (py < 4) py = Math.round(y + 16);
-  if (py + ph > 616) py = Math.round(y - 36);
+  if (py < 4) py = Math.round(y + 20);
+  if (py + ph > 616) py = Math.round(y - 44);
+  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
   if (selected) {
@@ -1892,11 +1938,11 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillStyle = "#101050";
   ctx.fillRect(px + 4, py + 4, pw - 8, ph - 8);
   ctx.fillStyle = fac ? fac.color : "#607838";
-  ctx.fillRect(px + 4, py + 4, 4, ph - 8);
+  ctx.fillRect(px + 4, py + 4, 5, ph - 8);
   ctx.fillStyle = "#f8d800";
-  ctx.fillText(r.short, px + 10, py + 12);
+  ctx.fillText(r.short, px + 12, py + 15);
   ctx.fillStyle = "#f8f8f8";
-  ctx.fillText(garr, px + pw - 8 - garrW, py + 12);
+  ctx.fillText(garr, px + pw - 10 - garrW, py + 15);
 }
 
 function drawMap() {
