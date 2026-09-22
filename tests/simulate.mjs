@@ -654,6 +654,8 @@ assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSr
 assert(/get\("demo"\) === "look"/.test(uiSrc) && /demo"\) === "terrain"/.test(uiSrc), "demo=look / demo=terrain hook");
 const terrainSrc = readFileSync(new URL("../js/terrain.js", import.meta.url), "utf8");
 assert(/paintTheaterTerrain/.test(terrainSrc) && /draw80sMarker/.test(terrainSrc), "painterly terrain + 80s markers");
+assert(/drawFactionFlag/.test(terrainSrc) && /drawCityNode/.test(terrainSrc), "city node + faction flag overlay");
+assert(/#f0ece0/.test(terrainSrc) && /hazeCoast/.test(terrainSrc), "pale topo roads and coast haze");
 assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
 assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");
 assert(/originalFaceGrid/.test(terrainSrc) && /face-grid/.test(uiSrc), "original officer face grid");

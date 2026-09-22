@@ -9,6 +9,8 @@ import {
 } from "./sprites.js";
 import {
   draw80sMarker,
+  drawCityNode,
+  drawFactionFlag,
   drawPixelRoadFull,
   drawPixelRoadHi,
   faceSrc,
@@ -1842,19 +1844,19 @@ const STATE_FILL = {
 
 function drawStateLabels(ctx) {
   const list = state.stateTheaters || [];
-  ctx.font = "16px 'Press Start 2P', 'Courier New', monospace";
+  ctx.font = "10px 'Press Start 2P', 'Courier New', monospace";
   list.forEach((st) => {
     if (!st.label) return;
     const [x, y] = st.label;
     const text = st.short || st.id.toUpperCase();
     const w = ctx.measureText(text).width;
-    const px = Math.round(x - w / 2 - 6);
-    const py = Math.round(y - 10);
-    ctx.fillStyle = "#000018";
-    ctx.fillRect(px, py, w + 12, 22);
+    const px = Math.round(x - w / 2 - 3);
+    const py = Math.round(y - 6);
+    ctx.fillStyle = "rgba(0,0,24,0.45)";
+    ctx.fillRect(px, py, w + 6, 14);
     const liberated = (ensureCampaign(state).liberated || []).includes(st.short || st.id.toUpperCase());
-    ctx.fillStyle = liberated ? "#f8d800" : st.id === "co" ? "#f8d800" : "#f0e8c8";
-    ctx.fillText(text, px + 6, py + 17);
+    ctx.fillStyle = liberated ? "#f8d800" : "#e8e0c8";
+    ctx.fillText(text, px + 3, py + 11);
   });
   ctx.font = PX_FONT;
 }
@@ -1867,17 +1869,7 @@ function drawCityPlate(ctx, r, selected) {
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? String(r.garrison) : "?";
   ctx.font = PX_FONT;
-  if (!selected && !here) {
-    const nameW = ctx.measureText(r.short).width;
-    let tx = Math.round(x - nameW / 2);
-    let ty = r.plate === "above" ? Math.round(y - 10) : Math.round(y + 18);
-    tx = Math.max(2, Math.min(998 - nameW, tx));
-    ctx.fillStyle = "#000018";
-    ctx.fillRect(tx - 2, ty - 9, nameW + 4, 12);
-    ctx.fillStyle = fac ? fac.color : "#f8d800";
-    ctx.fillText(r.short, tx, ty);
-    return;
-  }
+  if (!selected && !here && r.id !== hoverRegion) return;
   const nameW = ctx.measureText(r.short).width;
   const garrW = ctx.measureText(garr).width;
   const pw = Math.max(72, Math.ceil((nameW + garrW + 20) / 4) * 4);
@@ -1949,22 +1941,24 @@ function drawMap() {
 function drawCityMarkHi(ctx, r, selected) {
   const [x, y] = cityXY(r);
   const fac = r.owner ? factionOf(state, r.owner) : null;
-  const fill = fac ? fac.color : "#607838";
-  draw80sMarker(ctx, markerKind(r), x, y, selected, fill, 3);
+  const fill = fac ? fac.color : "#9aa7b0";
+  draw80sMarker(ctx, markerKind(r), x - 10, y + 2, selected, fill, 1.5);
+  drawCityNode(ctx, x, y, selected);
+  drawFactionFlag(ctx, x, y, fill, selected);
   const p = playerOf(state);
   if (p.region === r.id) {
-    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -6 : 0;
+    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 14, y - 36 + hop, 5, 5);
+    ctx.fillRect(x - 12, y - 22 + hop, 4, 4);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
-    ctx.fillRect(x + 14, y - 8, 4, 4);
+    ctx.fillRect(x + 16, y - 6, 3, 3);
   }
   legendBoard(state).forEach((h) => {
     if (h.regionId !== r.id || !h.mapMark) return;
     ctx.fillStyle = "#d080f8";
-    ctx.fillRect(x + 14, y - 8, 4, 4);
+    ctx.fillRect(x + 16, y - 6, 3, 3);
   });
 }
 

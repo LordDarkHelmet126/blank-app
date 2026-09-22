@@ -53,18 +53,18 @@ const BIAS_BIOME = {
 };
 
 const PAL = {
-  [BIOME.sea]: ["#082038", "#103058", "#1a4870"],
+  [BIOME.sea]: ["#2a6080", "#3a78a0", "#1a4870"],
   [BIOME.ice]: ["#c8d4dc", "#9aacb8", "#6a8494", "#e8f0f4"],
-  [BIOME.tundra]: ["#6a7860", "#889078", "#4a5848", "#a0a888"],
-  [BIOME.coast]: ["#3a6858", "#588870", "#2a5048", "#80a090"],
-  [BIOME.forest]: ["#184828", "#246038", "#0e3018", "#387848"],
-  [BIOME.pine]: ["#204830", "#2e603c", "#143024", "#4a7850"],
-  [BIOME.hills]: ["#6a7840", "#8a9850", "#4a5830", "#b0a868"],
-  [BIOME.rockies]: ["#8a7848", "#b89858", "#5a4830", "#d8c888"],
-  [BIOME.desert]: ["#c87840", "#e09858", "#8a5028", "#f0c080"],
-  [BIOME.plains]: ["#8a9a50", "#a8b868", "#687038", "#c8d080"],
-  [BIOME.farm]: ["#b8a048", "#d0bc60", "#887830", "#e8d888"],
-  [BIOME.urban]: ["#686860", "#888878", "#484840", "#a8a898"],
+  [BIOME.tundra]: ["#7a8a68", "#9aa880", "#5a6850", "#b0b898"],
+  [BIOME.coast]: ["#5a8a68", "#78a880", "#3a6850", "#98c0a0"],
+  [BIOME.forest]: ["#3a6840", "#4a7850", "#2a4830", "#5a8860"],
+  [BIOME.pine]: ["#4a7048", "#5a8858", "#385838", "#6a9868"],
+  [BIOME.hills]: ["#8a7848", "#a09058", "#6a5838", "#c0b070"],
+  [BIOME.rockies]: ["#8a6840", "#a08050", "#5a4830", "#c8b080"],
+  [BIOME.desert]: ["#c89858", "#d8b070", "#9a6838", "#e8d090"],
+  [BIOME.plains]: ["#7a8a48", "#8a9a58", "#5a6840", "#a8b868"],
+  [BIOME.farm]: ["#8a9a50", "#a0b060", "#687038", "#c0c878"],
+  [BIOME.urban]: ["#7a7a68", "#9a9a88", "#5a5a50", "#b0b0a0"],
 };
 
 const FACE_KITS = [
@@ -202,7 +202,7 @@ function pickTone(pal, n, high) {
 function cacheKey(state) {
   const season = state._season?.id || "summer";
   const n = (state.regions || []).length;
-  return `v3|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+  return `v4|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
 }
 
 function buildFields(state) {
@@ -287,10 +287,9 @@ function paintBase(fields, seasonId) {
       const o = i * 4;
       if (!land[i]) {
         const wave = ((x + y + ((x * 3) ^ y)) & 3) === 0;
-        const sea = wave ? 0x10 : 0x08;
-        data[o] = sea;
-        data[o + 1] = 0x20 + (wave ? 16 : 0);
-        data[o + 2] = 0x38 + (wave ? 24 : 0);
+        data[o] = wave ? 0x3a : 0x2a;
+        data[o + 1] = wave ? 0x80 : 0x68;
+        data[o + 2] = wave ? 0xa8 : 0x90;
         data[o + 3] = 255;
         continue;
       }
@@ -350,7 +349,33 @@ function paintBase(fields, seasonId) {
     }
   }
   scatterFeatures(ex, fields, seasonId);
+  hazeCoast(ex, fields);
   return elev;
+}
+
+function hazeCoast(ctx, fields) {
+  const { land } = fields;
+  const pix = ctx.getImageData(0, 0, TW, TH);
+  const d = pix.data;
+  const sea = [42, 104, 144];
+  for (let y = 1; y < TH - 1; y++) {
+    for (let x = 1; x < TW - 1; x++) {
+      const i = y * TW + x;
+      if (!land[i]) continue;
+      let near = 0;
+      if (!land[i - 1]) near += 1;
+      if (!land[i + 1]) near += 1;
+      if (!land[i - TW]) near += 1;
+      if (!land[i + TW]) near += 1;
+      if (!near) continue;
+      const o = i * 4;
+      const k = Math.min(0.55, 0.18 * near);
+      d[o] = Math.round(d[o] * (1 - k) + sea[0] * k);
+      d[o + 1] = Math.round(d[o + 1] * (1 - k) + sea[1] * k);
+      d[o + 2] = Math.round(d[o + 2] * (1 - k) + sea[2] * k);
+    }
+  }
+  ctx.putImageData(pix, 0, 0);
 }
 
 function scatterFeatures(ctx, fields, seasonId) {
@@ -533,9 +558,9 @@ export function drawPixelRoadFull(ctx, a, b, pulseOn) {
   let y = y0;
   let i = 0;
   for (;;) {
-    ctx.fillStyle = pulseOn ? "#886028" : "#4a3820";
+    ctx.fillStyle = pulseOn ? "#886028" : "#6a6860";
     ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 6 < 3 ? "#e0c060" : "#c8a038";
+    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f0ece0" : "#d8d4c8";
     ctx.fillRect(x, y, 1, 1);
     if (x === x1 && y === y1) break;
     const e2 = err * 2;
@@ -586,13 +611,33 @@ export function paintTheaterTerrain(o, state, opts) {
   painted.forEach((r) => {
     const fac = opts.factionOf ? opts.factionOf(r) : null;
     if (!r.polygon) return;
-    o.globalAlpha = 0.08;
+    o.globalAlpha = fac ? 0.22 : 0.08;
     o.fillStyle = fac ? fac.color : "#607838";
     fillPoly(o, r.polygon);
     o.globalAlpha = 1;
-    const rim = r.id === opts.selectedId ? "#f8d800" : r.id === opts.hoverId ? "#f8f8f8" : "rgba(16,24,32,0.45)";
-    strokePoly(o, r.polygon, rim, r.id === opts.selectedId ? 2 : 1);
+    if (r.id === opts.selectedId || r.id === opts.hoverId) {
+      strokePoly(o, r.polygon, r.id === opts.selectedId ? "#f8d800" : "#f8f8f8", 2);
+    }
   });
+}
+
+/** Square city node + faction color flag. Original kit — not a licensed banner. */
+export function drawCityNode(ctx, x, y, selected) {
+  const ink = selected ? "#f8d800" : "#f8f8f0";
+  const fill = "#c8c4b8";
+  px(ctx, x - 5, y - 5, 10, 10, "#201810");
+  px(ctx, x - 4, y - 4, 8, 8, fill);
+  px(ctx, x - 3, y - 3, 6, 6, ink);
+  px(ctx, x - 2, y - 2, 4, 4, fill);
+}
+
+export function drawFactionFlag(ctx, x, y, color, selected) {
+  const pole = selected ? "#f8d800" : "#e8e0d0";
+  const fly = color || "#607838";
+  px(ctx, x + 5, y - 20, 2, 20, pole);
+  px(ctx, x + 7, y - 20, 11, 8, fly);
+  px(ctx, x + 7, y - 20, 11, 1, "#fff8e0");
+  px(ctx, x + 16, y - 17, 2, 2, fly);
 }
 
 export function terrainSize() {

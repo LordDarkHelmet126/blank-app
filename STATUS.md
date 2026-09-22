@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Visual pivot: painterly biomes, 1980s markers, isometric field/siege. Gameplay (states / no-leap / geo / chronicle / missions / duel / phases) unchanged.
+**Last checkpoint:** 2026-09-22 — Visual pivot: topo land + node/road/flag overlay, 1980s American marks. Gameplay unchanged.
 
 ## How to run
 
@@ -22,7 +22,7 @@ node tests/simulate.mjs
 
 ## Visual pivot (not licensed art)
 
-Theater is no longer a flat node diagram. Cached painterly terrain in `js/terrain.js`: elevated heightfield, WA evergreen, CO/WY Rockies, UT desert mesas, plains farms, AK ice/coast. City marks are 1980s American kit (ranch, grain elevator, oil pump, radio tower, bunker, main street, mill) — not Chinese roofs. Field battles draw isometric diamonds with strength bars; urban/high-wall fights get a concrete siege wall. City report echoes a portrait + AP oversee strip. Create-officer uses an original face grid.
+Theater is a painted topo (olive plains, brown mountains, blue water, coast haze) with a **node + pale road + faction-flag** overlay. Cities keep small 1980s American marks (ranch, elevator, pump, tower, bunker) under a square node and colored flag — not Chinese roofs, not licensed banners. Semi-transparent ownership wash. Nameplates only on selected / here / hover. Field battles stay isometric with strength bars. City report still has portrait + AP. Create-officer uses an original face grid.
 
 ## Hierarchy
 
