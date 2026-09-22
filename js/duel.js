@@ -24,60 +24,60 @@ export const DUEL_STYLES = [
     id: "brawler",
     label: "Brawler",
     flavor: "Closes the gap. Special · Haymaker.",
-    special: { label: "Haymaker", verb: "haymakers", fx: "#f03030", effect: "extra" },
-    bias: { strike: 0.48, guard: 0.18, special: 0.34 },
-    strikeBonus: 2,
+    special: { label: "Haymaker", verb: "haymakers", fx: "#f03030", effect: "extra", hint: "extra hit" },
+    bias: { strike: 0.46, guard: 0.2, special: 0.34 },
+    strikeBonus: 1,
   },
   {
     id: "marksman",
     label: "Marksman",
     flavor: "Keeps a lane. Special · Aimed Shot chips Guard.",
-    special: { label: "Aimed Shot", verb: "aims through", fx: "#f8d800", effect: "pierce" },
+    special: { label: "Aimed Shot", verb: "aims through", fx: "#f8d800", effect: "pierce", hint: "chips Guard" },
     bias: { strike: 0.28, guard: 0.28, special: 0.44 },
   },
   {
     id: "grappler",
     label: "Grappler",
     flavor: "Hands on cloth. Special · Throw stuns the next beat.",
-    special: { label: "Throw", verb: "throws", fx: "#c8a038", effect: "stun" },
-    bias: { strike: 0.3, guard: 0.4, special: 0.3 },
+    special: { label: "Throw", verb: "throws", fx: "#c87828", effect: "stun", hint: "stun next" },
+    bias: { strike: 0.36, guard: 0.32, special: 0.32 },
   },
   {
     id: "cavalry",
     label: "Cavalry",
     flavor: "Horse-scout spur. Special · Spur Charge after a win.",
-    special: { label: "Spur Charge", verb: "charges", fx: "#886038", effect: "charge" },
-    bias: { strike: 0.42, guard: 0.22, special: 0.36 },
+    special: { label: "Spur Charge", verb: "charges", fx: "#d07030", effect: "charge", hint: "charge after a hit" },
+    bias: { strike: 0.4, guard: 0.24, special: 0.36 },
     strikeBonus: 1,
   },
   {
     id: "guerrilla",
     label: "Guerrilla",
     flavor: "Dust and a feint. Special · Dust Feint steals a little HP.",
-    special: { label: "Dust Feint", verb: "feints through", fx: "#88a040", effect: "heal" },
-    bias: { strike: 0.32, guard: 0.36, special: 0.32 },
+    special: { label: "Dust Feint", verb: "feints", fx: "#70a030", effect: "heal", hint: "steals HP" },
+    bias: { strike: 0.34, guard: 0.36, special: 0.3 },
   },
   {
     id: "drill",
     label: "Drill-Sergeant",
     flavor: "Dress-right. Special · Dress-Right mends on Guard.",
-    special: { label: "Dress-Right", verb: "dresses the line", fx: "#f8d800", effect: "rally" },
-    bias: { strike: 0.28, guard: 0.48, special: 0.24 },
+    special: { label: "Dress-Right", verb: "dresses", fx: "#e8e8f8", effect: "rally", hint: "mends" },
+    bias: { strike: 0.3, guard: 0.46, special: 0.24 },
     guardBonus: 2,
   },
   {
     id: "trapper",
     label: "Trapper",
     flavor: "Snare on the porch. Special · Snare Line.",
-    special: { label: "Snare Line", verb: "snares", fx: "#80d0f8", effect: "snare" },
-    bias: { strike: 0.22, guard: 0.4, special: 0.38 },
+    special: { label: "Snare Line", verb: "snares", fx: "#40c0a0", effect: "snare", hint: "snares Strike" },
+    bias: { strike: 0.24, guard: 0.36, special: 0.4 },
   },
   {
     id: "signals",
     label: "Signals",
     flavor: "Analog burst. Special · Static Burst (underdog finisher).",
-    special: { label: "Static Burst", verb: "bursts static", fx: "#80c0f8", effect: "finisher" },
-    bias: { strike: 0.22, guard: 0.3, special: 0.48 },
+    special: { label: "Static Burst", verb: "bursts", fx: "#80c0f8", effect: "finisher", hint: "underdog finisher" },
+    bias: { strike: 0.28, guard: 0.3, special: 0.42 },
   },
 ];
 
@@ -228,8 +228,13 @@ export function duelHp(stats) {
   return 40 + Math.floor((stats?.war || 50) / 5);
 }
 
+/**
+ * Pick-bar fraction where a press is "green" (timing bonus, not a combo).
+ * Even: 30% of the 7.5s sweep (~2.3s), centered so the wait is readable.
+ * Underdog: 56% (~4.2s), clearly wider, still not the whole bar.
+ */
 export function greenWindow(underdog) {
-  return underdog ? [0.32, 0.7] : [0.46, 0.62];
+  return underdog ? [0.22, 0.78] : [0.36, 0.66];
 }
 
 export function inGreen(timing, green) {
@@ -254,6 +259,7 @@ function packStyle(s) {
     bias: s.bias,
     strikeBonus: s.strikeBonus || 0,
     guardBonus: s.guardBonus || 0,
+    hint: s.special.hint || "",
   };
 }
 
@@ -333,10 +339,10 @@ export function createDuel({
     youSnare: false,
     foeSnare: false,
     log: [
-      `${arena.label} — ${youSnap.name} [${youSnap.style.label}] vs ${foeSnap.name} [${foeSnap.style.label}].`,
+      `${arena.label} — ${youSnap.name} vs ${foeSnap.name}.`,
       underdog
-        ? `UNDERDOG — ${you.name} (WAR ${youStats.war}) vs ${foe.name} (WAR ${foeStats.war}). Wider green window.`
-        : `Strike beats Special, Special beats Guard, Guard beats Strike. Special · ${youSnap.style.specialLabel} / Special · ${foeSnap.style.specialLabel}.`,
+        ? `UNDERDOG wide green. WAR ${youStats.war} vs ${foeStats.war}.`
+        : `${youSnap.style.specialLabel} / ${foeSnap.style.specialLabel}. Strike > Special > Guard.`,
     ],
     last: null,
     result: null,
@@ -397,11 +403,11 @@ export function resolveExchange(duel, youMove, timing, foeMove) {
   const foeFx = foeMove === "special" ? foe.style?.fx : null;
 
   if (duel.youSnare && youMove === "strike") {
-    youDmg += 4;
+    youDmg += 5;
     duel.youSnare = false;
   }
   if (duel.foeSnare && foeMove === "strike") {
-    foeDmg += 4;
+    foeDmg += 5;
     duel.foeSnare = false;
   }
 
@@ -409,22 +415,22 @@ export function resolveExchange(duel, youMove, timing, foeMove) {
     line = "Neither commits. Dust.";
   } else if (!youOk) {
     youDmg += hitFor(foe, you, foeMove, false, false);
-    line = `${you.name} misses the window. ${foe.name}'s ${moveLabel(foe, foeMove)} lands (${youDmg}).`;
+    line = `${you.name} misses. ${moveLabel(foe, foeMove)} lands (${youDmg}).`;
   } else if (!foeOk) {
     foeDmg += hitFor(you, foe, youMove, timed, duel.underdog);
-    line = `${you.name} ${verbFor(you, youMove)} an empty yard (${foeDmg}${timed ? ", timed" : ""}).`;
+    line = `${you.name} ${verbFor(you, youMove)} an open yard (${foeDmg}${timed ? ", green" : ""}).`;
   } else if (youMove === foeMove) {
     const chip = timed ? 2 : 4;
     youDmg += chip;
     foeDmg += chip;
-    line = `Clash — ${moveLabel(you, youMove)} vs ${moveLabel(foe, foeMove)}. Chip ${chip}.`;
+    line = `Clash ${moveLabel(you, youMove)} / ${moveLabel(foe, foeMove)}. Chip ${chip}.`;
   } else if (beats(youMove, foeMove)) {
     foeDmg += hitFor(you, foe, youMove, timed, duel.underdog);
-    line = `${you.name} ${verbFor(you, youMove)} ${moveLabel(foe, foeMove)} (${foeDmg}${timed ? ", green window" : ""}).`;
+    line = `${you.name} ${verbFor(you, youMove)} ${moveLabel(foe, foeMove)} (${foeDmg}${timed ? ", green" : ""}).`;
   } else {
     youDmg += hitFor(foe, you, foeMove, false, false);
     if (timed) youDmg = Math.max(1, youDmg - (duel.underdog ? 4 : 2));
-    line = `${foe.name} ${verbFor(foe, foeMove)} ${moveLabel(you, youMove)} (${youDmg}${timed ? ", you rolled with it" : ""}).`;
+    line = `${foe.name} ${verbFor(foe, foeMove)} ${moveLabel(you, youMove)} (${youDmg}${timed ? ", rolled" : ""}).`;
   }
 
   const hooks = applyStyleHooks(duel, {
@@ -517,40 +523,51 @@ function applyStyleHooks(duel, ctx) {
       }
     }
     if (effect === "stun" && win) {
-      if (side === "you") duel.foeStun = true;
-      else duel.youStun = true;
-      notes.push("Throw — stunned next beat");
+      if (side === "you") {
+        duel.foeStun = true;
+        foeDmg += 2;
+      } else {
+        duel.youStun = true;
+        youDmg += 2;
+      }
+      notes.push("Throw stuns");
     }
     if (effect === "charge") {
       const lastHit = side === "you" ? duel.last?.foeDmg : duel.last?.youDmg;
-      if (lastHit > 0) {
-        if (side === "you") foeDmg += 3;
-        else youDmg += 3;
+      const foeCommitted = side === "you" ? ctx.foeOk : ctx.youOk;
+      if (lastHit > 0 && (win || !foeCommitted)) {
+        if (side === "you") foeDmg += 2;
+        else youDmg += 2;
         notes.push("Spur Charge");
       }
     }
     if (effect === "heal") {
-      if (side === "you") youHeal += 5;
-      else foeHeal += 5;
-      notes.push("Dust Feint mends");
+      if (side === "you") youHeal += 3;
+      else foeHeal += 3;
+      notes.push("Dust Feint steals");
     }
     if (effect === "rally") {
       if (side === "you") {
-        youHeal += 3;
-        youDmg = Math.max(0, youDmg - 2);
+        youHeal += 2;
+        youDmg = Math.max(0, youDmg - 1);
       } else {
-        foeHeal += 3;
-        foeDmg = Math.max(0, foeDmg - 2);
+        foeHeal += 2;
+        foeDmg = Math.max(0, foeDmg - 1);
       }
       notes.push("Dress-Right");
     }
     if (effect === "snare" && win) {
-      if (side === "you") duel.foeSnare = true;
-      else duel.youSnare = true;
+      if (side === "you") {
+        foeDmg += 2;
+        duel.foeSnare = true;
+      } else {
+        youDmg += 2;
+        duel.youSnare = true;
+      }
       notes.push("Snare set");
     }
     if (effect === "finisher") {
-      const bonus = duel.underdog && timed && win ? 8 : win ? 2 : 0;
+      const bonus = duel.underdog && timed && win ? 8 : win ? 4 : 0;
       if (bonus) {
         if (side === "you") foeDmg += bonus;
         else youDmg += bonus;

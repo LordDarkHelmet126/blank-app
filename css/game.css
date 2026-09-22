@@ -985,8 +985,8 @@ hr {
 .duel {
   position: fixed;
   inset: 0;
-  background: #000010ee;
-  z-index: 32;
+  background: #000010;
+  z-index: 36;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -1006,18 +1006,21 @@ hr {
 }
 .duel-head { justify-content: flex-start; }
 .duel-clock {
-  margin-left: auto;
+  margin-left: 8px;
   color: var(--amber);
   font-size: 18px;
   min-width: 52px;
   text-align: right;
 }
+.duel-clock.is-low { color: var(--ice); }
+.duel-clock.is-critical { color: var(--blood); }
+.duel-exchange.is-late { color: var(--amber); }
 .duel-underdog {
   color: #000018;
   background: var(--amber);
   border: var(--chrome);
   padding: 2px 8px;
-  margin-left: 8px;
+  margin-left: auto;
 }
 .duel-cue {
   margin: 0;
@@ -1044,7 +1047,12 @@ hr {
 }
 .duel-card.foe { flex-direction: row; justify-content: flex-end; text-align: right; }
 .duel-card h2 { margin: 0 0 4px; color: var(--amber); font-size: var(--type-lg); }
-.duel-card p { margin: 0 0 4px; }
+.duel-card p {
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .duel-card .medallion { width: 48px; height: 48px; flex: 0 0 48px; }
 .duel-card .mini {
   width: 100%;
@@ -1085,28 +1093,44 @@ hr {
 }
 .duel-meter {
   position: relative;
-  height: 12px;
+  height: 16px;
   margin: 6px 8px;
   flex: 0 0 auto;
-  background: #000010;
+  background:
+    linear-gradient(90deg, transparent 0 24%, #303080 24% 25%, transparent 25% 49%, #303080 49% 51%, transparent 51% 74%, #303080 74% 75%, transparent 75% 100%),
+    #000010;
   border: var(--chrome);
 }
 .duel-green {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: #186018;
+  background: #1a6a1a;
   border-left: 2px solid var(--ok);
   border-right: 2px solid var(--ok);
+  color: #d8ffd8;
+  font-size: 8px;
+  line-height: 14px;
+  text-align: center;
+  overflow: hidden;
+}
+.duel-meter.is-wide .duel-green { background: #208830; }
+.duel-meter.in-window .duel-green {
+  background: var(--ok);
+  color: #041408;
+  box-shadow: inset 0 0 0 2px #e8ffe8;
 }
 .duel-needle {
   position: absolute;
-  top: -2px;
-  bottom: -2px;
+  top: -3px;
+  bottom: -3px;
   width: 4px;
+  margin-left: -2px;
   background: var(--amber);
   left: 0;
 }
+.duel-needle.in-window { background: #f8f8f8; width: 6px; margin-left: -3px; }
+.duel-needle.late { background: var(--blood); }
 .duel-moves {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -1121,9 +1145,27 @@ hr {
 }
 .duel-moves button b { color: var(--amber); margin-right: 6px; }
 .duel-moves button small { display: block; color: var(--ice); margin-top: 2px; line-height: 1.4; }
-.duel-log { max-height: 40px; margin: 0 8px 4px; flex: 0 0 auto; padding-top: 4px; padding-bottom: 4px; }
+.duel-log {
+  max-height: 40px;
+  margin: 0 8px 4px;
+  flex: 0 0 auto;
+  padding: 2px 8px 2px 22px;
+  line-height: 1.25;
+  overflow: hidden;
+}
+.duel-log li {
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .duel-foot { padding: 0 8px 6px; flex: 0 0 auto; }
 .duel-moves button.is-pick { background: #803010; color: var(--amber); border-color: var(--amber); }
+.duel-moves button.is-land { border-color: var(--ok); }
+.duel-moves button.is-miss { border-color: var(--blood); }
+.duel-moves button.window-open:not(:disabled) { box-shadow: inset 0 0 0 2px var(--ok); }
+.duel-hp i.is-hit { background: var(--ice); }
 
 .panel-why {
   margin: 0;

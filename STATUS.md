@@ -2,7 +2,13 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — STATE → territories, no leaping, alternate routes, geo yields.
+**Last checkpoint:** 2026-09-22 — yard duel polish (timing band, hit juice, style balance). Field battles / M113 spawn still parked.
+
+## Yard duel polish
+
+- Even green band is 30% of the pick bar (~2.3s), centered. Underdog band is 56% (~4.2s) and labeled WIDE. The needle and move keys light while the band is open. Clock reads `81s` and shifts white, then red, late.
+- Hits show a damage number, a spark, and a style-colored stripe on Special. The log stays two short lines. Cards read `Special · {name}` plus a one-word hint. NEXT and the coach stay off the yard.
+- Style pass: Haymaker is the spike (strike +1, not +2). Dust Feint steals 3, not 5. Dress-Right mends 2. Throw stuns and adds a shove. Spur Charge is +2 only after a real hit. Snare Line bites on the set and taxes the next Strike. Static Burst is +4 on a win, +8 only for a timed underdog finisher. Flash colors no longer share gold/blue.
 
 ## How to run
 

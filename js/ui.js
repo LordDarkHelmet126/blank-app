@@ -58,7 +58,7 @@ import {
   isAdjacent,
   geoTags,
 } from "./engine.js";
-import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
+import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS, inGreen } from "./duel.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -610,7 +610,7 @@ function ownedHere(st, here) {
 
 function renderObjective() {
   const bar = $("objective");
-  if (!state) {
+  if (!state || state.phase === "duel") {
     bar.hidden = true;
     return;
   }
@@ -1054,6 +1054,7 @@ export function render() {
   ensureMapPulse();
   wireOrders();
   wireAfterRender();
+  if (state.phase === "duel") parkCoach();
   applyCoachRing();
   if (state.phase === "battle") openBattle();
   else {
@@ -2198,6 +2199,14 @@ function openDuel() {
   const g = $("duel-green");
   g.style.left = `${d.green[0] * 100}%`;
   g.style.width = `${(d.green[1] - d.green[0]) * 100}%`;
+  g.textContent = d.underdog ? "WIDE" : "";
+  const meter = $("duel-meter");
+  if (meter) {
+    meter.classList.toggle("is-wide", !!d.underdog);
+    meter.title = d.underdog
+      ? "Wide green window. Press while the needle is in the bright band."
+      : "Green window. Press while the needle is in the bright band.";
+  }
   paintDuelStatic();
   paintDuelHud();
   $("duel-continue").hidden = !d.result;
@@ -2229,13 +2238,38 @@ function remainingClock(now) {
   return Math.max(0, Math.ceil(DUEL_CLOCK_S - elapsed));
 }
 
+function paintDuelClock(left, d) {
+  const clock = $("duel-clock");
+  if (!clock) return;
+  clock.textContent = `${left}s`;
+  clock.classList.toggle("is-low", left <= 27 && left > 9);
+  clock.classList.toggle("is-critical", left <= 9);
+  const ex = $("duel-exchange");
+  if (ex && d) ex.classList.toggle("is-late", d.maxExchanges - d.exchange <= 1);
+}
+
+function markGreenWindow(t, d) {
+  const open = d.beat === "pick" && !d.result && inGreen(t, d.green);
+  const late = d.beat === "pick" && !d.result && t > d.green[1];
+  $("duel-meter")?.classList.toggle("in-window", open);
+  const needle = $("duel-needle");
+  if (needle) {
+    needle.classList.toggle("in-window", open);
+    needle.classList.toggle("late", late);
+  }
+  document.querySelectorAll("[data-duel-move]").forEach((b) => {
+    b.classList.toggle("window-open", open);
+  });
+}
+
 function stepDuel(now) {
   const d = state.duel;
   if (!d) return;
   const left = remainingClock(now);
-  $("duel-clock").textContent = String(left);
+  paintDuelClock(left, d);
   if (d.result) {
     d.beat = "done";
+    markGreenWindow(0, d);
     paintDuelHud();
     drawDuelYard(now);
     $("duel-continue").hidden = false;
@@ -2253,12 +2287,15 @@ function stepDuel(now) {
   if (d.beat === "pick") {
     const t = (now - d.beatT0) / (d.pickMs || DUEL_PICK_MS);
     $("duel-needle").style.left = `${Math.min(1, Math.max(0, t)) * 100}%`;
+    markGreenWindow(t, d);
     if (t >= 1) {
       duelCmd(state, "move", { move: null, timing: 1 });
       d.resolveUntil = now + (d.resolveMs || DUEL_RESOLVE_MS);
+      markGreenWindow(1, d);
       paintDuelHud();
     }
   } else if (d.beat === "resolve") {
+    markGreenWindow(0, d);
     if (!d.resolveUntil) d.resolveUntil = now + (d.resolveMs || DUEL_RESOLVE_MS);
     if (now >= d.resolveUntil) {
       duelCmd(state, "next");
@@ -2314,12 +2351,16 @@ function paintDuelStatic() {
   $("duel-you-name").textContent = you.name;
   $("duel-you-style").textContent = `${you.style?.label || "Style"} · ${you.outfit?.label || "kit"}`;
   $("duel-you-meta").textContent = `AGE ${you.age} · ${you.title} · WAR ${you.stats.war}`;
-  $("duel-you-stats").textContent = you.wound ? "WOUND — WAR cut" : `INT ${you.stats.int}  POL ${you.stats.pol}  CHR ${you.stats.chr}`;
+  $("duel-you-stats").textContent = you.wound
+    ? "WOUND — WAR cut"
+    : `Special · ${you.style?.specialLabel || "Special"}${you.style?.hint ? ` · ${you.style.hint}` : ""}`;
   $("duel-foe-face").textContent = foe.portrait || portraitInitials(foe.name);
   $("duel-foe-name").textContent = foe.name;
   $("duel-foe-style").textContent = `${foe.style?.label || "Style"} · ${foe.outfit?.label || "kit"}`;
   $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""} · WAR ${foe.stats.war}`;
-  $("duel-foe-stats").textContent = foe.wound ? "WOUND — WAR cut" : `INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
+  $("duel-foe-stats").textContent = foe.wound
+    ? "WOUND — WAR cut"
+    : `Special · ${foe.style?.specialLabel || "Special"}${foe.style?.hint ? ` · ${foe.style.hint}` : ""}`;
   if ($("duel-arena")) $("duel-arena").textContent = d.arena?.label || "Yard";
 }
 
@@ -2328,6 +2369,8 @@ function paintDuelHp() {
   if (!d) return;
   $("duel-you-hp").style.width = `${Math.round((d.youHp / d.youMax) * 100)}%`;
   $("duel-foe-hp").style.width = `${Math.round((d.foeHp / d.foeMax) * 100)}%`;
+  $("duel-you-hp").classList.toggle("is-hit", d.beat === "resolve" && d.last?.youDmg > 0);
+  $("duel-foe-hp").classList.toggle("is-hit", d.beat === "resolve" && d.last?.foeDmg > 0);
   $("duel-you-hp-n").textContent = `${d.youHp} / ${d.youMax}`;
   $("duel-foe-hp-n").textContent = `${d.foeHp} / ${d.foeMax}`;
 }
@@ -2338,19 +2381,28 @@ function paintDuelHud() {
   $("duel-exchange").textContent = `EX ${Math.min(d.exchange, d.maxExchanges)} / ${d.maxExchanges}`;
   const specName = d.you.style?.specialLabel || "Special";
   const stakes = d.underdog
-    ? `UNDERDOG — wider green. Winner: gold + fame.`
+    ? `UNDERDOG — wide green. Special · ${specName}.`
     : d.you?.wound
       ? `Wound cuts WAR. Special · ${specName}.`
-      : `Stakes: gold, fame, a wound. Special · ${specName}.`;
+      : `Green band = bonus. Special · ${specName}.`;
   $("duel-cue").textContent = d.result ? d.log[d.log.length - 1] : stakes;
   const spec = $("duel-special");
   if (spec) {
-    spec.innerHTML = `<b>3</b> Special · ${esc(specName)}<small>beats Guard</small>`;
+    spec.innerHTML = `<b>3</b> Special · ${esc(specName)}<small>${esc(d.you.style?.hint || "beats Guard")}</small>`;
   }
+  const strikeBtn = document.querySelector('[data-duel-move="strike"]');
+  const guardBtn = document.querySelector('[data-duel-move="guard"]');
+  const sb = d.you.style?.strikeBonus || 0;
+  const gb = d.you.style?.guardBonus || 0;
+  if (strikeBtn) strikeBtn.innerHTML = `<b>1</b> Strike<small>beats Special${sb ? ` · +${sb}` : ""}</small>`;
+  if (guardBtn) guardBtn.innerHTML = `<b>2</b> Guard<small>beats Strike${gb ? ` · −${gb}` : ""}</small>`;
   $("duel-log").innerHTML = d.log.slice(-2).map((l) => `<li>${esc(l)}</li>`).join("");
   document.querySelectorAll("[data-duel-move]").forEach((b) => {
     b.disabled = d.beat !== "pick" || !!d.result;
-    if (d.beat !== "pick") b.classList.remove("is-pick");
+    const picked = d.beat === "resolve" && d.last?.youMove === b.dataset.duelMove;
+    b.classList.toggle("is-pick", picked);
+    b.classList.toggle("is-land", picked && (d.last.foeDmg > 0 || d.last.youHeal > 0) && d.last.youDmg <= d.last.foeDmg);
+    b.classList.toggle("is-miss", picked && d.last.youDmg > d.last.foeDmg && !(d.last.youHeal > 0));
   });
   $("duel-continue").hidden = !d.result;
   paintDuelHp();
@@ -2362,20 +2414,76 @@ function drawDuelYard(now) {
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
   const h = canvas.height;
+  const d = state.duel;
   ctx.imageSmoothingEnabled = false;
-  paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
+  paintDuelArena(ctx, w, h, d.arena?.id || "porch", now);
+  const last = d.last;
+  const resolving = !!(last && d.beat === "resolve");
+  let shake = 0;
+  if (resolving) {
+    const dur = d.resolveMs || DUEL_RESOLVE_MS;
+    const remain = Math.max(0, (d.resolveUntil || now) - now);
+    const p = dur ? remain / dur : 0;
+    const mag = Math.max(last.youDmg || 0, last.foeDmg || 0);
+    if (mag && p > 0.45) shake = (Math.floor(now / 45) % 2 ? 1 : -1) * Math.min(5, 2 + Math.floor(mag / 5));
+  }
   const bob = Math.floor(now / 280) % 2;
-  const flash = state.duel.last && state.duel.beat === "resolve";
-  const youHit = flash && state.duel.last.youDmg > 0;
-  const foeHit = flash && state.duel.last.foeDmg > 0;
-  drawDuelFighter(ctx, 150, 78 + bob, state.duel.you.outfit, false, youHit, state.duel.last?.youMove);
-  drawDuelFighter(ctx, 430, 78 + (1 - bob), state.duel.foe.outfit, true, foeHit, state.duel.last?.foeMove);
-  if (flash) {
-    const fx = state.duel.last.youFx || state.duel.last.foeFx || "#f8f8f8";
+  const youHit = resolving && last.youDmg > 0;
+  const foeHit = resolving && last.foeDmg > 0;
+  ctx.save();
+  ctx.translate(shake, 0);
+  drawDuelFighter(ctx, 150, 78 + bob, d.you.outfit, false, youHit, resolving ? last.youMove : null, last?.youMove === "special" ? last.youFx : null);
+  drawDuelFighter(ctx, 430, 78 + (1 - bob), d.foe.outfit, true, foeHit, resolving ? last.foeMove : null, last?.foeMove === "special" ? last.foeFx : null);
+  if (resolving) paintDuelImpact(ctx, w, h, last);
+  ctx.restore();
+}
+
+function paintDuelImpact(ctx, w, h, last) {
+  const youSpecial = last.youMove === "special";
+  const foeSpecial = last.foeMove === "special";
+  const landed = last.youDmg > 0 || last.foeDmg > 0 || last.youHeal > 0 || last.foeHeal > 0;
+  const fx = (youSpecial && last.youFx) || (foeSpecial && last.foeFx) || null;
+  if (fx && landed) {
     ctx.fillStyle = fx;
-    ctx.globalAlpha = 0.28;
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalAlpha = 1;
+    ctx.fillRect(0, 0, w, 6);
+    ctx.fillRect(0, h - 6, w, 6);
+  }
+  if (last.foeDmg > 0) paintBurst(ctx, 430, 78, youSpecial ? last.youFx : "#f8d800", last.foeDmg);
+  if (last.youDmg > 0) paintBurst(ctx, 168, 78, foeSpecial ? last.foeFx : "#f03030", last.youDmg);
+  ctx.font = "10px 'Press Start 2P', monospace";
+  ctx.textAlign = "left";
+  if (last.foeDmg > 0) {
+    ctx.fillStyle = "#f8d800";
+    ctx.fillText(`-${last.foeDmg}`, 400, 36);
+  }
+  if (last.youDmg > 0) {
+    ctx.fillStyle = "#f03030";
+    ctx.fillText(`-${last.youDmg}`, 108, 36);
+  }
+  if (last.youHeal > 0) {
+    ctx.fillStyle = "#30c030";
+    ctx.fillText(`+${last.youHeal}`, 108, 52);
+  }
+  if (last.foeHeal > 0) {
+    ctx.fillStyle = "#30c030";
+    ctx.fillText(`+${last.foeHeal}`, 400, 52);
+  }
+}
+
+function paintBurst(ctx, x, y, color, mag) {
+  ctx.fillStyle = color || "#f8f8f8";
+  const specks = [
+    [0, -10, 4, 4],
+    [12, -2, 3, 3],
+    [-14, 2, 3, 3],
+    [6, 12, 4, 2],
+    [-8, -16, 2, 2],
+    [16, 8, 2, 2],
+  ];
+  const n = Math.min(specks.length, 2 + Math.floor((mag || 1) / 3));
+  for (let i = 0; i < n; i++) {
+    const s = specks[i];
+    ctx.fillRect(x + s[0], y + s[1], s[2], s[3]);
   }
 }
 
@@ -2475,7 +2583,7 @@ function paintDuelArena(ctx, w, h, id, now) {
   px(ctx, 0, 120, w, 3, "#f8d800");
 }
 
-function drawDuelFighter(ctx, x, y, outfit, flip, hit, pose) {
+function drawDuelFighter(ctx, x, y, outfit, flip, hit, pose, fx) {
   const o = outfit || { coat: "#507040", hat: "#f8d800", pants: "#3a2010", accent: "#c8a038" };
   const s = flip ? -1 : 1;
   const hat = hit ? "#f8f8f8" : o.hat;
@@ -2493,7 +2601,10 @@ function drawDuelFighter(ctx, x, y, outfit, flip, hit, pose) {
   px(ctx, x + 2, y + 22, 4, 16, o.accent);
   if (pose === "guard") px(ctx, x + s * 20, y + 22, 10, 6, o.accent);
   if (pose === "strike") px(ctx, x + s * 22, y + 20, 12, 4, hat);
-  if (pose === "special") px(ctx, x + s * 18, y + 8, 8, 8, o.accent);
+  if (pose === "special") {
+    px(ctx, x + s * 16, y + 4, 10, 10, fx || o.accent);
+    px(ctx, x + s * 26, y, 6, 6, fx || "#f8f8f8");
+  }
   px(ctx, x + 4, y + 46, 6, 16, o.pants || "#201810");
   px(ctx, x + 14, y + 46, 6, 16, o.pants || "#201810");
 }

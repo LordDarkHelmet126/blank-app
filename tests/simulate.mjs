@@ -528,6 +528,12 @@ assert(isUnderdog({ war: 50, int: 40 }, { war: 90, int: 80 }), "underdog vs high
 assert(!isUnderdog({ war: 68, int: 70 }, { war: 66, int: 55 }), "even WAR is not underdog");
 assert(inGreen(0.5, greenWindow(false)) && !inGreen(0.1, greenWindow(false)), "green window timing");
 assert(greenWindow(true)[1] - greenWindow(true)[0] > greenWindow(false)[1] - greenWindow(false)[0], "underdog wider green");
+const evenBand = greenWindow(false);
+const wideBand = greenWindow(true);
+assert(evenBand[1] - evenBand[0] >= 0.25 && evenBand[1] - evenBand[0] <= 0.36, "even green is a readable band");
+assert(wideBand[1] - wideBand[0] - (evenBand[1] - evenBand[0]) >= 0.2, "underdog band is clearly wider");
+assert(inGreen(0.4, evenBand) && inGreen(0.66, evenBand) && !inGreen(0.2, evenBand), "even band sits mid-bar");
+assert(inGreen(0.22, wideBand) && inGreen(0.78, wideBand) && !inGreen(0.1, wideBand), "underdog band covers more of the sweep");
 
 const dEven = createDuel({
   you: { id: "a", name: "A", title: "Scout", age: 34, personality: "loyalist" },
@@ -637,6 +643,56 @@ resolveExchange(dStun, "strike", 0.5, "strike");
 assert(!dStun.foeStun, "stun consumed");
 assert(dStun.foeHp < foeHp, "stunned foe ate the Strike");
 
+const pair = (youStyleId, foeStyleId, youWar = 60, foeWar = 60) =>
+  createDuel({
+    you: { id: "a", name: "A", title: "Scout", personality: "loyalist" },
+    youStats: { war: youWar, int: 60, pol: 50, chr: 50 },
+    foe: { id: "b", name: "B", title: "Scout", personality: "loyalist" },
+    foeStats: { war: foeWar, int: 60, pol: 50, chr: 50 },
+    youStyleId,
+    foeStyleId,
+  });
+
+const dExtra = pair("brawler", "drill");
+resolveExchange(dExtra, "special", 0.5, "guard");
+assert(/Haymaker extra/.test(dExtra.last.line), "Haymaker extra on a clean special");
+
+const dHeal = pair("guerrilla", "brawler");
+resolveExchange(dHeal, "strike", 0.1, "strike");
+resolveExchange(dHeal, "special", 0.5, "guard");
+assert(dHeal.last.youHeal > 0 && /Dust Feint/.test(dHeal.last.line), "Dust Feint steals a little HP");
+
+const dRally = pair("drill", "brawler");
+resolveExchange(dRally, "special", 0.5, "strike");
+assert(dRally.last.youHeal > 0 && /Dress-Right/.test(dRally.last.line), "Dress-Right mends");
+assert(dRally.you.style.guardBonus === 2, "drill still softens Guard");
+
+const dSnare = pair("trapper", "brawler");
+resolveExchange(dSnare, "special", 0.5, "guard");
+assert(dSnare.foeSnare && /Snare set/.test(dSnare.last.line), "Snare Line sets");
+const snaredHp = dSnare.foeHp;
+resolveExchange(dSnare, "guard", 0.5, "strike");
+assert(!dSnare.foeSnare && dSnare.foeHp < snaredHp, "snared Strike pays");
+
+const dCharge = pair("cavalry", "marksman");
+resolveExchange(dCharge, "strike", 0.5, "special");
+assert(dCharge.last.foeDmg > 0, "cavalry strike lands before the spur");
+resolveExchange(dCharge, "special", 0.5, "guard");
+assert(/Spur Charge/.test(dCharge.last.line), "Spur Charge follows a hit");
+
+const dFinish = pair("signals", "brawler", 42, 78);
+assert(dFinish.underdog, "signals finisher case is underdog");
+resolveExchange(dFinish, "special", 0.5, "guard");
+assert(/Static Burst finisher/.test(dFinish.last.line), "underdog Static Burst finisher");
+const dBurst = pair("signals", "drill");
+assert(!dBurst.underdog, "even signals is not underdog");
+resolveExchange(dBurst, "special", 0.5, "guard");
+assert(/Static Burst/.test(dBurst.last.line) && !/finisher/.test(dBurst.last.line), "even Static Burst is not the finisher");
+
+assert(new Set(DUEL_STYLES.map((s) => s.special.effect)).size === DUEL_STYLES.length, "eight distinct special effects");
+assert(new Set(DUEL_STYLES.map((s) => s.special.hint)).size === DUEL_STYLES.length, "eight distinct special hints");
+assert(new Set(DUEL_STYLES.map((s) => s.special.fx)).size === DUEL_STYLES.length, "special flash colors differ");
+
 assert(/get\("style"\)/.test(uiSrc) && /get\("arena"\)/.test(uiSrc), "demo=duel&style= and arena= hooks");
 assert(/style=brawler|youStyleId/.test(uiSrc), "brawler demo style override");
 assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
@@ -647,7 +703,13 @@ assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc)
 assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 3 is hire into ADD chair");
 assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tiles lead with hire/appoint");
 assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
-assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
+const duelCss = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+assert(/max-height: 40px/.test(duelCss), "duel log compact");
+assert(/`\$\{left\}s`/.test(uiSrc), "yard clock reads in seconds");
+assert(/in-window/.test(uiSrc) && /in-window/.test(duelCss), "green window lights the pick bar");
+assert(/state\.phase === "duel"/.test(uiSrc) && /bar\.hidden = true/.test(uiSrc), "NEXT hides during the yard duel");
+assert(/paintDuelImpact/.test(uiSrc), "hits flash damage and special color");
+assert(/\.duel \{[^}]*background:\s*#000010;/.test(duelCss), "duel backdrop covers coach and NEXT");
 assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
 assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
