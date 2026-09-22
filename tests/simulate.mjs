@@ -39,6 +39,7 @@ import {
   geoYield,
   geoTags,
 } from "../js/engine.js";
+import { createBattle, autoResolveBattle } from "../js/battle.js";
 import {
   createDuel,
   resolveExchange,
@@ -209,6 +210,59 @@ assert(res.battleEnd === "atk" || res.battleEnd === "def", "battle must resolve"
 assert(battleState.phase === "strategy", "returned from battle");
 assert(battleState.log.some((l) => l.kind === "war"), "war log");
 console.log(`ok battle: ${res.message}`);
+
+const hullTrack = content.tech.tracks.find((t) => t.id === "tracked_hulls");
+assert(hullTrack?.battle?.unlockUnit === "ifv", "M113 tech unlocks unit ifv");
+function sideTypes(battle, side) {
+  return battle.units.filter((u) => u.side === side).map((u) => u.type);
+}
+const plainBattle = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const noHull = createBattle(plainBattle, content, "bethel", "nome", 90, 0);
+assert(sideTypes(noHull, "atk").every((t) => t === "regular"), "90 troops without unlock stay regulars");
+assert(!noHull.units.some((u) => u.type === "ifv" || u.type === "technical"), "no M113 or jeep without those unlocks");
+const militiaBattle = createBattle(plainBattle, content, "bethel", "nome", 20, 0);
+assert(sideTypes(militiaBattle, "atk").every((t) => t === "militia"), "small levy stays militia");
+const jeepOnly = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+jeepOnly.research.unlocked = ["small_arms", "technical"];
+const jeepBattle = createBattle(jeepOnly, content, "bethel", "nome", 90, 0);
+assert(sideTypes(jeepBattle, "atk").filter((t) => t === "technical").length === 1, "jeep still takes the last slot");
+assert(!jeepBattle.units.some((u) => u.type === "ifv"), "jeep unlock does not field an M113");
+const thinHull = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+thinHull.research.unlocked = ["small_arms", "tracked_hulls"];
+const underCrew = createBattle(thinHull, content, "bethel", "nome", 50, 0);
+assert(!underCrew.units.some((u) => u.type === "ifv"), "M113 waits until the levy can crew a hull");
+assert(sideTypes(underCrew, "atk").every((t) => t === "regular"), "50 troops with only tracked hulls stay regulars");
+const hullGame = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+hullGame.research.unlocked = ["small_arms", "tracked_hulls"];
+regionOf(hullGame, "nome").garrison = 80;
+const hullBattle = createBattle(hullGame, content, "bethel", "nome", 90, 0);
+const atkHull = hullBattle.units.filter((u) => u.side === "atk" && u.type === "ifv");
+const defHull = hullBattle.units.filter((u) => u.side === "def" && u.type === "ifv");
+assert(atkHull.length === 1 && defHull.length === 1, "one M113 per side when tracked_hulls is unlocked");
+assert(atkHull[0].label === "M113" && atkHull[0].maxHp === 18 && atkHull[0].atk === 7 && atkHull[0].def === 5 && atkHull[0].move === 3, "M113 salvage stats");
+assert(sideTypes(hullBattle, "atk").filter((t) => t === "regular").length >= 1, "foot regulars still deploy with the hull");
+assert(hullBattle.weather === "snow", "week-0 field is snow");
+const hullEnd = autoResolveBattle(hullGame, hullBattle, "loyalist");
+assert(hullEnd === "atk" || hullEnd === "def", "M113 battle auto-resolves");
+const mixed = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+mixed.research.unlocked = ["small_arms", "technical", "tracked_hulls"];
+const mixedBattle = createBattle(mixed, content, "bethel", "nome", 90, 0);
+const mixedAtk = sideTypes(mixedBattle, "atk");
+assert(mixedAtk.filter((t) => t === "technical").length === 1, "jeep survives beside the M113");
+assert(mixedAtk.filter((t) => t === "ifv").length === 1, "M113 takes the slot ahead of the jeep");
+assert(mixedAtk.at(-1) === "technical" && mixedAtk.at(-2) === "ifv", "jeep keeps the last slot");
+const liveHull = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+act(liveHull, content, "raise_banner");
+regionOf(liveHull, "bethel").garrison = 120;
+liveHull.research.unlocked.push("tracked_hulls");
+liveHull.ap = 4;
+res = act(liveHull, content, "attack", { regionId: "nome", auto: true, troops: 90 });
+assert(res.ok && (res.battleEnd === "atk" || res.battleEnd === "def"), `live M113 attack: ${res.message}`);
+assert(liveHull.phase === "strategy", "M113 auto-resolve returns to the map");
+const fieldSrc = readFileSync(new URL("../js/terrain.js", import.meta.url), "utf8") + readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+assert(/u\.type === "ifv"/.test(fieldSrc) && /fillText\("113"/.test(fieldSrc) && /type === "ifv"\) return "113"/.test(fieldSrc), "M113 reads as a tracked hull marked 113");
+assert(/get\("hull"\) === "1"/.test(fieldSrc), "demo battle hull=1 fields the M113");
+console.log("ok M113 field spawn");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
 act(spyState, content, "raise_banner");

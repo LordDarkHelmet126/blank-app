@@ -890,6 +890,14 @@ function drawFieldUnit(ctx, u, x, y, selected, now) {
     px(ctx, -6, 1, 3, 3, "#201810");
     px(ctx, 5, 1, 3, 3, "#201810");
     px(ctx, -8, -5, 2, 2, col);
+  } else if (u.type === "ifv") {
+    px(ctx, -12, -5, 24, 7, "#4a5840");
+    px(ctx, -8, -9, 12, 4, "#3a4830");
+    px(ctx, -11, 1, 5, 3, "#201810");
+    px(ctx, -3, 1, 5, 3, "#201810");
+    px(ctx, 5, 1, 5, 3, "#201810");
+    px(ctx, 8, -7, 3, 3, col);
+    px(ctx, -12, -6, 2, 2, col);
   } else if (u.type === "regular") {
     px(ctx, -3, -14, 6, 4, "#686860");
     px(ctx, -4, -10, 8, 10, "#385028");
@@ -909,6 +917,10 @@ function drawFieldUnit(ctx, u, x, y, selected, now) {
   ctx.fillStyle = col;
   ctx.font = "8px 'Press Start 2P', monospace";
   ctx.fillText(String(Math.max(0, u.hp)), x - 8, y - 44);
+  if (u.type === "ifv") {
+    ctx.fillStyle = "#f8f4e8";
+    ctx.fillText("113", x - 10, y + 18);
+  }
 }
 
 export function paintBiomeBackdrop(ctx, w, h, now, dest) {

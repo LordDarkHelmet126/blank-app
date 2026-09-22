@@ -7,6 +7,8 @@ const UNIT_STATS = {
   militia: { hp: 8, atk: 3, def: 2, move: 2, label: "Militia" },
   regular: { hp: 10, atk: 4, def: 3, move: 2, label: "Regulars" },
   technical: { hp: 12, atk: 6, def: 3, move: 3, label: "Jeep pickup" },
+  // One cannibalized M113: aluminum hull, pintle gun, not a Bradley company.
+  ifv: { hp: 18, atk: 7, def: 5, move: 3, label: "M113" },
 };
 
 function terrainForRegion(region, season, x, y) {
@@ -30,13 +32,26 @@ function terrainDef(t) {
   return 0;
 }
 
-function countUnits(troops, unlocked) {
+function unlocksUnit(unlocked, content, unitId) {
+  if (!Array.isArray(unlocked)) return false;
+  if (unlocked.includes(unitId)) return true;
+  const tracks = content?.tech?.tracks || [];
+  return tracks.some((t) => t.battle?.unlockUnit === unitId && unlocked.includes(t.id));
+}
+
+function countUnits(troops, unlocked, content) {
   const n = Math.max(1, Math.min(6, Math.round(troops / 18)));
   const units = [];
   for (let i = 0; i < n; i++) {
     let type = troops >= 40 ? "regular" : "militia";
     if (unlocked.includes("technical") && i === n - 1 && troops >= 50) type = "technical";
     units.push(type);
+  }
+  // tracked_hulls.unlockUnit is "ifv". One hull, and only if the levy can crew it.
+  // The jeep keeps the last slot when that older gate already claimed it.
+  if (unlocksUnit(unlocked, content, "ifv") && troops >= 64 && n >= 1) {
+    const slot = units[n - 1] === "technical" ? n - 2 : n - 1;
+    if (slot >= 0) units[slot] = "ifv";
   }
   return units;
 }
@@ -77,8 +92,8 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
   }
   const unlocked = state.research.unlocked;
   const defTroops = Math.max(6, dest.garrison);
-  const atkTypes = countUnits(commit, unlocked);
-  const defTypes = countUnits(defTroops, unlocked);
+  const atkTypes = countUnits(commit, unlocked, content);
+  const defTypes = countUnits(defTroops, unlocked, content);
   const units = [
     ...place(atkTypes, "atk", techAtk),
     ...place(defTypes, "def", dest.owner === "pof" || dest.owner === "banner" ? 1 : 0),
@@ -169,7 +184,7 @@ function checkEnd(battle) {
 function strike(state, battle, attacker, defender) {
   const terrain = battle.grid[defender.y][defender.x];
   const tdef = terrainDef(terrain);
-  const snow = battle.weather === "snow" && attacker.type !== "technical" ? -1 : 0;
+  const snow = battle.weather === "snow" && attacker.type !== "technical" && attacker.type !== "ifv" ? -1 : 0;
   const roll = nextInt(state, 1, 6);
   const dmg = Math.max(1, attacker.atk + roll + snow - defender.def - tdef);
   defender.hp -= dmg;

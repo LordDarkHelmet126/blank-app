@@ -90,6 +90,23 @@ function parseDemoFx(params) {
   return "";
 }
 
+function openDemoBattle(withHull) {
+  const home = regionOf(state, "bethel");
+  home.garrison = 90;
+  if (withHull) {
+    if (!state.research.unlocked.includes("tracked_hulls")) state.research.unlocked.push("tracked_hulls");
+    regionOf(state, "nome").garrison = 80;
+  }
+  const fight = act(state, content, "attack", {
+    regionId: "nome",
+    troops: withHull ? 90 : undefined,
+  });
+  if (fight.battle && state.battle) {
+    state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
+    openBattle();
+  }
+}
+
 function startSliceState() {
   state = createNewGame(content, {
     name: "Alex Rourke",
@@ -144,15 +161,7 @@ export async function boot(loaded) {
       });
     }
     if (fxKind === "travel") pulseTravel("bethel", "fairbanks", { loop: true });
-    if (fxKind === "battle") {
-      const home = regionOf(state, "bethel");
-      home.garrison = 90;
-      const fight = act(state, content, "attack", { regionId: "nome" });
-      if (fight.battle && state.battle) {
-        state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
-        openBattle();
-      }
-    }
+    if (fxKind === "battle") openDemoBattle(params.get("hull") === "1");
     afterFonts();
     return;
   }
@@ -334,15 +343,7 @@ export async function boot(loaded) {
       showModal(officersHtml(), { kind: "officers" });
       wireAfterRender();
     }
-    if (params.get("fx") === "battle") {
-      const home = regionOf(state, "bethel");
-      home.garrison = 90;
-      const fight = act(state, content, "attack", { regionId: "nome" });
-      if (fight.battle && state.battle) {
-        state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
-        openBattle();
-      }
-    }
+    if (params.get("fx") === "battle") openDemoBattle(params.get("hull") === "1");
     afterFonts();
     return;
   }
@@ -2090,6 +2091,7 @@ function drawTerrainGlyph(ctx, t, x, y) {
 }
 
 function unitAbbrev(u) {
+  if (u.type === "ifv") return "113";
   if (u.type === "technical") return "TRK";
   if (u.type === "regular") return "REG";
   if (u.type === "militia") return "MIL";
