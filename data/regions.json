@@ -3,13 +3,13 @@
     "theater": "west",
     "version": "0.2-states",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "STATE → territories. No leaping: travel only on adjacent roads. Alternate routes: ferry vs ALCAN, Rockies pass vs Cheyenne rail, plains vs yards. Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields.",
-    "unlock": "All US/Yukon cities are painted and walkable from week 0. Foreign nodes unlock at campaign phase 3 (after national leader). Korea appears if a sponsor intervenes.",
+    "notes": "STATE → territories. No leaping: travel only on adjacent roads. Alternate routes: ferry vs ALCAN, Rockies pass vs Cheyenne rail, plains vs yards. Gulf Sealift is the only Caribbean approach (St. Louis → gulf → Cuba); any later southern wire still cannot leap. Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields.",
+    "unlock": "All US/Yukon cities are painted and walkable from week 0. Foreign nodes unlock at campaign phase 3 (after national leader). Korea appears if a sponsor intervenes. Gulf Sealift opens with those desks — Cuba is not a direct road from St. Louis.",
     "counts": {
       "states": 12,
       "usStates": 11,
       "territories": 1,
-      "cities": 37,
+      "cities": 38,
       "alaskaPlusSpurs": 11,
       "lower48": 22,
       "foreign": 4
@@ -2581,7 +2581,8 @@
         "Far from the Front Range"
       ],
       "neighbors": [
-        "wichita"
+        "wichita",
+        "gulf_passage"
       ],
       "startOwner": "red_wharf",
       "garrison": 48,
@@ -2686,6 +2687,67 @@
       }
     },
     {
+      "id": "gulf_passage",
+      "name": "Gulf Sealift",
+      "short": "Gulf Sealift",
+      "state": "GL",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "sea",
+      "plus": [
+        "Warm sealift",
+        "Short hop"
+      ],
+      "minus": [
+        "Exposed channel",
+        "No army"
+      ],
+      "neighbors": [
+        "st_louis",
+        "far_cuba"
+      ],
+      "startOwner": null,
+      "garrison": 16,
+      "economy": 22,
+      "food": 18,
+      "walls": 8,
+      "order": 42,
+      "population": 900,
+      "terrainBias": "coast",
+      "plate": "above",
+      "polygon": [
+        [
+          188,
+          548
+        ],
+        [
+          300,
+          544
+        ],
+        [
+          308,
+          608
+        ],
+        [
+          192,
+          612
+        ]
+      ],
+      "label": [
+        214,
+        564
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 0,
+        "fuel": 1,
+        "water": 3,
+        "sun": 2,
+        "weather": 1,
+        "defense": 0
+      }
+    },
+    {
       "id": "far_cuba",
       "name": "Caribbean Desk",
       "short": "Cuba",
@@ -2702,6 +2764,7 @@
         "No inland"
       ],
       "neighbors": [
+        "gulf_passage",
         "far_nicaragua"
       ],
       "startOwner": null,
@@ -2922,6 +2985,13 @@
       "vs": "denver-omaha-lincoln-topeka",
       "kind": "plains",
       "note": "Direct grain road vs river bluffs"
+    },
+    {
+      "a": "st_louis",
+      "b": "gulf_passage",
+      "vs": "future-southern-wire",
+      "kind": "sealift",
+      "note": "Gulf Sealift is the only Caribbean approach; a later alt still cannot leap St. Louis to Cuba"
     }
   ]
 }
