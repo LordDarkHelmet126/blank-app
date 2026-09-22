@@ -665,9 +665,14 @@ assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && 
 assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");
 assert(/originalFaceGrid/.test(terrainSrc) && /face-grid/.test(uiSrc), "original officer face grid");
 assert(/city-oversee/.test(uiSrc), "city oversee portrait + AP");
-assert(/selectedRegion = "denver"/.test(uiSrc), "states demo opens on Denver");
+assert(
+  /demo"\) === "map"\) \{[\s\S]{0,320}selectedRegion = playerOf\(state\)\.region/.test(uiSrc),
+  "states demo city report follows the current region"
+);
 assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States dock + liberation board");
 assert(/Cannot leap/.test(uiSrc) && /route locked/.test(uiSrc), "NEXT and board explain no-leap");
+assert(/class="status-chip"/.test(uiSrc) && /class="terr-row"/.test(uiSrc) && /class="terr-name"/.test(uiSrc), "states list chip is separated from the city name");
+assert(!/\$\{route\}<\/small>/.test(uiSrc), "route status is not glued onto the next name");
 assert(/Geo:/.test(uiSrc), "city report shows geo tags");
 assert(/id: "war_council"/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "war council action");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
