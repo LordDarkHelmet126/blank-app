@@ -325,11 +325,11 @@ export async function boot(loaded) {
   }
   if (params.get("demo") === "look" || params.get("demo") === "terrain") {
     startSliceState();
-    selectedRegion = params.get("city") || "denver";
+    selectedRegion = params.get("focus") || params.get("city") || "seattle";
     commandCat = "domestic";
     hideModal();
     render();
-    pulseTravel("jackson", "denver", { loop: true });
+    pulseTravel("juneau", "seattle", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
       wireAfterRender();

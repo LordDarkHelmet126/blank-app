@@ -25,12 +25,13 @@ const BIOME = {
   plains: 9,
   farm: 10,
   urban: 11,
+  wetforest: 12,
 };
 
 const STATE_BIOME = {
   ak: BIOME.ice,
   yt: BIOME.pine,
-  wa: BIOME.forest,
+  wa: BIOME.wetforest,
   or: BIOME.forest,
   id: BIOME.pine,
   mt: BIOME.hills,
@@ -58,6 +59,7 @@ const PAL = {
   [BIOME.tundra]: ["#7a8a68", "#9aa880", "#5a6850", "#b0b898"],
   [BIOME.coast]: ["#5a8a68", "#78a880", "#3a6850", "#98c0a0"],
   [BIOME.forest]: ["#3a6840", "#4a7850", "#2a4830", "#5a8860"],
+  [BIOME.wetforest]: ["#143828", "#1c4834", "#0c241c", "#2a5840"],
   [BIOME.pine]: ["#4a7048", "#5a8858", "#385838", "#6a9868"],
   [BIOME.hills]: ["#8a7848", "#a09058", "#6a5838", "#c0b070"],
   [BIOME.rockies]: ["#8a6840", "#a08050", "#5a4830", "#c8b080"],
@@ -163,7 +165,8 @@ function biomeOf(stateId, bias) {
     if (bias === "plains") return BIOME.hills;
     return BIOME.rockies;
   }
-  if (stateId === "wa") return BIOME.forest;
+  if (stateId === "wa") return BIOME.wetforest;
+  if (stateId === "or" && bias !== "hills" && bias !== "plains") return BIOME.wetforest;
   if ((stateId === "ne" || stateId === "ks") && bias !== "urban") return BIOME.farm;
   if (BIAS_BIOME[bias] != null) return BIAS_BIOME[bias];
   return STATE_BIOME[stateId] || BIOME.plains;
@@ -174,6 +177,7 @@ function baseHeight(biome) {
   if (biome === BIOME.ice) return 0.62;
   if (biome === BIOME.hills) return 0.55;
   if (biome === BIOME.desert) return 0.42;
+  if (biome === BIOME.wetforest) return 0.32;
   if (biome === BIOME.pine || biome === BIOME.forest) return 0.38;
   if (biome === BIOME.tundra) return 0.34;
   if (biome === BIOME.coast) return 0.18;
@@ -202,13 +206,24 @@ function pickTone(pal, n, high) {
 function cacheKey(state) {
   const season = state._season?.id || "summer";
   const n = (state.regions || []).length;
-  return `v4|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+  return `v5|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+}
+
+const WET_IDS = new Set(["seattle", "olympia", "portland"]);
+const RAIN_SHADOW_IDS = new Set(["spokane"]);
+
+function pnwBandOf(r) {
+  if (!r) return 0;
+  if (WET_IDS.has(r.id)) return 1;
+  if (RAIN_SHADOW_IDS.has(r.id)) return 3;
+  return 0;
 }
 
 function buildFields(state) {
   const land = new Uint8Array(TW * TH);
   const biome = new Uint8Array(TW * TH);
   const height = new Float32Array(TW * TH);
+  const pnw = new Uint8Array(TW * TH);
   const maskC = document.createElement("canvas");
   maskC.width = TW;
   maskC.height = TH;
@@ -237,7 +252,10 @@ function buildFields(state) {
   (state.regions || []).forEach((r) => {
     if (!r.polygon) return;
     const pix = rasterMask(r.polygon);
-    const b = biomeOf(r.stateCode, r.terrainBias);
+    let b = biomeOf(r.stateCode, r.terrainBias);
+    if (WET_IDS.has(r.id)) b = BIOME.wetforest;
+    if (RAIN_SHADOW_IDS.has(r.id)) b = BIOME.pine;
+    const band = pnwBandOf(r);
     const geo = r.geo || {};
     const extra = ((geo.mine || 0) + (geo.defense || 0)) * 0.06 - (geo.farm || 0) * 0.03;
     for (let i = 0; i < TW * TH; i++) {
@@ -245,6 +263,7 @@ function buildFields(state) {
         biome[i] = b;
         land[i] = 1;
         height[i] += extra;
+        if (band) pnw[i] = band;
       }
     }
   });
@@ -263,10 +282,20 @@ function buildFields(state) {
       if (b === BIOME.desert && n > 0.62) h += 0.22;
       if (b === BIOME.rockies && n > 0.55) h += 0.2;
       if (b === BIOME.ice && n > 0.5) h += 0.12;
+      if (b === BIOME.wetforest) h += 0.04;
+      // Cascades climb: between Puget Sound (wet) and Spokane (rain-shadow).
+      if (x >= 82 && x <= 120 && y >= 118 && y <= 198 && pnw[i] !== 1 && pnw[i] !== 3) {
+        if (b === BIOME.wetforest || b === BIOME.forest || b === BIOME.pine || b === BIOME.hills || b === BIOME.urban) {
+          pnw[i] = 2;
+          h = Math.min(1, Math.max(h, 0.58) + 0.2 + (n - 0.45) * 0.22);
+          biome[i] = BIOME.pine;
+        }
+      }
+      if (pnw[i] === 3) h = Math.max(0.18, h - 0.06);
       height[i] = Math.max(0.02, Math.min(1, h));
     }
   }
-  return { land, biome, height };
+  return { land, biome, height, pnw };
 }
 
 function paintBase(fields, seasonId) {
@@ -275,7 +304,7 @@ function paintBase(fields, seasonId) {
   c.height = TH;
   const ctx = c.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  const { land, biome, height } = fields;
+  const { land, biome, height, pnw } = fields;
   const img = ctx.createImageData(TW, TH);
   const data = img.data;
   const winter = seasonId === "winter";
@@ -301,10 +330,12 @@ function paintBase(fields, seasonId) {
       const high = h > 0.72;
       let hex = pickTone(pal, (x + y * 3 + (h * 8) | 0) & 3, high);
       if (winter && (b === BIOME.ice || b === BIOME.tundra)) hex = pal[3] || "#e8f0f4";
-      if (winter && high && (b === BIOME.rockies || b === BIOME.hills || b === BIOME.pine)) hex = pal[3] || "#e8f0f4";
-      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && !high) {
+      if (winter && high && (b === BIOME.rockies || b === BIOME.hills || (b === BIOME.pine && pnw[i] === 2))) hex = pal[3] || "#e8f0f4";
+      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && !high && b !== BIOME.wetforest && pnw[i] !== 1) {
         hex = ((x + y) & 1) === 0 ? "#a05020" : "#d08830";
       }
+      if (b === BIOME.wetforest) hex = pickTone(PAL[BIOME.wetforest], (x + y * 2) & 3, false);
+      if (pnw[i] === 2 && high) hex = "#d8d0c0";
       const col = shade(hex, slope);
       const m = col.match(/\d+/g);
       data[o] = Number(m[0]);
@@ -336,13 +367,22 @@ function paintBase(fields, seasonId) {
       const dy = y - lift;
       const o = i * 4;
       if (lift > 1) {
-        const cliff = biome[i] === BIOME.desert ? "#8a5028" : biome[i] === BIOME.ice ? "#6a8494" : "#3a3020";
+        const cliff =
+          biome[i] === BIOME.desert
+            ? "#8a5028"
+            : biome[i] === BIOME.ice
+              ? "#6a8494"
+              : pnw[i] === 2
+                ? "#3a4030"
+                : biome[i] === BIOME.wetforest
+                  ? "#0e2418"
+                  : "#3a3020";
         ex.fillStyle = cliff;
         ex.fillRect(x, dy + 1, 1, lift);
       }
       ex.fillStyle = `rgb(${src[o]},${src[o + 1]},${src[o + 2]})`;
       ex.fillRect(x, dy, 1, 1);
-      if (height[i] > 0.8 && (biome[i] === BIOME.rockies || biome[i] === BIOME.ice)) {
+      if (height[i] > 0.8 && (biome[i] === BIOME.rockies || biome[i] === BIOME.ice || pnw[i] === 2)) {
         ex.fillStyle = "#f4f0e4";
         ex.fillRect(x, dy - 1, 1, 1);
       }
@@ -354,10 +394,11 @@ function paintBase(fields, seasonId) {
 }
 
 function hazeCoast(ctx, fields) {
-  const { land } = fields;
+  const { land, pnw } = fields;
   const pix = ctx.getImageData(0, 0, TW, TH);
   const d = pix.data;
   const sea = [42, 104, 144];
+  const sound = [48, 90, 108];
   for (let y = 1; y < TH - 1; y++) {
     for (let x = 1; x < TW - 1; x++) {
       const i = y * TW + x;
@@ -367,28 +408,44 @@ function hazeCoast(ctx, fields) {
       if (!land[i + 1]) near += 1;
       if (!land[i - TW]) near += 1;
       if (!land[i + TW]) near += 1;
-      if (!near) continue;
+      const wet = pnw && pnw[i] === 1;
+      if (!near && !wet) continue;
       const o = i * 4;
-      const k = Math.min(0.55, 0.18 * near);
-      d[o] = Math.round(d[o] * (1 - k) + sea[0] * k);
-      d[o + 1] = Math.round(d[o + 1] * (1 - k) + sea[1] * k);
-      d[o + 2] = Math.round(d[o + 2] * (1 - k) + sea[2] * k);
+      const mist = wet ? sound : sea;
+      const k = wet ? Math.min(0.42, 0.12 + 0.16 * near) : near ? Math.min(0.55, 0.18 * near) : 0;
+      if (!k) continue;
+      d[o] = Math.round(d[o] * (1 - k) + mist[0] * k);
+      d[o + 1] = Math.round(d[o + 1] * (1 - k) + mist[1] * k);
+      d[o + 2] = Math.round(d[o + 2] * (1 - k) + mist[2] * k);
     }
   }
   ctx.putImageData(pix, 0, 0);
 }
 
 function scatterFeatures(ctx, fields, seasonId) {
-  const { land, biome, height } = fields;
-  for (let y = 6; y < TH - 6; y += 7) {
-    for (let x = 6; x < TW - 6; x += 7) {
+  const { land, biome, height, pnw } = fields;
+  for (let y = 4; y < TH - 4; y += 5) {
+    for (let x = 4; x < TW - 4; x += 5) {
       const i = y * TW + x;
       if (!land[i]) continue;
       const n = hash2(x * 17, y * 13);
       const b = biome[i];
       const lift = Math.floor(height[i] * ELEV);
       const py = y - lift;
-      if (b === BIOME.forest || b === BIOME.pine) {
+      const band = pnw ? pnw[i] : 0;
+      if (b === BIOME.wetforest || band === 1) {
+        if (n > 0.18) fir(ctx, x - 3, py - 12, 11 + ((n * 7) | 0));
+        if (n > 0.42) fir(ctx, x + 2, py - 9, 8);
+        if (n > 0.7) {
+          ctx.fillStyle = "#c8d8d8";
+          ctx.fillRect(x, py - 4, 1, 3);
+        }
+      } else if (band === 2) {
+        if (n > 0.4) peak(ctx, x, py, 7 + ((height[i] * 8) | 0));
+        if (n > 0.62) pine(ctx, x - 1, py - 6, 6);
+      } else if (band === 3 || (b === BIOME.pine && band !== 2)) {
+        if (n > 0.48) dryPine(ctx, x - 2, py - 8, 7 + ((n * 4) | 0));
+      } else if (b === BIOME.forest || b === BIOME.pine) {
         if (n > 0.28) pine(ctx, x - 3, py - 10, 9 + ((n * 6) | 0));
         if (n > 0.6) pine(ctx, x + 2, py - 8, 7);
       } else if (b === BIOME.rockies) {
@@ -433,6 +490,24 @@ function pine(ctx, x, y, h) {
   ctx.fillRect(x + 1, y - 1, 3, 2);
 }
 
+function fir(ctx, x, y, h) {
+  ctx.fillStyle = "#0a1810";
+  ctx.fillRect(x + 2, y, 1, h);
+  ctx.fillStyle = "#144830";
+  ctx.fillRect(x, y + 1, 6, 3);
+  ctx.fillStyle = "#0e3020";
+  ctx.fillRect(x + 1, y - 2, 4, 3);
+}
+
+function dryPine(ctx, x, y, h) {
+  ctx.fillStyle = "#2a3820";
+  ctx.fillRect(x + 2, y, 1, h);
+  ctx.fillStyle = "#5a7848";
+  ctx.fillRect(x, y + 2, 5, 2);
+  ctx.fillStyle = "#4a6838";
+  ctx.fillRect(x + 1, y, 3, 2);
+}
+
 function mesa(ctx, x, y, w, h) {
   ctx.fillStyle = "#8a5028";
   ctx.fillRect(x, y, w, h);
@@ -454,6 +529,8 @@ export function invalidateTerrain() {
 }
 
 export function markerKind(r) {
+  if (r?.id === "seattle") return "street";
+  if (r?.id === "olympia" || r?.id === "spokane") return "mill";
   const g = r.geo || {};
   if ((g.fuel || 0) >= 2) return "pump";
   if ((g.farm || 0) >= 2) return "elevator";

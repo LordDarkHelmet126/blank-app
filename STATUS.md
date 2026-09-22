@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Visual pivot: topo land + node/road/flag overlay, 1980s American marks. Gameplay unchanged.
+**Last checkpoint:** 2026-09-22 — PNW first theater polish: wet Sound forest, Cascades climb, Spokane rain-shadow. Gameplay unchanged.
 
 ## How to run
 
@@ -16,7 +16,11 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver + Jackson–Denver pulse). Officers grid: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
+
+## PNW polish (first theater pass)
+
+WA–PNW is the hero biome on the look demo. West of the Cascades (Seattle / Olympia / Portland) is darker wet evergreen with Sound mist. A height ridge sits between the Sound and Spokane so the west→east road reads as a climb (no new leap edges). East WA is drier pine, still forest-family. Seattle mark is main-street; Olympia and Spokane are mills.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 **States demo:** `/?demo=states` or `/?demo=map` still works.
 
