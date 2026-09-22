@@ -31,7 +31,7 @@ function px(ctx, x, y, w, h, c) {
 
 function skyGround(ctx, arctic, mood) {
   if (arctic) paintArcticBackdrop(ctx, W, H, 0);
-  else paintWestBackdrop(ctx, W, H, 0, mood);
+  else paintWestBackdrop(ctx, W, H, 0, mood || "summer");
 }
 
 function pine(ctx, x, y) {
@@ -208,6 +208,42 @@ const PAINT = {
     px(ctx, 52, 16, 8, 10, PAL.wood);
     fig(ctx, 10, 14, PAL.ink, PAL.snow);
     px(ctx, 14, 18, 6, 3, PAL.ink);
+  },
+  court(ctx) {
+    skyGround(ctx);
+    fig(ctx, 20, 14, PAL.olive, PAL.gold);
+    fig(ctx, 48, 14, PAL.blue, PAL.wheat);
+    px(ctx, 36, 20, 8, 2, PAL.gold);
+  },
+  marriage(ctx) {
+    skyGround(ctx);
+    px(ctx, 36, 6, 3, 22, PAL.wood);
+    px(ctx, 39, 8, 14, 10, PAL.gold);
+    fig(ctx, 18, 14, PAL.olive, PAL.gold);
+    fig(ctx, 50, 14, PAL.blue, PAL.wheat);
+  },
+  birth(ctx) {
+    skyGround(ctx);
+    px(ctx, 24, 18, 32, 12, PAL.wood2);
+    fig(ctx, 16, 12, PAL.olive, PAL.gold);
+    fig(ctx, 52, 14, PAL.blue, PAL.wheat);
+    px(ctx, 36, 22, 8, 6, PAL.crate);
+  },
+  age(ctx) {
+    skyGround(ctx, false, "dusk");
+    fig(ctx, 28, 12, PAL.olive, PAL.gold);
+    px(ctx, 20, 28, 40, 4, PAL.wood);
+  },
+  funeral(ctx) {
+    skyGround(ctx, false, "dusk");
+    px(ctx, 36, 8, 4, 22, PAL.wood);
+    fig(ctx, 22, 14, PAL.olive, PAL.ink);
+    fig(ctx, 48, 14, PAL.blue, PAL.ink);
+  },
+  season(ctx) {
+    skyGround(ctx);
+    pine(ctx, 8, 12);
+    pine(ctx, 64, 10);
   },
 };
 

@@ -5,6 +5,7 @@ import {
   paintBattleCharge,
   paintBattleSky,
   paintChargeVignette,
+  paintSeasonVignette,
 } from "./sprites.js";
 import {
   createNewGame,
@@ -38,6 +39,10 @@ import {
   autoplayWeek,
   MAX_GENERALS,
   mapRoads,
+  courtCandidates,
+  sampleChronicle,
+  calendarYear,
+  seasonPalette,
 } from "./engine.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -187,6 +192,35 @@ export async function boot(loaded) {
     hideModal();
     render();
     openCoach();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "chronicle") {
+    startSliceState();
+    commandCat = "plot";
+    const sample = sampleChronicle(state);
+    state._season = { id: "summer", name: "Summer", weather: "clear", commerce: 1.12, food: 1.16, march: 1 };
+    hideModal();
+    render();
+    openChronicle(sample.chronicle);
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "season") {
+    startSliceState();
+    state.week = 13;
+    state._season = { id: "spring", name: "Spring", weather: "fog", commerce: 0.9, food: 1, march: 0.95 };
+    hideModal();
+    render();
+    openChronicle([
+      {
+        kind: "season",
+        id: "season",
+        title: "Spring 1985",
+        text: "Week 13. Breakup mud and new grass in the foothills. The ranch road thaws.",
+        season: "spring",
+      },
+    ]);
     afterFonts();
     return;
   }
@@ -448,6 +482,7 @@ function helpHtml() {
       <li>Hidden legend: Seek Legend on Plot (or Spy the Arctic Slope), then travel Fairbanks → Slope and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
       <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
+      <li>End Week can open a short chronicle: season tint, aging, courtship, a child seed. Plot → Court / Marry. Inspired by ROTK7 life ticks — original names only.</li>
     </ul>
     <p class="muted">Saves use this browser's localStorage and can be downloaded as JSON. Original IP — no licensed names.</p>
     <p><button type="button" id="help-coach" class="primary">Show week-1 coach</button></p>
@@ -466,7 +501,7 @@ function officersHtml() {
       const fac = o.faction ? factionOf(state, o.faction)?.short : "free";
       const loc = regionOf(state, o.region)?.short || "?";
       const face = esc(o.portrait || portraitInitials(o.name));
-      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.custom ? "<i>CUSTOM</i>" : ""}</span></span></button>`;
+      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · AGE ${o.age || "?"} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}${o.spouseId ? " · bound" : ""}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.custom ? "<i>CUSTOM</i>" : ""}${o.frail ? "<i>FRAIL</i>" : ""}</span></span></button>`;
     })
     .join("");
   const types = Object.entries(content.officers.personalities || {});
@@ -602,14 +637,15 @@ function run(id, extra) {
   } else if (SCENE_ACTIONS.has(id) && !res.weekEnd) {
     const a = listActions(state).find((x) => x.id === id);
     showEventScene({
-      id,
+      id: res.sceneId || id,
       title: a?.label || id,
       text: res.message || "The room goes still.",
       regionId: extra?.regionId || playerOf(state).region,
     });
   }
   if (res.weekEnd) {
-    showModal(weekReportHtml(res.report || []), { kind: "week" });
+    if (res.chronicle && res.chronicle.length) openChronicle(res.chronicle, res.report);
+    else showModal(weekReportHtml(res.report || []), { kind: "week" });
   }
   if (state.gameOver) {
     showModal(`<h2>Campaign closed</h2><p>${esc(state.ending || state.gameOver)}</p><button type="button" data-close>Close</button>`);
@@ -625,7 +661,7 @@ export function render() {
   if (!state) return;
   const p = playerOf(state);
   $("week").textContent = String(state.week);
-  $("season").textContent = state._season?.name || "";
+  $("season").textContent = `${state._season?.name || ""} ${calendarYear(state.week)}`;
   $("ap").textContent = `${state.ap}/${apMax(state)}`;
   $("gold").textContent = String(state.gold);
   $("food").textContent = String(state.food);
@@ -670,7 +706,8 @@ function officerHtml() {
       <div class="plate-stats">
         <span class="pill">AP ${state.ap}/${apMax(state)}</span>
         <span class="pill">W${state.week}</span>
-        <span class="pill">${esc(state._season?.name || "")}</span>
+        <span class="pill">${esc(state._season?.name || "")} ${calendarYear(state.week)}</span>
+        <span class="pill">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""}</span>
         <span class="pill">${esc(here?.short || "?")}</span>
       </div>
       <p class="muted">WAR ${p.war} INT ${p.int} POL ${p.pol} CHR ${p.chr}</p>
@@ -721,8 +758,8 @@ function weekReportHtml(report) {
   const headline = lines[0] || `Week ${state.week}`;
   const ai = lines.filter((l) => /\[[a-z]+\]/.test(l)).slice(0, 6);
   const extra = Math.max(0, lines.length - 1 - ai.length);
-  return `<div class="event-art week-art"><img src="${sceneUrl("hire")}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
-    <h2>Week ${state.week}</h2>
+  return `<div class="event-art week-art"><img src="${sceneUrl("season")}" alt="" /><img class="event-face" src="${PORTRAIT_SRC}" alt="" /></div>
+    <h2>Week ${state.week} · ${esc(state._season?.name || "")} ${calendarYear(state.week)}</h2>
     <p>${esc(headline)}</p>
     <p class="next-line">${esc(nextHint(state))}</p>
     <ul class="week-ai">${ai.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
@@ -732,12 +769,12 @@ function weekReportHtml(report) {
 
 const ACTION_CATS = {
   domestic: ["raise_banner", "drill", "commerce", "cultivate", "fortify", "safety", "research"],
-  plot: ["seek_legend", "spy", "hire", "ally", "break_ally", "rumor", "persuade", "hide"],
+  plot: ["seek_legend", "spy", "hire", "court", "ally", "break_ally", "rumor", "persuade", "hide"],
   military: ["travel", "attack"],
 };
 const TAB_TIPS = {
   domestic: "<strong>Domestic</strong><p>Town work: raise a banner, food, gold, walls, salvage.</p>",
-  plot: "<strong>Plot</strong><p>People work: hire, spy, rumor, alliance.</p>",
+  plot: "<strong>Plot</strong><p>People work: hire, court, spy, rumor, alliance.</p>",
   military: "<strong>Military</strong><p>Move on gold roads or march into a neighbor.</p>",
 };
 const SCENE_ACTIONS = new Set([
@@ -757,6 +794,12 @@ const SCENE_ACTIONS = new Set([
   "persuade",
   "hide",
   "travel",
+  "court",
+  "marriage",
+  "birth",
+  "age",
+  "funeral",
+  "season",
 ]);
 let commandCat = "domestic";
 const COACH_KEY = "northern-front-v01-coach";
@@ -845,7 +888,40 @@ function renderActions() {
 }
 
 const CHARGE_SCENE_IDS = new Set(["travel", "attack"]);
+const LIFE_SCENE_IDS = new Set(["court", "marriage", "birth", "age", "funeral", "season"]);
 let sceneFxRaf = 0;
+let chronicleQueue = [];
+let pendingWeekReport = null;
+
+function openChronicle(cards, weekReport) {
+  chronicleQueue = (cards || []).slice();
+  pendingWeekReport = weekReport || null;
+  if (!chronicleQueue.length) {
+    if (pendingWeekReport) {
+      showModal(weekReportHtml(pendingWeekReport), { kind: "week" });
+      pendingWeekReport = null;
+    }
+    return;
+  }
+  showNextChronicle();
+}
+
+function showNextChronicle() {
+  const ev = chronicleQueue.shift();
+  if (!ev) {
+    const report = pendingWeekReport;
+    pendingWeekReport = null;
+    if (report) showModal(weekReportHtml(report), { kind: "week" });
+    return;
+  }
+  showEventScene({
+    id: ev.id,
+    title: ev.title,
+    text: ev.text,
+    chronicle: true,
+    season: ev.season || state._season?.id,
+  });
+}
 
 function showEventScene(ev) {
   $("event-vignette").src = sceneArt(ev.id);
@@ -853,20 +929,43 @@ function showEventScene(ev) {
   $("event-title").textContent = ev.title || "Event";
   $("event-text").textContent = ev.text || "";
   const next = $("event-next");
-  if (next) next.textContent = state ? nextHint(state) : "";
+  if (next) next.textContent = ev.chronicle ? "CONTINUE for the next chronicle beat." : state ? nextHint(state) : "";
   const el = $("event-scene");
   el.hidden = false;
   el.classList.remove("open");
   void el.offsetWidth;
   el.classList.add("open");
-  const region = regionOf(state, ev.regionId || playerOf(state)?.region);
-  startSceneFx(CHARGE_SCENE_IDS.has(ev.id), isArcticRegion(region));
+  if (ev.chronicle || LIFE_SCENE_IDS.has(ev.id)) {
+    startSeasonFx(ev.season || state._season?.id);
+  } else {
+    const region = regionOf(state, ev.regionId || playerOf(state)?.region);
+    startSceneFx(CHARGE_SCENE_IDS.has(ev.id), isArcticRegion(region));
+  }
 }
 
 function hideEventScene() {
   $("event-scene").hidden = true;
   $("event-scene").classList.remove("open");
   stopSceneFx();
+  if (chronicleQueue.length || pendingWeekReport) showNextChronicle();
+}
+
+function startSeasonFx(seasonId) {
+  stopSceneFx();
+  const fx = $("scene-fx");
+  if (!fx) return;
+  fx.hidden = false;
+  const ctx = fx.getContext("2d");
+  const sid = seasonId || "summer";
+  const tick = (now) => {
+    if ($("event-scene").hidden || fx.hidden) {
+      sceneFxRaf = 0;
+      return;
+    }
+    paintSeasonVignette(ctx, now, sid);
+    sceneFxRaf = requestAnimationFrame(tick);
+  };
+  sceneFxRaf = requestAnimationFrame(tick);
 }
 
 function startSceneFx(on, arctic) {
@@ -914,6 +1013,18 @@ function startAction(a) {
       btn.onclick = () => {
         hideModal();
         run("hire", { officerId: btn.dataset.hire });
+      };
+    });
+    return;
+  }
+  if (a.needs === "court") {
+    const cs = courtCandidates(state);
+    if (!cs.length) return toast("No unmarried adult in this town.");
+    showModal(`<h2>Court / Marry</h2><p class="muted">Visit twice to keep house. Original households — not a licensed romance.</p>${cs.map((o) => `<button class="list-btn" data-court="${o.id}"><img class="cmd-thumb" src="${sceneArt("court")}" alt="" /><span>${esc(o.name)} · AGE ${o.age} · ${o.personality}${playerOf(state).courtingId === o.id ? " · courting" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    $("modal-card").querySelectorAll("[data-court]").forEach((btn) => {
+      btn.onclick = () => {
+        hideModal();
+        run("court", { officerId: btn.dataset.court });
       };
     });
     return;
@@ -1030,7 +1141,7 @@ function renderMapCaption() {
   if (!cap || !state) return;
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const you = regionOf(state, playerOf(state).region);
-  cap.textContent = `${r?.short || "?"} selected · you are in ${you?.short || "?"} · click a city · gold roads = travel`;
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.short || "?"} selected · you are in ${you?.short || "?"} · gold roads = travel`;
 }
 
 function cityXY(r) {
@@ -1205,9 +1316,12 @@ function drawMap() {
   }
   const o = drawMap.off.getContext("2d");
   o.imageSmoothingEnabled = false;
+  const pal = seasonPalette(state._season?.id);
+  const sea = pal.sea || ["#082038", "#103058"];
+  const land = pal.land || ["#486030", "#607838"];
   for (let y = 0; y < LOW_H; y += 2) {
     for (let x = 0; x < LOW_W; x += 2) {
-      o.fillStyle = ((x + y) >> 1) % 2 ? "#082038" : "#103058";
+      o.fillStyle = ((x + y) >> 1) % 2 ? sea[0] : sea[1];
       o.fillRect(x, y, 2, 2);
     }
   }
@@ -1218,7 +1332,7 @@ function drawMap() {
       i ? o.lineTo(x, y) : o.moveTo(x, y);
     });
     o.closePath();
-    o.fillStyle = dither(o, "#2a5028", "#386830");
+    o.fillStyle = dither(o, land[0], land[1]);
     o.fill();
   }
   state.regions.forEach((r) => {
@@ -1229,12 +1343,16 @@ function drawMap() {
       i ? o.lineTo(x, y) : o.moveTo(x, y);
     });
     o.closePath();
-    o.fillStyle = dither(o, fac ? fac.colorDark : "#486030", fac ? fac.color : "#607838");
+    o.fillStyle = dither(o, fac ? fac.colorDark : land[0], fac ? fac.color : land[1]);
     o.fill();
     o.lineWidth = 1;
     o.strokeStyle = r.id === selectedRegion ? "#f8d800" : r.id === hoverRegion ? "#f8f8f8" : "#203040";
     o.stroke();
   });
+  o.globalAlpha = 0.14;
+  o.fillStyle = pal.overlay || "#88a040";
+  o.fillRect(0, 0, LOW_W, LOW_H);
+  o.globalAlpha = 1;
   mapRoads(state.regions).forEach((rd) => drawPixelRoad(o, rd.a, rd.b));
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
@@ -1255,7 +1373,13 @@ function drawMap() {
   ctx.fillStyle = "#f8d800";
   ctx.font = PX_FONT;
   const hunt = legendStatus(state);
-  ctx.fillText(hunt.revealed ? "ROADS = MARCH LINES" : "CLICK A CITY. GOLD ROADS = TRAVEL", 12, 28);
+  ctx.fillText(
+    hunt.revealed
+      ? `${(state._season?.name || "SEASON").toUpperCase()} ${calendarYear(state.week)} · ROADS = MARCH LINES`
+      : `${(state._season?.name || "SEASON").toUpperCase()} ${calendarYear(state.week)} · GOLD ROADS = TRAVEL`,
+    12,
+    28
+  );
 }
 
 function ensureMapPulse() {

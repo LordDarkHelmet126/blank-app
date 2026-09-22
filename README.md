@@ -80,6 +80,8 @@ Optional screenshot URLs while the server is running: `/?demo=slice` (banner alr
 Travel column (jeep pickup, M113, militia horse scout on gold roads): `/?demo=fx=travel` or `/?demo=travel` or `/?demo=slice&fx=travel`.
 Battle charge strip (Rockies foothills + looping sprites): `/?demo=fx=battle` or `/?demo=battle` or `/?demo=slice&fx=battle`.
 Travel event vignette: `/?demo=slice&panel=travel`.
+Between-turn chronicle (season + aging + marriage + child): `/?demo=chronicle`.
+Season tint only: `/?demo=season`.
 
 ## Layout
 

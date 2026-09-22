@@ -16,6 +16,10 @@ import {
   setGeneralOrder,
   legendStatus,
   mapRoads,
+  sampleChronicle,
+  courtCandidates,
+  calendarYear,
+  seasonOf,
 } from "../js/engine.js";
 
 function assert(cond, msg) {
@@ -236,6 +240,41 @@ assert(/parseDemoFx/.test(uiSrc) && /demo === "fx=travel"/.test(uiSrc), "demo=fx
 assert(/arctic_slope/.test(spriteSrc) && /bering_strait/.test(spriteSrc), "arctic nodes keep ice look");
 assert(/paintWestBackdrop/.test(sceneSrc), "event painters use west backdrop");
 console.log("ok travel/battle fx + west vignettes");
+
+const life = createNewGame(content, { seed: 11, difficulty: "easy", name: "Alex Rourke", background: "scout" });
+assert(playerOf(life).age === 34, "player starts aged 34");
+assert(life.officers.every((o) => o.age != null), "every officer has an age");
+assert(seasonOf(0).name === "Winter" && seasonOf(13).name === "Spring", "season names are Winter/Spring/Summer/Fall");
+assert(seasonOf(26).name === "Summer" && seasonOf(40).name === "Fall", "summer and fall map");
+assert(calendarYear(0) === 1985 && calendarYear(52) === 1986, "year 1985 calendar");
+act(life, content, "raise_banner");
+const age0 = playerOf(life).age;
+const court = courtCandidates(life);
+assert(court.some((o) => o.id === "hart"), "Hart is a court candidate in Bethel");
+res = act(life, content, "court", { officerId: "hart" });
+assert(res.ok, `court: ${res.message}`);
+if (playerOf(life).courtingId === "hart") {
+  res = act(life, content, "court", { officerId: "hart" });
+  assert(res.ok, `marry: ${res.message}`);
+}
+assert(playerOf(life).spouseId === "hart", "player bound to Hart");
+assert(life.officers.find((o) => o.id === "hart").spouseId === "player", "spouse ids bind both ways");
+for (let i = life.week; i < 52; i++) {
+  const ended = act(life, content, "end_week");
+  assert(ended.ok, `year roll week ${i}`);
+}
+assert(life.week === 52, "year roll lands on week 52");
+assert(playerOf(life).age === age0 + 1, `aged one year, got ${playerOf(life).age}`);
+assert(life._season.name === "Winter", "week 52 is winter again");
+const sample = sampleChronicle(createNewGame(content, { seed: 3, name: "Alex Rourke", background: "scout" }));
+assert(sample.chronicle.some((c) => c.kind === "season"), "demo chronicle has season");
+assert(sample.chronicle.some((c) => c.kind === "marriage"), "demo chronicle has marriage");
+assert(sample.chronicle.some((c) => c.kind === "birth" || c.kind === "age"), "demo chronicle has birth or years");
+assert(!/wolverine/i.test(JSON.stringify(sample.chronicle)), "chronicle copy is original IP");
+const lifeSrc = readFileSync(new URL("../js/chronicle.js", import.meta.url), "utf8") + uiSrc;
+assert(/get\("demo"\) === "chronicle"/.test(uiSrc) && /get\("demo"\) === "season"/.test(uiSrc), "chronicle/season demo hooks");
+assert(!/wolverine/i.test(lifeSrc), "life layer must not use Wolverines");
+console.log("ok chronicle seasons/age/marriage");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");

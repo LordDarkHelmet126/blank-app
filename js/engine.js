@@ -8,6 +8,18 @@ import {
   autoResolveBattle,
   remainingRatio,
 } from "./battle.js";
+import {
+  hydrateLife,
+  tickLife,
+  buildChronicle,
+  doCourt,
+  courtCandidates,
+  sampleChronicle,
+  calendarYear,
+  seasonPalette,
+} from "./chronicle.js";
+
+export { courtCandidates, sampleChronicle, calendarYear, seasonPalette };
 
 export const GAME_VERSION = 1;
 export const MAX_GENERALS = 5;
@@ -123,7 +135,8 @@ export function livingOfficers(state) {
 }
 
 export function isVisibleOfficer(state, off) {
-  if (off.alive === false) return false;
+  if (off.alive === false || off.retired) return false;
+  if (off.child && (off.age || 0) < 16) return false;
   if (!off.hidden) return true;
   return state.discovered.includes(off.id);
 }
@@ -198,10 +211,10 @@ export function rankLabel(rank) {
 
 export function seasonOf(week) {
   const w = ((week % 52) + 52) % 52;
-  if (w < 12) return { id: "deep_winter", name: "Deep Winter", weather: "snow", commerce: 0.68, food: 0.72, march: 0.8 };
-  if (w < 24) return { id: "breakup", name: "Breakup", weather: "fog", commerce: 0.9, food: 0.9, march: 0.9 };
-  if (w < 36) return { id: "high_summer", name: "High Summer", weather: "clear", commerce: 1.12, food: 1.16, march: 1 };
-  return { id: "freeze_up", name: "Freeze-Up", weather: "wind", commerce: 0.84, food: 0.84, march: 0.9 };
+  if (w < 13) return { id: "winter", name: "Winter", weather: "snow", commerce: 0.68, food: 0.72, march: 0.8 };
+  if (w < 26) return { id: "spring", name: "Spring", weather: "fog", commerce: 0.9, food: 1.0, march: 0.95 };
+  if (w < 39) return { id: "summer", name: "Summer", weather: "clear", commerce: 1.12, food: 1.16, march: 1 };
+  return { id: "fall", name: "Fall", weather: "wind", commerce: 0.84, food: 0.9, march: 0.9 };
 }
 
 export function apMax(state) {
@@ -325,6 +338,9 @@ export function createNewGame(content, opts = {}) {
     bio: `${tpl.bio} Background: ${bg.blurb}`,
     background: bg.id,
     custom: false,
+    age: 34,
+    spouseId: null,
+    courtingId: null,
   };
   officers.unshift(player);
 
@@ -385,6 +401,7 @@ export function createNewGame(content, opts = {}) {
 
   applyDifficultyGarrisons(state);
   attachSeason(state);
+  hydrateLife(state);
   state.ap = apMax(state);
 
   setRelation(state, "pof", "banner", 62);
@@ -424,6 +441,7 @@ export function deserialize(raw) {
     if (!o.skills) o.skills = skillsForPersonality(o.personality);
     if (!o.portrait) o.portrait = portraitInitials(o.name);
   });
+  hydrateLife(state);
   if (state.customSlotsUsed == null) {
     state.customSlotsUsed = (state.officers || []).filter((o) => o.custom).length;
   }
@@ -452,10 +470,11 @@ function occupiedByInvader(region) {
 function actingStats(state, off) {
   const fac = off.faction ? factionOf(state, off.faction) : null;
   const m = fac?.mods || {};
+  const frail = off.frail || (off.age || 0) >= 60 ? -6 : 0;
   return {
-    war: clampStat(off.war + (m.war || 0)),
+    war: clampStat(off.war + (m.war || 0) + frail),
     int: clampStat(off.int + (m.int || 0)),
-    pol: clampStat(off.pol + (m.pol || 0)),
+    pol: clampStat(off.pol + (m.pol || 0) + Math.min(0, frail + 2)),
     chr: clampStat(off.chr + (m.chr || 0)),
   };
 }
@@ -667,6 +686,21 @@ export function listActions(state) {
     hint: "Talk a wavering officer into your color.",
     needs: "officer",
   });
+  const bound = !!p.spouseId;
+  const suitors = courtCandidates(state);
+  actions.push({
+    id: "court",
+    label: bound ? "Household" : p.courtingId ? "Marry / Court" : "Court / Marry",
+    ap: 1,
+    group: "plot",
+    enabled: !bound && suitors.length > 0,
+    hint: bound
+      ? "You already keep house. Children may appear on the year roll."
+      : suitors.length
+        ? "Court a listed adult in this town. Visit twice to bind. Original households only."
+        : "Need an unmarried adult in this town (Plot).",
+    needs: "court",
+  });
   actions.push({
     id: "hide",
     label: "Hide / Infiltrate",
@@ -772,6 +806,10 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "break_ally") return doBreak(state, extra.factionId);
   if (actionId === "rumor") return doRumor(state, extra.officerId, stats);
   if (actionId === "persuade") return doPersuade(state, extra.officerId, stats);
+  if (actionId === "court") {
+    if (!spend(state, 1)) return { ok: false, message: "No AP." };
+    return doCourt(state, extra.officerId, stats);
+  }
   if (actionId === "travel") return doTravel(state, extra.regionId);
   if (actionId === "attack") return doAttack(state, content, extra);
   return { ok: false, message: "Not implemented." };
@@ -1400,6 +1438,7 @@ function randomEvent(state) {
 export function endWeek(state, content) {
   if (state.phase === "battle") return { ok: false, message: "Battle still open." };
   attachSeason(state);
+  const prevSeason = state._season?.id;
   const report = [];
   const notes = upkeep(state);
   notes.forEach((n) => report.push(n));
@@ -1410,6 +1449,7 @@ export function endWeek(state, content) {
   const aiLines = [];
   livingOfficers(state).forEach((off) => {
     if (off.id === "player") return;
+    if (off.retired || (off.child && (off.age || 0) < 16)) return;
     const line = officerActAI(state, content, off);
     if (line) aiLines.push(line);
   });
@@ -1420,6 +1460,10 @@ export function endWeek(state, content) {
 
   state.week += 1;
   attachSeason(state);
+  const year = state.week > 0 && state.week % 52 === 0;
+  const seasonChanged = state._season?.id !== prevSeason;
+  const life = tickLife(state, { year, seasonChanged });
+  const chronicle = buildChronicle(state, { year, seasonChanged, lifeEvents: life.events });
   tryUnlockTech(state, content, true);
   state.ap = apMax(state);
   playerOf(state).fame = Math.min(100, playerOf(state).fame + (playerOf(state).faction ? 1 : 0));
@@ -1430,13 +1474,16 @@ export function endWeek(state, content) {
     p.region = refuge.id;
   }
 
-  report.unshift(`Week ${state.week} — ${state._season.name}. AP restored to ${state.ap}.`);
+  report.unshift(`Week ${state.week} — ${state._season.name} ${calendarYear(state.week)}. AP restored to ${state.ap}.`);
   state.weekReport = report;
   notes.forEach((n) => pushLog(state, n, "week"));
   if (ev) pushLog(state, ev, "week");
-  pushLog(state, `Calendar: week ${state.week}, ${state._season.name}.`, "week");
+  chronicle.forEach((c) => {
+    if (c.kind !== "season") pushLog(state, c.text, "week");
+  });
+  pushLog(state, `Calendar: week ${state.week}, ${state._season.name} ${calendarYear(state.week)}.`, "week");
   checkEnding(state);
-  return { ok: true, message: `Week ${state.week} begins.`, report, weekEnd: true };
+  return { ok: true, message: `Week ${state.week} begins.`, report, weekEnd: true, chronicle };
 }
 
 export function autoplayWeek(state, content) {
@@ -1537,6 +1584,9 @@ export function createCustomOfficer(state, spec) {
     skills,
     portrait,
     standingOrder: "auto",
+    age: 28,
+    spouseId: null,
+    courtingId: null,
   });
   state.customSlotsUsed += 1;
   pushLog(state, `${name} [${personality}] added to the free roster in ${currentRegion(state).short}.`, "info");

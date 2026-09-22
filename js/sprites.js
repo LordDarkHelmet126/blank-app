@@ -168,10 +168,19 @@ function mountainRow(ctx, w, baseY, height, color, shift) {
 export function paintWestBackdrop(ctx, w, h, now, mood) {
   const t = now || 0;
   const dusk = mood === "dusk";
-  ctx.fillStyle = dusk ? C.dusk : "#4a88c8";
+  const season = dusk ? "fall" : ["winter", "spring", "summer", "fall"].includes(mood) ? mood : "summer";
+  const pal =
+    season === "winter"
+      ? { sky: "#3a5878", sky2: "#6888a0", grass: "#8a9aa0", grass2: "#c8d0d8", dirt: "#6a7078" }
+      : season === "spring"
+        ? { sky: "#5aa0d0", sky2: "#b0d8c0", grass: "#3a7840", grass2: "#78b048", dirt: "#486038" }
+        : season === "fall"
+          ? { sky: "#c07840", sky2: "#e0a060", grass: "#a05020", grass2: "#d08830", dirt: "#683018" }
+          : { sky: "#4a88c8", sky2: "#98c0e0", grass: "#8a7840", grass2: "#c8a048", dirt: "#6a5030" };
+  ctx.fillStyle = dusk ? C.dusk : pal.sky;
   ctx.fillRect(0, 0, w, h);
   if (!dusk) {
-    ctx.fillStyle = "#98c0e0";
+    ctx.fillStyle = pal.sky2;
     ctx.fillRect(0, Math.floor(h * 0.22), w, Math.floor(h * 0.4));
     ctx.fillStyle = C.gold;
     ctx.fillRect(w - 10, 4, 3, 3);
@@ -183,11 +192,11 @@ export function paintWestBackdrop(ctx, w, h, now, mood) {
   mountainRow(ctx, w, Math.floor(h * 0.5), Math.floor(h * 0.22), C.mtFar, -far);
   mountainRow(ctx, w, Math.floor(h * 0.58), Math.floor(h * 0.16), C.mtNear, -near);
   const gy = Math.floor(h * 0.62);
-  ctx.fillStyle = C.grass;
+  ctx.fillStyle = pal.grass;
   ctx.fillRect(0, gy, w, h - gy);
   const gShift = Math.floor(t / 70);
   for (let x = 0; x < w; x += 2) {
-    ctx.fillStyle = ((x + gShift) & 2) === 0 ? C.grass2 : C.dirt;
+    ctx.fillStyle = ((x + gShift) & 2) === 0 ? pal.grass2 : pal.dirt;
     ctx.fillRect(x, gy + ((x + gShift) % 3), 2, 2);
   }
   pine(ctx, 4 - (near % 12), gy - 10, 10);
@@ -198,6 +207,23 @@ export function paintWestBackdrop(ctx, w, h, now, mood) {
   ctx.fillStyle = C.gold;
   const dash = Math.floor(t / 50);
   for (let x = -((dash * 2) % 8); x < w; x += 8) ctx.fillRect(x, roadY + 1, 3, 1);
+}
+
+export function paintSeasonVignette(dest, now, seasonId) {
+  const w = 160;
+  const h = 50;
+  if (!paintSeasonVignette.off || paintSeasonVignette.off.width !== w) {
+    paintSeasonVignette.off = document.createElement("canvas");
+    paintSeasonVignette.off.width = w;
+    paintSeasonVignette.off.height = h;
+  }
+  const c = paintSeasonVignette.off;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  paintWestBackdrop(ctx, w, h, now, seasonId || "summer");
+  dest.imageSmoothingEnabled = false;
+  dest.clearRect(0, 0, dest.canvas.width, dest.canvas.height);
+  dest.drawImage(c, 0, 0, dest.canvas.width, dest.canvas.height);
 }
 
 /** Snow/ice for explicitly arctic nodes only. */
