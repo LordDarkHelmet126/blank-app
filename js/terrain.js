@@ -10,7 +10,7 @@
 const TW = 500;
 const TH = 310;
 const MAP_S = 2;
-const ELEV = 10;
+const ELEV = 18;
 
 const BIOME = {
   sea: 0,
@@ -187,7 +187,7 @@ function shade(hex, slope) {
   let r = (n >> 16) & 255;
   let g = (n >> 8) & 255;
   let b = n & 255;
-  const k = 1 + Math.max(-0.45, Math.min(0.4, slope * 1.8));
+  const k = 1 + Math.max(-0.55, Math.min(0.5, slope * 2.4));
   r = Math.max(0, Math.min(255, Math.round(r * k)));
   g = Math.max(0, Math.min(255, Math.round(g * k)));
   b = Math.max(0, Math.min(255, Math.round(b * k)));
@@ -202,7 +202,7 @@ function pickTone(pal, n, high) {
 function cacheKey(state) {
   const season = state._season?.id || "summer";
   const n = (state.regions || []).length;
-  return `${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+  return `v3|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
 }
 
 function buildFields(state) {
@@ -301,8 +301,9 @@ function paintBase(fields, seasonId) {
       const slope = h - se;
       const high = h > 0.72;
       let hex = pickTone(pal, (x + y * 3 + (h * 8) | 0) & 3, high);
-      if (winter && (b === BIOME.ice || b === BIOME.tundra || b === BIOME.rockies || high)) hex = pal[3] || "#e8f0f4";
-      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills)) {
+      if (winter && (b === BIOME.ice || b === BIOME.tundra)) hex = pal[3] || "#e8f0f4";
+      if (winter && high && (b === BIOME.rockies || b === BIOME.hills || b === BIOME.pine)) hex = pal[3] || "#e8f0f4";
+      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && !high) {
         hex = ((x + y) & 1) === 0 ? "#a05020" : "#d08830";
       }
       const col = shade(hex, slope);
@@ -354,8 +355,8 @@ function paintBase(fields, seasonId) {
 
 function scatterFeatures(ctx, fields, seasonId) {
   const { land, biome, height } = fields;
-  for (let y = 4; y < TH - 4; y += 3) {
-    for (let x = 4; x < TW - 4; x += 3) {
+  for (let y = 6; y < TH - 6; y += 7) {
+    for (let x = 6; x < TW - 6; x += 7) {
       const i = y * TW + x;
       if (!land[i]) continue;
       const n = hash2(x * 17, y * 13);
@@ -363,26 +364,39 @@ function scatterFeatures(ctx, fields, seasonId) {
       const lift = Math.floor(height[i] * ELEV);
       const py = y - lift;
       if (b === BIOME.forest || b === BIOME.pine) {
-        if (n > 0.42) pine(ctx, x - 2, py - 6, 6 + ((n * 5) | 0));
-      } else if (b === BIOME.rockies && n > 0.78 && height[i] < 0.7) {
-        pine(ctx, x - 1, py - 5, 5);
-      } else if (b === BIOME.desert && n > 0.82) {
-        mesa(ctx, x - 3, py - 3, 7, 4);
-      } else if (b === BIOME.farm && n > 0.55) {
+        if (n > 0.28) pine(ctx, x - 3, py - 10, 9 + ((n * 6) | 0));
+        if (n > 0.6) pine(ctx, x + 2, py - 8, 7);
+      } else if (b === BIOME.rockies) {
+        if (height[i] > 0.55 && n > 0.35) peak(ctx, x, py, 8 + ((height[i] * 10) | 0));
+        else if (n > 0.7) pine(ctx, x - 1, py - 6, 6);
+      } else if (b === BIOME.desert) {
+        if (n > 0.55) mesa(ctx, x - 5, py - 5, 11, 6);
+      } else if (b === BIOME.farm) {
         ctx.fillStyle = ((x + y) & 1) === 0 ? "#e8d888" : "#887830";
-        ctx.fillRect(x, py, 3, 1);
-      } else if (b === BIOME.plains && n > 0.72) {
+        ctx.fillRect(x - 3, py, 8, 2);
+        ctx.fillRect(x - 3, py + 3, 8, 1);
+      } else if (b === BIOME.plains && n > 0.55) {
         ctx.fillStyle = "#687038";
-        ctx.fillRect(x, py, 2, 1);
-      } else if ((b === BIOME.ice || b === BIOME.tundra) && n > 0.7) {
+        ctx.fillRect(x, py, 4, 2);
+      } else if ((b === BIOME.ice || b === BIOME.tundra) && n > 0.45) {
         ctx.fillStyle = "#f8f8f8";
-        ctx.fillRect(x, py - 1, 1, 1);
-      } else if (b === BIOME.hills && n > 0.74) {
-        pine(ctx, x - 1, py - 4, 4);
+        ctx.fillRect(x, py - 2, 2, 2);
+        if (n > 0.75) peak(ctx, x, py, 6);
+      } else if (b === BIOME.hills) {
+        if (n > 0.4) peak(ctx, x, py, 6);
+        if (n > 0.7) pine(ctx, x - 1, py - 5, 5);
       }
     }
   }
   void seasonId;
+}
+
+function peak(ctx, x, y, h) {
+  ctx.fillStyle = "#5a4830";
+  ctx.fillRect(x - 4, y - Math.floor(h / 2), 9, Math.floor(h / 2));
+  ctx.fillRect(x - 2, y - h, 5, Math.floor(h / 2));
+  ctx.fillStyle = "#f4f0e4";
+  ctx.fillRect(x - 1, y - h - 1, 3, 2);
 }
 
 function pine(ctx, x, y, h) {
@@ -436,14 +450,16 @@ function px(ctx, x, y, w, h, c) {
 }
 
 /** 1980s American construction — isometric-ish pixel marks. */
-export function draw80sMarker(ctx, kind, x, y, selected, fill) {
+export function draw80sMarker(ctx, kind, x, y, selected, fill, scale) {
   const ink = "#000018";
   const gold = selected ? "#f8d800" : "#f8f8f8";
   const body = fill || "#607838";
   const roof = "#6a4030";
   const conc = "#888880";
+  const s = scale || 1;
   ctx.save();
   ctx.translate(Math.round(x), Math.round(y));
+  ctx.scale(s, s);
   px(ctx, -6, 1, 14, 3, "#00000055");
   if (kind === "elevator") {
     px(ctx, -2, -16, 5, 16, conc);
@@ -503,6 +519,38 @@ export function draw80sMarker(ctx, kind, x, y, selected, fill) {
   ctx.restore();
 }
 
+export function drawPixelRoadFull(ctx, a, b, pulseOn) {
+  const x0 = Math.round(a[0]);
+  const y0 = Math.round(a[1]);
+  const x1 = Math.round(b[0]);
+  const y1 = Math.round(b[1]);
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  let x = x0;
+  let y = y0;
+  let i = 0;
+  for (;;) {
+    ctx.fillStyle = pulseOn ? "#886028" : "#4a3820";
+    ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 6 < 3 ? "#e0c060" : "#c8a038";
+    ctx.fillRect(x, y, 1, 1);
+    if (x === x1 && y === y1) break;
+    const e2 = err * 2;
+    if (e2 > -dy) {
+      err -= dy;
+      x += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y += sy;
+    }
+    i += 1;
+  }
+}
+
 export function drawPixelRoadHi(ctx, a, b, pulseOn) {
   const [x0, y0] = [Math.round(a[0] / MAP_S), Math.round(a[1] / MAP_S)];
   const [x1, y1] = [Math.round(b[0] / MAP_S), Math.round(b[1] / MAP_S)];
@@ -538,7 +586,7 @@ export function paintTheaterTerrain(o, state, opts) {
   painted.forEach((r) => {
     const fac = opts.factionOf ? opts.factionOf(r) : null;
     if (!r.polygon) return;
-    o.globalAlpha = 0.16;
+    o.globalAlpha = 0.08;
     o.fillStyle = fac ? fac.color : "#607838";
     fillPoly(o, r.polygon);
     o.globalAlpha = 1;

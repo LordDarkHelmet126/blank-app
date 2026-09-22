@@ -9,6 +9,7 @@ import {
 } from "./sprites.js";
 import {
   draw80sMarker,
+  drawPixelRoadFull,
   drawPixelRoadHi,
   faceSrc,
   isoToCell,
@@ -791,8 +792,7 @@ function officersHtml() {
     .join("");
   const slots = state.contentMeta.customOfficerSlots || 10;
   const full = state.customSlotsUsed >= slots;
-  return `<h2>Officers (${visible.length} visible)</h2>${locked}${addHow}${emptyAdd}${rows}
-    <hr />
+  const createBlock = `
     <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
     <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Adds to the free roster here; Plot → Hire to put them in court / a general slot.</p>
     <p class="muted">Set the portrait — original faces only.</p>
@@ -819,7 +819,10 @@ function officersHtml() {
         <p class="muted" id="c-budget">Budget 220/${CUSTOM_STAT_BUDGET}</p>
       </div>
     </div>
-    <button type="button" id="c-add" class="primary"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add free officer here"}</button>
+    <button type="button" id="c-add" class="primary"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add free officer here"}</button>`;
+  return `<h2>Officers (${visible.length} visible)</h2>${addHow}${createBlock}
+    <hr />
+    ${locked}${emptyAdd}${rows}
     <p></p><button type="button" data-close>Close</button>`;
 }
 
@@ -1922,28 +1925,47 @@ function drawMap() {
     hoverId: hoverRegion,
     factionOf: (r) => (r.owner ? factionOf(state, r.owner) : null),
   });
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
+  ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
     const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
-    drawPixelRoadHi(o, rd.a, rd.b, on);
+    drawPixelRoadFull(ctx, rd.a, rd.b, on);
   });
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;
     let t = (now - mapFx.t0) / dur;
     t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
-    const [x0, y0] = lowPt(mapFx.a);
-    const [x1, y1] = lowPt(mapFx.b);
-    drawTravelConvoy(o, [x0, y0], [x1, y1], t, now, 2);
+    drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
   }
-  painted.forEach((r) => drawCityMark(o, r, r.id === selectedRegion));
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
-  ctx.imageSmoothingEnabled = false;
+  painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
   drawStateLabels(ctx);
   painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+}
+
+function drawCityMarkHi(ctx, r, selected) {
+  const [x, y] = cityXY(r);
+  const fac = r.owner ? factionOf(state, r.owner) : null;
+  const fill = fac ? fac.color : "#607838";
+  draw80sMarker(ctx, markerKind(r), x, y, selected, fill, 2);
+  const p = playerOf(state);
+  if (p.region === r.id) {
+    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -6 : 0;
+    ctx.fillStyle = "#f8d800";
+    ctx.fillRect(x - 14, y - 36 + hop, 5, 5);
+  }
+  if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
+    ctx.fillStyle = "#d080f8";
+    ctx.fillRect(x + 14, y - 8, 4, 4);
+  }
+  legendBoard(state).forEach((h) => {
+    if (h.regionId !== r.id || !h.mapMark) return;
+    ctx.fillStyle = "#d080f8";
+    ctx.fillRect(x + 14, y - 8, 4, 4);
+  });
 }
 
 function ensureMapPulse() {
