@@ -27,10 +27,30 @@ import {
   seedDemoMissions,
   missionCopy,
   missionById,
+  templateOf,
 } from "./missions.js";
+import {
+  createDuel,
+  resolveExchange,
+  advanceBeat,
+  autoResolveDuel,
+  finishOnClock,
+  aiMove,
+  isUnderdog,
+  DUEL_CLOCK_S,
+  DUEL_MAX_EXCHANGES,
+} from "./duel.js";
 
 export { courtCandidates, sampleChronicle, calendarYear, seasonPalette };
 export { MISSION_TEMPLATES, openMissions, seedDemoMissions, missionCopy, refreshMissionBoard };
+export {
+  createDuel,
+  autoResolveDuel,
+  isUnderdog,
+  DUEL_CLOCK_S,
+  DUEL_MAX_EXCHANGES,
+  aiMove,
+};
 
 export const GAME_VERSION = 1;
 export const MAX_GENERALS = 5;
@@ -240,7 +260,7 @@ export function ordersForOfficer(off) {
 }
 
 export function setGeneralOrder(state, officerId, orderId) {
-  if (state.phase === "battle") return { ok: false, message: "Finish the field first." };
+  if (state.phase === "battle" || state.phase === "duel") return { ok: false, message: "Finish the yard first." };
   const g = playerGenerals(state).find((o) => o.id === officerId);
   if (!g) return { ok: false, message: "Not one of your generals." };
   if (!ordersForOfficer(g).some((o) => o.id === orderId)) {
@@ -546,12 +566,13 @@ function occupiedByInvader(region) {
   return region.owner === "pof" || region.owner === "banner";
 }
 
-function actingStats(state, off) {
+export function actingStats(state, off) {
   const fac = off.faction ? factionOf(state, off.faction) : null;
   const m = fac?.mods || {};
   const frail = off.frail || (off.age || 0) >= 60 ? -6 : 0;
+  const wound = off.wound ? -8 : 0;
   return {
-    war: clampStat(off.war + (m.war || 0) + frail),
+    war: clampStat(off.war + (m.war || 0) + frail + wound),
     int: clampStat(off.int + (m.int || 0)),
     pol: clampStat(off.pol + (m.pol || 0) + Math.min(0, frail + 2)),
     chr: clampStat(off.chr + (m.chr || 0)),
@@ -665,7 +686,7 @@ function discoverCheck(state, regionId) {
 
 export function listActions(state) {
   if (state.gameOver) return [];
-  if (state.phase === "battle") return [];
+  if (state.phase === "battle" || state.phase === "duel") return [];
   const p = playerOf(state);
   const here = currentRegion(state);
   const rank = rankOf(state, p);
@@ -879,9 +900,21 @@ export function listActions(state) {
     hint: !hasBanner
       ? "Raise a banner, then take optional jobs (Military → Side Mission)."
       : jobs.length
-        ? "Optional jobs: scout, raid, escort, rescue, sabotage, radio run. 1 AP, or set a general to Side mission."
+        ? "Optional jobs: scout, raid, escort, rescue, porch challenge. 1 AP, or set a general to Side mission."
         : "Board empty. End Week refreshes side missions.",
     needs: "mission",
+  });
+  const rivals = challengeCandidates(state);
+  actions.push({
+    id: "challenge",
+    label: "Challenge",
+    ap: 1,
+    group: "plot",
+    enabled: rivals.length > 0,
+    hint: rivals.length
+      ? "Call out an officer in this city. Yard duel — Strike / Guard / Special, ~99 seconds if both stay up."
+      : "No listed officer in this city to call out.",
+    needs: "challenge",
   });
   actions.push({
     id: "end_week",
@@ -903,6 +936,61 @@ export function hireCandidates(state) {
   return visibleOfficers(state).filter(
     (o) => o.id !== p.id && !o.faction && o.region === p.region && o.alive !== false
   );
+}
+
+export function challengeCandidates(state) {
+  const p = playerOf(state);
+  if (!p) return [];
+  return visibleOfficers(state).filter(
+    (o) =>
+      o.id !== p.id &&
+      o.region === p.region &&
+      o.alive !== false &&
+      !o.retired &&
+      !(o.child && (o.age || 0) < 16)
+  );
+}
+
+function pickDuelFoe(state, regionId, actorId) {
+  const pool = visibleOfficers(state).filter(
+    (o) => o.id !== actorId && o.region === regionId && o.alive !== false && !o.retired
+  );
+  if (!pool.length) return null;
+  pool.sort((a, b) => (b.legend ? 1 : 0) - (a.legend ? 1 : 0) || (b.war || 0) - (a.war || 0));
+  return pool[0];
+}
+
+function beginDuel(state, actor, foe, extra = {}) {
+  const youStats = actingStats(state, actor);
+  const foeStats = actingStats(state, foe);
+  const kind = extra.kind || (actor.faction && foe.faction === actor.faction ? "spar" : "challenge");
+  state.phase = "duel";
+  state.duel = createDuel({
+    you: actor,
+    youStats,
+    foe,
+    foeStats,
+    jobId: extra.jobId || null,
+    kind,
+  });
+  state.duel.actorId = actor.id;
+  return state.duel;
+}
+
+function doChallenge(state, officerId) {
+  const p = playerOf(state);
+  const foe = officerOf(state, officerId);
+  if (!foe) return { ok: false, message: "No such officer." };
+  if (foe.region !== p.region) return { ok: false, message: "They are not in this city." };
+  if (foe.id === p.id) return { ok: false, message: "Not yourself." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  beginDuel(state, p, foe, { kind: p.faction && foe.faction === p.faction ? "spar" : "challenge" });
+  const d = state.duel;
+  const msg = d.underdog
+    ? `David vs Goliath — ${foe.name} (WAR ${d.foe.stats.war}) vs you (WAR ${d.you.stats.war}). Green window is wider.`
+    : `${foe.name} answers in the yard.`;
+  pushLog(state, msg, "war");
+  return { ok: true, duel: true, message: msg };
 }
 
 export function attackCandidates(state) {
@@ -927,7 +1015,9 @@ function alliedFactions(state) {
 export function act(state, content, actionId, extra = {}) {
   attachSeason(state);
   if (state.gameOver) return { ok: false, message: "The campaign is finished." };
-  if (state.phase === "battle" && actionId !== "battle") return { ok: false, message: "Finish the field first." };
+  if ((state.phase === "battle" && actionId !== "battle") || (state.phase === "duel" && actionId !== "duel")) {
+    return { ok: false, message: state.phase === "duel" ? "Finish the yard first." : "Finish the field first." };
+  }
 
   const p = playerOf(state);
   const here = currentRegion(state);
@@ -955,6 +1045,7 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "hire") return doHire(state, extra.officerId, stats);
   if (actionId === "appoint") return doAppoint(state, extra.officerId);
   if (actionId === "mission") return doMission(state, extra.jobId, extra.officerId);
+  if (actionId === "challenge") return doChallenge(state, extra.officerId);
   if (actionId === "ally") return doAlly(state, extra.factionId, stats);
   if (actionId === "break_ally") return doBreak(state, extra.factionId);
   if (actionId === "rumor") return doRumor(state, extra.officerId, stats);
@@ -1217,6 +1308,21 @@ function doMission(state, jobId, officerId) {
   if (p.region !== job.regionId) {
     return { ok: false, message: `Travel to ${regionOf(state, job.regionId)?.short || job.regionId} first.` };
   }
+  const t = templateOf(job.templateId);
+  if (t.duel) {
+    if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
+    const actor = officerOf(state, officerId) || p;
+    const foe = pickDuelFoe(state, job.regionId, actor.id);
+    if (!foe) {
+      const res = resolveMission(state, job, actor, missionHelpers());
+      pushLog(state, res.report || res.message, "player");
+      return { ...res, sceneId: res.sceneId || "mission" };
+    }
+    beginDuel(state, actor, foe, { jobId: job.id, kind: "mission" });
+    const msg = `Porch challenge: ${foe.name} in ${regionOf(state, job.regionId)?.short || "town"}.`;
+    pushLog(state, msg, "war");
+    return { ok: true, duel: true, message: msg, sceneId: "porch_challenge" };
+  }
   if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
   const actor = officerOf(state, officerId) || p;
   const res = resolveMission(state, job, actor, missionHelpers());
@@ -1227,6 +1333,27 @@ function doMission(state, jobId, officerId) {
 function runStandingMission(state, off) {
   const job = pickStandingJob(state, off);
   if (!job) return null;
+  const t = templateOf(job.templateId);
+  if (t.duel) {
+    const foe = pickDuelFoe(state, job.regionId, off.id);
+    if (!foe) {
+      const res = resolveMission(state, job, off, missionHelpers());
+      return { personality: off.personality, text: `${res.report} — ordered.` };
+    }
+    const duel = createDuel({
+      you: off,
+      youStats: actingStats(state, off),
+      foe,
+      foeStats: actingStats(state, foe),
+      jobId: job.id,
+      kind: "mission",
+    });
+    duel.actorId = off.id;
+    autoResolveDuel(duel, () => nextFloat(state));
+    const out = applyDuelOutcome(state, duel, { actor: off, silent: true });
+    job.done = true;
+    return { personality: off.personality, text: `${out.message} — ordered.` };
+  }
   const res = resolveMission(state, job, off, missionHelpers());
   return { personality: off.personality, text: `${res.report} — ordered.` };
 }
@@ -1326,6 +1453,136 @@ function defenderPersonality(state, region) {
   const defs = livingOfficers(state).filter((o) => o.faction === region.owner && o.region === region.id);
   if (defs.length) return defs.sort((a, b) => b.war - a.war)[0].personality;
   return "loyalist";
+}
+
+export function duelCmd(state, cmd, extra = {}) {
+  if (state.phase !== "duel" || !state.duel) return { ok: false, message: "No yard." };
+  const d = state.duel;
+  if (cmd === "move") {
+    if (d.result) return { ok: false, message: "Yard closed." };
+    if (d.beat !== "pick") return { ok: false, message: "Wait the next beat." };
+    const foeMove = aiMove(d, nextFloat(state));
+    resolveExchange(d, extra.move || null, extra.timing ?? 1, foeMove);
+    if (d.result) d.beat = "done";
+    return { ok: true, pendingEnd: !!d.result, message: d.last?.line || "Exchange." };
+  }
+  if (cmd === "next") {
+    if (d.result) {
+      d.beat = "done";
+      return { ok: true, pendingEnd: true, message: "Yard closed." };
+    }
+    advanceBeat(d);
+    return { ok: true, message: `Exchange ${d.exchange}/${d.maxExchanges}.` };
+  }
+  if (cmd === "clock") {
+    if (d.result) {
+      d.beat = "done";
+      return { ok: true, pendingEnd: true };
+    }
+    if (d.beat === "pick") {
+      const foeMove = aiMove(d, nextFloat(state));
+      resolveExchange(d, extra.move || null, extra.timing ?? 1, foeMove);
+    }
+    if (!d.result) finishOnClock(d);
+    d.beat = "done";
+    return { ok: true, pendingEnd: true, message: d.log[d.log.length - 1] };
+  }
+  if (cmd === "timeout") {
+    if (d.result) return finishDuel(state);
+    if (d.beat === "pick") {
+      const foeMove = aiMove(d, nextFloat(state));
+      resolveExchange(d, extra.move || null, extra.timing ?? 1, foeMove);
+    }
+    if (!d.result) finishOnClock(d);
+    d.beat = "done";
+    return finishDuel(state);
+  }
+  if (cmd === "close") {
+    if (!d.result) finishOnClock(d);
+    return finishDuel(state);
+  }
+  if (cmd === "auto") {
+    autoResolveDuel(d, () => nextFloat(state));
+    return finishDuel(state);
+  }
+  return { ok: false, message: "Unknown yard command." };
+}
+
+function finishDuel(state) {
+  const d = state.duel;
+  if (!d) return { ok: false, message: "No yard." };
+  const actor = officerOf(state, d.actorId) || playerOf(state);
+  const out = applyDuelOutcome(state, d, { actor });
+  d.beat = "done";
+  state.phase = "strategy";
+  state.duel = null;
+  pushLog(state, out.message, "war");
+  return {
+    ok: true,
+    duelEnd: d.result,
+    message: out.message,
+    sceneId: d.kind === "mission" ? "porch_challenge" : "challenge",
+    underdog: d.underdog,
+    bits: out.bits,
+  };
+}
+
+function applyDuelOutcome(state, d, { actor, silent } = {}) {
+  const you = officerOf(state, d.you.id) || actor || playerOf(state);
+  const foe = officerOf(state, d.foe.id);
+  const bits = [];
+  const gold = (n) => {
+    if (n > 0) {
+      state.gold += n;
+      bits.push(`+${n} gold`);
+    } else if (n < 0) {
+      const loss = Math.min(state.gold, -n);
+      state.gold -= loss;
+      if (loss) bits.push(`-${loss} gold`);
+    }
+  };
+  if (d.result === "you") {
+    gold(d.underdog ? 18 : d.kind === "spar" ? 4 : 12);
+    you.fame = (you.fame || 0) + (d.underdog ? 6 : 3);
+    state.fame = Math.min(100, (state.fame || 0) + (d.underdog ? 4 : 2));
+    bits.push("fame");
+    if (foe) {
+      foe.wound = true;
+      if (d.kind === "spar") {
+        foe.loyalty = Math.min(100, (foe.loyalty || 50) + 4);
+        you.loyalty = Math.min(100, (you.loyalty || 50) + 2);
+        bits.push("spar respect");
+      } else {
+        foe.loyalty = Math.max(0, (foe.loyalty || 50) - 8);
+        addBond(state, foe.id, 6);
+        bits.push(`${foe.name} wounded`);
+      }
+    }
+    if (d.underdog) bits.push("upset");
+  } else if (d.result === "foe") {
+    gold(d.kind === "spar" ? 0 : -8);
+    you.wound = true;
+    you.loyalty = Math.max(20, (you.loyalty || 50) - 4);
+    bits.push("you wounded");
+    if (foe && d.kind !== "spar") addBond(state, foe.id, -4);
+  } else {
+    gold(2);
+    bits.push("draw");
+  }
+  if (d.jobId) {
+    const job = missionById(state, d.jobId);
+    if (job && !job.done) {
+      job.done = true;
+      if (d.result === "you") {
+        gold(8);
+        bits.push("mission");
+      }
+    }
+  }
+  const verb = d.result === "you" ? "wins" : d.result === "foe" ? "falls in" : "draws";
+  const message = `${you.name} ${verb} the yard vs ${d.foe.name}${bits.length ? ` (${bits.join(", ")})` : ""}.`;
+  void silent;
+  return { message, bits };
 }
 
 function doAttack(state, content, extra) {
@@ -1679,6 +1936,10 @@ function randomEvent(state) {
 
 export function endWeek(state, content) {
   if (state.phase === "battle") return { ok: false, message: "Battle still open." };
+  if (state.phase === "duel") return { ok: false, message: "Yard still open." };
+  livingOfficers(state).forEach((o) => {
+    if (o.wound) o.wound = false;
+  });
   attachSeason(state);
   const prevSeason = state._season?.id;
   const report = [];
@@ -1741,6 +2002,7 @@ export function autoplayWeek(state, content) {
   const jobs = openMissions(state).filter((j) => j.regionId === playerOf(state).region);
   if (jobs.length && p.faction && state.ap > 1 && state.week >= 1) {
     act(state, content, "mission", { jobId: jobs[0].id });
+    if (state.phase === "duel") duelCmd(state, "auto");
   }
   if (p.faction && ownedByPlayer(state, currentRegion(state))) {
     if (state.food < 20 && state.ap) act(state, content, "cultivate");
@@ -1766,6 +2028,7 @@ export function autoplayWeek(state, content) {
     if (state.ap >= before) break;
   }
   if (state.phase === "battle") battleCmd(state, content, "auto");
+  if (state.phase === "duel") duelCmd(state, "auto");
   return endWeek(state, content);
 }
 

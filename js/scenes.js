@@ -343,6 +343,21 @@ const PAINT = {
     fig(ctx, 8, 14, PAL.olive, PAL.gold);
     fig(ctx, 58, 14, PAL.olive2, PAL.wheat);
   },
+  challenge(ctx) {
+    skyGround(ctx);
+    px(ctx, 0, 32, W, 13, "#503010");
+    px(ctx, 0, 32, W, 2, PAL.gold);
+    fig(ctx, 18, 10, PAL.olive, PAL.gold);
+    fig(ctx, 50, 10, PAL.navy, PAL.red);
+    px(ctx, 36, 18, 6, 2, PAL.gold);
+  },
+  porch_challenge(ctx) {
+    skyGround(ctx);
+    px(ctx, 8, 10, 22, 16, PAL.wood);
+    px(ctx, 0, 32, W, 13, "#503010");
+    fig(ctx, 34, 12, PAL.olive, PAL.gold);
+    fig(ctx, 52, 12, PAL.olive2, PAL.ink);
+  },
 };
 
 function paintId(id) {
@@ -410,6 +425,8 @@ const PHOTO_TINTS = {
   mission: ["art/scenes/scene-spy.png", "#c8a038"],
   radio_run: ["art/scenes/scene-spy.png", "#406080"],
   appoint: ["art/scenes/scene-council.png", "#f8d800"],
+  challenge: ["art/scenes/scene-council.png", "#a03020"],
+  porch_challenge: ["art/scenes/scene-council.png", "#c06020"],
 };
 
 export async function bakeScenes() {

@@ -49,7 +49,10 @@ import {
   openMissions,
   seedDemoMissions,
   missionCopy,
+  duelCmd,
+  challengeCandidates,
 } from "./engine.js";
+import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -290,6 +293,30 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "duel") {
+    startSliceState();
+    const goliath = params.get("goliath") === "1";
+    let foe;
+    if (goliath) {
+      foe = state.officers.find((o) => o.id === "marsh");
+      if (foe) {
+        foe.hidden = false;
+        foe.region = "bethel";
+        if (!state.discovered.includes("marsh")) state.discovered.push("marsh");
+        state.marshHunt = 2;
+      }
+    } else {
+      foe = state.officers.find((o) => o.id === "hart");
+    }
+    if (foe) {
+      const res = act(state, content, "challenge", { officerId: foe.id });
+      if (!res.ok) toast(res.message);
+    }
+    hideModal();
+    render();
+    afterFonts();
+    return;
+  }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
   afterFonts();
@@ -348,12 +375,22 @@ function bindChrome() {
   $("event-scene").onclick = (e) => {
     if (e.target.id === "event-scene") hideEventScene();
   };
+  document.querySelectorAll("[data-duel-move]").forEach((btn) => {
+    btn.onclick = () => pickDuelMove(btn.dataset.duelMove);
+  });
+  $("duel-continue").onclick = closeDuel;
   const canvas = $("map");
   canvas.addEventListener("click", onMapClick);
   canvas.addEventListener("mousemove", onMapMove);
   const bc = $("battle-canvas");
   bc.addEventListener("click", onBattleClick);
   window.addEventListener("keydown", (e) => {
+    if (state?.phase === "duel") {
+      if (e.key === "1") pickDuelMove("strike");
+      if (e.key === "2") pickDuelMove("guard");
+      if (e.key === "3") pickDuelMove("special");
+      return;
+    }
     if (e.key === "e" && state && state.phase === "strategy") run("end_week");
   });
 }
@@ -445,7 +482,7 @@ function hideModal() {
 
 function nextHint(st) {
   if (!st || st.gameOver) return "Campaign closed.";
-  if (st.phase === "battle") return "BATTLE: click a yellow unit, then an adjacent tile to step or fire — or Auto-resolve.";
+  if (st.phase === "duel") return "YARD: pick Strike / Guard / Special in the green window. Clock ~99s if both stand.";
   const p = playerOf(st);
   const here = regionOf(st, p.region);
   const gens = playerGenerals(st);
@@ -459,6 +496,8 @@ function nextHint(st) {
   }
   if (localJob) return `NEXT: Military → Side Mission: ${localJob.name} in this city (1 AP).`;
   if (jobs.length) return `NEXT: ${jobs.length} side missions on the board — Travel to the city, or set a general to Side mission.`;
+  const rivals = challengeCandidates(st);
+  if (rivals.length) return `NEXT: Plot → Challenge ${rivals[0].name} in this city (yard duel, ~99s).`;
   if (here && ownedHere(st, here) && here.garrison < 24) return "NEXT: Drill to raise the levy, or Military → Travel a gold road.";
   return `NEXT: ${st.ap} AP left — click a Command tile, or End Week.`;
 }
@@ -556,7 +595,7 @@ function helpHtml() {
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> five general chairs under the map. Hire fills a chair; extras wait; Plot → Appoint. Standing orders run at End Week.</li>
-      <li>Side missions: Military → Side Mission or Chronicle → Missions. 1 AP or a general's Side mission order.</li>
+      <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Strike / Guard / Special; press in the green window. Clock is ~99 seconds if both stay up. Underdog (much lower WAR) gets a wider window.</li>
       <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
       <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
@@ -752,6 +791,11 @@ function run(id, extra) {
     openBattle();
     return;
   }
+  if (res.duel) {
+    hideModal();
+    openDuel();
+    return;
+  }
   if (id === "travel" && extra?.regionId) pulseTravel(fromId, extra.regionId);
   if (res.revealed) {
     showEventScene({
@@ -818,6 +862,11 @@ export function render() {
   else {
     $("battle").hidden = true;
     stopBattleLoop();
+  }
+  if (state.phase === "duel") openDuel();
+  else if ($("duel") && !$("duel").hidden && !state.duel) {
+    $("duel").hidden = true;
+    stopDuelLoop();
   }
 }
 
@@ -951,13 +1000,13 @@ function weekReportHtml(report) {
 
 const ACTION_CATS = {
   domestic: ["raise_banner", "drill", "commerce", "cultivate", "fortify", "safety", "research"],
-  plot: ["seek_legend", "spy", "hire", "appoint", "court", "ally", "break_ally", "rumor", "persuade", "hide"],
-  military: ["travel", "attack", "mission"],
+  plot: ["seek_legend", "spy", "hire", "appoint", "court", "ally", "break_ally", "rumor", "persuade", "hide", "challenge"],
+  military: ["travel", "attack", "mission", "challenge"],
 };
 const TAB_TIPS = {
   domestic: "<strong>Domestic</strong><p>Town work: raise a banner, food, gold, walls, salvage.</p>",
-  plot: "<strong>Plot</strong><p>People work: hire, appoint generals, court, spy, rumor, alliance.</p>",
-  military: "<strong>Military</strong><p>Move on gold roads, march, or take a side mission.</p>",
+  plot: "<strong>Plot</strong><p>People work: hire, appoint generals, court, spy, rumor, alliance, challenge.</p>",
+  military: "<strong>Military</strong><p>Move on gold roads, march, take a side mission, or challenge an officer in this city.</p>",
 };
 const SCENE_ACTIONS = new Set([
   "raise_banner",
@@ -996,6 +1045,8 @@ const SCENE_ACTIONS = new Set([
   "claim_survey",
   "ice_listen",
   "ranch_relay",
+  "challenge",
+  "porch_challenge",
 ]);
 let commandCat = "domestic";
 const COACH_KEY = "northern-front-v01-coach";
@@ -1228,6 +1279,18 @@ function startAction(a) {
   if (a.needs === "mission") {
     showModal(missionsHtml(), { kind: "missions" });
     wireMissionButtons();
+    return;
+  }
+  if (a.needs === "challenge") {
+    const cs = challengeCandidates(state);
+    if (!cs.length) return toast("No listed officer in this city.");
+    showModal(`<h2>Challenge</h2><p class="muted">Yard duel in this city. Strike / Guard / Special. Clock ~99s if both stay up. Green window is a timing bonus — not a combo game.</p>${cs.map((o) => `<button class="list-btn" data-challenge="${o.id}"><img class="cmd-thumb" src="${sceneArt("challenge")}" alt="" /><span>${esc(o.name)} · ${esc(o.title)} · AGE ${o.age || "?"} · WAR ${o.war}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    $("modal-card").querySelectorAll("[data-challenge]").forEach((btn) => {
+      btn.onclick = () => {
+        hideModal();
+        run("challenge", { officerId: btn.dataset.challenge });
+      };
+    });
     return;
   }
   if (a.needs === "court") {
@@ -1595,6 +1658,7 @@ function ensureMapPulse() {
   mapPulseTimer = setInterval(() => {
     if (!state || state.phase !== "strategy") return;
     if ($("battle") && !$("battle").hidden) return;
+    if ($("duel") && !$("duel").hidden) return;
     drawMap();
   }, 240);
 }
@@ -1812,6 +1876,205 @@ function doBattle(cmd, extra) {
     return;
   }
   drawBattle();
+}
+
+let duelRaf = 0;
+
+function openDuel() {
+  if (!state?.duel) return;
+  $("duel").hidden = false;
+  const d = state.duel;
+  if (!d.t0) d.t0 = performance.now();
+  if (!d.beatT0) d.beatT0 = performance.now();
+  $("duel-underdog").hidden = !d.underdog;
+  const g = $("duel-green");
+  g.style.left = `${d.green[0] * 100}%`;
+  g.style.width = `${(d.green[1] - d.green[0]) * 100}%`;
+  paintDuelStatic();
+  paintDuelHud();
+  $("duel-continue").hidden = !d.result;
+  startDuelLoop();
+}
+
+function startDuelLoop() {
+  if (duelRaf) return;
+  const tick = (now) => {
+    if (!state?.duel || $("duel").hidden) {
+      duelRaf = 0;
+      return;
+    }
+    stepDuel(now);
+    duelRaf = requestAnimationFrame(tick);
+  };
+  duelRaf = requestAnimationFrame(tick);
+}
+
+function stopDuelLoop() {
+  if (duelRaf) cancelAnimationFrame(duelRaf);
+  duelRaf = 0;
+}
+
+function remainingClock(now) {
+  const d = state.duel;
+  if (!d) return 0;
+  const elapsed = (now - (d.t0 || now)) / 1000;
+  return Math.max(0, Math.ceil(DUEL_CLOCK_S - elapsed));
+}
+
+function stepDuel(now) {
+  const d = state.duel;
+  if (!d) return;
+  const left = remainingClock(now);
+  $("duel-clock").textContent = String(left);
+  if (d.result) {
+    d.beat = "done";
+    paintDuelHud();
+    drawDuelYard(now);
+    $("duel-continue").hidden = false;
+    document.querySelectorAll("[data-duel-move]").forEach((b) => {
+      b.disabled = true;
+    });
+    return;
+  }
+  if (left <= 0) {
+    duelCmd(state, "clock");
+    paintDuelHud();
+    drawDuelYard(now);
+    return;
+  }
+  if (d.beat === "pick") {
+    const t = (now - d.beatT0) / (d.pickMs || DUEL_PICK_MS);
+    $("duel-needle").style.left = `${Math.min(1, Math.max(0, t)) * 100}%`;
+    if (t >= 1) {
+      duelCmd(state, "move", { move: null, timing: 1 });
+      d.resolveUntil = now + (d.resolveMs || DUEL_RESOLVE_MS);
+      paintDuelHud();
+    }
+  } else if (d.beat === "resolve") {
+    if (!d.resolveUntil) d.resolveUntil = now + (d.resolveMs || DUEL_RESOLVE_MS);
+    if (now >= d.resolveUntil) {
+      duelCmd(state, "next");
+      d.beatT0 = now;
+      d.resolveUntil = 0;
+      paintDuelHud();
+    }
+  }
+  paintDuelHp();
+  drawDuelYard(now);
+}
+
+function pickDuelMove(move) {
+  if (!state?.duel || state.duel.beat !== "pick" || state.duel.result) return;
+  const now = performance.now();
+  const timing = (now - state.duel.beatT0) / (state.duel.pickMs || DUEL_PICK_MS);
+  document.querySelectorAll("[data-duel-move]").forEach((b) => {
+    b.classList.toggle("is-pick", b.dataset.duelMove === move);
+  });
+  duelCmd(state, "move", { move, timing });
+  state.duel.resolveUntil = now + (state.duel.resolveMs || DUEL_RESOLVE_MS);
+  paintDuelHud();
+}
+
+function closeDuel() {
+  if (!state?.duel) {
+    $("duel").hidden = true;
+    stopDuelLoop();
+    render();
+    return;
+  }
+  const res = duelCmd(state, "close");
+  $("duel").hidden = true;
+  stopDuelLoop();
+  render();
+  if (res.ok) {
+    showEventScene({
+      id: res.sceneId || "challenge",
+      title: res.duelEnd === "you" ? "Yard held" : res.duelEnd === "foe" ? "Yard lost" : "Dust settles",
+      text: res.message,
+      regionId: playerOf(state).region,
+    });
+  }
+}
+
+function paintDuelStatic() {
+  const d = state.duel;
+  const you = d.you;
+  const foe = d.foe;
+  $("duel-you-face").src = PORTRAIT_SRC;
+  $("duel-you-name").textContent = you.name;
+  $("duel-you-meta").textContent = `AGE ${you.age} · ${you.title}`;
+  $("duel-you-stats").textContent = `WAR ${you.stats.war}  INT ${you.stats.int}  POL ${you.stats.pol}  CHR ${you.stats.chr}`;
+  $("duel-foe-face").textContent = foe.portrait || portraitInitials(foe.name);
+  $("duel-foe-name").textContent = foe.name;
+  $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""}`;
+  $("duel-foe-stats").textContent = `WAR ${foe.stats.war}  INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
+}
+
+function paintDuelHp() {
+  const d = state.duel;
+  if (!d) return;
+  $("duel-you-hp").style.width = `${Math.round((d.youHp / d.youMax) * 100)}%`;
+  $("duel-foe-hp").style.width = `${Math.round((d.foeHp / d.foeMax) * 100)}%`;
+  $("duel-you-hp-n").textContent = `${d.youHp} / ${d.youMax}`;
+  $("duel-foe-hp-n").textContent = `${d.foeHp} / ${d.foeMax}`;
+}
+
+function paintDuelHud() {
+  const d = state.duel;
+  if (!d) return;
+  $("duel-exchange").textContent = `EX ${Math.min(d.exchange, d.maxExchanges)} / ${d.maxExchanges}`;
+  $("duel-cue").textContent = d.result
+    ? d.log[d.log.length - 1]
+    : d.underdog
+      ? "UNDERDOG — wider green window. Strike beats Special · Special beats Guard · Guard beats Strike."
+      : "Green window = bonus. Strike beats Special · Special beats Guard · Guard beats Strike.";
+  $("duel-log").innerHTML = d.log.slice(-6).map((l) => `<li>${esc(l)}</li>`).join("");
+  document.querySelectorAll("[data-duel-move]").forEach((b) => {
+    b.disabled = d.beat !== "pick" || !!d.result;
+    if (d.beat !== "pick") b.classList.remove("is-pick");
+  });
+  $("duel-continue").hidden = !d.result;
+  paintDuelHp();
+}
+
+function drawDuelYard(now) {
+  const canvas = $("duel-canvas");
+  if (!canvas || !state?.duel) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#3a68a0";
+  ctx.fillRect(0, 0, w, 48);
+  ctx.fillStyle = "#486030";
+  ctx.fillRect(0, 48, w, h);
+  ctx.fillStyle = "#503010";
+  ctx.fillRect(0, 100, w, 40);
+  ctx.fillStyle = "#f8d800";
+  ctx.fillRect(0, 100, w, 3);
+  const bob = Math.floor(now / 280) % 2;
+  const flash = state.duel.last && state.duel.beat === "resolve";
+  drawYardFighter(ctx, 160, 70 + bob, "#507040", "#f8d800", false, flash && state.duel.last.youDmg > 0);
+  drawYardFighter(ctx, 440, 70 + (1 - bob), "#304878", "#f03030", true, flash && state.duel.last.foeDmg > 0);
+  if (flash) {
+    ctx.fillStyle = "#f8f8f8";
+    ctx.globalAlpha = 0.25;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawYardFighter(ctx, x, y, coat, hat, flip, hit) {
+  const s = flip ? -1 : 1;
+  ctx.fillStyle = hit ? "#f8f8f8" : hat;
+  ctx.fillRect(x + s * 4, y, 16, 8);
+  ctx.fillStyle = "#c8a078";
+  ctx.fillRect(x + s * 4, y + 8, 16, 10);
+  ctx.fillStyle = hit ? "#f03030" : coat;
+  ctx.fillRect(x, y + 18, 24, 28);
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(x + 4, y + 46, 6, 16);
+  ctx.fillRect(x + 14, y + 46, 6, 16);
 }
 
 function wireOrders() {

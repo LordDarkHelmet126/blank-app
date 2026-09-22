@@ -214,6 +214,24 @@ export const MISSION_TEMPLATES = [
     fail: "They keep the tea and the silence.",
     rewards: { gold: [6, 14], loyalty: 6, item: "ranch_token" },
   },
+  {
+    id: "porch_challenge",
+    name: "Porch challenge",
+    ap: 1,
+    stat: "war",
+    dc: 50,
+    order: true,
+    duel: true,
+    flavor: {
+      default: `A yard behind the hall. No levy — two officers, Strike / Guard / Special, about ninety-nine seconds if both stay up. ${WEST}`,
+      bethel: "River-hall porch. Call out whoever is in Bethel. Original partisan kit — not a licensed bout.",
+      kenai: "Ranch yard in the western foothills. Horse scouts keep the circle.",
+      nome: "Spit gravel. Aurora watches; you still throw the first Strike.",
+    },
+    ok: "The yard remembers the name that stood.",
+    fail: "Dust and a split lip. Walk it off.",
+    rewards: { gold: [8, 16], fame: 3 },
+  },
 ];
 
 export function templateOf(id) {
@@ -386,6 +404,7 @@ export function seedDemoMissions(state) {
     ["escort_convoy", "bethel"],
     ["radio_run", "yukon_road"],
     ["rescue_officer", "bethel"],
+    ["porch_challenge", "bethel"],
     ["ranch_relay", "kenai"],
     ["raid_depot", "nome"],
     ["cache_pull", "bethel"],

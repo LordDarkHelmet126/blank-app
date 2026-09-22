@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — ROTK7-style layout rhythm (ruler plate, city report, command verbs, court strip, chronicle).
+**Last checkpoint:** 2026-09-22 — yard duel v0 (~99s clock, Strike/Guard/Special, David vs Goliath).
 
 ## How to run
 
@@ -29,23 +29,27 @@ Travel vignette: `/?demo=slice&panel=travel`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette:** `/?demo=missions&take=1`.
 **Layout (officer chrome):** `/?demo=layout`.
+**Yard duel (~99s):** `/?demo=duel`.
+**Underdog (Marsh):** `/?demo=duel&goliath=1`.
 
 Do not open `index.html` as a `file://` page — ES modules + JSON `fetch` need HTTP.
 
 ## What landed (this burst)
 
-- Officer-game chrome: status bar (calendar + treasury), **Ruler** medallion plate (name/age/loyalty/WAR INT POL CHR + faction banner stripe), **City report** (econ/stores/levy/walls/order + plus/minus + banner tick), **Command** Domestic/Plot/Military as compact icon+label tiles (one-line verb + AP/LOCK), center **Theater** map with caption bar (canvas overlay removed), **Court** strip of 5 numbered general chairs, **Chronicle** dock. Season tint stays on the map; caption bars stay gold SNES chrome.
-- Cultural presentation (original IP): officer-first identity, loyalty bar, court appointments, standing orders, city report, year/season on the calendar, banner list. 1980s resistance voice — no Koei names or assets. Hire/appoint copy points at the **court strip**, not a buried You card.
-- Prior generals, missions, coach, chronicle, travel/battle sprites kept.
-- Demo: `/?demo=layout` (Hart / Cole / Nash seated, Domestic open). Screenshots: `layout_before.png` (old You-card layout) vs `layout_after.png`.
+- **Yard duel v0:** two officer cards (portrait, name/age/title, WAR-weighted stats, HP), Strike / Guard / Special with a green timing window, visible **99s countdown**. 11 exchanges × 9s (7.5s pick + 1.5s resolve) when both stay up. KO or clock → back to map with gold/fame/wound/loyalty.
+- **David vs Goliath:** if foe WAR is much higher, UNDERDOG banner and a wider green window so skill can upset a legend.
+- Entry: Plot/Military → **Challenge** (same city); mission template **Porch challenge** opens the yard instead of a roll. Standing orders auto-resolve the duel.
+- Pixel navy HUD, original IP (no Tekken/SF/Koei/Wolverines). Coach, chronicle, missions, generals, layout chrome kept.
+- Demo: `/?demo=duel` (Hart), `/?demo=duel&goliath=1` (Marsh). Tests auto-resolve (no 99s wait).
 
 ## Counts
 
 - General slots: **5** (court strip)
-- Mission templates: **12**
+- Mission templates: **13** (12 jobs + porch challenge duel)
 - AI officers: **131**
 - Hidden legends: **3** (karr, silo, marsh)
 - Custom officer cap: **10**
+- Duel clock: **99s** / **11** exchanges
 
 ## What’s next (small bursts)
 

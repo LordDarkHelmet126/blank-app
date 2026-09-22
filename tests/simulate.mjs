@@ -26,7 +26,22 @@ import {
   seedDemoMissions,
   appointCandidates,
   playerCourt,
+  duelCmd,
+  challengeCandidates,
+  actingStats,
 } from "../js/engine.js";
+import {
+  createDuel,
+  resolveExchange,
+  autoResolveDuel,
+  isUnderdog,
+  beats,
+  DUEL_CLOCK_S,
+  DUEL_MAX_EXCHANGES,
+  expectedDuelSeconds,
+  greenWindow,
+  inGreen,
+} from "../js/duel.js";
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -361,6 +376,85 @@ assert(/get\("take"\) === "1"/.test(uiSrc), "missions take=1 vignette hook");
 assert(/data-add-gen/.test(uiSrc), "court-strip ADD empty general slots");
 assert(!/You card/.test(uiSrc), "layout copy uses court strip, not You card");
 console.log("ok generals/missions demos");
+
+assert(DUEL_CLOCK_S === 99, "duel clock is 99 seconds");
+assert(expectedDuelSeconds() === 99, `11 exchanges should total 99s, got ${expectedDuelSeconds()}`);
+assert(DUEL_MAX_EXCHANGES === 11, "11 exchanges when both stay up");
+assert(beats("strike", "special") && beats("special", "guard") && beats("guard", "strike"), "RPS triangle");
+assert(!beats("strike", "guard"), "strike loses to guard");
+assert(isUnderdog({ war: 50, int: 40 }, { war: 90, int: 80 }), "underdog vs high WAR");
+assert(!isUnderdog({ war: 68, int: 70 }, { war: 66, int: 55 }), "even WAR is not underdog");
+assert(inGreen(0.5, greenWindow(false)) && !inGreen(0.1, greenWindow(false)), "green window timing");
+assert(greenWindow(true)[1] - greenWindow(true)[0] > greenWindow(false)[1] - greenWindow(false)[0], "underdog wider green");
+
+const dEven = createDuel({
+  you: { id: "a", name: "A", title: "Scout", age: 34, personality: "loyalist" },
+  youStats: { war: 68, int: 70, pol: 56, chr: 63 },
+  foe: { id: "b", name: "B", title: "Volunteer", age: 40, personality: "loyalist" },
+  foeStats: { war: 66, int: 55, pol: 58, chr: 72 },
+});
+assert(!dEven.underdog, "Hart-range fight is not underdog");
+let guardHits = 0;
+for (let i = 0; i < 11; i++) {
+  resolveExchange(dEven, "guard", 0.5, "strike");
+  guardHits += 1;
+  if (dEven.result) break;
+}
+assert(dEven.exchangesDone === 11 || dEven.result, "a defensive fight runs the full slate or KOs");
+assert(expectedDuelSeconds() >= 90 && expectedDuelSeconds() <= 108, "pacing near 99s");
+
+const dGoliath = createDuel({
+  you: { id: "a", name: "A", title: "Scout", age: 34, personality: "loyalist" },
+  youStats: { war: 48, int: 70, pol: 56, chr: 63 },
+  foe: { id: "marsh", name: "Cal Marsh", title: "Ranch Marshal", age: 52, personality: "loyalist", legend: true },
+  foeStats: { war: 91, int: 64, pol: 58, chr: 80 },
+});
+assert(dGoliath.underdog, "Marsh is Goliath");
+autoResolveDuel(dGoliath, () => 0.5);
+assert(["you", "foe", "draw"].includes(dGoliath.result), "auto-resolve ends");
+
+const yard = createNewGame(content, { seed: 31, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(yard, content, "raise_banner");
+const hartY = yard.officers.find((o) => o.id === "hart");
+assert(challengeCandidates(yard).some((o) => o.id === "hart"), "Hart is a challenge in Bethel");
+const gold0 = yard.gold;
+res = act(yard, content, "challenge", { officerId: "hart" });
+assert(res.ok && res.duel && yard.phase === "duel", `challenge opens yard: ${res.message}`);
+assert(yard.duel.clockS === 99, "live duel stores 99s clock");
+assert(yard.duel.maxExchanges === 11, "live duel has 11 exchanges");
+res = duelCmd(yard, "auto");
+assert(res.ok && res.duelEnd, `duel auto: ${res.message}`);
+assert(yard.phase === "strategy", "yard returns to map");
+assert(hartY.wound || playerOf(yard).wound || res.duelEnd === "draw", "someone is marked or it was a draw");
+
+const porch = createNewGame(content, { seed: 32, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(porch, content, "raise_banner");
+seedDemoMissions(porch);
+porch.missions.board = [
+  {
+    id: "job_porch",
+    templateId: "porch_challenge",
+    name: "Porch challenge",
+    regionId: "bethel",
+    week: 0,
+    ap: 1,
+    done: false,
+  },
+];
+res = act(porch, content, "mission", { jobId: "job_porch" });
+assert(res.ok && res.duel && porch.phase === "duel", `porch mission opens duel: ${res.message}`);
+assert(!porch.missions.board[0].done, "porch job waits until the yard closes");
+res = duelCmd(porch, "auto");
+assert(res.ok && porch.missions.board[0].done, "porch job consumed after duel");
+void gold0;
+void actingStats;
+
+const duelSrc = readFileSync(new URL("../js/duel.js", import.meta.url), "utf8");
+assert(!/wolverine|tekken|street fighter/i.test(duelSrc + uiSrc), "duel copy is original IP");
+assert(/get\("demo"\) === "duel"/.test(uiSrc), "demo=duel hook");
+assert(/goliath/.test(uiSrc), "demo=duel&goliath=1 hook");
+assert(MISSION_TEMPLATES.some((t) => t.id === "porch_challenge" && t.duel), "porch_challenge mission is a duel");
+console.log("ok yard duel 99s");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
