@@ -43,6 +43,12 @@ import {
   sampleChronicle,
   calendarYear,
   seasonPalette,
+  playerCourt,
+  appointCandidates,
+  legendBoard,
+  openMissions,
+  seedDemoMissions,
+  missionCopy,
 } from "./engine.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -224,6 +230,44 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "generals") {
+    startSliceState();
+    ["hart", "cole", "nash"].forEach((id, i) => {
+      const o = state.officers.find((x) => x.id === id);
+      if (!o) return;
+      o.faction = "northern_front";
+      o.region = "bethel";
+      o.loyalty = 80;
+      o.isGeneral = true;
+      o.standingOrder = i === 0 ? "drill" : i === 1 ? "mission" : "commerce";
+    });
+    selectedRegion = "bethel";
+    commandCat = "plot";
+    hideModal();
+    render();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "missions") {
+    startSliceState();
+    seedDemoMissions(state);
+    const hart = state.officers.find((o) => o.id === "hart");
+    if (hart) {
+      hart.faction = "northern_front";
+      hart.loyalty = 80;
+      hart.isGeneral = true;
+      hart.standingOrder = "mission";
+      hart.region = "bethel";
+    }
+    selectedRegion = "bethel";
+    commandCat = "military";
+    hideModal();
+    render();
+    showModal(missionsHtml(), { kind: "missions" });
+    wireAfterRender();
+    afterFonts();
+    return;
+  }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
   afterFonts();
@@ -266,6 +310,10 @@ function bindChrome() {
     wireAfterRender();
   };
   $("btn-factions").onclick = () => showModal(factionsHtml());
+  $("btn-missions").onclick = () => {
+    showModal(missionsHtml(), { kind: "missions" });
+    wireAfterRender();
+  };
   $("modal").onclick = (e) => {
     if (e.target.id === "modal") hideModal();
   };
@@ -379,9 +427,16 @@ function nextHint(st) {
   const p = playerOf(st);
   const here = regionOf(st, p.region);
   const gens = playerGenerals(st);
+  const jobs = openMissions(st);
+  const localJob = jobs.find((j) => j.regionId === p.region);
   if (!p.faction) return "NEXT: Domestic → Raise Banner. Claims Bethel and founds Northern Front (1 AP).";
   if (st.ap <= 0) return "NEXT: End Week (top right). Neighbors act, then you get a fresh AP pool.";
-  if (gens.length === 0) return "NEXT: Commerce or Cultivate (Domestic), or Plot → Hire if a free officer is in this city.";
+  if (gens.length === 0) return "NEXT: Plot → Hire a free officer in this city. They fill general slot 1 of 5.";
+  if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
+    return `NEXT: Plot → Hire (${gens.length}/5 generals). Empty ADD slots sit on the You card.`;
+  }
+  if (localJob) return `NEXT: Military → Side Mission: ${localJob.name} in this city (1 AP).`;
+  if (jobs.length) return `NEXT: ${jobs.length} side missions on the board — Travel to the city, or set a general to Side mission.`;
   if (here && ownedHere(st, here) && here.garrison < 24) return "NEXT: Drill to raise the levy, or Military → Travel a gold road.";
   return `NEXT: ${st.ap} AP left — click a Command tile, or End Week.`;
 }
@@ -478,8 +533,9 @@ function helpHtml() {
       <li><strong>Map:</strong> click a city to select it. Gold roads are walkable (Military → Travel).</li>
       <li><strong>Command:</strong> Domestic = town (Raise Banner, food, gold). Plot = people. Military = march.</li>
       <li>Hover a tile for AP cost and why it is locked. Locked tiles are grey; live tiles lift on hover.</li>
-      <li>Hire up to 5 generals, then set their standing order on the You card. March/Attack is under Military.</li>
-      <li>Hidden legend: Seek Legend on Plot (or Spy the Arctic Slope), then travel Fairbanks → Slope and Seek again.</li>
+      <li>Hire up to 5 generals (You card slots). Extra hires join court; Plot → Appoint fills an empty slot. Custom officers: Officers → Create (cap 10), then Hire.</li>
+      <li>Side missions: Military → Side Mission or the Missions dock. Optional jobs cost 1 AP or a general's Side mission order. End Week refreshes the board.</li>
+      <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
       <li>March columns: jeep pickups, M113s, and militia horse scouts on gold roads. Original partisan kit — not a licensed film unit.</li>
       <li>End Week can open a short chronicle: season tint, aging, courtship, a child seed. Plot → Court / Marry. Inspired by ROTK7 life ticks — original names only.</li>
@@ -492,28 +548,46 @@ function helpHtml() {
 
 function officersHtml() {
   if (!state) return `<p>No game.</p>`;
-  const hunt = legendStatus(state);
-  const locked = hunt.revealed
-    ? ""
-    : `<div class="card rumor-card"><h2>Unlisted legend</h2><p class="rumor">${esc(hunt.rumor)}</p><p class="muted">Use Seek Legend on Town &amp; plots. A ? mark sits on the Slope until he is listed.</p></div>`;
-  const rows = visibleOfficers(state)
+  const hunts = legendBoard(state);
+  const locked = hunts
+    .filter((h) => !h.revealed)
+    .map(
+      (h) =>
+        `<div class="card rumor-card"><h2>Unlisted: ${esc(h.short)}</h2><p class="rumor">${esc(h.rumor)}</p><p class="muted">Plot → Seek Legend. A ? mark sits on the map until they are listed.</p></div>`
+    )
+    .join("");
+  const p = playerOf(state);
+  const court = playerCourt(state);
+  const gens = playerGenerals(state);
+  const visible = visibleOfficers(state);
+  const rows = visible
     .map((o) => {
       const fac = o.faction ? factionOf(state, o.faction)?.short : "free";
       const loc = regionOf(state, o.region)?.short || "?";
       const face = esc(o.portrait || portraitInitials(o.name));
-      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · AGE ${o.age || "?"} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}${o.spouseId ? " · bound" : ""}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.custom ? "<i>CUSTOM</i>" : ""}${o.frail ? "<i>FRAIL</i>" : ""}</span></span></button>`;
+      const staff =
+        o.faction === p.faction && o.id !== p.id
+          ? o.isGeneral
+            ? " · GENERAL"
+            : " · COURT"
+          : "";
+      return `<button type="button" class="list-btn officer-row" data-off="${o.id}"><span class="portrait" aria-hidden="true">${face}</span><span class="officer-body"><span class="officer-name">${esc(o.name)}</span><span class="officer-sub">${esc(o.title)} · AGE ${o.age || "?"} · ${esc(fac)} · ${esc(loc)} · ${esc(o.personality)}${staff}${o.spouseId ? " · bound" : ""}</span><span class="officer-stats"><i>WAR ${o.war}</i><i>INT ${o.int}</i><i>POL ${o.pol}</i><i>CHR ${o.chr}</i><i>loy ${o.loyalty}</i>${o.legend ? '<i class="leg">LEGEND</i>' : ""}${o.elite ? "<i>ELITE</i>" : ""}${o.custom ? "<i>CUSTOM</i>" : ""}${o.frail ? "<i>FRAIL</i>" : ""}</span></span></button>`;
     })
     .join("");
+  const emptyAdd = visible.length
+    ? ""
+    : `<p class="muted">No listed officers here yet. Plot → Seek Legend, or Create below.</p>`;
+  const addHow = `<p class="muted">ADD: Plot → Hire a free officer in this city · Appoint court into 5 general slots (${gens.length}/5) · Create custom (cap 10) · Rescue via side missions. Court ${court.length}.</p>`;
   const types = Object.entries(content.officers.personalities || {});
   const typeOpts = types
-    .map(([id, p], i) => `<option value="${esc(id)}"${id === "loyalist" ? " selected" : ""}>${esc(p.label || id)}</option>`)
+    .map(([id, per]) => `<option value="${esc(id)}"${id === "loyalist" ? " selected" : ""}>${esc(per.label || id)}</option>`)
     .join("");
   const slots = state.contentMeta.customOfficerSlots || 10;
   const full = state.customSlotsUsed >= slots;
-  return `<h2>Officers (${visibleOfficers(state).length} visible)</h2>${locked}<p class="muted">Roster is data-driven (cap ${state.contentMeta.rosterCap}). Hidden legends stay off this list until found.</p>${rows}
+  return `<h2>Officers (${visible.length} visible)</h2>${locked}${addHow}${emptyAdd}${rows}
     <hr />
     <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
-    <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Type gates skills the way ROTK7 aptitudes did.</p>
+    <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Adds to the free roster here; Plot → Hire to put them in court / a general slot.</p>
     <div class="creator">
       <div class="portrait portrait-lg" id="c-portrait" aria-hidden="true">RC</div>
       <div class="creator-fields">
@@ -530,8 +604,38 @@ function officersHtml() {
         <p class="muted" id="c-budget">Budget 220/${CUSTOM_STAT_BUDGET}</p>
       </div>
     </div>
-    <button type="button" id="c-add" class="primary"${full ? " disabled" : ""}>${full ? "Slots full" : "Add free officer here"}</button>
+    <button type="button" id="c-add" class="primary"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add free officer here"}</button>
     <p></p><button type="button" data-close>Close</button>`;
+}
+
+function missionsHtml() {
+  if (!state) return `<p>No game.</p>`;
+  const p = playerOf(state);
+  const jobs = openMissions(state);
+  const stash = (state.stash || []).slice(-8);
+  const empty = jobs.length
+    ? ""
+    : `<p class="muted">No jobs on the board. Raise a banner, then End Week to refresh. Optional: scout road, raid depot, escort convoy, rescue officer, sabotage, radio run, cache, ford watch, airstrip, claim survey, ice listen, ranch relay.</p>`;
+  const rows = jobs
+    .map((j) => {
+      const here = j.regionId === p.region;
+      const loc = regionOf(state, j.regionId)?.short || j.regionId;
+      const copy = missionCopy(j, j.regionId);
+      return `<button type="button" class="list-btn mission-row" data-job="${j.id}" ${here ? "" : "data-travel='1'"}>
+        <img class="cmd-thumb" src="${sceneArt(j.templateId)}" alt="" />
+        <span><strong>${esc(j.name)}</strong> · ${esc(loc)} · 1 AP
+        <small>${esc(copy)}</small>
+        ${here ? "<small>You are here — click to take it.</small>" : "<small>Travel to this city first, or set a general to Side mission.</small>"}
+        </span></button>`;
+    })
+    .join("");
+  const loot = stash.length
+    ? `<p class="muted">Stash: ${stash.map((s) => esc(s.name)).join(" · ")}</p>`
+    : `<p class="muted">Stash empty. Missions can grant depot scrip, analog pads, ranch tokens.</p>`;
+  return `<h2>Side missions (${jobs.length} open)</h2>
+    <p class="muted">Optional jobs. Cost 1 AP here, or a general's standing order (Side mission) at End Week. Alaska + western Rockies copy on the vignette.</p>
+    ${empty}${rows}${loot}
+    <button type="button" data-close>Close</button>`;
 }
 
 function factionsHtml() {
@@ -631,8 +735,15 @@ function run(id, extra) {
     showEventScene({
       id: "seek_legend",
       title: "Legend listed",
-      text: `${res.officerName || "Ilya Karr"} answers on the Arctic Slope. Original character — a hidden free officer. Hire him if you share the Slope.`,
-      regionId: "arctic_slope",
+      text: `${res.officerName || "A legend"} answers. Original character — a hidden free officer. Hire them if you share their ground.`,
+      regionId: res.regionId || playerOf(state).region,
+    });
+  } else if (res.sceneId && !res.weekEnd) {
+    showEventScene({
+      id: res.sceneId,
+      title: res.success === false ? "Mission slips" : "Side mission",
+      text: `${res.flavor ? res.flavor + " " : ""}${res.message || ""}`,
+      regionId: res.regionId || extra?.regionId || playerOf(state).region,
     });
   } else if (SCENE_ACTIONS.has(id) && !res.weekEnd) {
     const a = listActions(state).find((x) => x.id === id);
@@ -691,12 +802,33 @@ const PORTRAIT_SRC = "art/portraits/portrait-commander.png";
 function officerHtml() {
   const p = playerOf(state);
   const gens = playerGenerals(state);
+  const court = playerCourt(state);
   const fac = p.faction ? factionOf(state, p.faction) : null;
   const here = regionOf(state, p.region);
+  const wait = appointCandidates(state);
+  const slots = [];
+  for (let i = 0; i < MAX_GENERALS; i++) {
+    const g = gens[i];
+    if (g) {
+      slots.push(`<label class="gen-row filled"><span>${i + 1}. ${esc(g.name)}</span>
+        <select data-order-gen="${g.id}">${ordersForOfficer(g)
+          .map(
+            (o) =>
+              `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
+          )
+          .join("")}</select></label>`);
+    } else {
+      let hint;
+      if (!p.faction) hint = "ADD — Domestic → Raise Banner, then Plot → Hire.";
+      else if (wait[i - gens.length] || wait[0]) hint = `ADD — Plot → Appoint (${esc((wait[i - gens.length] || wait[0]).name)} in court).`;
+      else hint = "ADD — Plot → Hire a free officer in this city, or Officers → Create (cap 10).";
+      slots.push(`<button type="button" class="gen-row empty" data-add-gen="${i}">${i + 1}. ${hint}</button>`);
+    }
+  }
   return `
     <div class="panel-head">
       <span class="panel-title">You</span>
-      <span class="panel-why">AP = clicks this week.</span>
+      <span class="panel-why">5 general slots. Hire fills them; extras wait in court.</span>
     </div>
     <div class="plate-body">
     <img class="officer-face" src="${PORTRAIT_SRC}" alt="" />
@@ -709,23 +841,11 @@ function officerHtml() {
         <span class="pill">${esc(state._season?.name || "")} ${calendarYear(state.week)}</span>
         <span class="pill">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""}</span>
         <span class="pill">${esc(here?.short || "?")}</span>
+        <span class="pill">GEN ${gens.length}/${MAX_GENERALS}</span>
+        <span class="pill">COURT ${court.length}</span>
       </div>
       <p class="muted">WAR ${p.war} INT ${p.int} POL ${p.pol} CHR ${p.chr}</p>
-      ${
-        gens.length
-          ? `<div class="gen-orders">${gens
-              .map(
-                (g) => `<label class="gen-row"><span>${esc(g.name)}</span>
-        <select data-order-gen="${g.id}">${ordersForOfficer(g)
-          .map(
-            (o) =>
-              `<option value="${o.id}"${(g.standingOrder || "auto") === o.id ? " selected" : ""}>${esc(o.label)}</option>`
-          )
-          .join("")}</select></label>`
-              )
-              .join("")}</div>`
-          : `<p class="muted">No generals yet. Plot → Hire after you raise a banner.</p>`
-      }
+      <div class="gen-orders">${slots.join("")}</div>
     </div>
     </div>
   `;
@@ -749,7 +869,10 @@ function cityHtml() {
       <span class="pill"><span>POP</span><strong>${r.population || "?"}</strong></span>
       <span class="pill"><span>DEF</span><strong>${garr}/${walls}</strong></span>
     </div>
-    ${r.id === "arctic_slope" ? `<p class="rumor">${esc(legendStatus(state).rumor)}</p>` : ""}
+    ${legendBoard(state)
+      .filter((h) => h.regionId === r.id)
+      .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
+      .join("")}
   `;
 }
 
@@ -769,13 +892,13 @@ function weekReportHtml(report) {
 
 const ACTION_CATS = {
   domestic: ["raise_banner", "drill", "commerce", "cultivate", "fortify", "safety", "research"],
-  plot: ["seek_legend", "spy", "hire", "court", "ally", "break_ally", "rumor", "persuade", "hide"],
-  military: ["travel", "attack"],
+  plot: ["seek_legend", "spy", "hire", "appoint", "court", "ally", "break_ally", "rumor", "persuade", "hide"],
+  military: ["travel", "attack", "mission"],
 };
 const TAB_TIPS = {
   domestic: "<strong>Domestic</strong><p>Town work: raise a banner, food, gold, walls, salvage.</p>",
-  plot: "<strong>Plot</strong><p>People work: hire, court, spy, rumor, alliance.</p>",
-  military: "<strong>Military</strong><p>Move on gold roads or march into a neighbor.</p>",
+  plot: "<strong>Plot</strong><p>People work: hire, appoint generals, court, spy, rumor, alliance.</p>",
+  military: "<strong>Military</strong><p>Move on gold roads, march, or take a side mission.</p>",
 };
 const SCENE_ACTIONS = new Set([
   "raise_banner",
@@ -788,6 +911,7 @@ const SCENE_ACTIONS = new Set([
   "seek_legend",
   "spy",
   "hire",
+  "appoint",
   "ally",
   "break_ally",
   "rumor",
@@ -800,6 +924,19 @@ const SCENE_ACTIONS = new Set([
   "age",
   "funeral",
   "season",
+  "mission",
+  "scout_road",
+  "raid_depot",
+  "escort_convoy",
+  "rescue_officer",
+  "sabotage",
+  "radio_run",
+  "cache_pull",
+  "ford_watch",
+  "airstrip_mark",
+  "claim_survey",
+  "ice_listen",
+  "ranch_relay",
 ]);
 let commandCat = "domestic";
 const COACH_KEY = "northern-front-v01-coach";
@@ -1007,14 +1144,31 @@ function startAction(a) {
   }
   if (a.needs === "hire") {
     const cs = hireCandidates(state);
-    if (!cs.length) return toast("No free officers in this region.");
-    showModal(`<h2>Hire</h2>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · CHR check · ambition ${o.ambition}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    if (!cs.length) return toast("No free officers in this region. Travel, or Officers → Create (cap 10).");
+    showModal(`<h2>Hire into court / generals</h2><p class="muted">A free officer here joins your color. Empty general slots (5) fill first; extras wait in court for Appoint.</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-hire]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
         run("hire", { officerId: btn.dataset.hire });
       };
     });
+    return;
+  }
+  if (a.needs === "appoint") {
+    const cs = appointCandidates(state);
+    if (!cs.length) return toast("Court empty. Plot → Hire, or Officers → Create then Hire.");
+    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Promote a court officer into an empty You-card slot. Standing orders live on generals.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    $("modal-card").querySelectorAll("[data-appoint]").forEach((btn) => {
+      btn.onclick = () => {
+        hideModal();
+        run("appoint", { officerId: btn.dataset.appoint });
+      };
+    });
+    return;
+  }
+  if (a.needs === "mission") {
+    showModal(missionsHtml(), { kind: "missions" });
+    wireMissionButtons();
     return;
   }
   if (a.needs === "court") {
@@ -1268,6 +1422,11 @@ function drawCityMark(ctx, r, selected) {
     ctx.fillStyle = "#d080f8";
     ctx.fillRect(x + 4, y - 1, 2, 2);
   }
+  legendBoard(state).forEach((h) => {
+    if (h.regionId !== r.id || !h.mapMark) return;
+    ctx.fillStyle = "#d080f8";
+    ctx.fillRect(x + 4, y - 1, 2, 2);
+  });
 }
 
 function drawCityPlate(ctx, r, selected) {
@@ -1614,6 +1773,34 @@ function wireOrders() {
       render();
     };
   });
+  document.querySelectorAll("[data-add-gen]").forEach((btn) => {
+    btn.onclick = () => {
+      const wait = appointCandidates(state);
+      if (wait.length) {
+        commandCat = "plot";
+        render();
+        startAction(listActions(state).find((a) => a.id === "appoint") || { id: "appoint", needs: "appoint", label: "Appoint General" });
+        return;
+      }
+      if (hireCandidates(state).length) {
+        commandCat = "plot";
+        render();
+        startAction(listActions(state).find((a) => a.id === "hire") || { id: "hire", needs: "hire", label: "Hire" });
+        return;
+      }
+      toast(playerOf(state).faction ? "No free officer in this city. Travel, or Officers → Create (cap 10)." : "Raise a banner first, then Plot → Hire.");
+    };
+  });
+}
+
+function wireMissionButtons() {
+  $("modal-card")?.querySelectorAll("[data-job]")?.forEach((btn) => {
+    btn.onclick = () => {
+      const jobId = btn.dataset.job;
+      hideModal();
+      run("mission", { jobId });
+    };
+  });
 }
 
 function refreshCreator() {
@@ -1656,12 +1843,13 @@ function wireAfterRender() {
         pol: Number(document.getElementById("c-pol")?.value),
         chr: Number(document.getElementById("c-chr")?.value),
       });
-      toast(res.ok ? `${name} added to the free roster.` : res.message);
+      toast(res.ok ? `${name} added to the free roster. Plot → Hire to put them in court / a general slot.` : res.message);
       showModal(officersHtml(), { kind: "officers" });
       wireDynamicModals();
       render();
     };
   }
+  wireMissionButtons();
   wireDynamicModals();
 }
 

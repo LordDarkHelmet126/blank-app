@@ -44,8 +44,8 @@ If Python is missing, any static server in this folder works (`npx serve .`, etc
 
 1. New game → **Begin week 0** (name + background + difficulty). A week-1 coach and a yellow **NEXT** strip name the first click.
 2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**. Command opens on **Domestic**.
-3. **Raise Banner** to found Northern Front (max **5 generals** later via Hire / Persuade).
-4. Spend leftover AP (Commerce / Cultivate), then **End Week**.
+3. **Raise Banner** to found Northern Front (max **5 generals** via Hire / Appoint / Persuade). Extra hires wait in court.
+4. Spend leftover AP (Commerce / Cultivate / a **side mission**), then **End Week**.
 5. AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
 6. March into a neighbor (Nome is the usual first fight) for a short grid battle, or check Auto-resolve.
 7. **Save** writes `localStorage` and downloads JSON. **Load** reads the browser slot, a file, or pasted JSON.
@@ -65,7 +65,9 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 
 Add objects; the engine does not assume a fixed officer count.
 
-v0.1 ships **52 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). One is a **hidden legend** (`Ilya Karr`) until intel or Seek Legend.
+v0.1 ships **131 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, and Jonah Stave. Custom officers still cap at **10**.
+
+You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (12 templates) sit on a weekly board — Military → Side Mission, or the Missions dock. A general can take the **Side mission** standing order.
 
 ## Tests
 
@@ -82,6 +84,8 @@ Battle charge strip (Rockies foothills + looping sprites): `/?demo=fx=battle` or
 Travel event vignette: `/?demo=slice&panel=travel`.
 Between-turn chronicle (season + aging + marriage + child): `/?demo=chronicle`.
 Season tint only: `/?demo=season`.
+**Generals (5 slots + ADD empty states):** `/?demo=generals`.
+**Side missions board:** `/?demo=missions`.
 
 ## Layout
 

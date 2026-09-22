@@ -18,8 +18,19 @@ import {
   calendarYear,
   seasonPalette,
 } from "./chronicle.js";
+import {
+  MISSION_TEMPLATES,
+  refreshMissionBoard,
+  resolveMission,
+  pickStandingJob,
+  openMissions,
+  seedDemoMissions,
+  missionCopy,
+  missionById,
+} from "./missions.js";
 
 export { courtCandidates, sampleChronicle, calendarYear, seasonPalette };
+export { MISSION_TEMPLATES, openMissions, seedDemoMissions, missionCopy, refreshMissionBoard };
 
 export const GAME_VERSION = 1;
 export const MAX_GENERALS = 5;
@@ -33,6 +44,31 @@ export const GENERAL_ORDERS = [
   { id: "spy", label: "Spy" },
   { id: "hide", label: "Hide" },
   { id: "research", label: "Salvage" },
+  { id: "mission", label: "Side mission" },
+];
+
+export const LEGENDS = [
+  {
+    id: "karr",
+    regionId: "arctic_slope",
+    huntKey: "legendHunt",
+    short: "Ilya Karr, Slope Ghost",
+    travel: "Travel to Arctic Slope (via Fairbanks) and Seek Legend.",
+  },
+  {
+    id: "silo",
+    regionId: "yukon_road",
+    huntKey: "siloHunt",
+    short: "Nils Silo, Yukon Radio Ghost",
+    travel: "Travel the Yukon Road (via Fairbanks) and Seek Legend.",
+  },
+  {
+    id: "marsh",
+    regionId: "kenai",
+    huntKey: "marshHunt",
+    short: "Cal Marsh, Ranch Marshal",
+    travel: "Travel to Kenai (western foothills) and Seek Legend.",
+  },
 ];
 export const PERSONALITY_SKILLS = {
   aggressive: ["drill", "fortify", "safety"],
@@ -145,10 +181,43 @@ export function visibleOfficers(state) {
   return livingOfficers(state).filter((o) => isVisibleOfficer(state, o));
 }
 
-export function playerGenerals(state) {
+export function playerCourt(state) {
   const p = playerOf(state);
-  if (!p.faction) return [];
-  return livingOfficers(state).filter((o) => o.faction === p.faction && o.id !== p.id);
+  if (!p?.faction) return [];
+  return livingOfficers(state).filter((o) => o.faction === p.faction && o.id !== p.id && !o.retired);
+}
+
+function ensureStaff(state) {
+  const court = playerCourt(state);
+  const appointed = court.filter((o) => o.isGeneral);
+  if (appointed.length === 0 && court.length) {
+    court.slice(0, MAX_GENERALS).forEach((o) => {
+      o.isGeneral = true;
+    });
+  }
+}
+
+export function playerGenerals(state) {
+  ensureStaff(state);
+  return playerCourt(state).filter((o) => o.isGeneral);
+}
+
+export function appointCandidates(state) {
+  ensureStaff(state);
+  return playerCourt(state).filter((o) => !o.isGeneral);
+}
+
+function joinBanner(state, off, preferGeneral) {
+  const p = playerOf(state);
+  off.faction = p.faction;
+  off.standingOrder = off.standingOrder || "auto";
+  const gens = playerCourt(state).filter((o) => o.isGeneral && o.id !== off.id);
+  if (preferGeneral !== false && gens.length < MAX_GENERALS) {
+    off.isGeneral = true;
+  } else {
+    off.isGeneral = !!off.isGeneral && gens.length < MAX_GENERALS;
+  }
+  return off.isGeneral;
 }
 
 export function orderLabel(id) {
@@ -166,7 +235,7 @@ export function portraitInitials(name) {
 }
 
 export function ordersForOfficer(off) {
-  const allowed = new Set(["auto", ...(off?.skills || skillsForPersonality(off?.personality))]);
+  const allowed = new Set(["auto", "mission", ...(off?.skills || skillsForPersonality(off?.personality))]);
   return GENERAL_ORDERS.filter((o) => allowed.has(o.id));
 }
 
@@ -382,6 +451,10 @@ export function createNewGame(content, opts = {}) {
     bonds: { hart: 55, quinn: 30 },
     discovered: [],
     legendHunt: 0,
+    siloHunt: 0,
+    marshHunt: 0,
+    stash: [],
+    missions: { board: [], seq: 0, lastRefresh: -1 },
     research: { points: 0, unlocked: ["small_arms"] },
     log: [],
     logSeq: 1,
@@ -402,6 +475,7 @@ export function createNewGame(content, opts = {}) {
   applyDifficultyGarrisons(state);
   attachSeason(state);
   hydrateLife(state);
+  refreshMissionBoard(state);
   state.ap = apMax(state);
 
   setRelation(state, "pof", "banner", 62);
@@ -446,6 +520,11 @@ export function deserialize(raw) {
     state.customSlotsUsed = (state.officers || []).filter((o) => o.custom).length;
   }
   if (state.legendHunt == null) state.legendHunt = state.discovered?.includes("karr") ? 2 : 0;
+  if (state.siloHunt == null) state.siloHunt = state.discovered?.includes("silo") ? 2 : 0;
+  if (state.marshHunt == null) state.marshHunt = state.discovered?.includes("marsh") ? 2 : 0;
+  if (!state.stash) state.stash = [];
+  if (!state.missions) state.missions = { board: [], seq: 0, lastRefresh: -1 };
+  ensureStaff(state);
   (state.factions || []).forEach((f) => {
     if (f.onMap == null) f.onMap = f.sandbox === true;
     if (!f.bio) f.bio = "";
@@ -485,60 +564,93 @@ function spend(state, ap) {
   return true;
 }
 
-export function legendStatus(state) {
-  const k = officerOf(state, "karr");
+export function legendDef(id) {
+  return LEGENDS.find((d) => d.id === id) || LEGENDS[0];
+}
+
+export function legendStatus(state, id = "karr") {
+  const def = legendDef(id);
+  const k = officerOf(state, def.id);
   const revealed = !!(k && isVisibleOfficer(state, k));
-  const hunt = revealed ? 2 : state.legendHunt || 0;
+  const hunt = revealed ? 2 : state[def.huntKey] || 0;
   let rumor;
-  if (revealed) rumor = `${k.name}, ${k.title}, is listed. He still keeps to the Slope.`;
-  else if (hunt >= 1) rumor = "Named: Ilya Karr, Slope Ghost. Travel to Arctic Slope (via Fairbanks) and Seek Legend.";
-  else rumor = "Rumor: an unlisted trapline hand still walks Slope country. Seek Legend or Spy the Arctic Slope.";
+  if (revealed) rumor = `${k.name}, ${k.title}, is listed. ${k.bio}`;
+  else if (hunt >= 1) rumor = `Named: ${def.short}. ${def.travel}`;
+  else rumor = `Rumor: an unlisted name still walks ${regionOf(state, def.regionId)?.short || def.regionId}. Seek Legend.`;
   return {
-    id: "karr",
+    id: def.id,
     hunt,
     revealed,
-    regionId: "arctic_slope",
+    regionId: def.regionId,
     rumor,
     mapMark: !revealed,
+    short: def.short,
+    travel: def.travel,
   };
 }
 
+export function legendBoard(state) {
+  return LEGENDS.map((d) => legendStatus(state, d.id));
+}
+
+function noteLegendRumor(state, id = "karr") {
+  const st = legendStatus(state, id);
+  if (st.revealed) return false;
+  const def = legendDef(id);
+  if ((state[def.huntKey] || 0) >= 1) return false;
+  state[def.huntKey] = 1;
+  pushLog(state, `A name surfaces: ${def.short}. ${def.travel}`, "legend");
+  return true;
+}
+
 function noteKarrRumor(state) {
-  if (legendStatus(state).revealed) return false;
-  if ((state.legendHunt || 0) >= 1) return false;
-  state.legendHunt = 1;
-  pushLog(state, "A name surfaces: Ilya Karr, the Slope Ghost. Travel to Arctic Slope and Seek Legend to make contact.", "legend");
+  return noteLegendRumor(state, "karr");
+}
+
+function noteAnyLegendRumor(state) {
+  const hidden = legendBoard(state).find((h) => !h.revealed);
+  if (!hidden) return false;
+  return noteLegendRumor(state, hidden.id);
+}
+
+function revealLegend(state, id) {
+  const def = legendDef(id);
+  const k = officerOf(state, def.id);
+  if (!k) return false;
+  if (state.discovered.includes(def.id) && !k.hidden) {
+    state[def.huntKey] = 2;
+    return false;
+  }
+  if (!state.discovered.includes(def.id)) state.discovered.push(def.id);
+  k.hidden = false;
+  state[def.huntKey] = 2;
+  pushLog(state, `Legend found: ${k.name}, ${k.title}. ${k.bio} Hire them if you share ${regionOf(state, def.regionId)?.short || "their ground"}.`, "legend");
   return true;
 }
 
 function revealKarr(state) {
-  const k = officerOf(state, "karr");
-  if (!k) return false;
-  if (state.discovered.includes("karr") && !k.hidden) {
-    state.legendHunt = 2;
-    return false;
+  return revealLegend(state, "karr");
+}
+
+function advanceHunt(state, id, onSite) {
+  if (legendStatus(state, id).revealed) return { revealed: false, already: true, id };
+  if (onSite) {
+    const fresh = revealLegend(state, id);
+    return { revealed: fresh, rumored: false, id };
   }
-  if (!state.discovered.includes("karr")) state.discovered.push("karr");
-  k.hidden = false;
-  state.legendHunt = 2;
-  pushLog(state, `Legend found: ${k.name}, ${k.title}. ${k.bio} He can be hired if you share the Slope.`, "legend");
-  return true;
+  const rumored = noteLegendRumor(state, id);
+  return { revealed: false, rumored, id };
 }
 
 function advanceKarrHunt(state, onSlope) {
-  if (legendStatus(state).revealed) return { revealed: false, already: true };
-  if (onSlope) {
-    const fresh = revealKarr(state);
-    return { revealed: fresh, rumored: false };
-  }
-  const rumored = noteKarrRumor(state);
-  return { revealed: false, rumored };
+  return advanceHunt(state, "karr", onSlope);
 }
 
 function discoverCheck(state, regionId) {
-  if (regionId === "arctic_slope") {
-    const onSlope = playerOf(state).region === "arctic_slope";
-    return advanceKarrHunt(state, onSlope);
+  const def = LEGENDS.find((d) => d.regionId === regionId);
+  if (def) {
+    const onSite = playerOf(state).region === regionId;
+    return advanceHunt(state, def.id, onSite);
   }
   const hidden = livingOfficers(state).filter((o) => o.hidden && o.region === regionId && !state.discovered.includes(o.id));
   hidden.forEach((o) => {
@@ -572,17 +684,23 @@ export function listActions(state) {
     hint: hasBanner ? "You already fly a color." : here.owner ? "Cannot raise a banner in occupied ground." : "Found Northern Front and claim this region.",
   });
   const hunt = legendStatus(state);
+  const hunts = legendBoard(state);
+  const anyHidden = hunts.some((h) => !h.revealed);
+  const localHunt = hunts.find((h) => h.regionId === p.region && !h.revealed);
+  const rumoredOffSite = hunts.some((h) => !h.revealed && h.hunt >= 1 && h.regionId !== p.region);
   actions.push({
     id: "seek_legend",
-    label: hunt.hunt >= 1 && p.region === "arctic_slope" ? "Contact Legend" : "Seek Legend",
-    ap: hunt.hunt >= 1 && p.region !== "arctic_slope" ? 0 : 1,
+    label: localHunt ? "Contact Legend" : "Seek Legend",
+    ap: rumoredOffSite && !localHunt ? 0 : 1,
     group: "spy",
-    enabled: !hunt.revealed,
-    hint: hunt.revealed
-      ? "Ilya Karr is listed."
-      : hunt.hunt >= 1
-        ? "Travel to Arctic Slope (via Fairbanks) and seek again to make contact."
-        : "Follow Slope trapline rumors. A hidden officer may be walking the ice.",
+    enabled: anyHidden,
+    hint: !anyHidden
+      ? "Listed legends are found."
+      : localHunt
+        ? `Make contact here: ${localHunt.short}.`
+        : rumoredOffSite
+          ? hunts.find((h) => !h.revealed && h.hunt >= 1)?.travel || hunt.rumor
+          : "Follow trapline, ranch, and radio rumors. Hidden officers may still walk this theater.",
   });
   actions.push({
     id: "drill",
@@ -646,9 +764,28 @@ export function listActions(state) {
     label: "Hire",
     ap: 1,
     group: "plot",
-    enabled: hasBanner && gens < MAX_GENERALS,
-    hint: gens >= MAX_GENERALS ? "Command staff full (5 generals)." : "Recruit a free officer in this region.",
+    enabled: hasBanner && hireCandidates(state).length > 0,
+    hint: !hasBanner
+      ? "Raise a banner first."
+      : hireCandidates(state).length
+        ? gens >= MAX_GENERALS
+          ? "Recruit a free officer into court. Appoint later when a general slot opens (5 max)."
+          : "Recruit a free officer in this region. They fill a general slot if one is open (5 max)."
+        : "No free officer in this city. Travel, or Officers → Create (cap 10), then Hire.",
     needs: "hire",
+  });
+  actions.push({
+    id: "appoint",
+    label: "Appoint General",
+    ap: 0,
+    group: "plot",
+    enabled: hasBanner && gens < MAX_GENERALS && appointCandidates(state).length > 0,
+    hint: gens >= MAX_GENERALS
+      ? "Command staff full (5 generals)."
+      : appointCandidates(state).length
+        ? "Promote a court officer into an empty general slot."
+        : "Hire or create an officer first, then appoint them (5 slots).",
+    needs: "appoint",
   });
   actions.push({
     id: "ally",
@@ -682,8 +819,8 @@ export function listActions(state) {
     label: "Plot: Persuade",
     ap: 1,
     group: "plot",
-    enabled: hasBanner && gens < MAX_GENERALS,
-    hint: "Talk a wavering officer into your color.",
+    enabled: hasBanner,
+    hint: "Talk a wavering officer into your color. They join court; empty general slots fill first.",
     needs: "officer",
   });
   const bound = !!p.spouseId;
@@ -731,6 +868,20 @@ export function listActions(state) {
       ? "Commit a levy into a neighboring hostile region. A ronin who wins founds Northern Front."
       : "Need 8 garrison in a held region, or 8 personal retinue as a free officer.",
     needs: "attack",
+  });
+  const jobs = openMissions(state);
+  actions.push({
+    id: "mission",
+    label: jobs.length ? `Side Mission (${jobs.length})` : "Side Mission",
+    ap: 1,
+    group: "command",
+    enabled: hasBanner && jobs.length > 0,
+    hint: !hasBanner
+      ? "Raise a banner, then take optional jobs (Military → Side Mission)."
+      : jobs.length
+        ? "Optional jobs: scout, raid, escort, rescue, sabotage, radio run. 1 AP, or set a general to Side mission."
+        : "Board empty. End Week refreshes side missions.",
+    needs: "mission",
   });
   actions.push({
     id: "end_week",
@@ -802,6 +953,8 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "spy") return doSpy(state, extra.regionId, stats);
   if (actionId === "seek_legend") return doSeekLegend(state);
   if (actionId === "hire") return doHire(state, extra.officerId, stats);
+  if (actionId === "appoint") return doAppoint(state, extra.officerId);
+  if (actionId === "mission") return doMission(state, extra.jobId, extra.officerId);
   if (actionId === "ally") return doAlly(state, extra.factionId, stats);
   if (actionId === "break_ally") return doBreak(state, extra.factionId);
   if (actionId === "rumor") return doRumor(state, extra.officerId, stats);
@@ -897,29 +1050,35 @@ function tryUnlockTech(state, content, announce) {
 }
 
 function doSeekLegend(state) {
-  const st = legendStatus(state);
-  if (st.revealed) return { ok: false, message: "Ilya Karr is already listed." };
-  const onSlope = playerOf(state).region === "arctic_slope";
-  if (st.hunt >= 1 && !onSlope) {
-    const msg = "The name is Ilya Karr. Travel to Arctic Slope (Fairbanks → Slope) and Seek Legend again.";
-    pushLog(state, msg, "legend");
-    return { ok: true, message: msg };
-  }
-  if (!spend(state, 1)) return { ok: false, message: "No AP." };
-  if (onSlope) {
-    revealKarr(state);
-    const k = officerOf(state, "karr");
+  const hunts = legendBoard(state);
+  const hidden = hunts.filter((h) => !h.revealed);
+  if (!hidden.length) return { ok: false, message: "Listed legends are found." };
+  const here = playerOf(state).region;
+  const local = hidden.find((h) => h.regionId === here);
+  if (local) {
+    if (!spend(state, 1)) return { ok: false, message: "No AP." };
+    revealLegend(state, local.id);
+    const k = officerOf(state, local.id);
     return {
       ok: true,
       message: `${k.name} steps out of the weather. Legend listed.`,
       revealed: true,
       officerName: k.name,
+      regionId: local.regionId,
     };
   }
-  noteKarrRumor(state);
+  const rumored = hidden.find((h) => h.hunt >= 1);
+  if (rumored) {
+    const msg = `The name is ${rumored.short}. ${rumored.travel}`;
+    pushLog(state, msg, "legend");
+    return { ok: true, message: msg };
+  }
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  const target = hidden[0];
+  noteLegendRumor(state, target.id);
   return {
     ok: true,
-    message: "Trapline talk names Ilya Karr, Slope Ghost. Go north to Arctic Slope to make contact.",
+    message: `Talk names ${target.short}. ${target.travel}`,
   };
 }
 
@@ -932,7 +1091,10 @@ function doHide(state, stats) {
   const msg = `You go to ground in ${here.short}.${bonus}`;
   pushLog(state, msg, "player");
   const hunt = discoverCheck(state, here.id);
-  if (hunt?.revealed) return { ok: true, message: msg, revealed: true, officerName: "Ilya Karr" };
+  if (hunt?.revealed) {
+    const name = officerOf(state, hunt.id)?.name || "a legend";
+    return { ok: true, message: msg, revealed: true, officerName: name, regionId: here.id };
+  }
   return { ok: true, message: msg };
 }
 
@@ -952,7 +1114,10 @@ function doSpy(state, regionId, stats) {
   }
   const hunt = discoverCheck(state, target.id);
   pushLog(state, msg, "spy");
-  if (hunt?.revealed) return { ok: true, message: msg, revealed: true, officerName: "Ilya Karr" };
+  if (hunt?.revealed) {
+    const name = officerOf(state, hunt.id)?.name || "a legend";
+    return { ok: true, message: msg, revealed: true, officerName: name, regionId: target.id };
+  }
   if (hunt?.rumored) return { ok: true, message: `${msg} Trapline rumor attached.` };
   return { ok: true, message: msg };
 }
@@ -965,7 +1130,6 @@ function ownerName(state, region) {
 function doHire(state, officerId, stats) {
   const p = playerOf(state);
   if (!p.faction) return { ok: false, message: "Raise a banner first." };
-  if (playerGenerals(state).length >= MAX_GENERALS) return { ok: false, message: "Five generals already." };
   const t = officerOf(state, officerId);
   if (!t || t.faction || t.region !== p.region || !isVisibleOfficer(state, t)) {
     return { ok: false, message: "No free officer here to hire." };
@@ -983,15 +1147,88 @@ function doHire(state, officerId, stats) {
     return { ok: true, message: msg };
   }
   state.gold -= cost;
-  t.faction = p.faction;
+  const madeGeneral = joinBanner(state, t, true);
   t.loyalty = Math.min(90, 55 + Math.floor(stats.chr / 8));
-  t.standingOrder = t.standingOrder || "auto";
   addBond(state, t.id, 12);
   p.fame += 4;
-  const msg = `${t.name} takes your color as general ${playerGenerals(state).length}/${MAX_GENERALS}.`;
+  const msg = madeGeneral
+    ? `${t.name} takes your color as general ${playerGenerals(state).length}/${MAX_GENERALS}.`
+    : `${t.name} joins the court. Appoint them on the You card when a general slot opens (5 max).`;
   pushLog(state, msg, "alert");
-  state.ap = Math.min(apMax(state), state.ap + 1);
+  if (madeGeneral) state.ap = Math.min(apMax(state), state.ap + 1);
   return { ok: true, message: msg };
+}
+
+function doAppoint(state, officerId) {
+  const p = playerOf(state);
+  if (!p.faction) return { ok: false, message: "Raise a banner first." };
+  if (playerGenerals(state).length >= MAX_GENERALS) return { ok: false, message: "Five generals already." };
+  const t = officerOf(state, officerId);
+  if (!t || t.faction !== p.faction || t.id === p.id) return { ok: false, message: "Pick a court officer." };
+  if (t.isGeneral) return { ok: false, message: "Already a general." };
+  t.isGeneral = true;
+  t.standingOrder = t.standingOrder || "auto";
+  const n = playerGenerals(state).length;
+  const msg = `${t.name} is appointed general ${n}/${MAX_GENERALS}. Set a standing order on the You card.`;
+  pushLog(state, msg, "alert");
+  state.ap = Math.min(apMax(state), state.ap);
+  return { ok: true, message: msg };
+}
+
+function missionHelpers() {
+  return {
+    regionOf,
+    actingStats,
+    addBond,
+    rescueOfficer,
+    noteAnyLegendRumor,
+  };
+}
+
+function rescueOfficer(state, regionId, actor) {
+  const p = playerOf(state);
+  const hidden = livingOfficers(state).filter(
+    (o) => o.hidden && o.region === regionId && !state.discovered.includes(o.id) && !o.legend
+  );
+  if (hidden.length) {
+    const o = hidden[0];
+    if (!state.discovered.includes(o.id)) state.discovered.push(o.id);
+    o.hidden = false;
+    o.loyalty = Math.min(90, (o.loyalty || 40) + 12);
+    addBond(state, o.id, 8);
+    return o;
+  }
+  const free = visibleOfficers(state).filter(
+    (o) => o.id !== p.id && o.id !== actor.id && !o.faction && o.region === regionId
+  );
+  const t = free[0];
+  if (!t) return null;
+  t.loyalty = Math.min(90, (t.loyalty || 40) + 10);
+  addBond(state, t.id, 8);
+  if (p.faction) joinBanner(state, t, true);
+  return t;
+}
+
+function doMission(state, jobId, officerId) {
+  const p = playerOf(state);
+  if (!p.faction) return { ok: false, message: "Raise a banner first." };
+  const job = missionById(state, jobId);
+  if (!job || job.done) return { ok: false, message: "That job is gone. End Week refreshes the board." };
+  if (p.region !== job.regionId) {
+    return { ok: false, message: `Travel to ${regionOf(state, job.regionId)?.short || job.regionId} first.` };
+  }
+  if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
+  const actor = officerOf(state, officerId) || p;
+  const res = resolveMission(state, job, actor, missionHelpers());
+  pushLog(state, res.report || res.message, "player");
+  return { ...res, sceneId: res.sceneId || "mission" };
+}
+
+function runStandingMission(state, off) {
+  const job = pickStandingJob(state, off);
+  if (!job) return null;
+  const res = resolveMission(state, job, off, missionHelpers());
+  return { personality: off.personality, text: `${res.report} — ordered.` };
 }
 
 function doAlly(state, factionId, stats) {
@@ -1051,7 +1288,6 @@ function doRumor(state, officerId, stats) {
 function doPersuade(state, officerId, stats) {
   const p = playerOf(state);
   if (!p.faction) return { ok: false, message: "Raise a banner first." };
-  if (playerGenerals(state).length >= MAX_GENERALS) return { ok: false, message: "Staff is full." };
   const t = officerOf(state, officerId);
   if (!t || t.id === p.id || !isVisibleOfficer(state, t)) return { ok: false, message: "No target." };
   if (t.faction === p.faction) return { ok: false, message: "Already yours." };
@@ -1064,11 +1300,12 @@ function doPersuade(state, officerId, stats) {
     pushLog(state, msg, "plot");
     return { ok: true, message: msg };
   }
-  t.faction = p.faction;
+  const madeGeneral = joinBanner(state, t, true);
   t.loyalty = 50 + Math.floor(stats.chr / 10);
-  t.standingOrder = t.standingOrder || "auto";
   addBond(state, t.id, 10);
-  const msg = `${t.name} crosses the floor to Northern Front.`;
+  const msg = madeGeneral
+    ? `${t.name} crosses the floor as general ${playerGenerals(state).length}/${MAX_GENERALS}.`
+    : `${t.name} crosses the floor to the court. Appoint them when a slot opens.`;
   pushLog(state, msg, "alert");
   return { ok: true, message: msg };
 }
@@ -1273,6 +1510,10 @@ function applyOfficerChoice(state, off, choice, playerStaff) {
     if (playerStaff) state.research.points += 1;
     return { personality: off.personality, text: `${tag} scrapes a workshop for parts.${suffix}` };
   }
+  if (choice === "mission" && playerStaff) {
+    const ran = runStandingMission(state, off);
+    if (ran) return ran;
+  }
   region && (region.order = Math.min(100, region.order + 1));
   return { personality: off.personality, text: `${tag} hides stores and waits.${suffix}` };
 }
@@ -1281,8 +1522,8 @@ function officerActAI(state, content, off) {
   if (off.id === "player" || off.alive === false) return null;
   if (off.hidden && !state.discovered.includes(off.id) && off.legend) {
     if (state.week >= 6 && chance(state, 0.2)) {
-      noteKarrRumor(state);
-      return { personality: off.personality, text: "Slope talk: traplines are being walked by someone who will not take a radio." };
+      noteLegendRumor(state, off.id);
+      return { personality: off.personality, text: `Talk names ${legendDef(off.id).short} — still unlisted.` };
     }
     return null;
   }
@@ -1291,7 +1532,7 @@ function officerActAI(state, content, off) {
   const p = playerOf(state);
   const servingPlayer = !!(p.faction && off.faction === p.faction && off.id !== p.id);
   if (servingPlayer) {
-    let choice = off.standingOrder && off.standingOrder !== "auto" ? off.standingOrder : null;
+    let choice = off.isGeneral && off.standingOrder && off.standingOrder !== "auto" ? off.standingOrder : null;
     if (!choice) {
       const weights = { ...aiWeights(content, off.personality), attack: 0 };
       choice = weightedPick(state, weights, ["drill", "commerce", "cultivate", "fortify", "safety", "spy", "hide", "research"]);
@@ -1428,9 +1669,10 @@ function randomEvent(state) {
     here.order = Math.max(0, here.order - 6);
     return `Pamphlets in ${here.short} — order slips.`;
   }
-  if (roll < 36 && !legendStatus(state).revealed && state.week >= 4) {
-    noteKarrRumor(state);
-    return "A trapper south of the Brooks talks about Ilya Karr still walking the Slope. Seek Legend when you can go north.";
+  if (roll < 36 && legendBoard(state).some((h) => !h.revealed) && state.week >= 4) {
+    noteAnyLegendRumor(state);
+    const h = legendBoard(state).find((x) => x.hunt >= 1 && !x.revealed);
+    return h ? `Talk names ${h.short}. Seek Legend when you can travel.` : null;
   }
   return null;
 }
@@ -1465,6 +1707,7 @@ export function endWeek(state, content) {
   const life = tickLife(state, { year, seasonChanged });
   const chronicle = buildChronicle(state, { year, seasonChanged, lifeEvents: life.events });
   tryUnlockTech(state, content, true);
+  refreshMissionBoard(state);
   state.ap = apMax(state);
   playerOf(state).fame = Math.min(100, playerOf(state).fame + (playerOf(state).faction ? 1 : 0));
 
@@ -1494,6 +1737,10 @@ export function autoplayWeek(state, content) {
   const hires = hireCandidates(state);
   if (hires.length && playerGenerals(state).length < MAX_GENERALS && state.gold > 40 && state.ap > 1) {
     act(state, content, "hire", { officerId: hires[0].id });
+  }
+  const jobs = openMissions(state).filter((j) => j.regionId === playerOf(state).region);
+  if (jobs.length && p.faction && state.ap > 1 && state.week >= 1) {
+    act(state, content, "mission", { jobId: jobs[0].id });
   }
   if (p.faction && ownedByPlayer(state, currentRegion(state))) {
     if (state.food < 20 && state.ap) act(state, content, "cultivate");
@@ -1584,6 +1831,7 @@ export function createCustomOfficer(state, spec) {
     skills,
     portrait,
     standingOrder: "auto",
+    isGeneral: false,
     age: 28,
     spouseId: null,
     courtingId: null,

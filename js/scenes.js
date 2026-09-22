@@ -245,6 +245,104 @@ const PAINT = {
     pine(ctx, 8, 12);
     pine(ctx, 64, 10);
   },
+  appoint(ctx) {
+    px(ctx, 0, 0, W, H, "#181828");
+    px(ctx, 0, 28, W, 17, PAL.wood);
+    fig(ctx, 14, 12, PAL.olive, PAL.gold);
+    fig(ctx, 50, 12, PAL.olive2, PAL.navy);
+    px(ctx, 36, 6, 3, 22, PAL.wood);
+    px(ctx, 39, 6, 14, 10, PAL.gold);
+  },
+  mission(ctx) {
+    skyGround(ctx);
+    pine(ctx, 6, 14);
+    px(ctx, 0, 30, W, 4, "#503010");
+    px(ctx, 0, 31, W, 1, PAL.gold);
+    fig(ctx, 18, 12, PAL.olive, PAL.gold);
+    px(ctx, 42, 18, 16, 10, PAL.crate);
+  },
+  scout_road(ctx) {
+    skyGround(ctx);
+    pine(ctx, 8, 12);
+    pine(ctx, 64, 10);
+    px(ctx, 0, 30, W, 4, "#503010");
+    px(ctx, 0, 31, W, 1, PAL.gold);
+    fig(ctx, 22, 12, PAL.olive, PAL.olive2);
+    px(ctx, 48, 20, 6, 4, PAL.ink);
+  },
+  raid_depot(ctx) {
+    skyGround(ctx, false, "dusk");
+    px(ctx, 28, 14, 28, 16, PAL.wood);
+    px(ctx, 32, 18, 8, 8, PAL.crate);
+    px(ctx, 44, 18, 8, 8, PAL.gold);
+    fig(ctx, 10, 14, PAL.olive, PAL.ink);
+  },
+  escort_convoy(ctx) {
+    skyGround(ctx);
+    px(ctx, 0, 30, W, 4, "#503010");
+    px(ctx, 0, 31, W, 1, PAL.gold);
+    px(ctx, 16, 20, 14, 8, PAL.gold);
+    px(ctx, 40, 18, 16, 10, PAL.olive);
+    fig(ctx, 60, 12, PAL.olive2, PAL.gold);
+  },
+  rescue_officer(ctx) {
+    skyGround(ctx, false, "dusk");
+    px(ctx, 48, 12, 18, 18, PAL.wood);
+    px(ctx, 54, 16, 6, 10, PAL.ink);
+    fig(ctx, 16, 12, PAL.olive, PAL.gold);
+    fig(ctx, 32, 14, PAL.blue, PAL.snow);
+  },
+  sabotage(ctx) {
+    skyGround(ctx, false, "dusk");
+    px(ctx, 24, 16, 20, 12, PAL.wood);
+    px(ctx, 28, 20, 12, 4, PAL.red);
+    fig(ctx, 8, 14, PAL.ink, PAL.olive);
+  },
+  radio_run(ctx) {
+    px(ctx, 0, 0, W, H, "#201810");
+    px(ctx, 20, 14, 40, 16, PAL.wood2);
+    px(ctx, 24, 10, 4, 8, PAL.gold);
+    px(ctx, 25, 8, 2, 2, "#fff8c0");
+    fig(ctx, 8, 14, PAL.olive, PAL.olive2);
+  },
+  cache_pull(ctx) {
+    skyGround(ctx);
+    px(ctx, 22, 18, 36, 12, PAL.wood);
+    px(ctx, 26, 20, 8, 8, PAL.crate);
+    px(ctx, 38, 20, 8, 8, PAL.wheat);
+    fig(ctx, 8, 14, PAL.olive2, PAL.olive);
+  },
+  ford_watch(ctx) {
+    skyGround(ctx);
+    px(ctx, 0, 26, W, 8, PAL.blue);
+    px(ctx, 28, 22, 24, 4, PAL.gold);
+    fig(ctx, 18, 10, PAL.olive, PAL.gold);
+  },
+  airstrip_mark(ctx) {
+    skyGround(ctx);
+    px(ctx, 8, 28, 64, 3, PAL.crate);
+    px(ctx, 36, 12, 4, 16, PAL.gold);
+    fig(ctx, 16, 14, PAL.olive, PAL.olive2);
+  },
+  claim_survey(ctx) {
+    skyGround(ctx);
+    px(ctx, 30, 8, 3, 22, PAL.wood);
+    px(ctx, 20, 26, 40, 6, PAL.wood2);
+    fig(ctx, 44, 12, PAL.olive, PAL.gold);
+  },
+  ice_listen(ctx) {
+    skyGround(ctx, true);
+    px(ctx, 10, 26, 60, 6, PAL.snow);
+    px(ctx, 48, 16, 12, 8, PAL.blue);
+    fig(ctx, 18, 12, PAL.ink, PAL.snow);
+  },
+  ranch_relay(ctx) {
+    skyGround(ctx);
+    px(ctx, 28, 12, 28, 16, PAL.wood);
+    px(ctx, 32, 8, 8, 8, PAL.gold);
+    fig(ctx, 8, 14, PAL.olive, PAL.gold);
+    fig(ctx, 58, 14, PAL.olive2, PAL.wheat);
+  },
 };
 
 function paintId(id) {
@@ -309,6 +407,9 @@ const PHOTO_TINTS = {
   spy: ["art/scenes/scene-spy.png", "#4060a0"],
   hide: ["art/scenes/scene-spy.png", "#203040"],
   seek_legend: ["art/scenes/scene-spy.png", "#8040c0"],
+  mission: ["art/scenes/scene-spy.png", "#c8a038"],
+  radio_run: ["art/scenes/scene-spy.png", "#406080"],
+  appoint: ["art/scenes/scene-council.png", "#f8d800"],
 };
 
 export async function bakeScenes() {

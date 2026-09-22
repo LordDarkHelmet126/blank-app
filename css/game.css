@@ -380,6 +380,22 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   border-radius: 0;
   box-shadow: var(--chrome-in);
 }
+.gen-row.empty {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #000030;
+  color: var(--amber);
+  border: var(--chrome);
+  box-shadow: var(--chrome-in);
+  padding: 4px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 8px;
+  line-height: 1.5;
+}
+.gen-row.empty:hover { color: var(--ice); background: #181868; }
+.mission-row small { display: block; color: var(--ice-dim); margin-top: 4px; }
 .event-scene {
   position: fixed;
   inset: 0;
@@ -769,7 +785,8 @@ hr {
   .officer-face { width: 64px; height: 64px; flex-basis: 64px; }
   .cmd-card { min-height: 180px; }
   .officer-plate { min-height: 0; }
-  .officer-plate .gen-orders { display: none; }
+  .officer-plate .gen-orders { display: flex; }
+  .officer-plate .gen-row.empty { font-size: 8px; padding: 2px 4px; }
   .side .panel-why, .dock .panel-why { display: none; }
   .cmd-tab img { height: 36px; }
   .cmd-actions button { min-height: 68px; padding: 0; }

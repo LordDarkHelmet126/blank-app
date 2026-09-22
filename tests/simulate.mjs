@@ -20,6 +20,12 @@ import {
   courtCandidates,
   calendarYear,
   seasonOf,
+  MAX_GENERALS,
+  MISSION_TEMPLATES,
+  openMissions,
+  seedDemoMissions,
+  appointCandidates,
+  playerCourt,
 } from "../js/engine.js";
 
 function assert(cond, msg) {
@@ -32,11 +38,13 @@ assert(/1985/.test(techBlob) && /M16A2/.test(techBlob) && /Jeep/.test(techBlob) 
 assert(content.tech.tracks.every((t) => !/^(F-35|JLTV|MRAP|drone)/i.test(t.name)), "tech track names must not be 2020s kit");
 assert(content.tech.tracks.reduce((s, t) => s + (t.battle?.atk || 0), 0) === 14, "1980s tracks keep the original salvage ATK cap");
 const aiCount = content.officers.officers.length;
-assert(aiCount >= 40 && aiCount <= 60, `AI roster should be 40–60 original officers, got ${aiCount}`);
+assert(aiCount >= 110 && aiCount <= 160, `AI roster should jump well past ~50 toward 500, got ${aiCount}`);
 const officerIds = content.officers.officers.map((o) => o.id);
 assert(new Set(officerIds).size === officerIds.length, "duplicate officer ids");
 assert(content.officers.officers.every((o) => o.name && o.bio && o.personality && o.region), "every officer needs name/bio/personality/region");
-assert(content.officers.officers.filter((o) => o.legend).map((o) => o.id).join() === "karr", "single original legend remains Ilya Karr");
+const legends = content.officers.officers.filter((o) => o.legend).map((o) => o.id).sort();
+assert(legends.join() === "karr,marsh,silo", `three original legends (Karr, Silo, Marsh), got ${legends}`);
+assert(content.officers.officers.filter((o) => o.elite).length >= 3, "need a few elites (Brack, Lumen, Stave, legends)");
 assert(content.factions.factions.length >= 36 && content.factions.factions.length <= 44, `Need ~40 original factions, got ${content.factions.factions.length}`);
 const facIds = content.factions.factions.map((f) => f.id);
 assert(new Set(facIds).size === facIds.length, "duplicate faction ids");
@@ -148,6 +156,7 @@ assert(pat.custom && pat.portrait === "PQ", "placeholder portrait initials");
 assert(pat.skills.includes("commerce") && !pat.skills.includes("drill"), "merchant type gates skills");
 pat.faction = "northern_front";
 pat.loyalty = 80;
+pat.isGeneral = true;
 assert(!setGeneralOrder(spyState, pat.id, "drill").ok, "gated skill rejected");
 assert(setGeneralOrder(spyState, pat.id, "commerce").ok, "in-type skill allowed");
 assert(!createCustomOfficer(spyState, { name: "Over", war: 80, int: 80, pol: 80, chr: 80, personality: "loyalist" }).ok, "stat budget cap");
@@ -275,6 +284,79 @@ const lifeSrc = readFileSync(new URL("../js/chronicle.js", import.meta.url), "ut
 assert(/get\("demo"\) === "chronicle"/.test(uiSrc) && /get\("demo"\) === "season"/.test(uiSrc), "chronicle/season demo hooks");
 assert(!/wolverine/i.test(lifeSrc), "life layer must not use Wolverines");
 console.log("ok chronicle seasons/age/marriage");
+
+assert(MAX_GENERALS === 5, "five general slots");
+assert(MISSION_TEMPLATES.length >= 12, `need 12 side-mission templates, got ${MISSION_TEMPLATES.length}`);
+const missionIds = MISSION_TEMPLATES.map((t) => t.id);
+assert(new Set(missionIds).size === missionIds.length, "duplicate mission templates");
+["scout_road", "raid_depot", "escort_convoy", "rescue_officer", "sabotage", "radio_run"].every((id) =>
+  assert(missionIds.includes(id), `missing mission ${id}`)
+);
+
+const staff = createNewGame(content, { seed: 21, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(staff, content, "raise_banner");
+assert(playerGenerals(staff).length === 0, "solo start — no generals");
+assert(openMissions(staff).length >= 1, "mission board opens with a bannered week-0 game");
+const hartStaff = staff.officers.find((o) => o.id === "hart");
+hartStaff.faction = "northern_front";
+hartStaff.loyalty = 80;
+hartStaff.region = "bethel";
+assert(playerGenerals(staff).some((o) => o.id === "hart"), "court assignment fills a general slot");
+assert(playerGenerals(staff).length <= MAX_GENERALS, "not over 5 generals");
+const extra = createCustomOfficer(staff, { name: "Pat Quinn", war: 55, int: 55, pol: 55, chr: 55, personality: "merchant" });
+assert(extra.ok, "custom still adds");
+const pat2 = staff.officers.find((o) => o.id === extra.id);
+pat2.faction = "northern_front";
+pat2.loyalty = 80;
+pat2.isGeneral = false;
+assert(appointCandidates(staff).some((o) => o.id === pat2.id), "custom in court waits for appoint");
+res = act(staff, content, "appoint", { officerId: pat2.id });
+assert(res.ok && pat2.isGeneral, `appoint: ${res.message}`);
+assert(playerGenerals(staff).length === 2, "two generals after appoint");
+console.log(`ok general slots ${playerGenerals(staff).length}/${MAX_GENERALS} court ${playerCourt(staff).length}`);
+
+const jobState = createNewGame(content, { seed: 22, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(jobState, content, "raise_banner");
+seedDemoMissions(jobState);
+const local = openMissions(jobState).find((j) => j.regionId === "bethel");
+assert(local, "demo board has a Bethel job");
+const beforeGold = jobState.gold;
+res = act(jobState, content, "mission", { jobId: local.id });
+assert(res.ok, `mission: ${res.message}`);
+assert(res.sceneId, "mission opens a vignette id");
+assert(local.done, "accepted job is consumed");
+const hartJob = jobState.officers.find((o) => o.id === "hart");
+hartJob.faction = "northern_front";
+hartJob.loyalty = 80;
+hartJob.region = "bethel";
+hartJob.isGeneral = true;
+assert(setGeneralOrder(jobState, "hart", "mission").ok, "side mission standing order");
+seedDemoMissions(jobState);
+res = act(jobState, content, "end_week");
+assert(res.ok, "end week after mission order");
+assert(
+  jobState.log.some((l) => /ordered/.test(l.text) && (l.text.includes("Eli Hart") || /mission|clears|fails/.test(l.text))),
+  "ordered general should run a side mission"
+);
+void beforeGold;
+console.log("ok side missions");
+
+const moreHunt = createNewGame(content, { seed: 4, difficulty: "easy", name: "Scout", background: "scout" });
+act(moreHunt, content, "raise_banner");
+assert(!visibleOfficers(moreHunt).some((o) => o.id === "silo" || o.id === "marsh"), "Silo and Marsh start hidden");
+playerOf(moreHunt).region = "yukon_road";
+res = act(moreHunt, content, "seek_legend");
+assert(res.ok && res.revealed && visibleOfficers(moreHunt).some((o) => o.id === "silo"), `Silo contact: ${res.message}`);
+playerOf(moreHunt).region = "kenai";
+res = act(moreHunt, content, "seek_legend");
+assert(res.ok && res.revealed && visibleOfficers(moreHunt).some((o) => o.id === "marsh"), `Marsh contact: ${res.message}`);
+console.log("ok Silo/Marsh legend paths");
+
+const missionSrc = readFileSync(new URL("../js/missions.js", import.meta.url), "utf8");
+assert(!/wolverine/i.test(missionSrc), "mission copy must not use Wolverines");
+assert(/get\("demo"\) === "generals"/.test(uiSrc) && /get\("demo"\) === "missions"/.test(uiSrc), "generals/missions demo hooks");
+assert(/data-add-gen/.test(uiSrc), "You-card ADD empty general slots");
+console.log("ok generals/missions demos");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
