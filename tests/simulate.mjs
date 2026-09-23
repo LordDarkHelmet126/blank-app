@@ -363,9 +363,25 @@ assert(!isAdjacent(leap, "bethel", "denver"), "engine marks Denver non-adjacent 
   ["los_angeles", "las_vegas"],
   ["reno", "las_vegas"],
   ["salt_lake", "las_vegas"],
+  ["spokane", "portland"],
+  ["spokane", "bend"],
+  ["boise", "missoula"],
+  ["boise", "jackson"],
+  ["cheyenne", "salt_lake"],
+  ["cheyenne", "lincoln"],
+  ["denver", "lincoln"],
+  ["reno", "salt_lake"],
+  ["lincoln", "wichita"],
+  ["topeka", "st_louis"],
 ].forEach(([a, b]) => {
   assert(isAdjacent(leap, a, b) && isAdjacent(leap, b, a), `${a}–${b} is a neighbor road`);
 });
+const gulf = regionOf(leap, "gulf_passage");
+assert(gulf && gulf.type === "sea" && gulf.unlockPhase === 3, "Gulf Sealift is the phase-3 sea gate");
+const nbrs = (id) => regionOf(leap, id).neighbors;
+assert(nbrs("st_louis").includes("gulf_passage") && nbrs("gulf_passage").includes("st_louis") && nbrs("gulf_passage").includes("far_cuba") && nbrs("far_cuba").includes("gulf_passage") && nbrs("far_cuba").includes("far_nicaragua"), "Gulf approach is St. Louis → Gulf Sealift → Cuba → Nicaragua");
+assert(!nbrs("st_louis").includes("far_cuba"), "Cuba is not a direct road from St. Louis");
+assert(nbrs("nome").includes("bering_strait") && nbrs("bering_strait").includes("nome") && nbrs("bering_strait").includes("far_russia") && nbrs("far_russia").includes("bering_strait"), "Russia approach stays Nome → Bering");
 assert(isAdjacent(leap, "bethel", "anchorage"), "Anchorage is an adjacent road");
 playerOf(leap).region = "bethel";
 leap.ap = 2;

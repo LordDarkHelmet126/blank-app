@@ -3,13 +3,13 @@
     "theater": "west",
     "version": "0.2-states",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Continental US silhouette with an Alaska/Yukon spur. California and Nevada are on the board (Sacramento, Los Angeles, Reno, Las Vegas) by neighbor roads only. Week 0 starts in unowned Cheyenne. No leaping.",
+    "notes": "Continental US silhouette with an Alaska/Yukon spur. California and Nevada are on the board (Sacramento, Los Angeles, Reno, Las Vegas) by neighbor roads only. Week 0 starts in unowned Cheyenne. No leaping. Shared-border roads only: Spokane\u2013Portland, Spokane\u2013Bend, Boise\u2013Missoula, Boise\u2013Jackson, Cheyenne\u2013Salt Lake, Cheyenne\u2013Lincoln, Denver\u2013Lincoln, Reno\u2013Salt Lake, Lincoln\u2013Wichita, Topeka\u2013St. Louis. Gulf Sealift is St. Louis \u2192 gulf_passage \u2192 Cuba \u2192 Nicaragua. Russia stays Nome \u2192 Bering.",
     "unlock": "All US/Yukon cities are painted and walkable from week 0. Foreign nodes unlock at campaign phase 3 (after national leader). Korea appears if a sponsor intervenes.",
     "counts": {
       "states": 14,
       "usStates": 13,
       "territories": 1,
-      "cities": 41,
+      "cities": 42,
       "alaskaPlusSpurs": 11,
       "lower48": 26,
       "foreign": 4
@@ -3574,7 +3574,9 @@
       "neighbors": [
         "seattle",
         "coeur_dalene",
-        "missoula"
+        "missoula",
+        "portland",
+        "bend"
       ],
       "startOwner": "timberline",
       "garrison": 34,
@@ -3636,7 +3638,8 @@
         "seattle",
         "olympia",
         "eugene",
-        "bend"
+        "bend",
+        "spokane"
       ],
       "startOwner": "pacific_spine",
       "garrison": 44,
@@ -3758,7 +3761,8 @@
       "neighbors": [
         "portland",
         "eugene",
-        "boise"
+        "boise",
+        "spokane"
       ],
       "startOwner": "timberline",
       "garrison": 30,
@@ -3880,7 +3884,9 @@
       "neighbors": [
         "coeur_dalene",
         "bend",
-        "salt_lake"
+        "salt_lake",
+        "missoula",
+        "jackson"
       ],
       "startOwner": "copper_road",
       "garrison": 38,
@@ -3943,7 +3949,8 @@
         "spokane",
         "coeur_dalene",
         "billings",
-        "jackson"
+        "jackson",
+        "boise"
       ],
       "startOwner": "timberline",
       "garrison": 32,
@@ -4069,7 +4076,8 @@
         "cheyenne",
         "grand_junction",
         "denver",
-        "salt_lake"
+        "salt_lake",
+        "boise"
       ],
       "startOwner": "idle_hour",
       "garrison": 18,
@@ -4131,7 +4139,9 @@
         "billings",
         "jackson",
         "denver",
-        "omaha"
+        "omaha",
+        "salt_lake",
+        "lincoln"
       ],
       "startOwner": null,
       "garrison": 34,
@@ -4194,7 +4204,9 @@
         "moab",
         "grand_junction",
         "jackson",
-        "las_vegas"
+        "las_vegas",
+        "cheyenne",
+        "reno"
       ],
       "startOwner": "rail_brotherhood",
       "garrison": 48,
@@ -4383,7 +4395,8 @@
         "omaha",
         "topeka",
         "jackson",
-        "moab"
+        "moab",
+        "lincoln"
       ],
       "startOwner": "ember_campus",
       "garrison": 40,
@@ -4566,7 +4579,10 @@
       ],
       "neighbors": [
         "omaha",
-        "topeka"
+        "topeka",
+        "cheyenne",
+        "denver",
+        "wichita"
       ],
       "startOwner": "idle_hour",
       "garrison": 20,
@@ -4627,7 +4643,8 @@
       "neighbors": [
         "lincoln",
         "wichita",
-        "denver"
+        "denver",
+        "st_louis"
       ],
       "startOwner": "idle_hour",
       "garrison": 22,
@@ -4688,7 +4705,8 @@
       "neighbors": [
         "topeka",
         "colorado_springs",
-        "st_louis"
+        "st_louis",
+        "lincoln"
       ],
       "startOwner": "copper_road",
       "garrison": 34,
@@ -4747,7 +4765,9 @@
         "Far from the Front Range"
       ],
       "neighbors": [
-        "wichita"
+        "wichita",
+        "topeka",
+        "gulf_passage"
       ],
       "startOwner": "red_wharf",
       "garrison": 48,
@@ -4788,6 +4808,67 @@
         "sun": 1,
         "weather": 0,
         "defense": 1
+      }
+    },
+    {
+      "id": "gulf_passage",
+      "name": "Gulf Sealift",
+      "short": "Gulf Sealift",
+      "state": "GL",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "sea",
+      "plus": [
+        "Warm sealift",
+        "Short hop"
+      ],
+      "minus": [
+        "Exposed channel",
+        "No army"
+      ],
+      "neighbors": [
+        "st_louis",
+        "far_cuba"
+      ],
+      "startOwner": null,
+      "garrison": 16,
+      "economy": 22,
+      "food": 18,
+      "walls": 8,
+      "order": 42,
+      "population": 900,
+      "terrainBias": "coast",
+      "plate": "above",
+      "polygon": [
+        [
+          594,
+          536
+        ],
+        [
+          626,
+          536
+        ],
+        [
+          626,
+          562
+        ],
+        [
+          594,
+          562
+        ]
+      ],
+      "label": [
+        610,
+        549
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 0,
+        "fuel": 1,
+        "water": 3,
+        "sun": 2,
+        "weather": 1,
+        "defense": 0
       }
     },
     {
@@ -4868,7 +4949,8 @@
         "No inland"
       ],
       "neighbors": [
-        "far_nicaragua"
+        "far_nicaragua",
+        "gulf_passage"
       ],
       "startOwner": null,
       "garrison": 54,
@@ -5169,7 +5251,8 @@
       ],
       "neighbors": [
         "sacramento",
-        "las_vegas"
+        "las_vegas",
+        "salt_lake"
       ],
       "startOwner": "rail_brotherhood",
       "garrison": 30,

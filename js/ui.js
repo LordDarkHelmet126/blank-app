@@ -2151,6 +2151,7 @@ function projectLL(lon, lat) {
 const WORLD_DESKS = [
   { id: "bering_strait", lon: -168, lat: 65.6, color: "#7aa0b4" },
   { id: "far_russia", lon: 158, lat: 63, color: "#9a3b3b" },
+  { id: "gulf_passage", lon: -90.5, lat: 23.8, color: "#8c4a4a" },
   { id: "far_cuba", lon: -79.5, lat: 21.6, color: "#8c4a4a" },
   { id: "far_nicaragua", lon: -85.2, lat: 12.4, color: "#8c4a4a" },
   { id: "far_korea", lon: 127.2, lat: 38.2, color: "#9a3b3b" },
@@ -2231,9 +2232,8 @@ function drawGlobe(ctx) {
 
 /**
  * Sea marks only — not roads.
- * Bering→Russia uses bering_strait and far_russia.
- * Gulf→Cuba/Nicaragua uses far_cuba and far_nicaragua.
- * gulf_passage is not in this data, so no sealift node is painted.
+ * Bering→Russia uses nome → bering_strait → far_russia.
+ * Gulf uses st_louis → gulf_passage → far_cuba → far_nicaragua.
  */
 function drawWorldCorridors(ctx) {
   if (mapView.z > 0.92) return;

@@ -60,7 +60,7 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
 | `data/factions.json` | ~40 original groups. **17** are on the current board (Alaska six + Yukon/Bering + eight western banners); the rest stay off-map. |
-| `data/regions.json` | **14 states/territories** (13 US + Yukon), including California and Nevada. **37** US/Yukon cities plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
+| `data/regions.json` | **14 states/territories** (13 US + Yukon), including California and Nevada. **37** US/Yukon cities, Gulf Sealift, plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
 | `data/tech.json` | Slow 1985–89 salvage unlocks (M16A2, Jeeps, M113s, Hueys; calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.
