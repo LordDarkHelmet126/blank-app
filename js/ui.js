@@ -1791,8 +1791,8 @@ function frameBox(x0, y0, x1, y1) {
 }
 
 function frameWorld() {
-  const [xWest, yNorth] = projectLL(-175, 80);
-  const [xEast, ySouth] = projectLL(185, -72);
+  const [xWest, yNorth] = projectLL(-175, 78);
+  const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
   const maxX = Math.max(xWest, xEast) + 30;
   const minY = Math.min(yNorth, ySouth) - 24;
@@ -1805,9 +1805,9 @@ function frameWorld() {
 }
 
 function frameNear() {
-  mapView.z = 0.78;
-  mapView.x = 36;
-  mapView.y = 8;
+  mapView.z = 0.56;
+  mapView.x = 48;
+  mapView.y = 18;
   drawMap();
 }
 
@@ -2206,7 +2206,7 @@ function tracePart(ctx, part) {
 function drawGlobe(ctx) {
   ctx.save();
   ctx.lineJoin = "round";
-  ctx.lineWidth = Math.max(1.35, 1.75 / mapView.z);
+  ctx.lineWidth = Math.max(1.5, 2.05 / mapView.z);
   ctx.strokeStyle = "#1a140c";
   WORLD_LAND.concat(WORLD_OVERLAY).forEach((land) => {
     coastParts(land.ring).forEach((part) => {
@@ -2544,6 +2544,33 @@ function drawStallFront(ctx) {
   ctx.fill();
 }
 
+/** World zoom keeps the state silhouette and drops the sea card and Alaska inset. */
+function theaterLandPlate() {
+  const src = drawMap.off;
+  const c = document.createElement("canvas");
+  c.width = src.width;
+  c.height = src.height;
+  const g = c.getContext("2d");
+  g.drawImage(src, 0, 0);
+  const img = g.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  for (let y = 0; y < c.height; y++) {
+    for (let x = 0; x < c.width; x++) {
+      const i = (y * c.width + x) * 4;
+      if (x < 268 && y < 136) {
+        d[i + 3] = 0;
+        continue;
+      }
+      const r = d[i];
+      const gc = d[i + 1];
+      const b = d[i + 2];
+      if (b > 110 && r < 80 && gc < 175 && b > r + 40) d[i + 3] = 0;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
 function drawMap() {
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
@@ -2571,7 +2598,7 @@ function drawMap() {
   ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
   ctx.imageSmoothingEnabled = false;
   drawGlobe(ctx);
-  ctx.drawImage(drawMap.off, 0, 0);
+  ctx.drawImage(mapView.z < 0.7 ? theaterLandPlate() : drawMap.off, 0, 0);
   ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
