@@ -985,6 +985,9 @@ hr {
   padding: 12px;
   margin: 0 0 12px;
 }
+.roster-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.roster-head h2 { margin: 0; }
+.roster-head button { font-size: 14px; background: #f8d800; color: #101010; }
 .roster-ladder h2,
 .roster-ladder h3,
 .officers-card h2 {

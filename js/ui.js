@@ -478,6 +478,8 @@ function bindChrome() {
   const bc = $("battle-canvas");
   bc.addEventListener("click", onBattleClick);
   window.addEventListener("keydown", (e) => {
+    const tag = e.target?.tagName || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target?.isContentEditable) return;
     if (state?.phase === "duel") {
       if (e.key === "1") pickDuelMove("strike");
       if (e.key === "2") pickDuelMove("guard");
@@ -815,7 +817,7 @@ function rosterLadderHtml() {
     ? `<p class="roster-confirm" role="status">Rank change confirmed. ${esc(ladderNotice)}</p>`
     : "";
   return `<section class="roster-ladder">
-    <h2>Roster ladder</h2>
+    <div class="roster-head"><h2>Roster ladder</h2><button type="button" data-close>Close</button></div>
     <p class="roster-lead">Friends join as players. Promote them here: Player → Officer → General. Current rank sits on each row.</p>
     ${note}
     ${block("Players", ladder.player, "No friends yet. Create one below.")}

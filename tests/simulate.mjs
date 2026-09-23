@@ -799,6 +799,7 @@ assert(/get\("demo"\) === "roster"/.test(uiSrc) && /=== "ladder"/.test(uiSrc), "
 assert(/get\("promote"\)/.test(uiSrc), "demo=roster&promote= hook");
 assert(/id="btn-roster"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "roster dock button");
 assert(/data-promote/.test(uiSrc) && /roster-ladder/.test(uiSrc) && /roster-confirm/.test(uiSrc), "roster promote UI");
+assert(/tag === "INPUT"/.test(uiSrc), "roster typing does not fire the End Week shortcut");
 assert(/--type:\s*10px/.test(cssSrc), "HUD type stays 10px");
 assert(/\.roster-ladder[\s\S]*font-size:\s*16px/.test(cssSrc) && /\.roster-confirm[\s\S]*#101010/.test(cssSrc), "roster type and contrast");
 console.log("ok roster ladder");
