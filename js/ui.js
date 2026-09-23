@@ -1705,12 +1705,15 @@ function toggleLegend() {
 }
 
 function renderLegend() {
-  const key = `<span><i class="key-occ"></i>Occupied</span><span><i class="key-con"></i>Contested</span><span><i class="key-held"></i>Held</span>`;
+  const phases = ["Prairie Fire", "Gulf", "Border Fury", "Bering"]
+    .map((name) => `<span class="phase-line">${esc(name)}</span>`)
+    .join("");
+  const scars = NUKE_SCARS.map((s) => esc(s.name)).join(" ");
   const banners = state.factions
     .filter((f) => f.onMap && (f.id !== "northern_front" || f.alive))
     .map((f) => `<span><i style="background:${f.color}"></i>${esc(f.short)}</span>`)
     .join("");
-  $("legend").innerHTML = `${key}${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
+  $("legend").innerHTML = `${phases}<span>Scars ${scars}</span>${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
 }
 
 function regionAt(mx, my, canvas) {
@@ -2054,21 +2057,6 @@ function drawFrontSeg(ctx, a, b) {
   ctx.restore();
 }
 
-function drawMapPlate(ctx, text, x, y, ink) {
-  ctx.font = PX_FONT;
-  const w = Math.ceil(ctx.measureText(text).width);
-  const pw = w + 12;
-  const ph = 22;
-  const px = Math.max(2, Math.min(998 - pw, Math.round(x)));
-  const py = Math.max(2, Math.min(616 - ph, Math.round(y)));
-  ctx.fillStyle = "#000018";
-  ctx.fillRect(px - 2, py - 2, pw + 4, ph + 4);
-  ctx.fillStyle = "#f8f8f8";
-  ctx.fillRect(px, py, pw, ph);
-  ctx.fillStyle = ink || "#101050";
-  ctx.fillText(text, px + 6, py + 16);
-}
-
 function drawAxis(ctx, a, b, color) {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
@@ -2080,13 +2068,13 @@ function drawAxis(ctx, a, b, color) {
   ctx.save();
   ctx.lineCap = "round";
   ctx.strokeStyle = "#1a0808";
-  ctx.lineWidth = 9;
+  ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.moveTo(a[0], a[1]);
   ctx.lineTo(b[0], b[1]);
   ctx.stroke();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 2;
   ctx.stroke();
   const tip = b;
   const baseX = b[0] - ux * 18;
@@ -2110,40 +2098,35 @@ function drawAxis(ctx, a, b, color) {
 
 /** Original geo marks. Dark crater, amber ring — not a copied cloud icon. */
 const NUKE_SCARS = [
-  { x: 813, y: 332, name: "DC", lx: 12, ly: -26 },
-  { x: 844, y: 304, name: "NY", lx: -46, ly: -26 },
-  { x: 528, y: 329, name: "KC", lx: -40, ly: 14 },
-  { x: 506, y: 290, name: "Offutt", lx: -112, ly: 6 },
-  { x: 418, y: 155, name: "Minot", lx: -16, ly: 14 },
-  { x: 488, y: 161, name: "GF", lx: 12, ly: 8 },
-  { x: 390, y: 233, name: "Ellsworth", lx: -36, ly: 14 },
+  { x: 813, y: 332, name: "DC" },
+  { x: 844, y: 304, name: "NY" },
+  { x: 528, y: 329, name: "KC" },
+  { x: 506, y: 290, name: "Offutt" },
+  { x: 418, y: 155, name: "Minot" },
+  { x: 488, y: 161, name: "GF" },
+  { x: 390, y: 233, name: "Ellsworth" },
 ];
 
 function drawNukeScars(ctx) {
   NUKE_SCARS.forEach((s) => {
     ctx.beginPath();
-    ctx.arc(s.x, s.y, 8, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, 7, 0, Math.PI * 2);
     ctx.fillStyle = "#1a0808";
     ctx.fill();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#e8a020";
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
     ctx.fillStyle = "#f8d800";
     ctx.fill();
-    drawMapPlate(ctx, s.name, s.x + s.lx, s.y + s.ly, "#6a2808");
   });
 }
 
-/** Visual axes only. They are not roads and do not change adjacency. */
+/** Visual axes only. Names stay in the Banners panel, not on the land. */
 function drawInvasionAxes(ctx) {
   drawAxis(ctx, [6, 34], [86, 86], "#7aa0b4");
-  drawMapPlate(ctx, "BERING", 8, 4, "#103040");
   drawAxis(ctx, [334, 467], [482, 579], "#8c4a4a");
-  drawMapPlate(ctx, "Border Fury", 348, 418, "#101050");
-  drawMapPlate(ctx, "Prairie Fire", 408, 296, "#101050");
-  drawMapPlate(ctx, "Gulf", 612, 448, "#101050");
 }
 
 function drawStallFront(ctx) {

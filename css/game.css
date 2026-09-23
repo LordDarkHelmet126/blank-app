@@ -209,24 +209,47 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   text-overflow: ellipsis;
   text-align: right;
 }
-.map-head { flex-wrap: nowrap; align-items: center; }
+.map-head { flex-wrap: nowrap; align-items: center; overflow: hidden; }
+.wash-key {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+  color: var(--ice);
+  font-size: 16px;
+  white-space: nowrap;
+}
+.wash-key i {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: -3px;
+  border: 3px solid #f8f8f8;
+}
+.wash-key .key-occ { background: #9a3b3b; border-color: #1a0808; }
+.wash-key .key-con { background: #e8c080; border-color: #f8f8f8; }
+.wash-key .key-held { background: #f0c060; border-color: #f8d800; }
 /* Look demo: the theater fills the pane. Side, court, and chronicle stay in the DOM. */
 body.look-map .side,
 body.look-map .court-strip,
 body.look-map .dock { display: none; }
 body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 4px; }
 body.look-map .map-wrap { flex: 1; min-height: 0; }
-.map-legend-card { flex: 0 1 auto; max-height: 160px; overflow: auto; }
+.map-wrap .map-legend-card { flex: 0 0 auto; max-height: 72px; overflow: hidden; }
 .map-legend {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 8px;
+  flex-wrap: nowrap;
+  gap: 8px 12px;
   padding: 8px;
   font-size: 16px;
   line-height: 1.4;
   background: transparent;
   border: 0;
   color: var(--ice);
+  overflow-x: auto;
+  white-space: nowrap;
 }
 .map-legend i {
   display: inline-block;

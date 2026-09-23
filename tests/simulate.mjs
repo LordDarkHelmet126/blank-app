@@ -673,7 +673,9 @@ assert(/e\.key === "l"/.test(uiSrc) && /function toggleLegend/.test(uiSrc), "L t
 assert(/drawStallFront/.test(uiSrc) && /isAdjacent\(state, prev, r\)/.test(uiSrc), "stall line follows existing roads only");
 assert(/OCCUPIED_EAST/.test(uiSrc) && /#9a3b3b/.test(uiSrc) && !/OCCUPIED_EAST[\s\S]{0,80}CA /.test(uiSrc), "east of the stall washes occupied; CA stays bare");
 assert(/function drawNukeScars/.test(uiSrc) && /Offutt/.test(uiSrc) && /Ellsworth/.test(uiSrc) && /Minot/.test(uiSrc), "nuke scars mark DC NY KC Offutt Minot GF Ellsworth");
-assert(/function drawInvasionAxes/.test(uiSrc) && /BERING/.test(uiSrc) && /Border Fury/.test(uiSrc) && /Prairie Fire/.test(uiSrc), "Bering, Rio Grande, Prairie Fire, and Gulf are labels only");
+assert(/function drawInvasionAxes/.test(uiSrc) && /Prairie Fire/.test(uiSrc) && /Border Fury/.test(uiSrc) && /Bering/.test(uiSrc), "phase names still exist for the banners panel");
+assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land");
+assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");
 assert(!/wolverine/i.test(uiSrc) && !/red dawn/i.test(uiSrc), "map copy stays original IP");
 assert(/function drawHereChip/.test(uiSrc) && /plateAwayFromSelected/.test(uiSrc), "here chip stays off selected city");
 assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
