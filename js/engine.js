@@ -9,7 +9,7 @@ import {
   remainingRatio,
   siegeCommand,
 } from "./battle.js";
-import { inlandDesk, stampDuelDesk } from "./inland.js";
+import { inlandDesk, stampBattleDesk, stampDuelDesk } from "./inland.js";
 import {
   hydrateLife,
   tickLife,
@@ -2332,6 +2332,7 @@ export function startInlandBattle(state, content, nodeId, extra = {}) {
     field,
     forceSiege: !field,
   });
+  stampBattleDesk(battle, nodeId);
   battle.defenderPersonality = defenderPersonality(state, regionOf(state, nodeId) || battle.deskRegion || { id: nodeId, owner: null });
   battle.fromHold = false;
   state.phase = "battle";

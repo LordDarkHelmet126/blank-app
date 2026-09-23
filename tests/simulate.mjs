@@ -51,7 +51,7 @@ import {
   startInlandBattle,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
-import { INLAND_IDS, inlandDesk, inlandLook } from "../js/inland.js";
+import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk } from "../js/inland.js";
 import {
   regionIsSiege,
   createSiege,
@@ -276,6 +276,7 @@ assert(mixedAtk.filter((t) => t === "technical").length === 1, "jeep survives be
 assert(mixedAtk.filter((t) => t === "ifv").length === 1, "M113 takes the slot ahead of the jeep");
 assert(mixedAtk.at(-1) === "technical" && mixedAtk.at(-2) === "ifv", "jeep keeps the last slot");
 const liveHull = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+playerOf(liveHull).region = "bethel";
 act(liveHull, content, "raise_banner");
 regionOf(liveHull, "bethel").garrison = 120;
 liveHull.research.unlocked.push("tracked_hulls");
@@ -339,6 +340,7 @@ const siegeEnd = autoResolveBattle(siegeGame, bowl, "loyalist");
 assert(siegeEnd === "atk", "auto siege follows the coach and takes Anchorage");
 assert(bowl.units.some((u) => u.side === "atk"), "siege still keeps the field roster for a later fight");
 
+playerOf(siegeGame).region = "bethel";
 act(siegeGame, content, "raise_banner");
 regionOf(siegeGame, "bethel").garrison = 120;
 siegeGame.ap = 4;
@@ -378,15 +380,17 @@ assert(/id="siege-last"/.test(pageSrc), "latest siege line stays with the button
 console.log("ok siege depth");
 
 const inlandGame = createNewGame(content, { seed: 12, difficulty: "easy", name: "Riley Cho", background: "fighter" });
-const mapIds = new Set(content.regions.regions.map((r) => r.id));
-const neighborBlob = JSON.stringify(content.regions.regions.map((r) => r.neighbors));
 for (const id of INLAND_IDS) {
   assert(inlandDesk(id), `desk ${id}`);
-  assert(!mapIds.has(id), `${id} is not a map node`);
-  assert(!neighborBlob.includes(`"${id}"`), `${id} is not a road`);
-  const fight = createBattle(inlandGame, content, inlandDesk(id).approach, id, 80, 0);
-  assert(fight.deskOnly, `${id} fight does not require a map node`);
-  assert(fight.siege && fight.siege.works === inlandDesk(id).walls, `${id} WORKS uses the desk preset`);
+  const live = regionOf(inlandGame, id);
+  assert(live, `${id} stays a Campaign map node`);
+  const neighborsBefore = live.neighbors.join(",");
+  const regionCount = inlandGame.regions.length;
+  const opened = startInlandBattle(inlandGame, content, id, { troops: 80 });
+  const fight = inlandGame.battle;
+  assert(opened.ok && fight?.siege, `${id} siege demo opens a board`);
+  assert(!fight.deskOnly, `${id} uses the painted node`);
+  assert(fight.siege.works === live.walls, `${id} WORKS uses painted walls`);
   assert(fight.siege.suppress === inlandDesk(id).pressure, `${id} opens at the pressure preset`);
   assert(/You are the attacker/.test(fight.siege.log[0]), `${id} siege log keeps the attacker line`);
   assert(/NEXT:/.test(siegeCoach(fight.siege)) && inlandDesk(id).flavor && siegeCoach(fight.siege).includes(inlandDesk(id).flavor), `${id} coach keeps NEXT and the desk line`);
@@ -396,35 +400,48 @@ for (const id of INLAND_IDS) {
   const look = inlandLook(id);
   assert(look && look.strip && look.read && look.edge && look.panel && look.backdrop, `${id} has a desk look`);
   assert(fight.units.some((u) => u.side === "atk") && fight.units.some((u) => u.side === "def"), `${id} keeps the field roster`);
-  assert(!regionOf(inlandGame, id), `${id} battle does not insert a map node`);
+  assert(inlandGame.regions.length === regionCount, `${id} siege does not insert a map node`);
+  assert(regionOf(inlandGame, id).neighbors.join(",") === neighborsBefore, `${id} siege does not rewrite roads`);
+  inlandGame.phase = "strategy";
+  inlandGame.battle = null;
 }
-assert(inlandDesk("kamchatka").walls > inlandDesk("havana").walls, "Kamchatka berm is heavier than Havana");
-assert(inlandDesk("havana").walls > inlandDesk("managua").walls, "Havana berm is heavier than Managua");
-assert(siegeRecommend(createBattle(inlandGame, content, "far_cuba", "havana", 80, 0).siege) === "cut", "Havana still opens on Cut the berm");
-const inlandEnd = autoResolveBattle(inlandGame, createBattle(inlandGame, content, "far_russia", "kamchatka", 80, 0), "loyalist");
-assert(inlandEnd === "atk", "coach script takes the Kamchatka preset");
-const managuaEnd = autoResolveBattle(inlandGame, createBattle(inlandGame, content, "far_nicaragua", "managua", 80, 0), "loyalist");
-assert(managuaEnd === "atk", "coach script takes the Managua preset");
+assert(inlandDesk("kamchatka").walls > inlandDesk("havana").walls, "Kamchatka berm preset is heavier than Havana");
+assert(inlandDesk("havana").walls > inlandDesk("managua").walls, "Havana berm preset is heavier than Managua");
+const havanaBoard = createBattle(inlandGame, content, "far_cuba", "havana", 80, 0, { forceSiege: true });
+assert(havanaBoard.siege.works === regionOf(inlandGame, "havana").walls, "Havana WORKS copies the painted wall");
+assert(siegeRecommend(havanaBoard.siege) === "rake", "Havana painted walls open on Rake the parapet");
+const ghost = createNewGame(content, { seed: 12, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+ghost.regions = ghost.regions.filter((r) => r.id !== "havana");
+const ghostFight = createBattle(ghost, content, "far_cuba", "havana", 80, 0);
+assert(ghostFight.deskOnly && ghostFight.siege.works === inlandDesk("havana").walls, "a missing node still uses the Havana desk preset");
+const inlandEnd = autoResolveBattle(
+  inlandGame,
+  createBattle(inlandGame, content, "far_russia", "kamchatka", 80, 0, { forceSiege: true }),
+  "loyalist",
+);
+assert(inlandEnd === "atk", "coach script takes the Kamchatka board");
+const managuaEnd = autoResolveBattle(
+  inlandGame,
+  createBattle(inlandGame, content, "far_nicaragua", "managua", 80, 0, { forceSiege: true }),
+  "loyalist",
+);
+assert(managuaEnd === "atk", "coach script takes the Managua board");
 const sibField = createBattle(inlandGame, content, "far_russia", "siberia", 80, 0, { field: true });
-assert(sibField.siege == null && sibField.grid.some((row) => row.includes("forest")), "inland field spawn skips the siege board");
+assert(sibField.siege == null && sibField.grid.some((row) => row.includes("ice")), "inland field spawn skips the siege board");
 const painted = createNewGame(content, { seed: 13, difficulty: "easy", name: "Riley Cho", background: "fighter" });
-painted.regions.push({
-  id: "kr_inland",
-  name: "Campaign Ridge",
-  short: "Ridge",
-  walls: 30,
-  garrison: 22,
-  terrainBias: "hills",
-  neighbors: [],
-});
+const ridge = regionOf(painted, "kr_inland");
+const ridgeNeighbors = ridge.neighbors.join(",");
+ridge.walls = 30;
 const paintedFight = createBattle(painted, content, "far_korea", "kr_inland", 80, 0);
 assert(paintedFight.siege && paintedFight.siege.works === 30 && !paintedFight.deskOnly, "painted walls replace the desk preset");
-assert(painted.regions.find((r) => r.id === "kr_inland").neighbors.length === 0, "combat hook does not add a road");
-const low = createNewGame(content, { seed: 14, difficulty: "easy", name: "Riley Cho", background: "fighter" });
-low.regions.push({ id: "managua", name: "Managua", short: "Managua", walls: 10, garrison: 12, terrainBias: "forest", neighbors: ["far_nicaragua"] });
-assert(!createBattle(low, content, "far_nicaragua", "managua", 80, 0).siege, "authored low walls stay a field fight");
-assert(createBattle(low, content, "far_nicaragua", "managua", 80, 0, { forceSiege: true }).siege, "siege demo can still force the board");
+assert(ridge.neighbors.join(",") === ridgeNeighbors, "combat hook does not add a road");
+const managuaLive = regionOf(inlandGame, "managua");
+assert(managuaLive.walls < 24 && managuaLive.terrainBias !== "urban", "Managua paint stays under the siege line");
+assert(!createBattle(inlandGame, content, "far_nicaragua", "managua", 80, 0).siege, "authored low walls stay a field fight");
+assert(createBattle(inlandGame, content, "far_nicaragua", "managua", 80, 0, { forceSiege: true }).siege, "siege demo can still force the board");
 act(inlandGame, content, "raise_banner");
+const laneCount = inlandGame.regions.length;
+const laneNeighbors = regionOf(inlandGame, "sponsor_lane").neighbors.join(",");
 const lane = startInlandBattle(inlandGame, content, "sponsor_lane", { troops: 80 });
 assert(lane.ok && inlandGame.phase === "battle" && inlandGame.battle.siege, `sponsor lane siege: ${lane.message}`);
 const laneWorks = inlandGame.battle.siege.works;
@@ -432,7 +449,10 @@ const laneCut = battleCmd(inlandGame, content, "siege", { kind: "cut" });
 assert(laneCut.ok && inlandGame.battle.siege.works < laneWorks, "inland Cut the berm drops WORKS");
 res = battleCmd(inlandGame, content, "auto");
 assert(res.battleEnd === "atk" || res.battleEnd === "def", `inland siege auto closes: ${res.message}`);
-assert(inlandGame.phase === "strategy" && !regionOf(inlandGame, "sponsor_lane"), "inland siege returns without adding a node");
+assert(
+  inlandGame.phase === "strategy" && inlandGame.regions.length === laneCount && regionOf(inlandGame, "sponsor_lane").neighbors.join(",") === laneNeighbors,
+  "inland siege returns without adding a node or a road",
+);
 const lookStrips = new Set(INLAND_IDS.map((id) => inlandLook(id).strip));
 const lookReads = new Set(INLAND_IDS.map((id) => inlandLook(id).read));
 const lookEdges = new Set(INLAND_IDS.map((id) => inlandLook(id).edge));
@@ -451,9 +471,45 @@ assert(/Cut the berm/.test(pageSrc) && /Rake the parapet/.test(pageSrc) && /Rush
 assert(/PRESS/.test(siegeUi) && /WAIT/.test(siegeUi), "PRESS and WAIT marks stay");
 assert(/get\("node"\)/.test(siegeUi) && /startInlandBattle/.test(siegeUi), "demo node= starts an inland battle");
 assert(/field: true/.test(siegeUi), "demo=battle&node= opens a field spawn");
+assert(/function stampBattleDesk/.test(readFileSync(new URL("../js/inland.js", import.meta.url), "utf8")), "field stamp lives with the desk tokens");
+assert(/stampBattleDesk\(battle, toId\)/.test(readFileSync(new URL("../js/battle.js", import.meta.url), "utf8")), "desk id is stamped after the field is created");
+assert(/stampBattleDesk\(state\.battle, node\)/.test(siegeUi), "demo=battle stamps node= onto the field");
+assert(/function activeFieldDesk/.test(siegeUi) && /function demoFieldNode/.test(siegeUi), "field chrome reads node= even if create dropped the desk");
+assert(/function fieldNextLine/.test(siegeUi) && /look\.read/.test(siegeUi), "field NEXT leads with the desk read");
+assert(/id="field-desk"/.test(pageSrc) && /id="field-next"/.test(pageSrc), "field desk strip and NEXT are on the battle chrome");
+assert(/\.battle\[data-desk\]:not\(\.is-siege\)/.test(siegeCss) && /--desk-backdrop/.test(siegeCss), "field shell tints from the desk id");
+assert(/\.field-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "field NEXT stays amber");
+assert(/\.field-next \{[^}]*color:\s*#000000/.test(siegeCss), "field NEXT text is black on amber");
+assert(/inlandLook\(node\) && demoQuery\(\)\.get\("siege"\) !== "1"/.test(siegeUi), "unknown node= does not open a foreign field");
+const nomeField = createBattle(inlandGame, content, "bethel", "nome", 80, 0);
+assert(nomeField.deskId == null && nomeField.siege == null, "domestic Nome field has no desk");
+assert(stampBattleDesk(nomeField, "not-a-desk") == null && nomeField.deskId == null, "unknown node= stays a domestic field");
+for (const id of INLAND_IDS) {
+  const field = createBattle(inlandGame, content, inlandDesk(id).approach, id, 80, 0, { field: true });
+  const roster = field.units.map((u) => `${u.id}:${u.type}:${u.hp}`).join(",");
+  const grid = field.grid.map((row) => row.join("")).join("|");
+  assert(field.siege == null, `${id} field spawn skips the siege board`);
+  assert(field.deskId === id, `${id} field stores the desk after create`);
+  assert(stampBattleDesk(field, id) === id && field.deskId === id, `${id} field stamp sticks`);
+  assert(field.units.map((u) => `${u.id}:${u.type}:${u.hp}`).join(",") === roster, `${id} stamp does not touch the roster`);
+  assert(field.grid.map((row) => row.join("")).join("|") === grid, `${id} stamp does not touch the grid`);
+  assert(field.round === 1 && field.maxRounds === 8, `${id} stamp does not touch the impulse clock`);
+  assert(stampBattleDesk(field, "anchorage") == null && field.deskId === id, `${id} unknown stamp does not clear the desk`);
+}
+assert(
+  /NEXT: \$\{desk\.line\}\. \$\{look\.read\}\. Yellow unit, then an adjacent diamond\./.test(siegeUi),
+  "field NEXT names the desk then the existing order",
+);
+const havanaSiege = createBattle(inlandGame, content, "far_cuba", "havana", 80, 0, { forceSiege: true });
+assert(havanaSiege.siege && havanaSiege.deskId === "havana", "siege hook still stores the Havana desk");
+assert(siegeCoach(havanaSiege.siege).startsWith("NEXT: Havana desk."), "siege NEXT still leads with the desk");
+const badField = startInlandBattle(createNewGame(content, { seed: 19, difficulty: "easy", name: "Riley Cho", background: "fighter" }), content, "nome", { field: true });
+assert(!badField.ok, "a domestic id is not an inland field hook");
 const statusSrc = readFileSync(new URL("../STATUS.md", import.meta.url), "utf8");
 for (const id of INLAND_IDS) assert(statusSrc.includes(`node=${id}`), `STATUS documents ${id}`);
+for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=battle&node=${id}`), `STATUS documents field ${id}`);
 assert(statusSrc.includes("demo=battle&siege=1&node="), "STATUS documents the battle siege hook");
+assert(statusSrc.includes("Domestic field, unchanged: `/?demo=battle`"), "STATUS notes the default field");
 console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
@@ -1083,9 +1139,13 @@ assert(hitDesk.result === "you" && hitDesk.log.some((l) => l.includes("holds the
 const deskYard = createNewGame(content, { seed: 41, difficulty: "easy", name: "Casey Flint", background: "scout" });
 act(deskYard, content, "raise_banner");
 const deskHere = playerOf(deskYard).region;
+const managuaRoads = regionOf(deskYard, "managua").neighbors.join(",");
 res = act(deskYard, content, "challenge", { officerId: "hart", deskId: "managua" });
 assert(res.ok && deskYard.duel.deskId === "managua", `challenge can open on a desk: ${res.message}`);
-assert(playerOf(deskYard).region === deskHere && !regionOf(deskYard, "managua"), "duel desk does not add a map node");
+assert(
+  playerOf(deskYard).region === deskHere && regionOf(deskYard, "managua").neighbors.join(",") === managuaRoads,
+  "duel desk does not rewrite the Managua road",
+);
 assert(deskYard.duel.clockS === 99 && deskYard.duel.maxExchanges === 11, "live desk duel keeps the yard clock");
 res = duelCmd(deskYard, "auto");
 assert(res.ok && deskYard.phase === "strategy", "desk duel still returns to the map");
@@ -1170,6 +1230,9 @@ const personalities = new Set(content.officers.officers.map((o) => o.personality
 assert(personalities.size >= 6, "distinct personalities in data");
 
 const lad = createNewGame(content, { seed: 31, difficulty: "easy", name: "Casey Flint", background: "scout" });
+playerOf(lad).region = "bethel";
+const hartLad = lad.officers.find((o) => o.id === "hart");
+if (hartLad) hartLad.region = "bethel";
 act(lad, content, "raise_banner");
 assert(!createCustomOfficer(lad, { name: "Skip Rank", ladder: "general", personality: "loyalist" }).ok, "cannot create a general");
 assert(
@@ -1278,7 +1341,7 @@ assert(/get\("promote"\)/.test(uiSrc), "demo=roster&promote= hook");
 assert(/id="btn-roster"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "roster dock button");
 assert(/data-promote/.test(uiSrc) && /roster-ladder/.test(uiSrc) && /roster-confirm/.test(uiSrc), "roster promote UI");
 assert(/tag === "INPUT"/.test(uiSrc), "roster typing does not fire the End Week shortcut");
-assert(/--type:\s*10px/.test(cssSrc), "HUD type stays 10px");
+assert(/--type:\s*16px/.test(cssSrc), "HUD type stays 16px");
 assert(/\.roster-ladder[\s\S]*font-size:\s*16px/.test(cssSrc) && /\.roster-confirm[\s\S]*#101010/.test(cssSrc), "roster type and contrast");
 const officersFn = uiSrc.slice(uiSrc.indexOf("function officersHtml"), uiSrc.indexOf("function missionsHtml"));
 assert(officersFn.includes('id="roster-create"') && officersFn.indexOf("roster-create") < officersFn.indexOf("rosterRungsHtml()"), "create-friend form is above the ladder lists");

@@ -85,7 +85,7 @@ import {
   roadLabel,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
-import { inlandDesk, inlandLook, stampDuelDesk } from "./inland.js";
+import { inlandDesk, inlandLook, stampBattleDesk, stampDuelDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -169,10 +169,11 @@ function openDemoSiege() {
 
 function openDemoBattle(withHull) {
   const node = demoQuery().get("node");
-  if (node && demoQuery().get("siege") !== "1") {
+  if (inlandLook(node) && demoQuery().get("siege") !== "1") {
     const fight = startInlandBattle(state, content, node, { troops: withHull ? 90 : 80, field: true });
     if (!fight.ok) toast(fight.message || "Field demo could not open.");
     if (fight.battle && state.battle) {
+      stampBattleDesk(state.battle, node);
       state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
       openBattle();
     }
@@ -3537,6 +3538,13 @@ function pulseSiegeMeter(id, value) {
 
 const DESK_VARS = ["--desk-bg", "--desk-panel", "--desk-edge", "--desk-strip", "--desk-ink", "--desk-read", "--desk-backdrop"];
 
+function hideFieldDesk() {
+  const strip = $("field-desk");
+  if (strip) strip.hidden = true;
+  const next = $("field-next");
+  if (next) next.hidden = true;
+}
+
 function clearSiegeDesk() {
   const battleEl = $("battle");
   if (!battleEl) return;
@@ -3544,6 +3552,69 @@ function clearSiegeDesk() {
   DESK_VARS.forEach((name) => battleEl.style.removeProperty(name));
   const strip = $("siege-desk");
   if (strip) strip.hidden = true;
+  hideFieldDesk();
+}
+
+function demoFieldNode() {
+  const params = demoQuery();
+  if (params.get("demo") !== "battle") return null;
+  if (params.get("siege") === "1") return null;
+  const node = params.get("node");
+  return inlandLook(node) ? node : null;
+}
+
+function activeFieldDesk(b) {
+  const fromDemo = demoFieldNode();
+  if (fromDemo) return fromDemo;
+  if (inlandLook(b?.deskId)) return b.deskId;
+  if (inlandLook(b?.toId)) return b.toId;
+  return null;
+}
+
+function syncFieldDesk(b) {
+  const id = activeFieldDesk(b);
+  if (b && id) stampBattleDesk(b, id);
+  return id;
+}
+
+function fieldNextLine(id) {
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!desk || !look) return "";
+  return `NEXT: ${desk.line}. ${look.read}. Yellow unit, then an adjacent diamond.`;
+}
+
+function paintFieldDesk(id) {
+  const battleEl = $("battle");
+  if (!battleEl) return;
+  const look = inlandLook(id);
+  const desk = inlandDesk(id);
+  if (!look || !desk) {
+    clearSiegeDesk();
+    return;
+  }
+  battleEl.dataset.desk = id;
+  battleEl.style.setProperty("--desk-bg", look.bg);
+  battleEl.style.setProperty("--desk-panel", look.panel);
+  battleEl.style.setProperty("--desk-edge", look.edge);
+  battleEl.style.setProperty("--desk-strip", look.stripBg);
+  battleEl.style.setProperty("--desk-ink", look.ink);
+  battleEl.style.setProperty("--desk-read", look.readInk);
+  battleEl.style.setProperty("--desk-backdrop", look.backdrop);
+  $("battle-title").textContent = `Field — ${look.strip}`;
+  const strip = $("field-desk");
+  if (strip) {
+    strip.hidden = false;
+    const name = $("field-desk-name");
+    const read = $("field-desk-read");
+    if (name) name.textContent = look.strip;
+    if (read) read.textContent = look.read;
+  }
+  const next = $("field-next");
+  if (next) {
+    next.hidden = false;
+    next.textContent = fieldNextLine(id);
+  }
 }
 
 function paintSiegeDesk(id) {
@@ -3624,11 +3695,16 @@ function drawBattle(now = performance.now()) {
   const siegeOn = !!(b.siege && !b.siege.closed);
   $("battle").classList.toggle("is-siege", siegeOn);
   if (siegeOn) {
+    hideFieldDesk();
     paintSiegeHud(b, dest);
     return;
   }
-  clearSiegeDesk();
-  $("battle-title").textContent = `Field — ${dest.name}`;
+  const deskId = syncFieldDesk(b);
+  if (deskId) paintFieldDesk(deskId);
+  else {
+    clearSiegeDesk();
+    $("battle-title").textContent = `Field — ${dest.name}`;
+  }
   const lead = b.commanderName ? ` · led by ${b.commanderRank ? ladderLabel(b.commanderRank) + " " : ""}${b.commanderName}` : "";
   $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
