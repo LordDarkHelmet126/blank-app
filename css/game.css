@@ -1472,6 +1472,37 @@ hr {
   min-height: 1.5em;
 }
 .siege-next { border: 4px solid #000000; }
+.siege-desk {
+  display: none;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 4px solid #f8f8f8;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.siege-desk strong { font-size: 15px; letter-spacing: 0.04em; }
+.siege-desk span { font-size: 12px; line-height: 1.45; text-align: right; }
+.battle.is-siege[data-desk] {
+  background-color: var(--desk-bg, #000010);
+  background-image: var(--desk-backdrop, none);
+}
+.battle.is-siege[data-desk] .siege-board,
+.battle.is-siege[data-desk] .battle-bar,
+.battle.is-siege[data-desk] .siege-sticky,
+.battle.is-siege[data-desk] .siege-log {
+  background: var(--desk-panel, #000000);
+  border-color: var(--desk-edge, #f8f8f8);
+}
+.battle.is-siege[data-desk] .siege-desk {
+  display: flex;
+  background: var(--desk-strip, #181818);
+  border-color: var(--desk-edge, #f8f8f8);
+  color: var(--desk-ink, #f8f8f8);
+}
+.battle.is-siege[data-desk] .siege-desk strong { color: var(--desk-ink, #f8f8f8); }
+.battle.is-siege[data-desk] .siege-desk span { color: var(--desk-read, #f8f8f8); }
 @media (max-width: 800px) {
   .siege-meters,
   .siege-ploys { grid-template-columns: 1fr; }

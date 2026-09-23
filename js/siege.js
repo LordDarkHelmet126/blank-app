@@ -36,6 +36,8 @@ export function createSiege(region, commit) {
   const pressure = Math.max(0, Math.min(100, region?.pressure || 0));
   const flavor = region?.flavor || "";
   const placeName = region?.name || "the settlement";
+  const deskLine = region?.line || "";
+  const around = deskLine ? `the ${deskLine}` : placeName;
   return {
     role: "atk",
     defender: "def",
@@ -52,8 +54,9 @@ export function createSiege(region, commit) {
     closed: false,
     result: null,
     flavor,
+    deskLine,
     log: [
-      `Siege lines around ${placeName}. WORKS ${works}. You are the attacker. They hold the berm.${flavor ? ` ${flavor}` : ""}`,
+      `Siege lines around ${around}. WORKS ${works}. You are the attacker. They hold the berm.${flavor ? ` ${flavor}` : ""}`,
     ],
   };
 }
@@ -78,14 +81,21 @@ export function siegeRecommend(siege) {
 
 export function siegeCoach(siege) {
   if (!siege) return "NEXT: No siege.";
-  if (siege.result === "atk") return "TAKEN. The settlement is yours.";
-  if (siege.result === "def" && siege.levy <= 0) return "LEVY SPENT. The siege lifts.";
-  if (siege.result === "def") return "WATCH RAN OUT. The siege lifts.";
+  if (siege.result === "atk") {
+    return siege.deskLine ? `TAKEN. ${siege.deskLine} is yours.` : "TAKEN. The settlement is yours.";
+  }
+  if (siege.result === "def" && siege.levy <= 0) {
+    return siege.deskLine ? `LEVY SPENT. ${siege.deskLine} holds. The siege lifts.` : "LEVY SPENT. The siege lifts.";
+  }
+  if (siege.result === "def") {
+    return siege.deskLine ? `WATCH RAN OUT. ${siege.deskLine} holds. The siege lifts.` : "WATCH RAN OUT. The siege lifts.";
+  }
   const rec = siegeRecommend(siege);
-  const tail = siege.flavor ? ` ${siege.flavor}` : "";
-  if (rec === "cut") return `NEXT: WORKS ${siege.works} still hold. Cut the berm. Do not rush.${tail}`;
-  if (rec === "rake") return `NEXT: Berm is cut (WORKS ${siege.works}). Rake the parapet, then rush.${tail}`;
-  return `NEXT: Gap is open and the parapet is quiet. Rush the gap.${tail}`;
+  const where = siege.deskLine ? `${siege.deskLine}. ` : "";
+  const scene = siege.flavor ? `${siege.flavor} ` : "";
+  if (rec === "cut") return `NEXT: ${where}${scene}WORKS ${siege.works} still hold. Cut the berm. Do not rush.`;
+  if (rec === "rake") return `NEXT: ${where}${scene}Berm is cut (WORKS ${siege.works}). Rake the parapet, then rush.`;
+  return `NEXT: ${where}${scene}Gap is open and the parapet is quiet. Rush the gap.`;
 }
 
 function finishImpulse(siege) {
