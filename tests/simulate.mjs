@@ -28,6 +28,11 @@ import {
   playerCourt,
   duelCmd,
   challengeCandidates,
+  hireCandidates,
+  ladderRankOf,
+  ladderLabel,
+  ladderRoster,
+  promotedInCity,
   actingStats,
   weekTease,
   stateControl,
@@ -685,4 +690,117 @@ console.log("ok yard duel 99s");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
+
+const lad = createNewGame(content, { seed: 31, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(lad, content, "raise_banner");
+assert(!createCustomOfficer(lad, { name: "Skip Rank", ladder: "general", personality: "loyalist" }).ok, "cannot create a general");
+assert(
+  !createCustomOfficer(lad, { name: "Over Budget", ladder: "player", war: 80, int: 80, pol: 80, chr: 80, personality: "loyalist" }).ok,
+  "friend stats stay inside the budget"
+);
+const made = createCustomOfficer(lad, {
+  name: "Sam Ivers",
+  title: "Friend",
+  personality: "loyalist",
+  portrait: "F2",
+  war: 58,
+  int: 52,
+  pol: 48,
+  chr: 62,
+  ladder: "player",
+});
+assert(made.ok && made.ladder === "player", "friend created as a player");
+const sam = lad.officers.find((o) => o.id === made.id);
+assert(sam.friend && sam.custom && sam.portrait === "F2" && sam.faction == null, "friend identity stored");
+assert(ladderRankOf(sam) === "player" && ladderLabel("player") === "Player", "player rung");
+assert(ladderRoster(lad).player.some((o) => o.id === sam.id), "roster lists the player rung");
+assert(!hireCandidates(lad).some((o) => o.id === sam.id), "friends promote; they are not an RNG hire");
+assert(!act(lad, content, "promote", { officerId: "player" }).ok, "commander is not promoted");
+const hartFree = lad.officers.find((o) => o.id === "hart");
+assert(!act(lad, content, "promote", { officerId: "hart" }).ok && hartFree.faction == null, "listed free officers still use hire");
+regionOf(lad, "bethel").garrison = 90;
+const blockedLead = act(lad, content, "attack", { regionId: "nome", auto: true, commanderId: sam.id });
+assert(!blockedLead.ok && lad.phase === "strategy", `player cannot lead a march: ${blockedLead.message}`);
+assert(regionOf(lad, "bethel").garrison === 90, "rejected lead does not spend the levy");
+sam.region = "nome";
+const away = act(lad, content, "promote", { officerId: sam.id });
+assert(!away.ok && ladderRankOf(sam) === "player" && sam.region === "nome", "commission requires the same city");
+sam.region = "bethel";
+let step = act(lad, content, "promote", { officerId: sam.id });
+assert(step.ok && step.rankChanged && step.from === "player" && step.to === "officer", step.message);
+assert(step.message.includes("Player → Officer"), "officer confirmation");
+assert(ladderRankOf(sam) === "officer" && sam.isGeneral === false, "officer rung is not a general");
+assert(!playerGenerals(lad).some((o) => o.id === sam.id), "explicit officer is not auto-seated");
+assert(promotedInCity(lad).some((o) => o.id === sam.id), "promoted officer can be selected in this city");
+const yardRes = act(lad, content, "challenge", { officerId: "hart", actorId: sam.id });
+assert(yardRes.ok && yardRes.duel && lad.duel.actorId === sam.id, `officer takes the yard: ${yardRes.message}`);
+assert(lad.duel.you.id === sam.id, "yard fighter is the promoted officer");
+const yardEnd = duelCmd(lad, "auto");
+assert(yardEnd.ok && lad.phase === "strategy", "yard still closes");
+step = act(lad, content, "promote", { officerId: sam.id });
+assert(step.ok && step.to === "general" && step.rankChanged, step.message);
+assert(/Officer → General \(1\/5\)/.test(step.message), "general confirmation counts the chair");
+assert(sam.isGeneral && ladderRankOf(sam) === "general", "general rung");
+assert(playerGenerals(lad).some((o) => o.id === sam.id), "general sits the court");
+assert(!act(lad, content, "promote", { officerId: sam.id }).ok, "general does not promote again");
+lad.ap = 8;
+regionOf(lad, "bethel").garrison = 90;
+const march = act(lad, content, "attack", { regionId: "nome", auto: true, commanderId: sam.id });
+assert(march.ok, `general leads the field: ${march.message}`);
+assert(
+  lad.log.some((l) => l.text.includes("Sam Ivers") && l.text.includes("leads the column")),
+  "field log names the promoted lead"
+);
+const kept = deserialize(serialize(lad));
+const savedSam = kept.officers.find((o) => o.id === sam.id);
+assert(savedSam.ladder === "general" && savedSam.friend && savedSam.isGeneral, "ladder survives save");
+
+const bare = createNewGame(content, { seed: 32, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const barePal = createCustomOfficer(bare, {
+  name: "Sam Ivers",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(barePal.ok, "friend can be created before a banner");
+assert(!act(bare, content, "promote", { officerId: barePal.id }).ok, "promote waits for a banner");
+assert(ladderRankOf(bare.officers.find((o) => o.id === barePal.id)) === "player", "still a player");
+
+const capped = createNewGame(content, { seed: 33, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(capped, content, "raise_banner");
+capped.officers
+  .filter((o) => o.id !== "player")
+  .slice(0, 5)
+  .forEach((o) => {
+    o.faction = "northern_front";
+    o.isGeneral = true;
+    o.alive = true;
+    o.retired = false;
+  });
+const sixth = createCustomOfficer(capped, {
+  name: "Sam Ivers",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(act(capped, content, "promote", { officerId: sixth.id }).ok, "player still becomes an officer when chairs are full");
+const sixthOff = capped.officers.find((o) => o.id === sixth.id);
+assert(!act(capped, content, "promote", { officerId: sixth.id }).ok && !sixthOff.isGeneral, "sixth general is refused");
+assert(playerGenerals(capped).length === 5, "cap stays at five");
+
+const cssSrc = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+assert(/get\("demo"\) === "roster"/.test(uiSrc) && /=== "ladder"/.test(uiSrc), "demo=roster and demo=ladder");
+assert(/get\("promote"\)/.test(uiSrc), "demo=roster&promote= hook");
+assert(/id="btn-roster"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "roster dock button");
+assert(/data-promote/.test(uiSrc) && /roster-ladder/.test(uiSrc) && /roster-confirm/.test(uiSrc), "roster promote UI");
+assert(/--type:\s*10px/.test(cssSrc), "HUD type stays 10px");
+assert(/\.roster-ladder[\s\S]*font-size:\s*16px/.test(cssSrc) && /\.roster-confirm[\s\S]*#101010/.test(cssSrc), "roster type and contrast");
+console.log("ok roster ladder");
+
 console.log("ALL TESTS PASSED");

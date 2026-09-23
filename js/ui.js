@@ -65,6 +65,10 @@ import {
   missionCopy,
   duelCmd,
   challengeCandidates,
+  ladderRoster,
+  ladderRankOf,
+  ladderLabel,
+  promotedInCity,
   weekTease,
   stateControl,
   ensureCampaign,
@@ -79,6 +83,7 @@ let content;
 let state;
 let selectedRegion = "bethel";
 let hoverRegion = null;
+let ladderNotice = "";
 
 const $ = (id) => document.getElementById(id);
 
@@ -346,6 +351,36 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "roster" || params.get("demo") === "ladder") {
+    startSliceState();
+    const made = createCustomOfficer(state, {
+      name: "Sam Ivers",
+      title: "Friend",
+      personality: "loyalist",
+      portrait: "F1",
+      war: 58,
+      int: 52,
+      pol: 48,
+      chr: 62,
+      ladder: "player",
+    });
+    const steps = Number(params.get("promote") || 0);
+    if (made.ok && steps >= 1) {
+      const r1 = act(state, content, "promote", { officerId: made.id });
+      if (r1.rankChanged) ladderNotice = r1.message;
+    }
+    if (made.ok && steps >= 2) {
+      const r2 = act(state, content, "promote", { officerId: made.id });
+      if (r2.rankChanged) ladderNotice = r2.message;
+    }
+    selectedRegion = "bethel";
+    commandCat = "plot";
+    hideModal();
+    render();
+    showModal(officersHtml(), { kind: "officers" });
+    afterFonts();
+    return;
+  }
   if (params.get("demo") === "duel") {
     startSliceState();
     const goliath = params.get("goliath") === "1";
@@ -413,10 +448,8 @@ function bindChrome() {
   };
   $("coach-skip").onclick = () => finishCoach(true);
   document.querySelectorAll("[data-tip]").forEach((el) => bindTip(el, el.getAttribute("data-tip")));
-  $("btn-officers").onclick = () => {
-    showModal(officersHtml(), { kind: "officers" });
-    wireAfterRender();
-  };
+  $("btn-officers").onclick = () => openRoster();
+  $("btn-roster").onclick = () => openRoster();
   $("btn-factions").onclick = () => showModal(factionsHtml());
   $("btn-states").onclick = () => showModal(campaignHtml());
   $("btn-missions").onclick = () => {
@@ -743,6 +776,7 @@ function helpHtml() {
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
+      <li><strong>Roster:</strong> Dock → Roster. Create a friend (they start as a player), then Promote to officer, then general. The rank change is confirmed on that screen. A promoted officer in this city can take the yard or lead a march.</li>
       <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Keys 1/2/3: Strike / Guard / Special · style move (e.g. Special · Dust Feint). Press in the green window. Clock ~99s if both stay up.</li>
       <li>Hidden legends: Seek Legend on Plot. Karr on the Slope, Silo on the Yukon Road, Marsh in Kenai. Spy or Seek, then travel and Seek again.</li>
       <li>Tech is 1985–89 salvage + calendar (M16A2, AK-47, Jeeps, M113s, Hueys). No leapfrog, no drones.</li>
@@ -753,6 +787,45 @@ function helpHtml() {
     <p><button type="button" id="help-coach" class="primary">Show week-1 coach</button></p>
     <button type="button" data-close>Close</button>
   `;
+}
+
+function rosterFace(o) {
+  const faceImg = faceSrc(o.portrait);
+  const face = esc(o.portrait || portraitInitials(o.name));
+  return `<span class="portrait" aria-hidden="true">${faceImg ? `<img src="${faceImg}" alt="" />` : face}</span>`;
+}
+
+function rosterRow(o) {
+  const rank = ladderRankOf(o);
+  const city = regionOf(state, o.region)?.short || "?";
+  const action =
+    rank === "player"
+      ? `<button type="button" class="roster-promote" data-promote="${o.id}">Promote to officer</button>`
+      : rank === "officer"
+        ? `<button type="button" class="roster-promote" data-promote="${o.id}">Promote to general</button>`
+        : `<span class="roster-held">Rank held</span>`;
+  return `<div class="roster-row">${rosterFace(o)}<span class="roster-rank">${esc(ladderLabel(rank))}</span><span class="roster-who"><strong>${esc(o.name)}</strong><span>${esc(o.title || "Friend")} · ${esc(city)} · WAR ${o.war} · ${esc(o.personality)}</span></span>${action}</div>`;
+}
+
+function rosterLadderHtml() {
+  const ladder = ladderRoster(state);
+  const block = (title, list, empty) =>
+    `<h3>${title} (${list.length})</h3>${list.length ? list.map(rosterRow).join("") : `<p class="roster-empty">${empty}</p>`}`;
+  const note = ladderNotice
+    ? `<p class="roster-confirm" role="status">Rank change confirmed. ${esc(ladderNotice)}</p>`
+    : "";
+  return `<section class="roster-ladder">
+    <h2>Roster ladder</h2>
+    <p class="roster-lead">Friends join as players. Promote them here: Player → Officer → General. Current rank sits on each row.</p>
+    ${note}
+    ${block("Players", ladder.player, "No friends yet. Create one below.")}
+    ${block("Officers", ladder.officer, "No officers waiting. Promote a player.")}
+    ${block("Generals", ladder.general, "No generals yet. Promote an officer into an open chair (5).")}
+  </section>`;
+}
+
+function openRoster() {
+  showModal(officersHtml(), { kind: "officers" });
 }
 
 function officersHtml() {
@@ -795,9 +868,8 @@ function officersHtml() {
   const slots = state.contentMeta.customOfficerSlots || 10;
   const full = state.customSlotsUsed >= slots;
   const createBlock = `
-    <h2>Create officer (${state.customSlotsUsed}/${slots})</h2>
-    <p class="muted">Original general — not licensed IP. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Adds to the free roster here; Plot → Hire to put them in court / a general slot.</p>
-    <p class="muted">Set the portrait — original faces only.</p>
+    <h2>Create a friend (${state.customSlotsUsed}/${slots})</h2>
+    <p class="roster-lead">Name, title, and an original face. They join as a player in this city. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Promote them on the ladder above — not a licensed likeness.</p>
     <div class="face-grid" id="c-faces">${originalFaceGrid()
       .map(
         (f, i) =>
@@ -809,7 +881,7 @@ function officersHtml() {
       <div class="portrait portrait-lg" id="c-portrait" aria-hidden="true"><img id="c-portrait-img" src="${faceSrc("F0")}" alt="" /></div>
       <div class="creator-fields">
         <div class="field"><label>Name</label><input id="c-name" maxlength="28" value="Riley Cho" /></div>
-        <div class="field"><label>Title</label><input id="c-title" maxlength="24" value="Volunteer" /></div>
+        <div class="field"><label>Title</label><input id="c-title" maxlength="24" value="Friend" /></div>
         <div class="field"><label>Type</label><select id="c-type">${typeOpts}</select></div>
         <p class="muted" id="c-skills"></p>
         <div class="creator-stats">
@@ -821,8 +893,8 @@ function officersHtml() {
         <p class="muted" id="c-budget">Budget 220/${CUSTOM_STAT_BUDGET}</p>
       </div>
     </div>
-    <button type="button" id="c-add" class="primary"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add free officer here"}</button>`;
-  return `<h2>Officers (${visible.length} visible)</h2>${addHow}${createBlock}
+    <button type="button" id="c-add" class="primary roster-promote"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add friend as player"}</button>`;
+  return `${rosterLadderHtml()}${createBlock}<hr /><h2>Officers (${visible.length} visible)</h2>${addHow}
     <hr />
     ${locked}${emptyAdd}${rows}
     <p></p><button type="button" data-close>Close</button>`;
@@ -1171,7 +1243,7 @@ function courtHtml() {
         <span class="mini" style="border-color:${esc(stripe)}">${esc(g.portrait || portraitInitials(g.name))}</span>
         <div class="who">
           <strong>${i + 1}. ${esc(g.name)}</strong>
-          <small>AGE ${g.age || "?"} · LOY ${g.loyalty} · ${esc(g.title || "officer")}</small>
+          <small>${esc(ladderLabel(ladderRankOf(g)).toUpperCase())} · AGE ${g.age || "?"} · LOY ${g.loyalty}</small>
           <select data-order-gen="${g.id}">${ordersForOfficer(g)
             .map(
               (o) =>
@@ -1184,6 +1256,7 @@ function courtHtml() {
       let hint;
       if (!p.faction) hint = "Raise Banner, then Plot → Hire.";
       else if (wait[0]) hint = `Plot → Appoint ${esc(wait[0].name)}.`;
+      else if (ladderRoster(state).player.some((o) => o.region === p.region)) hint = "Roster → Promote a player to officer.";
       else hint = "Plot → Hire fills this ADD chair.";
       chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
         <span class="mini empty-mini">+</span>
@@ -1191,7 +1264,7 @@ function courtHtml() {
       </button>`);
     }
   }
-  return `<div class="chrome-head"><span class="panel-title">Court</span><span class="panel-why">Five chairs. Orders at End Week.</span></div>${chairs.join("")}`;
+  return `<div class="chrome-head"><span class="panel-title">Court</span><button type="button" data-open-roster>Roster</button><span class="panel-why">Five chairs. Promote on the roster.</span></div>${chairs.join("")}`;
 }
 
 function cityHtml() {
@@ -1564,11 +1637,22 @@ function startAction(a) {
   if (a.needs === "challenge") {
     const cs = challengeCandidates(state);
     if (!cs.length) return toast("No listed officer in this city.");
-    showModal(`<h2>Challenge</h2><p class="muted">Yard duel in this city. Keys: 1 Strike, 2 Guard, 3 Special · your style move. Clock ~99s if both stay up. Green window is a timing bonus — not a combo game.</p>${cs.map((o) => `<button class="list-btn" data-challenge="${o.id}"><img class="cmd-thumb" src="${sceneArt("challenge")}" alt="" /><span>${esc(o.name)} · ${esc(o.title)} · AGE ${o.age || "?"} · WAR ${o.war}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    const fighters = promotedInCity(state);
+    const lead = fighters.length
+      ? `<label class="roster-lead-pick">Who fights <select id="duel-actor"><option value="">You (${esc(playerOf(state).name)})</option>${fighters
+          .map((o) => `<option value="${o.id}">${esc(ladderLabel(ladderRankOf(o)))} ${esc(o.name)}</option>`)
+          .join("")}</select></label>`
+      : "";
+    showModal(`<h2>Challenge</h2><p class="muted">Yard duel in this city. Keys: 1 Strike, 2 Guard, 3 Special · your style move. Clock ~99s if both stay up. Green window is a timing bonus — not a combo game.</p>${lead}${cs.map((o) => `<button class="list-btn" data-challenge="${o.id}"><img class="cmd-thumb" src="${sceneArt("challenge")}" alt="" /><span>${esc(o.name)} · ${esc(o.title)} · AGE ${o.age || "?"} · WAR ${o.war}${ladderRankOf(o) ? ` · ${esc(ladderLabel(ladderRankOf(o)))}` : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-challenge]").forEach((btn) => {
       btn.onclick = () => {
+        const actorId = $("modal-card").querySelector("#duel-actor")?.value || "";
+        if (actorId && actorId === btn.dataset.challenge) {
+          toast("Pick a different foe.");
+          return;
+        }
         hideModal();
-        run("challenge", { officerId: btn.dataset.challenge });
+        run("challenge", { officerId: btn.dataset.challenge, actorId: actorId || undefined });
       };
     });
     return;
@@ -1620,16 +1704,24 @@ function startAction(a) {
     const list = attackCandidates(state);
     if (!list.length) return toast("No adjacent hostile ground.");
     const here = regionOf(state, playerOf(state).region);
+    const leaders = promotedInCity(state);
+    const leadPick = leaders.length
+      ? `<label class="roster-lead-pick">Field lead <select id="atk-lead"><option value="">You</option>${leaders
+          .map((o) => `<option value="${o.id}">${esc(ladderLabel(ladderRankOf(o)))} ${esc(o.name)} · WAR ${o.war}</option>`)
+          .join("")}</select></label>`
+      : "";
     showModal(`<h2>March / Attack</h2>
       <p>Commit troops from ${esc(here.short)} (garrison ${here.garrison}). Battle is a short grid; auto-resolve is allowed.</p>
+      ${leadPick}
       ${list.map((r) => `<button class="list-btn" data-atk="${r.id}"><img class="cmd-thumb" src="${sceneArt("attack")}" alt="" /><span>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${r.owner ? factionOf(state, r.owner)?.short : "open"} · ${geoTags(r).map((t) => t.label).join("/") || "—"}</span></button>`).join("")}
       <label class="muted"><input type="checkbox" id="atk-auto" /> Auto-resolve</label>
       <button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-atk]").forEach((btn) => {
       btn.onclick = () => {
         const auto = $("modal-card").querySelector("#atk-auto").checked;
+        const commanderId = $("modal-card").querySelector("#atk-lead")?.value || "";
         hideModal();
-        run("attack", { regionId: btn.dataset.atk, auto });
+        run("attack", { regionId: btn.dataset.atk, auto, commanderId: commanderId || undefined });
       };
     });
     return;
@@ -2103,7 +2195,8 @@ function drawBattle(now = performance.now()) {
   const arctic = isArcticRegion(dest);
   const siege = (dest.walls || 0) >= 12 || dest.terrainBias === "urban";
   $("battle-title").textContent = `${siege ? "Siege" : "Field"} — ${dest.name}`;
-  $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}`;
+  const lead = b.commanderName ? ` · led by ${b.commanderRank ? ladderLabel(b.commanderRank) + " " : ""}${b.commanderName}` : "";
+  $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
   const sky = $("battle-sky");
   if (sky) {
@@ -2495,6 +2588,10 @@ function wireOrders() {
         startAction(listActions(state).find((a) => a.id === "appoint") || { id: "appoint", needs: "appoint", label: "Appoint General" });
         return;
       }
+      if (ladderRoster(state).player.some((o) => o.region === playerOf(state).region)) {
+        openRoster();
+        return;
+      }
       if (hireCandidates(state).length) {
         commandCat = "plot";
         render();
@@ -2567,13 +2664,31 @@ function wireAfterRender() {
         int: Number(document.getElementById("c-int")?.value),
         pol: Number(document.getElementById("c-pol")?.value),
         chr: Number(document.getElementById("c-chr")?.value),
+        ladder: "player",
       });
-      toast(res.ok ? `${name} added to the free roster. Plot → Hire to put them in court / a general slot.` : res.message);
+      if (res.ok) ladderNotice = "";
+      toast(res.ok ? `${name} joins as a player. Promote them on the ladder.` : res.message);
       showModal(officersHtml(), { kind: "officers" });
       wireDynamicModals();
       render();
     };
   }
+  document.querySelectorAll("[data-promote]").forEach((btn) => {
+    btn.onclick = () => {
+      const res = act(state, content, "promote", { officerId: btn.dataset.promote });
+      if (res.ok && res.rankChanged) {
+        ladderNotice = res.message;
+        flashDing(`${ladderLabel(res.from)} → ${ladderLabel(res.to)}`);
+      } else {
+        toast(res.message);
+      }
+      openRoster();
+      render();
+    };
+  });
+  document.querySelectorAll("[data-open-roster]").forEach((btn) => {
+    btn.onclick = () => openRoster();
+  });
   wireMissionButtons();
   wireDynamicModals();
 }
