@@ -252,9 +252,9 @@ body.look-map .meter span,
 body.look-map .meter strong { font-size: 10px; }
 body.look-map .top-actions button { padding: 4px 8px; font-size: 10px; }
 body.look-map .objective { margin: 2px 4px 0; padding: 2px 8px; gap: 8px; }
-body.look-map .objective-copy { line-height: 1.2; display: flex; gap: 8px; align-items: baseline; }
+body.look-map .objective-copy { line-height: 1.35; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 body.look-map .objective strong { display: inline; margin: 0; font-size: 11px; }
-body.look-map .objective span { font-size: 11px; }
+body.look-map .objective span { font-size: 11px; color: #f8f8f8; white-space: normal; }
 body.look-map #btn-coach { padding: 3px 8px; font-size: 10px; }
 body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 2px; gap: 2px; }
 body.look-map .map-wrap { flex: 1; min-height: 0; }
@@ -1344,3 +1344,19 @@ hr {
   .city-stats .plus,
   .city-stats .minus { display: none; }
 }
+
+.modal-card.states-card { width: min(960px, calc(100vw - 24px)); }
+.modal-card.states-card .mark-chip {
+  display: inline-block;
+  margin: 0 6px 0 0;
+  padding: 2px 6px;
+  background: #000010;
+  color: #f8f8f8;
+  border: 2px solid #f8f8f8;
+}
+.modal-card.states-card .mark-chip.key { color: #f8d800; border-color: #f8d800; }
+.modal-card.states-card .mark-chip.adjacent { color: #b8ffb8; border-color: #30c030; }
+.modal-card.states-card .mark-chip.locked { color: #ffb0b0; border-color: #f03030; }
+.modal-card.states-card .mark-chip.here { background: #181868; }
+.desk-roads { list-style: none; margin: 6px 0; padding: 0; }
+.desk-roads li { margin: 6px 0; line-height: 1.55; }

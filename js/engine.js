@@ -518,6 +518,7 @@ export function createNewGame(content, opts = {}) {
     stateTheaters: content.regions.states || [],
     campaignSpec: content.regions.campaign || {},
     campaign: initCampaign(content.regions.campaign || {}),
+    alternateRoutes: content.regions.alternateRoutes || [],
     contentMeta: {
       rosterCap: content.officers.meta.rosterCap,
       customOfficerSlots: content.officers.meta.customOfficerSlots,
@@ -919,7 +920,7 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: true,
-    hint: "Move to a neighboring city. Alaska → Juneau/Yukon → PNW → Rockies → plains east. US roads open week 0.",
+    hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), and Salt Lake (I-80 basin). Reno uses the Wendover rail. Cuba is Gulf Sealift, then Havana. Nicaragua, then Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). No leaping.",
     needs: "neighbor",
   });
   const camp = ensureCampaign(state);
@@ -1069,6 +1070,167 @@ export function isAdjacent(state, fromId, toId) {
   const to = typeof toId === "string" ? regionOf(state, toId) : toId;
   if (!from || !to) return false;
   return !!(from.neighbors || []).includes(to.id) && travelUnlocked(state, to);
+}
+
+function distancesFrom(state, originId) {
+  const dist = new Map([[originId, 0]]);
+  const q = [originId];
+  while (q.length) {
+    const id = q.shift();
+    const node = regionOf(state, id);
+    for (const n of node?.neighbors || []) {
+      if (dist.has(n)) continue;
+      dist.set(n, dist.get(id) + 1);
+      q.push(n);
+    }
+  }
+  return dist;
+}
+
+function shortestPath(state, fromId, toId) {
+  if (fromId === toId) return [fromId];
+  const prev = new Map([[fromId, null]]);
+  const q = [fromId];
+  while (q.length) {
+    const id = q.shift();
+    const node = regionOf(state, id);
+    for (const n of node?.neighbors || []) {
+      if (prev.has(n)) continue;
+      prev.set(n, id);
+      if (n === toId) {
+        const path = [];
+        let cur = toId;
+        while (cur) {
+          path.push(cur);
+          cur = prev.get(cur);
+        }
+        path.reverse();
+        return path;
+      }
+      q.push(n);
+    }
+  }
+  return null;
+}
+
+function approachChain(state, from, to) {
+  const path = shortestPath(state, from.id, to.id);
+  if (!path || path.length < 2) {
+    return (to.neighbors || [])
+      .map((id) => regionOf(state, id))
+      .filter((r) => r && r.id !== from.id)
+      .slice(0, 3);
+  }
+  const chain = [];
+  for (let i = path.length - 2; i >= 1; i--) {
+    const node = regionOf(state, path[i]);
+    if (!node) break;
+    chain.push(node);
+    if (!(node.unlockPhase > 0)) break;
+  }
+  return chain.reverse().slice(0, 3);
+}
+
+function rankCorridor(state, from, hops) {
+  const named = new Set();
+  for (const row of state.alternateRoutes || []) {
+    if (row.a === from.id) named.add(row.b);
+    else if (row.b === from.id) named.add(row.a);
+  }
+  return hops.slice().sort((a, b) => (named.has(a.id) ? 0 : 1) - (named.has(b.id) ? 0 : 1));
+}
+
+function pathNeighbors(state, from, to) {
+  const dist = distancesFrom(state, to.id);
+  const goal = dist.get(from.id);
+  if (goal == null || goal <= 1) return [];
+  const hops = [];
+  for (const id of from.neighbors || []) {
+    if (dist.get(id) !== goal - 1) continue;
+    const node = regionOf(state, id);
+    if (node) hops.push(node);
+  }
+  return rankCorridor(state, from, hops);
+}
+
+const APPROACH_ANCHOR = {
+  far_russia: "nome",
+  kamchatka: "nome",
+  siberia: "nome",
+  sponsor_lane: "nome",
+  far_korea: "nome",
+  kr_inland: "nome",
+  gulf_passage: "st_louis",
+  far_cuba: "st_louis",
+  havana: "st_louis",
+  far_nicaragua: "st_louis",
+  managua: "st_louis",
+};
+
+export function sharesRoad(state, fromId, toId) {
+  const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
+  const to = typeof toId === "string" ? regionOf(state, toId) : toId;
+  if (!from || !to) return false;
+  return (from.neighbors || []).includes(to.id);
+}
+
+export function roadLabel(state, aId, bId) {
+  const row = (state.alternateRoutes || []).find(
+    (r) => (r.a === aId && r.b === bId) || (r.a === bId && r.b === aId),
+  );
+  return row?.label || "";
+}
+
+export function approachTrail(state, fromId, toId) {
+  const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
+  const to = typeof toId === "string" ? regionOf(state, toId) : toId;
+  if (!from || !to || from.id === to.id) return [];
+  const desk = to.type === "foreign" || to.type === "sea" || (to.unlockPhase || 0) > 0 || APPROACH_ANCHOR[to.id];
+  if (!desk) return [];
+  const path = shortestPath(state, from.id, to.id);
+  if (!path) return [];
+  let start = 0;
+  const anchorId = APPROACH_ANCHOR[to.id];
+  if (anchorId) {
+    const at = path.indexOf(anchorId);
+    if (at >= 0) start = at;
+  }
+  if (path[start] === from.id) start += 1;
+  const nodes = path
+    .slice(start)
+    .map((id) => regionOf(state, id))
+    .filter(Boolean);
+  if (to.id === "gulf_passage" && from.id !== "far_cuba") {
+    const cuba = regionOf(state, "far_cuba");
+    if (cuba && !nodes.some((n) => n.id === cuba.id)) nodes.push(cuba);
+  }
+  return nodes;
+}
+
+export function approachRoads(state, fromId, toId) {
+  const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
+  const to = typeof toId === "string" ? regionOf(state, toId) : toId;
+  if (!from || !to || from.id === to.id) return [];
+  if (to.type === "sea") {
+    return (to.neighbors || [])
+      .map((id) => regionOf(state, id))
+      .filter(Boolean)
+      .slice(0, 3)
+      .map((r) => r.short);
+  }
+  if (to.type === "foreign" || (to.unlockPhase || 0) > 0) {
+    const chain = approachChain(state, from, to);
+    if (chain.length) return chain.map((r) => r.short);
+    if ((from.neighbors || []).includes(to.id)) return [to.short];
+    return [];
+  }
+  const dist = distancesFrom(state, to.id);
+  const goal = dist.get(from.id);
+  if (goal == null) return [];
+  if (goal <= 1) return [to.short];
+  return pathNeighbors(state, from, to)
+    .slice(0, 3)
+    .map((r) => r.short);
 }
 
 export function attackCandidates(state) {
@@ -1666,6 +1828,43 @@ export function stateControl(state) {
   });
 }
 
+export function deskControl(state) {
+  const p = playerOf(state);
+  const here = currentRegion(state);
+  const theaters = (state.stateTheaters || []).filter((st) => st.kind === "foreign");
+  return theaters.map((st) => {
+    const code = st.short || String(st.id || "").toUpperCase();
+    const keys = st.keyCities || [];
+    const terrs = state.regions.filter((r) => r.stateCode === code);
+    const heldKeys = keys.filter((id) => {
+      const r = regionOf(state, id);
+      return !!(r && p?.faction && r.owner === p.faction);
+    });
+    const heldTerr = terrs.filter((r) => p?.faction && r.owner === p.faction);
+    return {
+      id: code,
+      name: st.name,
+      kind: "foreign",
+      held: heldKeys.length,
+      need: keys.length,
+      keys,
+      territories: terrs.map((r) => ({
+        id: r.id,
+        short: r.short,
+        key: keys.includes(r.id),
+        owner: r.owner,
+        geo: geoTags(r),
+        adjacent: !!(here && isAdjacent(state, here, r)),
+        here: here?.id === r.id,
+        phase: r.unlockPhase || 0,
+      })),
+      heldTerr: heldTerr.length,
+      totalTerr: terrs.length,
+      liberated: !!(p?.faction && keys.length && heldKeys.length === keys.length),
+    };
+  });
+}
+
 export function tickCampaign(state) {
   const camp = ensureCampaign(state);
   const p = playerOf(state);
@@ -1733,7 +1932,9 @@ export function fireSponsor(state) {
   }
   const node = regionOf(state, spec.id);
   if (node) node.unlockPhase = 4;
-  const line = spec.copy || "A sponsor intervenes. A new country is now a takeable front.";
+  const line = spec.copy
+    ? `Foreign desks. ${spec.copy} Korea is a takeable front through the Sponsor Lane. The Bering road and Gulf Sealift stay the only ocean gates.`
+    : "Foreign desks. A sponsor intervenes. Korea is now a takeable front through the Sponsor Lane.";
   pushLog(state, line, "alert");
   return line;
 }

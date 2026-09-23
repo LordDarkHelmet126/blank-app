@@ -35,6 +35,10 @@ import {
   fireSponsor,
   travelUnlocked,
   isAdjacent,
+  approachRoads,
+  approachTrail,
+  roadLabel,
+  deskControl,
   geoOf,
   geoYield,
   geoTags,
@@ -394,6 +398,28 @@ assert(nbrs("far_russia").includes("sponsor_lane") && nbrs("sponsor_lane").inclu
 assert(!nbrs("far_russia").includes("far_korea") && !nbrs("sponsor_lane").includes("kr_inland"), "no direct Russia–Korea or sponsor–sheds leap");
 assert(regionOf(leap, "sponsor_lane").type === "sea" && regionOf(leap, "sponsor_lane").unlockPhase === 4, "Sponsor Lane is the phase-4 sea");
 assert(regionOf(leap, "siberia").unlockPhase === 3 && regionOf(leap, "havana").unlockPhase === 3 && regionOf(leap, "kr_inland").unlockPhase === 4, "inland phases match the locked gates");
+assert(!content.regions.regions.some((r) => r.state === "MX" || r.state === "AZ" || r.id === "mexico" || r.id === "arizona"), "no Mexico or Arizona nodes");
+assert(playerOf(leap).region === "cheyenne", "week 0 stays Cheyenne");
+const hop = (id) => approachTrail(leap, "cheyenne", id).map((r) => r.short).join(" → ");
+assert(hop("havana") === "St. Louis → Gulf Sealift → Cuba → Havana", `Havana chain: ${hop("havana")}`);
+assert(hop("siberia") === "Nome → Bering → Russia → Kamchatka → Siberia", `Siberia chain: ${hop("siberia")}`);
+assert(hop("managua") === "St. Louis → Gulf Sealift → Cuba → Nicaragua → Managua", `Managua chain: ${hop("managua")}`);
+assert(hop("kamchatka") === "Nome → Bering → Russia → Kamchatka", `Kamchatka chain: ${hop("kamchatka")}`);
+assert(hop("sponsor_lane") === "Nome → Bering → Russia → Sponsor Lane", `Sponsor chain: ${hop("sponsor_lane")}`);
+assert(hop("kr_inland") === "Nome → Bering → Russia → Sponsor Lane → Korea → Sheds", `Korea inland chain: ${hop("kr_inland")}`);
+assert(approachRoads(leap, "far_cuba", "havana").join(", ") === "Havana", "Havana from Cuba names itself");
+assert(approachRoads(leap, "far_russia", "siberia").join(", ") === "Kamchatka", "Siberia from Russia names Kamchatka");
+assert(approachRoads(leap, "cheyenne", "lincoln").join(", ") === "Lincoln", "adjacent I-80 names Lincoln");
+assert(roadLabel(leap, "cheyenne", "lincoln") === "I-80 Stall", "I-80 Stall label");
+assert(roadLabel(leap, "far_cuba", "havana") === "Havana road", "Havana road label");
+assert(roadLabel(leap, "kamchatka", "siberia") === "Siberia road", "Siberia road label");
+assert(roadLabel(leap, "far_nicaragua", "managua") === "Managua road", "Managua road label");
+assert(roadLabel(leap, "far_russia", "sponsor_lane") === "Sponsor lane", "Sponsor lane label");
+assert(roadLabel(leap, "far_korea", "kr_inland") === "Peninsula sheds", "Peninsula sheds label");
+const desks = deskControl(leap);
+assert(desks.find((s) => s.id === "RU")?.keys.includes("siberia"), "Siberia stays a Russia key");
+assert(desks.find((s) => s.id === "CU")?.keys.includes("havana"), "Havana stays a Cuba key");
+assert(desks.find((s) => s.id === "NI")?.keys.includes("managua"), "Managua stays a Nicaragua key");
 assert(isAdjacent(leap, "bethel", "anchorage"), "Anchorage is an adjacent road");
 playerOf(leap).region = "bethel";
 leap.ap = 2;
@@ -690,6 +716,7 @@ assert(/get\("style"\)/.test(uiSrc) && /get\("arena"\)/.test(uiSrc), "demo=duel&
 assert(/style=brawler|youStyleId/.test(uiSrc), "brawler demo style override");
 assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
 assert(/function parkCoach/.test(uiSrc) && /function flushOverlays/.test(uiSrc), "overlays queue: park coach, one at a time");
+assert(/Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland \(kr_inland\)/.test(uiSrc), "coach names Sheds, the Korea inland road");
 assert(/--type:\s*16px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 16px");
 assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
 assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
