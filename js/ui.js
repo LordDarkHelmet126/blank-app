@@ -937,7 +937,7 @@ function officersHtml() {
     .join("");
   const emptyAdd = visible.length
     ? ""
-    : `<p class="muted">No listed officers here yet. Plot → Seek Legend, or Create below.</p>`;
+    : `<p class="muted">No listed officers here yet. Plot → Seek Legend, or Create above.</p>`;
   const addHow = `<p class="muted">${HIRE_LINE} Create custom (cap 10). Court ${court.length} · generals ${gens.length}/5.</p>`;
   const types = Object.entries(content.officers.personalities || {});
   const typeOpts = types
@@ -949,7 +949,7 @@ function officersHtml() {
   const createBlock = `
     <section class="roster-create" id="roster-create">
     <h2>Create a friend (${state.customSlotsUsed}/${slots})</h2>
-    <p class="roster-lead">Name, title, and an original face. They join as a player in this city. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX} each, total ≤ ${CUSTOM_STAT_BUDGET}. Promote them on the ladder below — not a licensed likeness.</p>
+    <p class="roster-lead">Named face. Joins here as a Player. Stats ${CUSTOM_STAT_MIN}–${CUSTOM_STAT_MAX}, total ≤ ${CUSTOM_STAT_BUDGET}.</p>
     <div class="face-grid" id="c-faces">${originalFaceGrid()
       .map(
         (f, i) =>
@@ -965,6 +965,7 @@ function officersHtml() {
         <div class="field"><label>Title</label><input id="c-title" maxlength="24" value="Friend" /></div>
         <div class="field"><label>Type</label><select id="c-type">${typeOpts}</select></div>
         <p class="muted" id="c-skills"></p>
+        <button type="button" id="c-add" class="primary roster-promote"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add friend as player"}</button>
         <div class="creator-stats">
           <label>WAR <input id="c-war" type="number" min="${CUSTOM_STAT_MIN}" max="${CUSTOM_STAT_MAX}" value="55" /></label>
           <label>INT <input id="c-int" type="number" min="${CUSTOM_STAT_MIN}" max="${CUSTOM_STAT_MAX}" value="55" /></label>
@@ -974,7 +975,6 @@ function officersHtml() {
         <p class="muted" id="c-budget">Budget 220/${CUSTOM_STAT_BUDGET}</p>
       </div>
     </div>
-    <button type="button" id="c-add" class="primary roster-promote"${full ? " disabled" : ""}>${full ? "Slots full (10)" : "Add friend as player"}</button>
     </section>`;
   return `${rosterChromeHtml()}${createBlock}${rosterRungsHtml()}<hr /><h2>Officers (${visible.length} visible)</h2>${addHow}
     <hr />
@@ -1342,6 +1342,7 @@ function courtHtml() {
       let hint;
       if (!p.faction) hint = "Raise Banner, then Plot → Hire.";
       else if (wait[0]) hint = `Plot → Appoint ${esc(wait[0].name)}.`;
+      else if (ladderRoster(state).officer.some((o) => o.region === p.region) && gens.length < MAX_GENERALS) hint = "Roster → Promote an officer to general.";
       else if (ladderRoster(state).player.some((o) => o.region === p.region)) hint = "Roster → Promote a player to officer.";
       else hint = "Plot → Hire fills this ADD chair.";
       chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
