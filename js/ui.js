@@ -79,7 +79,7 @@ import {
   geoTags,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
-import { inlandDesk, inlandLook } from "./inland.js";
+import { inlandDesk, inlandLook, stampDuelDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -103,6 +103,39 @@ function parseDemoFx(params) {
 
 function demoQuery() {
   return new URLSearchParams(location.search);
+}
+
+function openDemoDuel() {
+  const params = demoQuery();
+  startSliceState();
+  const goliath = params.get("goliath") === "1";
+  const style = params.get("style");
+  const arena = params.get("arena");
+  const node = params.get("node");
+  let foe;
+  if (goliath) {
+    foe = state.officers.find((o) => o.id === "marsh");
+    if (foe) {
+      foe.hidden = false;
+      foe.region = "bethel";
+      if (!state.discovered.includes("marsh")) state.discovered.push("marsh");
+      state.marshHunt = 2;
+    }
+  } else {
+    foe = state.officers.find((o) => o.id === "hart");
+  }
+  if (foe) {
+    const res = act(state, content, "challenge", {
+      officerId: foe.id,
+      youStyleId: style || undefined,
+      arenaId: arena || undefined,
+      deskId: node || undefined,
+    });
+    if (!res.ok) toast(res.message);
+  }
+  if (state?.duel) stampDuelDesk(state.duel, node);
+  hideModal();
+  render();
 }
 
 function openDemoSiege() {
@@ -448,32 +481,7 @@ export async function boot(loaded) {
     return;
   }
   if (params.get("demo") === "duel") {
-    startSliceState();
-    const goliath = params.get("goliath") === "1";
-    const style = params.get("style");
-    const arena = params.get("arena");
-    let foe;
-    if (goliath) {
-      foe = state.officers.find((o) => o.id === "marsh");
-      if (foe) {
-        foe.hidden = false;
-        foe.region = "bethel";
-        if (!state.discovered.includes("marsh")) state.discovered.push("marsh");
-        state.marshHunt = 2;
-      }
-    } else {
-      foe = state.officers.find((o) => o.id === "hart");
-    }
-    if (foe) {
-      const res = act(state, content, "challenge", {
-        officerId: foe.id,
-        youStyleId: style || undefined,
-        arenaId: arena || undefined,
-      });
-      if (!res.ok) toast(res.message);
-    }
-    hideModal();
-    render();
+    openDemoDuel();
     afterFonts();
     return;
   }
@@ -2616,12 +2624,14 @@ function pickDuelMove(move) {
 function closeDuel() {
   if (!state?.duel) {
     $("duel").hidden = true;
+    clearDuelDesk();
     stopDuelLoop();
     render();
     return;
   }
   const res = duelCmd(state, "close");
   $("duel").hidden = true;
+  clearDuelDesk();
   stopDuelLoop();
   render();
   if (res.ok) {
@@ -2656,18 +2666,45 @@ function paintStyleStripe(id, style) {
   el.style.background = styleInk(style);
 }
 
+function demoDuelNode() {
+  const params = demoQuery();
+  if (params.get("demo") !== "duel") return null;
+  const node = params.get("node");
+  return inlandLook(node) ? node : null;
+}
+
+function activeDuelDesk(d) {
+  if (inlandLook(d?.deskId)) return d.deskId;
+  return demoDuelNode();
+}
+
+function syncDuelDesk(d) {
+  const id = activeDuelDesk(d);
+  if (d && id) stampDuelDesk(d, id);
+  return id;
+}
+
+function duelDeskPrefix(d) {
+  const id = syncDuelDesk(d);
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!desk || !look) return "";
+  return `${desk.line}. ${look.read}. `;
+}
+
 function duelNextLine(d) {
   const spec = d.you.style?.specialLabel || "Special";
-  if (d.result === "you") return "NEXT: You hold the yard. Back to map.";
-  if (d.result === "foe") return "NEXT: They hold the yard. Back to map.";
-  if (d.result) return "NEXT: Draw. Back to map.";
+  const where = duelDeskPrefix(d);
+  if (d.result === "you") return `NEXT: ${where}You hold the yard. Back to map.`;
+  if (d.result === "foe") return `NEXT: ${where}They hold the yard. Back to map.`;
+  if (d.result) return `NEXT: ${where}Draw. Back to map.`;
   if (d.beat === "resolve" && d.last) {
     const you = d.last.youDmg ? `You -${d.last.youDmg}` : d.last.youHeal ? `You +${d.last.youHeal}` : "You clean";
     const foe = d.last.foeDmg ? `Foe -${d.last.foeDmg}` : d.last.foeHeal ? `Foe +${d.last.foeHeal}` : "Foe clean";
-    return `HIT: ${you} · ${foe}.${d.last.timed ? " Green window." : ""}`;
+    return `HIT: ${where}${you} · ${foe}.${d.last.timed ? " Green window." : ""}`;
   }
-  if (d.underdog) return `NEXT: Wider green. Press 1 Strike, 2 Guard, or 3 Special · ${spec} inside the band.`;
-  return `NEXT: Needle in the green, then 1 Strike, 2 Guard, or 3 Special · ${spec}.`;
+  if (d.underdog) return `NEXT: ${where}Wider green. Press 1 Strike, 2 Guard, or 3 Special · ${spec} inside the band.`;
+  return `NEXT: ${where}Needle in the green, then 1 Strike, 2 Guard, or 3 Special · ${spec}.`;
 }
 
 function paintDuelHit(id, dmg, heal, show) {
@@ -2697,7 +2734,44 @@ function paintDuelStatic() {
   paintStyleStripe("duel-foe-stripe", foe.style);
   $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""} · WAR ${foe.stats.war}`;
   $("duel-foe-stats").textContent = foe.wound ? "WOUND — WAR cut" : `INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
-  if ($("duel-arena")) $("duel-arena").textContent = d.arena?.label || "Yard";
+  const deskId = syncDuelDesk(d);
+  const look = inlandLook(deskId);
+  if ($("duel-arena")) $("duel-arena").textContent = look?.strip || d.arena?.label || "Yard";
+  paintDuelDesk(deskId);
+}
+
+function clearDuelDesk() {
+  const el = $("duel");
+  if (!el) return;
+  delete el.dataset.desk;
+  DESK_VARS.forEach((name) => el.style.removeProperty(name));
+  const strip = $("duel-desk");
+  if (strip) strip.hidden = true;
+}
+
+function paintDuelDesk(id) {
+  const el = $("duel");
+  if (!el) return;
+  const look = inlandLook(id);
+  if (!look) {
+    if (el.dataset.desk) clearDuelDesk();
+    return;
+  }
+  el.dataset.desk = id;
+  el.style.setProperty("--desk-bg", look.bg);
+  el.style.setProperty("--desk-panel", look.panel);
+  el.style.setProperty("--desk-edge", look.edge);
+  el.style.setProperty("--desk-strip", look.stripBg);
+  el.style.setProperty("--desk-ink", look.ink);
+  el.style.setProperty("--desk-read", look.readInk);
+  el.style.setProperty("--desk-backdrop", look.backdrop);
+  const strip = $("duel-desk");
+  if (!strip) return;
+  strip.hidden = false;
+  const name = $("duel-desk-name");
+  const read = $("duel-desk-read");
+  if (name) name.textContent = look.strip;
+  if (read) read.textContent = look.read;
 }
 
 function paintDuelHp() {
@@ -2751,7 +2825,10 @@ function drawDuelYard(now) {
   const w = canvas.width;
   const h = canvas.height;
   ctx.imageSmoothingEnabled = false;
-  paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
+  const deskId = syncDuelDesk(state.duel);
+  if (!paintInlandDuelYard(ctx, w, h, deskId)) {
+    paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
+  }
   const bob = Math.floor(now / 280) % 2;
   const flash = state.duel.last && state.duel.beat === "resolve";
   const youHit = flash && state.duel.last.youDmg > 0;
@@ -2773,6 +2850,7 @@ function drawDuelYard(now) {
     ctx.fillRect(0, 0, w, h);
     ctx.globalAlpha = 1;
   }
+  if (deskId) paintDuelDeskPlate(ctx, w, deskId);
 }
 
 function paintStyleBar(ctx, x, y, color) {
@@ -2797,6 +2875,77 @@ function paintDuelDamage(ctx, x, y, dmg, heal) {
 function px(ctx, x, y, w, h, c) {
   ctx.fillStyle = c;
   ctx.fillRect(x, y, w, h);
+}
+
+function paintDuelDeskPlate(ctx, w, id) {
+  const look = inlandLook(id);
+  const desk = inlandDesk(id);
+  if (!look || !desk) return;
+  px(ctx, 0, 0, w, 42, look.stripBg);
+  px(ctx, 0, 0, w, 4, look.edge);
+  ctx.font = "bold 18px monospace";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = look.ink;
+  ctx.fillText(look.strip, 16, 6);
+  ctx.font = "13px monospace";
+  ctx.fillStyle = look.readInk;
+  ctx.fillText(look.read, 16, 26);
+}
+
+function paintInlandDuelYard(ctx, w, h, id) {
+  const look = inlandLook(id);
+  if (!look) return false;
+  px(ctx, 0, 0, w, h, look.bg);
+  if (id === "kamchatka") {
+    px(ctx, 0, 0, w, h, "#07141c");
+    px(ctx, 0, 56, w, 16, "#145068");
+    px(ctx, 0, 78, w, h, "#0a3044");
+    px(ctx, 0, 78, w, 6, "#8fd4ea");
+    for (const x of [36, 140, 280, 420, 540]) px(ctx, x, 96, 36, 8, "#8fd4ea");
+  } else if (id === "siberia") {
+    px(ctx, 0, 48, w, h, "#142010");
+    for (const x of [24, 80, 500, 560]) {
+      px(ctx, x, 36, 10, 80, "#5a3a18");
+      px(ctx, x - 16, 18, 42, 28, "#243818");
+      px(ctx, x - 8, 6, 26, 16, "#7cb342");
+    }
+    px(ctx, 0, 124, w, 14, "#5a3a18");
+  } else if (id === "havana") {
+    px(ctx, 0, 0, w, 70, "#06303c");
+    px(ctx, 0, 28, w, 12, "#26c6b0");
+    px(ctx, 0, 48, w, 8, "#8ee0d4");
+    px(ctx, 0, 70, w, 16, "#6a3018");
+    px(ctx, 0, 86, w, h, "#c4a574");
+    px(ctx, 220, 40, 90, 30, "#d8c0a0");
+  } else if (id === "managua") {
+    px(ctx, 0, 36, w, h, "#c47830");
+    px(ctx, 20, 78, 36, 32, "#f0b429");
+    px(ctx, 64, 90, 24, 20, "#6a4018");
+    px(ctx, 500, 70, 48, 36, "#f0b429");
+    px(ctx, 0, 118, w, 18, "#4a3010");
+  } else if (id === "sponsor_lane") {
+    px(ctx, 0, 40, w, h, "#1c220e");
+    px(ctx, 48, 48, 48, 34, "#3a4018");
+    px(ctx, 56, 56, 32, 10, "#e6ee55");
+    px(ctx, 160, 40, 52, 40, "#2a3010");
+    px(ctx, 168, 50, 36, 10, "#f7f7b0");
+    px(ctx, 480, 36, 60, 46, "#3a4018");
+    px(ctx, 220, 70, 120, 10, "#e6ee55");
+    px(ctx, 0, 108, w, 8, "#e6ee55");
+  } else if (id === "kr_inland") {
+    px(ctx, 0, 0, w, 80, "#1a1428");
+    px(ctx, 0, 46, 220, 50, "#3a2858");
+    px(ctx, 160, 24, 260, 72, "#2c2040");
+    px(ctx, 360, 14, 220, 80, "#3a2858");
+    px(ctx, 0, 96, w, h, "#120e18");
+    px(ctx, 0, 96, w, 6, "#c9a0e8");
+  } else {
+    px(ctx, 0, 40, w, h, look.panel);
+  }
+  px(ctx, 0, 0, 10, h, look.edge);
+  px(ctx, w - 10, 0, 10, h, look.edge);
+  return true;
 }
 
 function paintDuelArena(ctx, w, h, id, now) {

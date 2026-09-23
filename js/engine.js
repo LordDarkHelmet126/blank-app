@@ -9,7 +9,7 @@ import {
   remainingRatio,
   siegeCommand,
 } from "./battle.js";
-import { inlandDesk } from "./inland.js";
+import { inlandDesk, stampDuelDesk } from "./inland.js";
 import {
   hydrateLife,
   tickLife,
@@ -1162,7 +1162,9 @@ function beginDuel(state, actor, foe, extra = {}) {
     youStyleId: extra.youStyleId || extra.styleId || null,
     foeStyleId: extra.foeStyleId || null,
     jobTemplateId: extra.jobTemplateId || null,
+    deskId: extra.deskId || null,
   });
+  stampDuelDesk(state.duel, extra.deskId || regionId);
   state.duel.actorId = actor.id;
   return state.duel;
 }
@@ -1186,6 +1188,7 @@ function doChallenge(state, extra = {}) {
     youStyleId: extra.youStyleId || extra.styleId,
     foeStyleId: extra.foeStyleId,
     regionId: extra.regionId || p.region,
+    deskId: extra.deskId || null,
   });
   const d = state.duel;
   const msg = d.underdog
