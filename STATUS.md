@@ -2,7 +2,31 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Foreign-desk siege identity. Same board, per-theater read. WORKS and pressure unchanged.
+**Last checkpoint:** 2026-09-23 — Foreign-desk duel read. Same yard clock, per-theater backdrop. Hit math unchanged.
+
+## Foreign-desk duel read
+
+A yard duel tied to one of the six locked inland ids keeps the **99s / 11 exchange** clock, the amber NEXT line, hit juice, and the style specials. The backdrop, the panel edge, and a short desk strip now match that siege desk. NEXT leads with the desk name. A duel with no desk id stays the domestic yard.
+
+| Id | Strip | Read | Yard |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice berm, navy sky |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine and timber |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon and harbor wall |
+| managua | MANAGUA DESK | Block wall · isthmus | clay blocks, ochre ground |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil crates |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk ridge |
+
+**Playtest (yard):**
+
+- `/?demo=duel&node=kamchatka`
+- `/?demo=duel&node=siberia`
+- `/?demo=duel&node=havana`
+- `/?demo=duel&node=managua`
+- `/?demo=duel&node=sponsor_lane`
+- `/?demo=duel&node=kr_inland`
+
+Domestic yard, unchanged: `/?demo=duel`. An unknown `node=` does not borrow another desk. `style=` and `arena=` still work beside `node=`.
 
 ## Foreign-desk siege identity
 

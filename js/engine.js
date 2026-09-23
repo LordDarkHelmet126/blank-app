@@ -1162,6 +1162,7 @@ function beginDuel(state, actor, foe, extra = {}) {
     youStyleId: extra.youStyleId || extra.styleId || null,
     foeStyleId: extra.foeStyleId || null,
     jobTemplateId: extra.jobTemplateId || null,
+    deskId: extra.deskId || null,
   });
   state.duel.actorId = actor.id;
   return state.duel;
@@ -1186,6 +1187,7 @@ function doChallenge(state, extra = {}) {
     youStyleId: extra.youStyleId || extra.styleId,
     foeStyleId: extra.foeStyleId,
     regionId: extra.regionId || p.region,
+    deskId: extra.deskId || null,
   });
   const d = state.duel;
   const msg = d.underdog

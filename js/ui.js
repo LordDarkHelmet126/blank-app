@@ -452,6 +452,7 @@ export async function boot(loaded) {
     const goliath = params.get("goliath") === "1";
     const style = params.get("style");
     const arena = params.get("arena");
+    const node = params.get("node");
     let foe;
     if (goliath) {
       foe = state.officers.find((o) => o.id === "marsh");
@@ -469,6 +470,7 @@ export async function boot(loaded) {
         officerId: foe.id,
         youStyleId: style || undefined,
         arenaId: arena || undefined,
+        deskId: node || undefined,
       });
       if (!res.ok) toast(res.message);
     }
@@ -2616,12 +2618,14 @@ function pickDuelMove(move) {
 function closeDuel() {
   if (!state?.duel) {
     $("duel").hidden = true;
+    clearDuelDesk();
     stopDuelLoop();
     render();
     return;
   }
   const res = duelCmd(state, "close");
   $("duel").hidden = true;
+  clearDuelDesk();
   stopDuelLoop();
   render();
   if (res.ok) {
@@ -2656,18 +2660,24 @@ function paintStyleStripe(id, style) {
   el.style.background = styleInk(style);
 }
 
+function duelDeskPrefix(d) {
+  const line = inlandDesk(d?.deskId)?.line;
+  return line ? `${line}. ` : "";
+}
+
 function duelNextLine(d) {
   const spec = d.you.style?.specialLabel || "Special";
-  if (d.result === "you") return "NEXT: You hold the yard. Back to map.";
-  if (d.result === "foe") return "NEXT: They hold the yard. Back to map.";
-  if (d.result) return "NEXT: Draw. Back to map.";
+  const where = duelDeskPrefix(d);
+  if (d.result === "you") return `NEXT: ${where}You hold the yard. Back to map.`;
+  if (d.result === "foe") return `NEXT: ${where}They hold the yard. Back to map.`;
+  if (d.result) return `NEXT: ${where}Draw. Back to map.`;
   if (d.beat === "resolve" && d.last) {
     const you = d.last.youDmg ? `You -${d.last.youDmg}` : d.last.youHeal ? `You +${d.last.youHeal}` : "You clean";
     const foe = d.last.foeDmg ? `Foe -${d.last.foeDmg}` : d.last.foeHeal ? `Foe +${d.last.foeHeal}` : "Foe clean";
-    return `HIT: ${you} · ${foe}.${d.last.timed ? " Green window." : ""}`;
+    return `HIT: ${where}${you} · ${foe}.${d.last.timed ? " Green window." : ""}`;
   }
-  if (d.underdog) return `NEXT: Wider green. Press 1 Strike, 2 Guard, or 3 Special · ${spec} inside the band.`;
-  return `NEXT: Needle in the green, then 1 Strike, 2 Guard, or 3 Special · ${spec}.`;
+  if (d.underdog) return `NEXT: ${where}Wider green. Press 1 Strike, 2 Guard, or 3 Special · ${spec} inside the band.`;
+  return `NEXT: ${where}Needle in the green, then 1 Strike, 2 Guard, or 3 Special · ${spec}.`;
 }
 
 function paintDuelHit(id, dmg, heal, show) {
@@ -2697,7 +2707,42 @@ function paintDuelStatic() {
   paintStyleStripe("duel-foe-stripe", foe.style);
   $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""} · WAR ${foe.stats.war}`;
   $("duel-foe-stats").textContent = foe.wound ? "WOUND — WAR cut" : `INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
-  if ($("duel-arena")) $("duel-arena").textContent = d.arena?.label || "Yard";
+  if ($("duel-arena")) $("duel-arena").textContent = inlandDesk(d.deskId)?.line || d.arena?.label || "Yard";
+  paintDuelDesk(d.deskId);
+}
+
+function clearDuelDesk() {
+  const el = $("duel");
+  if (!el) return;
+  delete el.dataset.desk;
+  DESK_VARS.forEach((name) => el.style.removeProperty(name));
+  const strip = $("duel-desk");
+  if (strip) strip.hidden = true;
+}
+
+function paintDuelDesk(id) {
+  const el = $("duel");
+  if (!el) return;
+  const look = inlandLook(id);
+  if (!look) {
+    if (el.dataset.desk) clearDuelDesk();
+    return;
+  }
+  el.dataset.desk = id;
+  el.style.setProperty("--desk-bg", look.bg);
+  el.style.setProperty("--desk-panel", look.panel);
+  el.style.setProperty("--desk-edge", look.edge);
+  el.style.setProperty("--desk-strip", look.stripBg);
+  el.style.setProperty("--desk-ink", look.ink);
+  el.style.setProperty("--desk-read", look.readInk);
+  el.style.setProperty("--desk-backdrop", look.backdrop);
+  const strip = $("duel-desk");
+  if (!strip) return;
+  strip.hidden = false;
+  const name = $("duel-desk-name");
+  const read = $("duel-desk-read");
+  if (name) name.textContent = look.strip;
+  if (read) read.textContent = look.read;
 }
 
 function paintDuelHp() {
@@ -2751,7 +2796,9 @@ function drawDuelYard(now) {
   const w = canvas.width;
   const h = canvas.height;
   ctx.imageSmoothingEnabled = false;
-  paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
+  if (!paintInlandDuelYard(ctx, w, h, state.duel.deskId)) {
+    paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
+  }
   const bob = Math.floor(now / 280) % 2;
   const flash = state.duel.last && state.duel.beat === "resolve";
   const youHit = flash && state.duel.last.youDmg > 0;
@@ -2797,6 +2844,71 @@ function paintDuelDamage(ctx, x, y, dmg, heal) {
 function px(ctx, x, y, w, h, c) {
   ctx.fillStyle = c;
   ctx.fillRect(x, y, w, h);
+}
+
+function paintInlandDuelYard(ctx, w, h, id) {
+  const look = inlandLook(id);
+  if (!look) return false;
+  px(ctx, 0, 0, w, h, look.bg);
+  if (id === "kamchatka") {
+    px(ctx, 0, 24, w, 36, "#0a2430");
+    px(ctx, 70, 16, 100, 40, "#1a2830");
+    px(ctx, 96, 6, 30, 16, "#8fd4ea");
+    px(ctx, 0, 72, w, h, "#d4eef6");
+    px(ctx, 0, 72, w, 8, "#145068");
+    px(ctx, 36, 88, 16, 30, "#8fd4ea");
+    px(ctx, 540, 84, 22, 34, "#b7e6f4");
+  } else if (id === "siberia") {
+    px(ctx, 0, 36, w, h, "#1a2a14");
+    for (const x of [20, 64, 520, 576]) {
+      px(ctx, x, 30, 8, 72, "#5a3a18");
+      px(ctx, x - 14, 16, 36, 26, "#243818");
+      px(ctx, x - 8, 4, 24, 16, "#7cb342");
+    }
+    px(ctx, 0, 118, w, 12, "#5a3a18");
+    px(ctx, 0, 132, w, 8, "#243818");
+  } else if (id === "havana") {
+    px(ctx, 0, 0, w, 64, "#0c3844");
+    px(ctx, 0, 22, w, 10, "#26c6b0");
+    px(ctx, 0, 44, w, 8, "#8ee0d4");
+    px(ctx, 160, 36, 80, 28, "#d8c0a0");
+    px(ctx, 188, 22, 8, 16, "#f8f8f8");
+    px(ctx, 0, 64, w, 14, "#6a3018");
+    px(ctx, 0, 78, w, h, "#c4a574");
+  } else if (id === "managua") {
+    px(ctx, 0, 30, w, h, "#c47830");
+    px(ctx, 12, 70, 30, 28, "#f0b429");
+    px(ctx, 48, 80, 22, 20, "#6a4018");
+    px(ctx, 500, 64, 40, 34, "#f0b429");
+    px(ctx, 546, 82, 24, 18, "#4a3010");
+    px(ctx, 0, 108, w, 16, "#4a3010");
+    px(ctx, 0, 124, w, 4, "#1a1008");
+  } else if (id === "sponsor_lane") {
+    px(ctx, 0, 44, w, h, "#1c220e");
+    px(ctx, 48, 40, 40, 30, "#3a4018");
+    px(ctx, 54, 46, 28, 8, "#e6ee55");
+    px(ctx, 130, 32, 44, 36, "#2a3010");
+    px(ctx, 136, 40, 32, 8, "#f7f7b0");
+    px(ctx, 470, 28, 52, 42, "#3a4018");
+    px(ctx, 476, 36, 36, 8, "#e6ee55");
+    px(ctx, 280, 58, 8, 54, "#686040");
+    px(ctx, 230, 54, 108, 8, "#e6ee55");
+    px(ctx, 0, 100, w, 8, "#e6ee55");
+  } else if (id === "kr_inland") {
+    px(ctx, 0, 0, w, 70, "#1a1428");
+    px(ctx, 0, 42, 210, 44, "#3a2858");
+    px(ctx, 150, 22, 240, 64, "#2c2040");
+    px(ctx, 340, 12, 200, 74, "#3a2858");
+    px(ctx, 0, 86, w, h, "#120e18");
+    px(ctx, 0, 86, w, 6, "#c9a0e8");
+    px(ctx, 70, 16, 3, 3, "#f3e4ff");
+    px(ctx, 420, 10, 3, 3, "#f3e4ff");
+  } else {
+    px(ctx, 0, 36, w, h - 44, look.panel);
+  }
+  px(ctx, 0, 0, w, 6, look.edge);
+  px(ctx, 0, h - 6, w, 6, look.edge);
+  return true;
 }
 
 function paintDuelArena(ctx, w, h, id, now) {

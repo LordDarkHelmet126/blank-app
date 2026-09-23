@@ -2,7 +2,11 @@
  * Yard duel — 1v1 officer challenge. Strike / Guard / Special with a
  * timing window. Default clock is ~99s (11 exchanges × 9s).
  * Arenas, outfits, and named fighting styles are original IP only.
+ * A locked inland desk id tints the yard read. It does not change the clock,
+ * the exchange count, or the hit math.
  */
+
+import { inlandDesk, inlandLook } from "./inland.js";
 
 export const DUEL_MOVES = [
   { id: "strike", label: "Strike", beats: "special", verb: "cuts through" },
@@ -149,6 +153,15 @@ export function outfitOf(id) {
 
 export function arenaOf(id) {
   return DUEL_ARENAS[id] || DUEL_ARENAS.porch;
+}
+
+/** Presentation hook. Unknown ids stay a domestic yard. */
+export function duelDeskId(id) {
+  return inlandLook(id) ? id : null;
+}
+
+export function duelPlace(duel) {
+  return inlandDesk(duel?.deskId)?.line || duel?.arena?.label || "yard";
 }
 
 export function pickStyle(off, stats, overrideId) {
@@ -299,12 +312,14 @@ export function createDuel({
   youStyleId = null,
   foeStyleId = null,
   jobTemplateId = null,
+  deskId = null,
 }) {
   const underdog = isUnderdog(youStats, foeStats);
   const youMax = duelHp(youStats);
   const foeMax = duelHp(foeStats);
   const green = greenWindow(underdog);
   const arena = pickArena(regionId, seasonId, jobTemplateId, arenaId);
+  const desk = duelDeskId(deskId) || duelDeskId(regionId);
   const youSnap = snapshot(you, youStats, regionId, seasonId, youStyleId);
   const foeSnap = snapshot(foe, foeStats, regionId, seasonId, foeStyleId);
   if (youStyleId === "cycle") youSnap.style = packStyle(styleOf("brawler"));
@@ -326,6 +341,7 @@ export function createDuel({
     jobId,
     kind,
     arena,
+    deskId: desk,
     regionId,
     seasonId,
     youStun: false,
@@ -333,7 +349,7 @@ export function createDuel({
     youSnare: false,
     foeSnare: false,
     log: [
-      `${arena.label} — ${youSnap.name} [${youSnap.style.label}] vs ${foeSnap.name} [${foeSnap.style.label}].`,
+      `${inlandDesk(desk)?.line || arena.label} — ${youSnap.name} [${youSnap.style.label}] vs ${foeSnap.name} [${foeSnap.style.label}].`,
       underdog
         ? `UNDERDOG — ${you.name} (WAR ${youStats.war}) vs ${foe.name} (WAR ${foeStats.war}). Wider green window.`
         : `Strike beats Special, Special beats Guard, Guard beats Strike. Special · ${youSnap.style.specialLabel} / Special · ${foeSnap.style.specialLabel}.`,
@@ -467,10 +483,10 @@ export function resolveExchange(duel, youMove, timing, foeMove) {
     duel.log.push("Both down. Draw.");
   } else if (duel.youHp <= 0) {
     duel.result = "foe";
-    duel.log.push(`${foe.name} holds the ${duel.arena?.label || "yard"}.`);
+    duel.log.push(`${foe.name} holds the ${duelPlace(duel)}.`);
   } else if (duel.foeHp <= 0) {
     duel.result = "you";
-    duel.log.push(`${you.name} holds the ${duel.arena?.label || "yard"}.`);
+    duel.log.push(`${you.name} holds the ${duelPlace(duel)}.`);
   } else if (duel.exchangesDone >= duel.maxExchanges) {
     finishOnClock(duel);
   } else {
