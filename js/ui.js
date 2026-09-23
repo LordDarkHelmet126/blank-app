@@ -353,6 +353,8 @@ export async function boot(loaded) {
     else if (view === "near") frameNear();
     else if (view === "ca") frameCa();
     else if (view === "gulf") frameGulf();
+    else if (view === "bering") frameBering();
+    else if (view === "cuba") frameCuba();
     if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -1820,6 +1822,30 @@ function frameGulf() {
   frameBox(470, 300, 760, 610);
 }
 
+function frameLonLat(lon0, lat0, lon1, lat1, pad) {
+  const [xA, yA] = projectLL(lon0, lat0);
+  const [xB, yB] = projectLL(lon1, lat1);
+  const minX = Math.min(xA, xB);
+  const maxX = Math.max(xA, xB);
+  const minY = Math.min(yA, yB);
+  const maxY = Math.max(yA, yB);
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
+  mapView.z = Math.max(0.16, Math.min(3.2, z));
+  mapView.x = (1000 - (minX + maxX) * z) / 2;
+  mapView.y = (620 - (minY + maxY) * z) / 2;
+  drawMap();
+}
+
+/** East end of the ice approach: Siberia, the Russia desk, and the Korea sponsor. */
+function frameBering() {
+  frameLonLat(100, 74, 172, 36, 0.9);
+}
+
+/** Gulf Sealift through Mexico, Cuba, and Nicaragua. Wide enough that the sea card stays lifted. */
+function frameCuba() {
+  frameLonLat(-122, 34, -62, 8, 0.9);
+}
+
 function onMapPointerDown(e) {
   const canvas = $("map");
   const [sx, sy] = canvasPoint(e, canvas);
@@ -2204,6 +2230,83 @@ function tracePart(ctx, part) {
   });
 }
 
+function ringBox(ring) {
+  let minLon = 1e9;
+  let maxLon = -1e9;
+  let minLat = 1e9;
+  let maxLat = -1e9;
+  ring.forEach(([lon, lat]) => {
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  });
+  return { minLon, maxLon, minLat, maxLat, w: maxLon - minLon, h: maxLat - minLat };
+}
+
+/** Involved desks only. Flat on the world overview so the faction read stays clean. */
+function foreignTheaterKind(ring, color) {
+  if (mapView.z < 0.3 || mapView.z >= 0.92) return null;
+  const b = ringBox(ring);
+  if (color === "#d32f2f" && b.maxLat > 70 && b.maxLon > 160 && b.minLon < 40) return "russia";
+  if (color === "#1e88e5" && b.minLon < -120 && b.maxLat > 65 && b.maxLon < -50 && b.w > 60) return "canada";
+  if (color === "#e57373" && b.minLon < -110 && b.maxLat > 30 && b.minLat < 18 && b.w > 20) return "mexico";
+  if (color === "#e57373" && b.minLon > -86 && b.maxLon < -73 && b.minLat > 19 && b.maxLat < 24) return "cuba";
+  if (color === "#e57373" && b.minLat > 10 && b.maxLat < 16 && b.minLon > -90 && b.maxLon < -80 && b.w < 8) return "nicaragua";
+  if (b.minLon > 123 && b.maxLon < 132 && b.minLat > 33 && b.maxLat < 44 && b.w < 8) return "korea";
+  return null;
+}
+
+function reliefHeight(lon, lat, kind) {
+  const n = Math.sin(lon * 0.17) * Math.cos(lat * 0.21) * 0.45 + Math.sin(lon * 0.37 + 1.7) * Math.cos(lat * 0.33) * 0.25;
+  if (kind === "russia") {
+    const ural = Math.exp(-((lon - 60) ** 2) / 22);
+    const kam = Math.exp(-((lon - 158) ** 2) / 36) * Math.exp(-((lat - 57) ** 2) / 24);
+    return 0.42 + n * 0.22 + ural * 0.34 + kam * 0.28;
+  }
+  if (kind === "canada") {
+    const rockies = Math.exp(-((lon + 120) ** 2) / 28);
+    return 0.4 + n * 0.16 + rockies * 0.36;
+  }
+  if (kind === "mexico") {
+    const sierra = Math.exp(-((lon + 106) ** 2) / 26);
+    return 0.36 + n * 0.14 + sierra * 0.4;
+  }
+  if (kind === "cuba") return 0.32 + Math.exp(-((lat - 21.7) ** 2) / 0.9) * 0.5;
+  if (kind === "nicaragua") return 0.3 + Math.exp(-((lon + 85.5) ** 2) / 1.1) * 0.55;
+  if (kind === "korea") return 0.32 + Math.exp(-((lon - 127.4) ** 2) / 1.3) * 0.5;
+  return 0.5;
+}
+
+function shadeWash(hex, t) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lift = (Math.max(0, Math.min(1, t)) - 0.42) * 64;
+  const c = (v) => Math.max(0, Math.min(255, Math.round(v + lift)));
+  return `rgb(${c(r)},${c(g)},${c(b)})`;
+}
+
+function paintTheaterRelief(ctx, ring, color, kind) {
+  const b = ringBox(ring);
+  const step = kind === "cuba" || kind === "nicaragua" || kind === "korea" ? 0.32 : kind === "mexico" ? 0.85 : 1.45;
+  ctx.save();
+  ctx.beginPath();
+  tracePart(ctx, ring);
+  ctx.clip();
+  for (let lat = b.minLat; lat < b.maxLat; lat += step) {
+    for (let lon = b.minLon; lon < b.maxLon; lon += step) {
+      const [xA, yA] = projectLL(lon, lat);
+      const [xB, yB] = projectLL(lon + step, lat - step);
+      const x = Math.min(xA, xB);
+      const y = Math.min(yA, yB);
+      ctx.fillStyle = shadeWash(color, reliefHeight(lon + step * 0.5, lat - step * 0.5, kind));
+      ctx.fillRect(x, y, Math.abs(xB - xA) + 0.6, Math.abs(yB - yA) + 0.6);
+    }
+  }
+  ctx.restore();
+}
+
 function drawGlobe(ctx) {
   ctx.save();
   ctx.lineJoin = "round";
@@ -2225,6 +2328,8 @@ function drawGlobe(ctx) {
       ctx.closePath();
       ctx.fillStyle = land.color;
       ctx.fill();
+      const kind = foreignTheaterKind(part, land.color);
+      if (kind) paintTheaterRelief(ctx, part, land.color, kind);
       ctx.beginPath();
       tracePart(ctx, part);
       ctx.stroke();
@@ -2237,9 +2342,10 @@ function drawGlobe(ctx) {
 }
 
 /**
- * Sea marks only — not roads.
+ * Sea marks only — not inland roads.
  * Bering→Russia uses nome → bering_strait → far_russia.
  * Gulf uses st_louis → gulf_passage → far_cuba → far_nicaragua.
+ * No extra city ids exist inside Russia, Cuba, Nicaragua, Mexico, or Canada.
  */
 function drawWorldCorridors(ctx) {
   if (mapView.z > 0.92) return;
@@ -2249,6 +2355,12 @@ function drawWorldCorridors(ctx) {
     { color: "#8c4a4a", pts: [[-90.5, 23.8], [-79.5, 21.6]] },
     { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] },
   ];
+  if (mapView.z >= 0.3) {
+    routes.push(
+      { color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] },
+      { color: "#9a3b3b", pts: [[158, 63], [127.2, 38.2]] }
+    );
+  }
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
