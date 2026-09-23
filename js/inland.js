@@ -18,6 +18,7 @@ export const INLAND_DESKS = {
   kamchatka: {
     name: "Kamchatka Works",
     short: "Kamchatka",
+    line: "Kamchatka desk",
     walls: 56,
     garrison: 74,
     pressure: 0,
@@ -28,6 +29,7 @@ export const INLAND_DESKS = {
   siberia: {
     name: "Siberia Column",
     short: "Siberia",
+    line: "Siberia desk",
     walls: 36,
     garrison: 68,
     pressure: 4,
@@ -38,6 +40,7 @@ export const INLAND_DESKS = {
   havana: {
     name: "Havana Harbor",
     short: "Havana",
+    line: "Havana desk",
     walls: 48,
     garrison: 66,
     pressure: 16,
@@ -48,6 +51,7 @@ export const INLAND_DESKS = {
   managua: {
     name: "Managua Works",
     short: "Managua",
+    line: "Managua desk",
     walls: 28,
     garrison: 50,
     pressure: 22,
@@ -58,6 +62,7 @@ export const INLAND_DESKS = {
   sponsor_lane: {
     name: "Sponsor Lane",
     short: "Lane",
+    line: "Sponsor Lane desk",
     walls: 32,
     garrison: 42,
     pressure: 8,
@@ -68,17 +73,95 @@ export const INLAND_DESKS = {
   kr_inland: {
     name: "Inland Ridge",
     short: "Inland",
+    line: "Inland Ridge desk",
     walls: 40,
     garrison: 58,
     pressure: 12,
     terrainBias: "hills",
     approach: "far_korea",
-    flavor: "Ridge berm inland of the peninsula desk.",
+    flavor: "Ridge berm inland of the peninsula coast.",
+  },
+};
+
+/**
+ * Glance identity for the shared siege board. Presentation only.
+ * Colors stay here so a missing id cannot borrow another theater.
+ */
+export const INLAND_LOOK = {
+  kamchatka: {
+    strip: "KAMCHATKA DESK",
+    read: "Ice berm · far shore",
+    bg: "#07141c",
+    panel: "#0a1c28",
+    edge: "#8fd4ea",
+    stripBg: "#145068",
+    ink: "#e8f8ff",
+    readInk: "#b7e6f4",
+    backdrop: "repeating-linear-gradient(90deg, #07141c 0 12px, #145068 12px 14px, #07141c 14px 28px)",
+  },
+  siberia: {
+    strip: "SIBERIA DESK",
+    read: "Timber berm · taiga",
+    bg: "#0c140c",
+    panel: "#101c10",
+    edge: "#7cb342",
+    stripBg: "#243818",
+    ink: "#e4f6c8",
+    readInk: "#b7d98a",
+    backdrop: "repeating-linear-gradient(180deg, #0c140c 0 10px, #1e3418 10px 14px)",
+  },
+  havana: {
+    strip: "HAVANA DESK",
+    read: "Harbor wall · seawall",
+    bg: "#06141c",
+    panel: "#081820",
+    edge: "#26c6b0",
+    stripBg: "#0c3844",
+    ink: "#d8fff8",
+    readInk: "#8ee0d4",
+    backdrop: "repeating-linear-gradient(180deg, #0c3844 0 16px, #06141c 16px 20px, #6a3018 20px 24px, #06141c 24px 44px)",
+  },
+  managua: {
+    strip: "MANAGUA DESK",
+    read: "Block wall · isthmus",
+    bg: "#1a1008",
+    panel: "#24160c",
+    edge: "#f0b429",
+    stripBg: "#4a3010",
+    ink: "#ffe7a8",
+    readInk: "#f0c56a",
+    backdrop: "repeating-linear-gradient(90deg, #1a1008 0 16px, #4a3010 16px 20px, #1a1008 20px 24px, #2a1c0c 24px 40px)",
+  },
+  sponsor_lane: {
+    strip: "SPONSOR LANE DESK",
+    read: "Checkpoint · crate berm",
+    bg: "#12160c",
+    panel: "#161a0c",
+    edge: "#e6ee55",
+    stripBg: "#2a3010",
+    ink: "#f7f7b0",
+    readInk: "#d5dc78",
+    backdrop: "repeating-linear-gradient(135deg, #12160c 0 10px, #2a3010 10px 12px, #12160c 12px 22px)",
+  },
+  kr_inland: {
+    strip: "INLAND RIDGE DESK",
+    read: "Ridge berm · peninsula",
+    bg: "#120e18",
+    panel: "#16101c",
+    edge: "#c9a0e8",
+    stripBg: "#2c2040",
+    ink: "#f3e4ff",
+    readInk: "#d2b4ea",
+    backdrop: "repeating-linear-gradient(160deg, #120e18 0 14px, #3a2858 14px 18px, #120e18 18px 32px)",
   },
 };
 
 export function inlandDesk(id) {
   return INLAND_DESKS[id] || null;
+}
+
+export function inlandLook(id) {
+  return INLAND_LOOK[id] || null;
 }
 
 /**
@@ -104,6 +187,7 @@ export function combatView(live, id, wallsOverride = 0) {
     terrainBias: live?.terrainBias || desk.terrainBias,
     pressure: live?.pressure != null ? live.pressure : desk.pressure,
     flavor: desk.flavor,
+    line: desk.line,
     owner: live?.owner ?? null,
     stateCode: live?.stateCode || live?.state || null,
   };

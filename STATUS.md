@@ -2,7 +2,37 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Inland siege hooks for the locked foreign node ids. Combat only; map roads unchanged.
+**Last checkpoint:** 2026-09-23 — Foreign-desk siege identity. Same board, per-theater read. WORKS and pressure unchanged.
+
+## Foreign-desk siege identity
+
+The six locked inland ids still open the shared siege board. Each one now has its own backdrop, panel tint, and desk strip, and the amber NEXT line leads with the desk name. Ploys stay **Cut the berm**, **Rake the parapet**, and **Rush the gap**. **PRESS** / **WAIT** marks are unchanged. Default WORKS and opening pressure were not rebalanced.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+**Before:** one black board. NEXT appended a flavor sentence after the ploy order, so Havana and Siberia read the same until the last clause.
+
+**After:** the margin stripes, the panel edge, and the desk strip name the theater before the meters. NEXT starts `Kamchatka desk. Volcanic berm… WORKS 56 still hold. Cut the berm.`
+
+**Playtest (siege board):**
+
+- `/?demo=siege&node=kamchatka`
+- `/?demo=siege&node=siberia`
+- `/?demo=siege&node=havana`
+- `/?demo=siege&node=managua`
+- `/?demo=siege&node=sponsor_lane`
+- `/?demo=siege&node=kr_inland`
+
+Same tint from the battle hook: `/?demo=battle&siege=1&node=kamchatka` (and `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`).
+
+Domestic siege stays the black board: `/?demo=siege` and `/?demo=battle&siege=1`. A missing id still closes cleanly and does not borrow another desk's colors.
 
 ## Inland siege hooks
 
