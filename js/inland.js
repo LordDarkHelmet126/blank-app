@@ -182,6 +182,18 @@ export function stampDuelDesk(duel, id) {
 }
 
 /**
+ * Presentation stamp for a field already created. Unknown ids do nothing.
+ * Does not touch grid, units, HP, morale, impulses, or siege state.
+ */
+export function stampBattleDesk(battle, id) {
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!battle || !desk || !look) return null;
+  battle.deskId = id;
+  return id;
+}
+
+/**
  * Combat view for a locked id. Does not write neighbors, polygons, or biomes.
  * Painted walls (walls > 0) on a live node replace the desk preset.
  */

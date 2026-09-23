@@ -47,7 +47,7 @@ import {
   startInlandBattle,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
-import { INLAND_IDS, inlandDesk, inlandLook } from "../js/inland.js";
+import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk } from "../js/inland.js";
 import {
   regionIsSiege,
   createSiege,
@@ -444,9 +444,45 @@ assert(/Cut the berm/.test(pageSrc) && /Rake the parapet/.test(pageSrc) && /Rush
 assert(/PRESS/.test(siegeUi) && /WAIT/.test(siegeUi), "PRESS and WAIT marks stay");
 assert(/get\("node"\)/.test(siegeUi) && /startInlandBattle/.test(siegeUi), "demo node= starts an inland battle");
 assert(/field: true/.test(siegeUi), "demo=battle&node= opens a field spawn");
+assert(/function stampBattleDesk/.test(readFileSync(new URL("../js/inland.js", import.meta.url), "utf8")), "field stamp lives with the desk tokens");
+assert(/stampBattleDesk\(battle, toId\)/.test(readFileSync(new URL("../js/battle.js", import.meta.url), "utf8")), "desk id is stamped after the field is created");
+assert(/stampBattleDesk\(state\.battle, node\)/.test(siegeUi), "demo=battle stamps node= onto the field");
+assert(/function activeFieldDesk/.test(siegeUi) && /function demoFieldNode/.test(siegeUi), "field chrome reads node= even if create dropped the desk");
+assert(/function fieldNextLine/.test(siegeUi) && /look\.read/.test(siegeUi), "field NEXT leads with the desk read");
+assert(/id="field-desk"/.test(pageSrc) && /id="field-next"/.test(pageSrc), "field desk strip and NEXT are on the battle chrome");
+assert(/\.battle\[data-desk\]:not\(\.is-siege\)/.test(siegeCss) && /--desk-backdrop/.test(siegeCss), "field shell tints from the desk id");
+assert(/\.field-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "field NEXT stays amber");
+assert(/\.field-next \{[^}]*color:\s*#000000/.test(siegeCss), "field NEXT text is black on amber");
+assert(/inlandLook\(node\) && demoQuery\(\)\.get\("siege"\) !== "1"/.test(siegeUi), "unknown node= does not open a foreign field");
+const nomeField = createBattle(inlandGame, content, "bethel", "nome", 80, 0);
+assert(nomeField.deskId == null && nomeField.siege == null, "domestic Nome field has no desk");
+assert(stampBattleDesk(nomeField, "not-a-desk") == null && nomeField.deskId == null, "unknown node= stays a domestic field");
+for (const id of INLAND_IDS) {
+  const field = createBattle(inlandGame, content, inlandDesk(id).approach, id, 80, 0, { field: true });
+  const roster = field.units.map((u) => `${u.id}:${u.type}:${u.hp}`).join(",");
+  const grid = field.grid.map((row) => row.join("")).join("|");
+  assert(field.siege == null, `${id} field spawn skips the siege board`);
+  assert(field.deskId === id, `${id} field stores the desk after create`);
+  assert(stampBattleDesk(field, id) === id && field.deskId === id, `${id} field stamp sticks`);
+  assert(field.units.map((u) => `${u.id}:${u.type}:${u.hp}`).join(",") === roster, `${id} stamp does not touch the roster`);
+  assert(field.grid.map((row) => row.join("")).join("|") === grid, `${id} stamp does not touch the grid`);
+  assert(field.round === 1 && field.maxRounds === 8, `${id} stamp does not touch the impulse clock`);
+  assert(stampBattleDesk(field, "anchorage") == null && field.deskId === id, `${id} unknown stamp does not clear the desk`);
+}
+assert(
+  /NEXT: \$\{desk\.line\}\. \$\{look\.read\}\. Yellow unit, then an adjacent diamond\./.test(siegeUi),
+  "field NEXT names the desk then the existing order",
+);
+const havanaSiege = createBattle(inlandGame, content, "far_cuba", "havana", 80, 0);
+assert(havanaSiege.siege && havanaSiege.deskId === "havana", "siege hook still stores the Havana desk");
+assert(siegeCoach(havanaSiege.siege).startsWith("NEXT: Havana desk."), "siege NEXT still leads with the desk");
+const badField = startInlandBattle(createNewGame(content, { seed: 19, difficulty: "easy", name: "Riley Cho", background: "fighter" }), content, "nome", { field: true });
+assert(!badField.ok, "a domestic id is not an inland field hook");
 const statusSrc = readFileSync(new URL("../STATUS.md", import.meta.url), "utf8");
 for (const id of INLAND_IDS) assert(statusSrc.includes(`node=${id}`), `STATUS documents ${id}`);
+for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=battle&node=${id}`), `STATUS documents field ${id}`);
 assert(statusSrc.includes("demo=battle&siege=1&node="), "STATUS documents the battle siege hook");
+assert(statusSrc.includes("Domestic field, unchanged: `/?demo=battle`"), "STATUS notes the default field");
 console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
