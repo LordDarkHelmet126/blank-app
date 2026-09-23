@@ -51,7 +51,7 @@ import {
   startInlandBattle,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
-import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk } from "../js/inland.js";
+import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
   regionIsSiege,
   createSiege,
@@ -536,6 +536,52 @@ for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=officers&node=${id}
 for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=court&node=${id}`), `STATUS documents court ${id}`);
 assert(statusSrc.includes("Domestic officers, unchanged: `/?demo=officers`"), "STATUS notes the default officers screen");
 assert(statusSrc.includes("Domestic court, unchanged: `/?demo=court`"), "STATUS notes the default court");
+assert(/function stampMissionDesk/.test(readFileSync(new URL("../js/inland.js", import.meta.url), "utf8")), "mission stamp lives with the desk tokens");
+assert(/stampMissionDesk\(missionView, params\.get\("node"\)\)/.test(siegeUi), "demo=missions stamps node= onto the mission board");
+assert(/function activeMissionDesk/.test(siegeUi) && /function demoMissionNode/.test(siegeUi), "mission chrome reads node= even if create dropped the desk");
+assert(/Missions — \$\{look\.strip\}/.test(siegeUi), "mission title uses the siege strip");
+assert(/class="mission-desk"/.test(siegeUi) && /class="mission-next"/.test(siegeUi), "mission strip and NEXT name the desk");
+assert(/NEXT: \$\{esc\(desk\.line\)\}\. \$\{esc\(look\.read\)\}\. 1 AP here/.test(siegeUi), "mission NEXT names the desk then the existing order");
+assert(/Side missions \(\$\{jobs\.length\} open\)/.test(siegeUi), "domestic mission title stays when no desk is set");
+assert(/<p class="muted">1 AP here, or a general's Side mission at End Week\.<\/p>/.test(siegeUi), "domestic mission lead stays the muted line");
+assert(/get\("demo"\) === "missions"/.test(siegeUi), "demo=missions hook");
+assert(/kind === "missions"/.test(siegeUi) && /paintMissionDesk/.test(siegeUi), "mission modal paints the desk host");
+assert(/\.modal-card\.missions-card\[data-desk\]/.test(siegeCss), "mission shell tints from the desk id");
+assert(/\.mission-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "mission NEXT stays amber");
+assert(/\.mission-next \{[^}]*color:\s*#000000/.test(siegeCss), "mission NEXT text is black");
+assert(/id="event-desk"/.test(pageSrc), "mission result keeps a desk strip");
+assert(/function paintEventDesk/.test(siegeUi) && /deskId: res\.deskId/.test(siegeUi), "mission result paints a returned desk id");
+assert(/\.event-card\[data-desk\] \.next-line \{[^}]*background:\s*#f8d800/.test(siegeCss), "mission result NEXT stays amber");
+const missionHost = { jobs: 4 };
+assert(stampMissionDesk(missionHost, "havana") === "havana" && missionHost.deskId === "havana" && missionHost.jobs === 4, "mission stamp stores the desk and leaves the jobs");
+assert(stampMissionDesk(missionHost, "anchorage") == null && missionHost.deskId === "havana", "unknown mission node= does not clear the desk");
+assert(stampMissionDesk({}, "nome") == null, "a domestic id is not a mission desk");
+for (const id of INLAND_IDS) {
+  const host = {};
+  assert(stampMissionDesk(host, id) === id && host.deskId === id, `${id} mission stamp`);
+  assert(inlandLook(id).strip && inlandDesk(id).line && inlandLook(id).read, `${id} mission can read the siege look`);
+}
+assert(/function openDemoFight/.test(siegeUi) && /stampBattleDesk\(state\.battle, node\)/.test(siegeUi), "demo=fight stamps node= onto the field");
+assert(/function activeFightDesk/.test(siegeUi) && /function demoFightNode/.test(siegeUi), "fight chrome reads node= even if create dropped the desk");
+assert(/state\.battle\.liberation = true/.test(siegeUi), "liberation fight keeps the desk flag on the live board");
+assert(/Fight — \$\{look\.strip\}/.test(siegeUi), "fight title uses the siege strip");
+assert(/Liberation fight\. Yellow unit, then an adjacent diamond\./.test(siegeUi), "fight NEXT names the liberation fight then the field order");
+assert(/get\("demo"\) === "fight"/.test(siegeUi), "demo=fight hook");
+assert(/!inlandLook\(node\)/.test(siegeUi), "unknown fight node= does not open a foreign board");
+assert(/demo === "fight" \|\| demo === "missions"/.test(siegeUi), "fight and mission demos do not tint the court");
+const fightGame = createNewGame(content, { seed: 44, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const openedFight = startInlandBattle(fightGame, content, "managua", { troops: 80, field: true });
+const fightBoard = fightGame.battle;
+const fightRoster = fightBoard.units.map((u) => `${u.id}:${u.type}:${u.hp}`).join(",");
+fightBoard.liberation = true;
+assert(openedFight.ok && fightBoard.siege == null && fightBoard.deskId === "managua", "liberation fight opens the Managua field");
+assert(stampBattleDesk(fightBoard, "managua") === "managua" && fightBoard.liberation === true, "fight stamp sticks beside the liberation flag");
+assert(fightBoard.units.map((u) => `${u.id}:${u.type}:${u.hp}`).join(",") === fightRoster, "fight stamp does not touch the roster");
+assert(fightBoard.round === 1 && fightBoard.maxRounds === 8, "fight stamp does not touch the impulse clock");
+for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=missions&node=${id}`), `STATUS documents missions ${id}`);
+for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=fight&node=${id}`), `STATUS documents fight ${id}`);
+assert(statusSrc.includes("Domestic missions, unchanged: `/?demo=missions`"), "STATUS notes the default mission board");
+assert(statusSrc.includes("Domestic fight, unchanged: `/?demo=fight`"), "STATUS notes the default fight");
 console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
@@ -987,9 +1033,49 @@ porch.missions.board = [
 ];
 res = act(porch, content, "mission", { jobId: "job_porch" });
 assert(res.ok && res.duel && porch.phase === "duel", `porch mission opens duel: ${res.message}`);
+assert(porch.duel.deskId == null, "porch mission without node= stays a domestic yard");
 assert(!porch.missions.board[0].done, "porch job waits until the yard closes");
 res = duelCmd(porch, "auto");
 assert(res.ok && porch.missions.board[0].done, "porch job consumed after duel");
+const porchDesk = createNewGame(content, { seed: 45, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(porchDesk, content, "raise_banner");
+porchDesk.missions.board = [
+  {
+    id: "job_porch_desk",
+    templateId: "porch_challenge",
+    name: "Porch challenge",
+    regionId: "cheyenne",
+    week: 0,
+    ap: 1,
+    done: false,
+  },
+];
+const porchRoads = regionOf(porchDesk, "havana").neighbors.join(",");
+res = act(porchDesk, content, "mission", { jobId: "job_porch_desk", deskId: "havana" });
+assert(res.ok && porchDesk.duel.deskId === "havana", `porch mission can open on a desk: ${res.message}`);
+assert(porchDesk.duel.arena.label === "HAVANA DESK", "porch desk replaces the domestic yard title");
+assert(porchDesk.duel.clockS === 99 && porchDesk.duel.maxExchanges === 11, "porch desk keeps 99s / 11");
+assert(regionOf(porchDesk, "havana").neighbors.join(",") === porchRoads, "porch desk does not rewrite the Havana road");
+res = duelCmd(porchDesk, "auto");
+assert(res.ok && porchDesk.phase === "strategy", "porch desk returns to the map");
+const plainJob = createNewGame(content, { seed: 22, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(plainJob, content, "raise_banner");
+seedDemoMissions(plainJob);
+const plainLocal = openMissions(plainJob).find((j) => j.regionId === "cheyenne");
+const deskJob = createNewGame(content, { seed: 22, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(deskJob, content, "raise_banner");
+seedDemoMissions(deskJob);
+const deskLocal = openMissions(deskJob).find((j) => j.regionId === "cheyenne");
+const plainRes = act(plainJob, content, "mission", { jobId: plainLocal.id });
+const deskRes = act(deskJob, content, "mission", { jobId: deskLocal.id, deskId: "kr_inland" });
+assert(plainRes.ok && deskRes.ok && plainRes.deskId == null && deskRes.deskId === "kr_inland", "mission result carries only a locked desk");
+assert(plainJob.gold === deskJob.gold && plainJob.food === deskJob.food, "mission desk does not change the reward");
+const badDesk = createNewGame(content, { seed: 22, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(badDesk, content, "raise_banner");
+seedDemoMissions(badDesk);
+const badLocal = openMissions(badDesk).find((j) => j.regionId === "cheyenne");
+res = act(badDesk, content, "mission", { jobId: badLocal.id, deskId: "nome" });
+assert(res.ok && res.deskId == null && badDesk.gold === plainJob.gold, "unknown mission node= stays a domestic job");
 void gold0;
 void actingStats;
 
