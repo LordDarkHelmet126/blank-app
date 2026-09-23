@@ -2,15 +2,21 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Roster ladder: friends join as players, then promote to officer and general.
+**Last checkpoint:** 2026-09-23 — Officers final: create-a-friend sits at the top of the roster, faces use original names, the siege log keeps older lines, and the court strip shows the next rank.
 
-## Roster ladder
+## Officers final
 
-Dock → **Roster** (same screen as Officers; also the Court strip button). Create a friend with a name, title, and an original face. They start as **Player**. Promote to **Officer**, then **General**. The roster confirms the rank change and lists each rung. Promoted officers in your city can be chosen for a yard duel or to lead a field march.
+Dock → **Roster** (same screen as Officers; also the Court strip button). The create-a-friend form is the first block in the modal. Each original face has a readable name (Nell Crowe and the rest — not F0–F15). Friends join as **Player**. Promote to **Officer**, then **General**. A yellow **RANK CONFIRMED** banner and a **NEXT** line name the rung. Rank badges on the roster and the court strip use large amber/white type. Promoted officers in your city can take the yard or lead a march.
 
-**Playtest:** `/?demo=roster` (alias `/?demo=ladder`). One screen: create a friend, promote Sam Ivers player → officer → general, and read the ladder. Optional `promote=1` opens with Sam already an officer; `promote=2` opens with Sam already a general.
+**Playtest:** `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Optional `promote=1` opens with Sam Ivers already an officer; `promote=2` opens with Sam already a general.
 
-Campaign adjacency, leap rules, and the theater map are unchanged.
+Campaign adjacency, leap rules, and the theater map are unchanged. Yard duel stays 99s / 11 exchanges.
+
+## Siege board
+
+Fortified bowls (walls ≥ 24, or urban) open a siege instead of treating walls as defender morale. You are the attacker. The garrison is the defender. **WORKS** is wall strength. Three ploys: **Cut the berm** (drops WORKS), **Rake the parapet** (fills SUPPRESS), **Rush the gap** (takes the place only when WORKS are low and the parapet is quiet). The amber NEXT line names the ploy. The siege log is one list on the battle scroller — older lines stay in the list. The siege **lifts** if the levy hits 0 or the watch runs out. Field fights, including the M113 spawn, stay on the isometric grid.
+
+**Demo:** `/?demo=siege` (Anchorage from Bethel). Harder berm: `/?demo=siege&walls=72`. Same board from the battle hook: `/?demo=battle&siege=1`. Field M113 check is still `/?demo=look&fx=battle&hull=1` (Nome, not a siege).
 
 ## How to run
 
@@ -24,7 +30,7 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`. M113 hulls: `/?demo=look&fx=battle&hull=1`.
 
 ## PNW polish (first theater pass)
 
