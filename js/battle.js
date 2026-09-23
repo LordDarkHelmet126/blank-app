@@ -1,5 +1,6 @@
 import { nextInt, nextFloat, chance } from "./rng.js";
 import { attachSiege, autoResolveSiege, siegeCommand } from "./siege.js";
+import { combatView, inlandDesk } from "./inland.js";
 
 const COLS = 8;
 const ROWS = 6;
@@ -82,8 +83,10 @@ function place(types, side, atkBonus) {
   return units;
 }
 
-export function createBattle(state, content, fromId, toId, commit, techAtk) {
-  const dest = state.regions.find((r) => r.id === toId);
+export function createBattle(state, content, fromId, toId, commit, techAtk, opts) {
+  const live = state.regions.find((r) => r.id === toId);
+  const desk = inlandDesk(toId);
+  const dest = desk ? combatView(live, toId, opts?.walls) : live;
   const season = state._season;
   const grid = [];
   for (let y = 0; y < ROWS; y++) {
@@ -125,8 +128,11 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
     result: null,
     cols: COLS,
     rows: ROWS,
+    deskRegion: desk ? dest : null,
+    deskOnly: !!(desk && !live),
   };
-  attachSiege(battle, dest);
+  if (opts?.field) battle.siege = null;
+  else attachSiege(battle, dest, !!opts?.forceSiege);
   return battle;
 }
 

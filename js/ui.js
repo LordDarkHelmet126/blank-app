@@ -35,6 +35,7 @@ import {
   rankLabel,
   apMax,
   regionOf,
+  startInlandBattle,
   factionOf,
   getRelation,
   hireCandidates,
@@ -99,11 +100,27 @@ function parseDemoFx(params) {
   return "";
 }
 
+function demoQuery() {
+  return new URLSearchParams(location.search);
+}
+
 function openDemoSiege() {
+  const params = demoQuery();
+  const node = params.get("node");
+  if (node) {
+    const walls = Number(params.get("walls"));
+    const fight = startInlandBattle(state, content, node, {
+      troops: 80,
+      walls: Number.isFinite(walls) && walls > 0 ? walls : 0,
+    });
+    if (!fight.ok) toast(fight.message || "Siege demo could not open.");
+    if (fight.battle && state.battle) openBattle();
+    return;
+  }
   const home = regionOf(state, "bethel");
   home.garrison = 100;
   const bowl = regionOf(state, "anchorage");
-  const walls = Number(new URLSearchParams(location.search).get("walls"));
+  const walls = Number(params.get("walls"));
   if (Number.isFinite(walls) && walls > 0) bowl.walls = Math.min(90, Math.round(walls));
   const fight = act(state, content, "attack", { regionId: "anchorage", troops: 80 });
   if (!fight.ok) toast(fight.message || "Siege demo could not march.");
@@ -111,6 +128,16 @@ function openDemoSiege() {
 }
 
 function openDemoBattle(withHull) {
+  const node = demoQuery().get("node");
+  if (node && demoQuery().get("siege") !== "1") {
+    const fight = startInlandBattle(state, content, node, { troops: withHull ? 90 : 80, field: true });
+    if (!fight.ok) toast(fight.message || "Field demo could not open.");
+    if (fight.battle && state.battle) {
+      state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
+      openBattle();
+    }
+    return;
+  }
   const home = regionOf(state, "bethel");
   home.garrison = 90;
   if (withHull) {
@@ -2357,7 +2384,7 @@ function paintSiegeHud(b, dest) {
 function drawBattle(now = performance.now()) {
   const b = state.battle;
   if (!b) return;
-  const dest = regionOf(state, b.toId);
+  const dest = regionOf(state, b.toId) || b.deskRegion || { name: b.toId, short: b.toId };
   const arctic = isArcticRegion(dest);
   const siegeOn = !!(b.siege && !b.siege.closed);
   $("battle").classList.toggle("is-siege", siegeOn);

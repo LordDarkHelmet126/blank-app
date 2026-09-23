@@ -2,7 +2,35 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Combat polish: yard NEXT and damage reads, siege meter contrast with sticky ploys, friend-added banner and rank stripes.
+**Last checkpoint:** 2026-09-23 — Inland siege hooks for the locked foreign node ids. Combat only; map roads unchanged.
+
+## Inland siege hooks
+
+Locked ids open the same siege board (WORKS / berm / parapet / Rush the gap) or the same field spawn. The hook is the id string. Campaign still owns roads, leaps, and node paint. If the map node is missing, the demo still opens. If Campaign has already set walls, those walls are WORKS. Opening SUPPRESS is the desk pressure preset.
+
+| Id | Desk | Default WORKS | Opening pressure |
+| --- | --- | --- | --- |
+| kamchatka | Kamchatka Works | 56 | 0 |
+| siberia | Siberia Column | 36 | 4 |
+| havana | Havana Harbor | 48 | 16 |
+| managua | Managua Works | 28 | 22 |
+| sponsor_lane | Sponsor Lane | 32 | 8 |
+| kr_inland | Inland Ridge | 40 | 12 |
+
+**Playtest (siege board):**
+
+- `/?demo=siege&node=kamchatka`
+- `/?demo=siege&node=siberia`
+- `/?demo=siege&node=havana`
+- `/?demo=siege&node=managua`
+- `/?demo=siege&node=sponsor_lane`
+- `/?demo=siege&node=kr_inland`
+
+Same board from the battle hook: `/?demo=battle&siege=1&node=kamchatka` (and `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`).
+
+Field spawn for the same ids (no siege board): `/?demo=battle&node=havana` (swap the id). Harder berm still works: `/?demo=siege&node=havana&walls=72`.
+
+Prior yard / siege / court polish is unchanged. Domestic siege demo is still `/?demo=siege` and `/?demo=battle&siege=1`.
 
 ## Combat polish
 

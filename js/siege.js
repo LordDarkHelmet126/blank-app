@@ -33,13 +33,16 @@ export function createSiege(region, commit) {
   const works = Math.max(0, region?.walls || 0);
   const levy = Math.max(1, commit || 1);
   const garrison = Math.max(6, region?.garrison || 6);
+  const pressure = Math.max(0, Math.min(100, region?.pressure || 0));
+  const flavor = region?.flavor || "";
+  const placeName = region?.name || "the settlement";
   return {
     role: "atk",
     defender: "def",
-    place: region?.short || region?.name || "the settlement",
+    place: region?.short || placeName,
     works,
     worksMax: Math.max(works, 1),
-    suppress: 0,
+    suppress: pressure,
     levy,
     levyMax: levy,
     garrison,
@@ -48,15 +51,16 @@ export function createSiege(region, commit) {
     maxImpulses: SIEGE_MAX_IMPULSES,
     closed: false,
     result: null,
+    flavor,
     log: [
-      `Siege lines around ${region?.name || "the settlement"}. WORKS ${works}. You are the attacker. They hold the berm.`,
+      `Siege lines around ${placeName}. WORKS ${works}. You are the attacker. They hold the berm.${flavor ? ` ${flavor}` : ""}`,
     ],
   };
 }
 
-export function attachSiege(battle, region) {
+export function attachSiege(battle, region, force) {
   if (!battle) return battle;
-  if (!regionIsSiege(region)) {
+  if (!region || (!force && !regionIsSiege(region))) {
     battle.siege = null;
     return battle;
   }
@@ -78,9 +82,10 @@ export function siegeCoach(siege) {
   if (siege.result === "def" && siege.levy <= 0) return "LEVY SPENT. The siege lifts.";
   if (siege.result === "def") return "WATCH RAN OUT. The siege lifts.";
   const rec = siegeRecommend(siege);
-  if (rec === "cut") return `NEXT: WORKS ${siege.works} still hold. Cut the berm. Do not rush.`;
-  if (rec === "rake") return `NEXT: Berm is cut (WORKS ${siege.works}). Rake the parapet, then rush.`;
-  return "NEXT: Gap is open and the parapet is quiet. Rush the gap.";
+  const tail = siege.flavor ? ` ${siege.flavor}` : "";
+  if (rec === "cut") return `NEXT: WORKS ${siege.works} still hold. Cut the berm. Do not rush.${tail}`;
+  if (rec === "rake") return `NEXT: Berm is cut (WORKS ${siege.works}). Rake the parapet, then rush.${tail}`;
+  return `NEXT: Gap is open and the parapet is quiet. Rush the gap.${tail}`;
 }
 
 function finishImpulse(siege) {
