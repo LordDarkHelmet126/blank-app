@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues open the live Combat siege board, and each locked inland id has its own desk read. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
+**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues open live Combat boards. Siege, yard, and (next) field chrome name the six locked inland desks. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
 
 ## Coach → foreign siege
 
@@ -17,11 +17,26 @@ When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six in
 | `sponsor_lane` | Sponsor Lane | `/?demo=siege&node=sponsor_lane` |
 | `kr_inland` | Sheds | `/?demo=siege&node=kr_inland` |
 
-Same board: `/?demo=battle&siege=1&node=<id>`. Field spawn (no siege board): `/?demo=battle&node=<id>`.
+Same board: `/?demo=battle&siege=1&node=<id>`. Field spawn (no siege board): `/?demo=battle&node=<id>`. Yard: `/?demo=duel&node=<id>`.
 
 Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
 On the look demo the approach chain and the siege desk are separate blocks in the NEXT strip (the line break is kept). On the coach demo the Raise-a-banner copy scrolls in `#coach-text` while the siege desk line stays pinned under it.
+
+## Foreign-desk duel read
+
+A yard duel tied to one of the six locked inland ids keeps the **99s / 11 exchange** clock, the amber NEXT line, hit juice, and the style specials. `/?demo=duel&node=<id>` stamps that siege desk onto the yard after the duel is created, and the chrome also reads `node=` directly. The title is the siege strip (`KAMCHATKA DESK`), the yard paints that theater instead of the snowy roadhouse, and NEXT leads with the desk name and read. A duel with no desk id stays the domestic snowy roadhouse.
+
+| Id | Strip | Read | Yard |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice berm, navy sky |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine and timber |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon and harbor wall |
+| managua | MANAGUA DESK | Block wall · isthmus | clay blocks, ochre ground |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil crates |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk ridge |
+
+Domestic yard, unchanged: `/?demo=duel`. An unknown `node=` does not borrow another desk. `style=` and `arena=` still work beside `node=`.
 
 ## Foreign-desk siege identity
 

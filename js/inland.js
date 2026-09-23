@@ -165,6 +165,23 @@ export function inlandLook(id) {
 }
 
 /**
+ * Presentation stamp for a yard already created. Unknown ids do nothing.
+ * Does not touch clock, exchanges, HP, or the arena id used by domestic yards.
+ */
+export function stampDuelDesk(duel, id) {
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!duel || !desk || !look) return null;
+  duel.deskId = id;
+  const arena = duel.arena || { id: "porch", label: "Yard" };
+  duel.arena = { ...arena, label: look.strip };
+  if (Array.isArray(duel.log) && duel.log.length && !String(duel.log[0]).startsWith(desk.line)) {
+    duel.log[0] = String(duel.log[0]).replace(/^.*? — /, `${desk.line} — `);
+  }
+  return id;
+}
+
+/**
  * Combat view for a locked id. Does not write neighbors, polygons, or biomes.
  * Painted walls (walls > 0) on a live node replace the desk preset.
  */
