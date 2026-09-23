@@ -68,10 +68,15 @@ import {
   challengeCandidates,
   weekTease,
   stateControl,
+  deskControl,
   ensureCampaign,
   theaterVisible,
   isAdjacent,
   geoTags,
+  approachRoads,
+  approachTrail,
+  sharesRoad,
+  roadLabel,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 
@@ -318,10 +323,12 @@ export async function boot(loaded) {
   }
   if (params.get("demo") === "states" || params.get("demo") === "map") {
     startSliceState();
-    selectedRegion = "denver";
+    const focus = params.get("focus");
+    selectedRegion = focus && regionOf(state, focus) ? focus : "denver";
     hideModal();
     render();
-    pulseTravel("juneau", "seattle", { loop: true });
+    showModal(campaignHtml(), { kind: "states" });
+    if (!focus) pulseTravel("juneau", "seattle", { loop: true });
     afterFonts();
     return;
   }
@@ -357,6 +364,7 @@ export async function boot(loaded) {
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
     if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
+    frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
       wireAfterRender();
@@ -623,7 +631,7 @@ function showModal(html, opts = {}) {
     return;
   }
   parkCoach();
-  const extra = opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : "";
+  const extra = opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : opts.kind === "states" ? " states-card" : "";
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
@@ -651,6 +659,42 @@ function hideModal(opts = {}) {
 
 const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
 
+function routeSentence(st) {
+  if (!st) return "";
+  const here = regionOf(st, playerOf(st).region);
+  const sel = regionOf(st, selectedRegion);
+  if (!sel || !here || sel.id === here.id) return "";
+  const label = roadLabel(st, here.id, sel.id);
+  const named = label ? ` — ${label}` : "";
+  if (isAdjacent(st, here, sel)) {
+    return `${sel.short} is adjacent${named}. Military → Travel or March. No leaping past it.`;
+  }
+  if (sharesRoad(st, here, sel)) {
+    const need = sel.unlockPhase || 0;
+    const phase = ensureCampaign(st).phase || 1;
+    const why = need > phase ? (need >= 4 ? ", locked until a sponsor" : ", locked until the foreign desks") : "";
+    return `${sel.short} is the next road${named}${why}. Cannot leap past it.`;
+  }
+  const via = approachRoads(st, here, sel);
+  const desk = sel.type === "foreign" || sel.type === "sea" || (sel.unlockPhase || 0) > 0;
+  if (desk) {
+    const trail = approachTrail(st, here, sel)
+      .map((r) => r.short)
+      .join(" → ");
+    const chain = trail || via.join(" → ");
+    return `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Approach: ${chain || "the gate on the board"}.`;
+  }
+  const hops = via.join(", ");
+  return `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Next road: ${hops || "an adjacent city"}.`;
+}
+
+function frameForInlandFocus(id) {
+  if (!id || !regionOf(state, id)) return;
+  if (["havana", "far_cuba", "managua", "far_nicaragua", "gulf_passage"].includes(id)) frameCuba();
+  else if (["kamchatka", "siberia", "far_russia", "bering_strait", "nome"].includes(id)) frameBering();
+  else if (["sponsor_lane", "kr_inland", "far_korea"].includes(id)) frameKorea();
+}
+
 function nextHint(st) {
   if (!st || st.gameOver) return "Campaign closed.";
   if (st.phase === "duel") {
@@ -666,12 +710,9 @@ function nextHint(st) {
   const jobs = openMissions(st);
   const localJob = jobs.find((j) => j.regionId === p.region);
   const wait = appointCandidates(st);
-  if (sel && here && sel.id !== here.id && !isAdjacent(st, here, sel)) {
-    const via = (here.neighbors || []).map((id) => regionOf(st, id)?.short).filter(Boolean).slice(0, 3).join(", ");
-    return `NEXT: Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Take an adjacent road${via ? ` (${via})` : ""} first.`;
-  }
-  if (sel && here && sel.id !== here.id && isAdjacent(st, here, sel)) {
-    return `NEXT: ${sel.short} is adjacent — Military → Travel or March. No leaping past it.`;
+  if (sel && here && sel.id !== here.id) {
+    const route = routeSentence(st);
+    if (route) return `NEXT: ${route}`;
   }
   if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.";
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
@@ -723,7 +764,8 @@ function openCoach() {
   parkedCoach = false;
   $("coach").hidden = false;
   $("coach-title").textContent = step.title;
-  $("coach-text").textContent = step.body;
+  const route = step.id === "city" || step.id === "banner" ? routeSentence(state) : "";
+  $("coach-text").textContent = route ? `${step.body} ${route}` : step.body;
   $("coach-next").textContent = coachStep >= COACH_STEPS.length - 1 ? "Start playing" : "Got it";
   applyCoachRing();
 }
@@ -949,7 +991,16 @@ function campaignHtml() {
       .join("")}</div>
     ${blocks}
     <h2>Foreign war council</h2>
-    <p class="muted">After Phase 2 the far-shore desks unlock. A sponsor may add another country as a takeable front.</p>
+    <p class="muted">Russia by Bering, then Kamchatka and Siberia. Cuba by Gulf Sealift, then Havana. Nicaragua, then Managua. Korea by the Sponsor Lane after a sponsor. No leaping.</p>
+    ${deskControl(state).map((s) => {
+      const rows = (s.territories || []).map((t) => {
+        const chip = t.here ? "here" : t.adjacent ? "adjacent" : t.key ? "key" : "locked";
+        const trail = here ? approachTrail(state, here.id, t.id).map((r) => r.short).join(" → ") : "";
+        const hop = t.here ? "here" : t.adjacent ? "adjacent road" : `Cannot leap. Approach: ${trail || "the gate"}`;
+        return `<li><span class="mark-chip ${chip}${t.key ? " key" : ""}">${esc(t.short)}${t.key ? " ★" : ""}</span> <span>${esc(hop)}</span></li>`;
+      }).join("");
+      return `<div class="card desk-card"><h2>${esc(s.name)} · ${esc(s.id)}</h2><ul class="desk-roads">${rows}</ul></div>`;
+    }).join("")}
     ${foreign || "<p class='muted'>No foreign desks yet.</p>"}
     <button type="button" data-close>Close</button>`;
 }
@@ -1292,7 +1343,7 @@ function cityHtml() {
         const here = regionOf(state, playerOf(state).region);
         const adj = here && isAdjacent(state, here, r);
         const at = here?.id === r.id;
-        const route = at ? "You are here" : adj ? "Adjacent road open" : "Route locked — not adjacent";
+        const route = at ? "You are here" : routeSentence(state) || (adj ? "Adjacent road open" : "Route locked — not adjacent");
         const lib = row?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode || "—"} ${row ? `${row.heldTerr}/${row.totalTerr} territories · ${row.held}/${row.need} key` : ""}`;
         return `<p class="plus">${esc(lib)}</p><p class="minus">${esc(route)}</p>`;
       })()}
@@ -1390,7 +1441,7 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP.",
+    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },

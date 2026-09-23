@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — California and Nevada cities are on the silhouette. A new game starts in Cheyenne.
+**Last checkpoint:** 2026-09-23 — Coach and NEXT sit on Terrain tip `ae6f300`. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
 
 ## How to run
 

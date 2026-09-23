@@ -5847,6 +5847,126 @@
       "vs": "denver-omaha-lincoln-topeka",
       "kind": "plains",
       "note": "Direct grain road vs river bluffs"
+    },
+    {
+      "a": "cheyenne",
+      "b": "lincoln",
+      "vs": "no-leap",
+      "kind": "plains",
+      "label": "I-80 Stall",
+      "note": "I-80 Stall from the Cheyenne yards"
+    },
+    {
+      "a": "cheyenne",
+      "b": "salt_lake",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "I-80 basin",
+      "note": "I-80 basin"
+    },
+    {
+      "a": "reno",
+      "b": "salt_lake",
+      "vs": "reno-las_vegas-salt_lake",
+      "kind": "pass",
+      "label": "Wendover rail",
+      "note": "I-80 Wendover vs the Las Vegas strip"
+    },
+    {
+      "a": "spokane",
+      "b": "portland",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Columbia Gorge",
+      "note": "Columbia Gorge"
+    },
+    {
+      "a": "spokane",
+      "b": "bend",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Inland desert",
+      "note": "Inland desert"
+    },
+    {
+      "a": "topeka",
+      "b": "st_louis",
+      "vs": "no-leap",
+      "kind": "plains",
+      "label": "I-70",
+      "note": "I-70"
+    },
+    {
+      "a": "nome",
+      "b": "bering_strait",
+      "vs": "no-leap",
+      "kind": "ferry",
+      "label": "Bering gate",
+      "note": "Bering gate. Nome does not teleport to the Russia desk."
+    },
+    {
+      "a": "st_louis",
+      "b": "gulf_passage",
+      "vs": "no-leap",
+      "kind": "sealift",
+      "label": "Gulf Sealift",
+      "note": "Gulf Sealift"
+    },
+    {
+      "a": "far_russia",
+      "b": "kamchatka",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Kamchatka road",
+      "note": "Interior road past the Russia desk. Not a second Bering."
+    },
+    {
+      "a": "kamchatka",
+      "b": "siberia",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Siberia road",
+      "note": "Siberia key behind Kamchatka."
+    },
+    {
+      "a": "far_russia",
+      "b": "sponsor_lane",
+      "vs": "no-leap",
+      "kind": "sealift",
+      "label": "Sponsor lane",
+      "note": "Sponsor sea gate. Korea is not a direct road from the Russia desk."
+    },
+    {
+      "a": "sponsor_lane",
+      "b": "far_korea",
+      "vs": "no-leap",
+      "kind": "sealift",
+      "label": "Peninsula gate",
+      "note": "Peninsula gate. Phase 4, after the sponsor."
+    },
+    {
+      "a": "far_korea",
+      "b": "kr_inland",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Peninsula sheds",
+      "note": "Inland sheds. Not a leap from the Sponsor Lane."
+    },
+    {
+      "a": "far_cuba",
+      "b": "havana",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Havana road",
+      "note": "Island road past the Cuba desk. Not a second Gulf Sealift."
+    },
+    {
+      "a": "far_nicaragua",
+      "b": "managua",
+      "vs": "no-leap",
+      "kind": "pass",
+      "label": "Managua road",
+      "note": "Inland road past the isthmus column. Not a Gulf leap."
     }
   ],
   "spurs": [
