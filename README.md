@@ -1,6 +1,6 @@
 # Northern Front
 
-Working title for an original-IP, officer-first sandbox. Invasion week 0, Alaska-first western theater (Alaska → Yukon → Pacific Northwest → Mountain West / Colorado). Romance of the Three Kingdoms VII–style weekly AP, not a licensed ROTK product and not a Red Dawn tie-in (no Wolverines, no Koei assets).
+Working title for an original-IP, officer-first sandbox. Week 0 opens on the Stall corridor in Cheyenne, not Alaska. The map is one US coastline: Alaska and the Yukon stay reachable by road, and California and Nevada are states on that outline. Romance of the Three Kingdoms VII–style weekly AP, not a licensed ROTK product and not a Red Dawn tie-in (no Wolverines, no Koei assets).
 
 **v0.1 vertical slice** — playable loop, expandable JSON roster (not a fake 500-officer dump).
 
@@ -43,11 +43,11 @@ If Python is missing, any static server in this folder works (`npx serve .`, etc
 ### First session (what “done” looks like)
 
 1. New game → **Begin week 0** (name + background + difficulty). A week-1 coach and a yellow **NEXT** strip name the first click.
-2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**. Command opens on **Domestic**.
+2. You start **alone** in **Cheyenne Yards**. Command opens on **Domestic**. Adjacent roads are Denver, Jackson, Billings, and Omaha. Seattle is not a week-0 leap.
 3. **Raise Banner** to found Northern Front (max **5 generals** via Hire / Appoint / Persuade). Extra hires wait in court.
 4. Spend leftover AP (Commerce / Cultivate / a **side mission**), then **End Week**.
 5. AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
-6. March into a neighbor (Nome is the usual first fight) for a short grid battle, or check Auto-resolve.
+6. March into a neighbor (Denver is the usual first fight) for a short grid battle, or check Auto-resolve.
 7. **Save** writes `localStorage` and downloads JSON. **Load** reads the browser slot, a file, or pasted JSON.
 
 Play 10+ weeks without the UI locking: **End Week** is always available in strategy phase. If gold and food both hit 0, a cache event keeps the campaign movable.
@@ -60,18 +60,18 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
 | `data/factions.json` | ~40 original groups. **17** are on the current board (Alaska six + Yukon/Bering + eight western banners); the rest stay off-map. |
-| `data/regions.json` | **12 states/territories** on the mid-step (11 US + Yukon). **33** US/Yukon cities, **1** Phase 3 sea node (Gulf Sealift), plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
+| `data/regions.json` | **14 states/territories** (13 US + Yukon), including **California** (`sacramento`, `los_angeles`) and **Nevada** (`reno`, `las_vegas`). **1** Phase 3 sea node (Gulf Sealift) plus **4** foreign stubs. Week 0 start id: `cheyenne`. |
 | `data/tech.json` | Slow 1985–89 salvage unlocks (M16A2, Jeeps, M113s, Hueys; calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.
 
 v0.1 ships **153 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, Jonah Stave, plus Front Range officers Vera Range and Ivy Front. Custom officers still cap at **10**.
 
-**Liberate the States:** hierarchy is **STATE → territories**. A state is free when you hold its **key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail). Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields. A scar tag is copy only — Omaha is **Scar Offutt glass**. **8 US states** (west bloc AK–CO) names you **national leader**. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua. Cuba is St. Louis → Gulf Sealift → Cuba (no leap; a later southern wire would still use that channel). A late **sponsor** event can add Korea.
+**Liberate the States:** hierarchy is **STATE → territories**. A state is free when you hold its **key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail, Eugene → Sacramento vs the long desert swing). California keys are `sacramento` and `los_angeles`. Nevada keys are `reno` and `las_vegas`. New roads: Eugene–Sacramento, Sacramento–Reno, Sacramento–Los Angeles, Los Angeles–Las Vegas, Reno–Las Vegas, Salt Lake–Las Vegas. Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields. A scar tag is copy only — Omaha is **Scar Offutt glass**. **8 US states** (west bloc AK–CO, not CA/NV) names you **national leader**. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua. Cuba is St. Louis → Gulf Sealift → Cuba (no leap; a later southern wire would still use that channel). A late **sponsor** event can add Korea.
 
 **Phase board:** the strip under NEXT. Yellow chip = now. Invasion Day → Stall → Advent Crown → Prairie Fire (Ridge Runners, copy only) → Gulf Hammer (Long Rifle) → Border Fury → Foreign desks. Occupied / contested / held is the liberation word. Demo: `/?demo=phase`.
 
-**Map unlock:** every US/Yukon city is painted from week 0. Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. After Phase 3: St. Louis → Gulf Sealift → Cuba → Nicaragua. Demo: `/?demo=states` or `/?demo=map`. Visual look: `/?demo=look` or `/?demo=terrain` — elevated biomes (WA forest, Rockies, UT desert, plains, AK ice) and 1980s American city markers. Original art only.
+**Map unlock:** every US/Yukon city, including California and Nevada, is painted from week 0 on the contiguous coastline. Foreign nodes wait on campaign phase. Week 0 is Cheyenne. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. California: Eugene → Sacramento → Los Angeles, with Reno and Las Vegas on the Nevada side and Salt Lake → Las Vegas. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. After Phase 3: St. Louis → Gulf Sealift → Cuba → Nicaragua. Demo: `/?demo=states` or `/?demo=map`. Visual look: `/?demo=look` or `/?demo=terrain`. Phase names stay on the dock. Original art only.
 
 You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (13 templates, including a **Porch challenge** yard duel) sit on a weekly board — Military → Side Mission, or the Missions dock. Plot/Military → **Challenge** calls out an officer in the same city. Duels last ~**99 seconds** if both stay up (11 exchanges × 9s): Strike / Guard / named Special with a green timing window. Eight arenas (porch, roadhouse, foothills, airstrip, ice ford, gas lot, pine ridge, radio tower), outfit kits, and fighting styles (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals). Underdog (much lower WAR) gets a wider window. Original IP — not a licensed fighting game.
 
@@ -92,7 +92,7 @@ Between-turn chronicle (season + aging + marriage + child): `/?demo=chronicle`.
 Season tint only: `/?demo=season`.
 **Generals (5 slots + ADD empty states):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
-**Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
+**Mission vignette (auto-take a Cheyenne job):** `/?demo=missions&take=1`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
 **Expanded theater (AK→CO):** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle road pulses).
 **Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (PNW hero: Seattle + Juneau–Seattle pulse). `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`.

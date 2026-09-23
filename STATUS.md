@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Phase board uses the locked labels. Yellow chip is now. `/?demo=phase`. No new roads or cities.
+**Last checkpoint:** 2026-09-23 — California and Nevada are playable states on the silhouette. Week 0 starts in Cheyenne (`cheyenne`). Phase names stay on the dock. `/?demo=states`.
 
 ## Phase board (locked labels → our gates)
 
@@ -13,7 +13,7 @@ Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update 
 | 3 Advent Crown | Phase 1, weeks 13–38, still before that breakout. | First offensive fails. Pressure on Seattle, Cheyenne, and St. Louis. |
 | 4 Prairie Fire | CO, KS, or MO is held, before the eight-state leader. | West-to-east on states already on the board. Ridge Runners is Front Range copy, not a new owner. Eight west-bloc states still name a national leader. |
 | 5 Gulf Hammer | National leader, Missouri not held yet. Subtitle: Long Rifle. | St. Louis is the gulf gate into Gulf Sealift. No new Gulf or Texas cities. |
-| 6 Border Fury | Missouri is held and Nebraska or Kansas is still short. | Clear the last states on this board. |
+| 6 Border Fury | Missouri is held and a state on this board is still short. | Clear the plains, California, and Nevada. |
 | 7 Foreign desks | Every US state on this board is held. | Phase 3. Russia by Bering. Cuba and Nicaragua by Gulf Sealift. A sponsor may add Korea. |
 
 Ground words, document only (map paint unchanged): **occupied** (invader), **contested** (local banner, empty ground, or a split state), **held** (your color, or a liberated state). Those washes track the fronts above. They are not a new paint pass.
@@ -36,7 +36,7 @@ node tests/simulate.mjs
 
 WA–PNW is the hero biome on the look demo. West of the Cascades (Seattle / Olympia / Portland) is darker wet evergreen with Sound mist. A height ridge sits between the Sound and Spokane so the west→east road reads as a climb (no new leap edges). East WA is drier pine, still forest-family. Seattle mark is main-street; Olympia and Spokane are mills.
 
-Look-demo paint fix: the “you are here” nameplate is a compact chip anchored above the home city (Bethel stays in AK, not on the Seattle box). Roads and selected plates are larger; ownership wash/edge is stronger.
+Look-demo paint fix: the “you are here” nameplate is a compact chip anchored above the home city. Week 0 home is Cheyenne, on the Front Range, not a chip pasted onto Seattle. Roads and selected plates stay large; ownership wash stays high contrast. Phase names are not stamped on the land.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 **States demo:** `/?demo=states` or `/?demo=map` still works.
 
@@ -69,11 +69,11 @@ Examples: Lincoln/Topeka **Farm 3**; Arctic Slope **Fuel 3 + Weather 3**; Klondi
 
 ## Campaign
 
-Phase 1 is Stall, then Advent Crown. Phase 2 at **8** west-bloc US states is Prairie Fire — national leader — then Gulf Hammer and Border Fury while the states on this board are still short. Phase 3 Foreign desks: Russia by Bering, Cuba and Nicaragua only through Gulf Sealift. Phase 4 sponsor can add Korea. Graph stays 38 nodes / 118 directed roads.
+Phase 1 is Stall, then Advent Crown. Phase 2 at **8** west-bloc US states (AK–CO, not CA/NV) is Prairie Fire — national leader — then Gulf Hammer and Border Fury while any state on this board is still short. Phase 3 Foreign desks: Russia by Bering, Cuba and Nicaragua only through Gulf Sealift. Phase 4 sponsor can add Korea. Graph is 42 nodes / 130 directed roads. Start region id: `cheyenne`. New node ids: `sacramento`, `los_angeles`, `reno`, `las_vegas`.
 
 ## Counts (exact)
 
-- **US states: 11** · **Yukon: 1** · **territories on those units: 33** · **foreign stubs: 4** · **sea approach: 1** (Gulf Sealift) · **total nodes: 38**
+- **US states: 13** · **Yukon: 1** · **California keys:** `sacramento`, `los_angeles` · **Nevada keys:** `reno`, `las_vegas` · **foreign stubs: 4** · **sea approach: 1** (Gulf Sealift) · **total nodes: 42**
 - On-map factions: **17** · AI officers: **153** · legends: **3**
 - Duel clock: **99s** / **11** exchanges
 

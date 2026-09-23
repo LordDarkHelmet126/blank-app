@@ -114,8 +114,8 @@ assert(
 const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
 const cities = content.regions.regions;
-assert(cities.length === 38, `graph frozen at 38 nodes, got ${cities.length}`);
-assert(cities.reduce((n, r) => n + (r.neighbors || []).length, 0) === 118, "no new adjacency edges");
+assert(cities.length === 42, `graph is 42 nodes with CA/NV, got ${cities.length}`);
+assert(cities.reduce((n, r) => n + (r.neighbors || []).length, 0) === 130, "CA/NV add only the six deliberate roads");
 assert(!["washington_dc", "manhattan", "kansas_city", "casper", "vancouver", "fargo", "minot"].some((id) => cities.some((r) => r.id === id)), "no silhouette-fight cities");
 assert(!/wolverine/i.test(JSON.stringify(content.regions) + JSON.stringify(content.factions)), "no Wolverines trademark");
 assert(content.regions.campaign?.chronology?.cell === "Ridge Runners", "Front Range cell is Ridge Runners");
@@ -126,7 +126,7 @@ assert(
 );
 assert(content.regions.campaign.chronology.rows.find((r) => r.id === "gulf").subtitle === "Long Rifle", "Gulf Hammer subtitle is Long Rifle");
 const stateCodes = [...new Set(cities.map((r) => r.state))].sort();
-assert(["AK", "CO", "ID", "KS", "MO", "MT", "NE", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
+assert(["AK", "CA", "CO", "ID", "KS", "MO", "MT", "NE", "NV", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
 assert(cities.filter((r) => r.state === "CO").map((r) => r.id).sort().join() === "colorado_springs,denver,grand_junction", "Colorado city cluster");
 assert(cities.every((r) => (r.unlockWeek || 0) === 0), "no week lock on the US theater");
 assert(cities.find((r) => r.id === "juneau").neighbors.includes("seattle"), "Juneau ferry into Washington");
@@ -134,7 +134,7 @@ assert(cities.find((r) => r.id === "yukon_road").neighbors.includes("missoula"),
 assert(cities.find((r) => r.id === "denver").neighbors.includes("omaha"), "Colorado opens the plains east");
 assert(cities.find((r) => r.id === "st_louis"), "east-approach St. Louis");
 assert(content.regions.mainland?.length >= 6, "lower-48 landmass");
-assert((content.regions.states || []).filter((s) => s.kind === "us").length === 11, "11 US states on this mid-step");
+assert((content.regions.states || []).filter((s) => s.kind === "us").length === 13, "13 US states once California and Nevada are on the board");
 assert(content.regions.campaign?.restoreThreshold === 8, "Phase 2 at 8 liberated US states");
 assert(["far_russia", "far_cuba", "far_nicaragua", "far_korea"].every((id) => cities.some((r) => r.id === id)), "foreign theater stubs");
 const fairbanks = content.regions.regions.find((r) => r.id === "fairbanks");
@@ -196,7 +196,7 @@ assert(roads.every((rd) => rd.a && rd.b), "roads need city markers");
 for (const diff of ["easy", "normal", "hard"]) {
   const state = createNewGame(content, { seed: 42 + diff.length, difficulty: diff, name: "Casey Flint", background: "scout" });
   assert(state.week === 0, "start week 0");
-  assert(playerOf(state).region === "bethel", "start in Bethel");
+  assert(playerOf(state).region === "cheyenne", "start in Cheyenne");
   assert(!playerOf(state).faction, "start alone / no banner");
   assert(listActions(state).some((a) => a.id === "end_week" && a.enabled), "End Week always available");
   assert(state.factions.length === content.factions.factions.length, "unused factions still load into state");
@@ -226,9 +226,9 @@ const battleState = createNewGame(content, { seed: 7, difficulty: "easy", name: 
 let res = act(battleState, content, "raise_banner");
 assert(res.ok, `raise banner: ${res.message}`);
 assert(playerOf(battleState).faction === "northern_front", "banner founded");
-const home = regionOf(battleState, "bethel");
+const home = regionOf(battleState, "cheyenne");
 home.garrison = 90;
-res = act(battleState, content, "attack", { regionId: "nome", auto: true });
+res = act(battleState, content, "attack", { regionId: "denver", auto: true });
 assert(res.ok, `attack: ${res.message}`);
 assert(res.battleEnd === "atk" || res.battleEnd === "def", "battle must resolve");
 assert(battleState.phase === "strategy", "returned from battle");
@@ -274,8 +274,8 @@ act(orderState, content, "raise_banner");
 const hart = orderState.officers.find((o) => o.id === "hart");
 hart.faction = "northern_front";
 hart.loyalty = 80;
-hart.region = "bethel";
-const beforeG = regionOf(orderState, "bethel").garrison;
+hart.region = "cheyenne";
+const beforeG = regionOf(orderState, "cheyenne").garrison;
 const ordered = setGeneralOrder(orderState, "hart", "drill");
 assert(ordered.ok, `set order: ${ordered.message}`);
 assert(hart.standingOrder === "drill", "standing order persisted");
@@ -285,7 +285,7 @@ assert(
   orderState.log.some((l) => l.text.includes("Eli Hart") && l.text.includes("drills") && l.text.includes("ordered")),
   "ordered general should drill at week end"
 );
-assert(regionOf(orderState, "bethel").garrison > beforeG, "drill should raise garrison");
+assert(regionOf(orderState, "cheyenne").garrison > beforeG, "drill should raise garrison");
 const loadedOrders = deserialize(serialize(orderState));
 assert(loadedOrders.officers.find((o) => o.id === "hart").standingOrder === "drill", "order survives save");
 console.log("ok general standing orders");
@@ -374,34 +374,39 @@ console.log("ok Alaska→Colorado corridor");
 const leap = createNewGame(content, { seed: 12, difficulty: "easy", name: "Scout", background: "scout" });
 act(leap, content, "raise_banner");
 leap.ap = 6;
-res = act(leap, content, "travel", { regionId: "denver" });
-assert(!res.ok && /leap|adjacent/i.test(res.message), `no leap Bethel→Denver: ${res.message}`);
 res = act(leap, content, "travel", { regionId: "seattle" });
-assert(!res.ok, "no leap Bethel→Seattle");
-res = act(leap, content, "attack", { regionId: "denver", auto: true });
+assert(!res.ok && /leap|adjacent/i.test(res.message), `no leap Cheyenne→Seattle: ${res.message}`);
+res = act(leap, content, "travel", { regionId: "bethel" });
+assert(!res.ok, "no leap Cheyenne→Bethel");
+res = act(leap, content, "attack", { regionId: "sacramento", auto: true });
 assert(!res.ok && /leap|adjacent|neighbor/i.test(res.message), `no leap attack: ${res.message}`);
-assert(!isAdjacent(leap, "bethel", "denver"), "engine marks Denver non-adjacent from Bethel");
-assert(isAdjacent(leap, "bethel", "anchorage"), "Anchorage is an adjacent road");
-const cubaRoads = approachRoads(leap, "bethel", "far_cuba");
-assert(cubaRoads.join(", ") === "St. Louis, Gulf Sealift", `Cuba approach from Bethel: ${cubaRoads.join(", ")}`);
+assert(!isAdjacent(leap, "cheyenne", "seattle"), "Seattle is not a week-0 leap from Cheyenne");
+assert(!isAdjacent(leap, "cheyenne", "bethel"), "Bethel is not adjacent to Cheyenne");
+assert(isAdjacent(leap, "cheyenne", "denver"), "Denver is the Front Range road");
+assert(isAdjacent(leap, "eugene", "sacramento"), "Eugene opens northern California");
+assert(isAdjacent(leap, "sacramento", "reno"), "Sacramento opens Reno");
+assert(isAdjacent(leap, "los_angeles", "las_vegas"), "Los Angeles opens Las Vegas");
+assert(isAdjacent(leap, "salt_lake", "las_vegas"), "Salt Lake opens the desert road");
+assert(!isAdjacent(leap, "bend", "reno") && !isAdjacent(leap, "boise", "reno"), "no OR/ID leap into Reno");
+assert(!isAdjacent(leap, "los_angeles", "salt_lake") && !isAdjacent(leap, "eugene", "las_vegas"), "no cross-state leap past Nevada");
+const cubaRoads = approachRoads(leap, "cheyenne", "far_cuba");
+assert(cubaRoads.join(", ") === "St. Louis, Gulf Sealift", `Cuba approach from Cheyenne: ${cubaRoads.join(", ")}`);
 assert(!cubaRoads.some((n) => n === "Nome" || n === "Fairbanks" || n === "Anchorage"), `Cuba NEXT must not list AK home roads: ${cubaRoads.join(", ")}`);
 assert(approachRoads(leap, "denver", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "Cuba approach from Denver is the sealift chain");
 assert(approachRoads(leap, "st_louis", "far_cuba").join(", ") === "Gulf Sealift", "Cuba from St. Louis names the sealift, not the city you are in");
-const gulfRoads = approachRoads(leap, "bethel", "gulf_passage");
+const gulfRoads = approachRoads(leap, "cheyenne", "gulf_passage");
 assert(gulfRoads.join(", ") === "St. Louis, Cuba", `Gulf Sealift NEXT names its own roads: ${gulfRoads.join(", ")}`);
 assert(!gulfRoads.some((n) => n === "Nome" || n === "Fairbanks" || n === "Anchorage"), `Gulf NEXT must not list AK home roads: ${gulfRoads.join(", ")}`);
 assert(approachRoads(leap, "denver", "gulf_passage").join(", ") === "St. Louis, Cuba", "Gulf Sealift from Denver is still St. Louis and Cuba");
 assert(approachRoads(leap, "st_louis", "gulf_passage").join(", ") === "St. Louis, Cuba", "Gulf Sealift from St. Louis still names both ends");
-assert(approachRoads(leap, "bethel", "far_russia").join(", ") === "Bering", "Russia approach is the Bering gate");
+assert(approachRoads(leap, "cheyenne", "far_russia").join(", ") === "Bering", "Russia approach is the Bering gate");
 leap.campaign.phase = 3;
-assert(approachRoads(leap, "bethel", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "open Phase 3 desks still name the sealift chain");
+assert(approachRoads(leap, "cheyenne", "far_cuba").join(", ") === "St. Louis, Gulf Sealift", "open Phase 3 desks still name the sealift chain");
 leap.campaign.phase = 1;
-const seattleRoads = approachRoads(leap, "bethel", "seattle");
-assert(seattleRoads.includes("Anchorage") && !seattleRoads.includes("Nome"), `Seattle adjacent road: ${seattleRoads.join(", ")}`);
-const denverRoads = approachRoads(leap, "bethel", "denver");
-assert(denverRoads.includes("Fairbanks") && denverRoads.includes("Anchorage") && !denverRoads.includes("Nome"), `Denver adjacent roads: ${denverRoads.join(", ")}`);
-res = act(leap, content, "travel", { regionId: "anchorage" });
-assert(res.ok, `adjacent travel Bethel→Anchorage: ${res.message}`);
+const seattleRoads = approachRoads(leap, "cheyenne", "seattle");
+assert(seattleRoads.includes("Jackson") && !seattleRoads.includes("Anchorage") && !seattleRoads.includes("Nome"), `Seattle road from Cheyenne: ${seattleRoads.join(", ")}`);
+res = act(leap, content, "travel", { regionId: "denver" });
+assert(res.ok, `adjacent travel Cheyenne→Denver: ${res.message}`);
 const farmY = geoYield(regionOf(leap, "lincoln"), { food: 1, commerce: 1 });
 const iceY = geoYield(regionOf(leap, "arctic_slope"), { food: 1, commerce: 1 });
 assert(farmY.food > iceY.food, `farm belt out-yields ice food (${farmY.food} vs ${iceY.food})`);
@@ -414,7 +419,7 @@ console.log("ok adjacency / geo yields");
 
 const lib = createNewGame(content, { seed: 21, difficulty: "easy", name: "Scout", background: "scout" });
 act(lib, content, "raise_banner");
-assert(stateControl(lib).every((s) => !s.liberated), "no state liberated from Bethel alone");
+assert(stateControl(lib).filter((s) => s.liberated).map((s) => s.id).join() === "WY", "raising the banner in Cheyenne liberates Wyoming only");
 ["denver", "colorado_springs"].forEach((id) => {
   regionOf(lib, id).owner = "northern_front";
 });
@@ -436,6 +441,11 @@ regionOf(lib, "st_louis").owner = "northern_front";
 tickCampaign(lib);
 assert(campaignBeat(lib).now.id === "border", `Border Fury once Missouri is held and the plains are short: ${campaignBeat(lib).now.id}`);
 ["omaha", "topeka"].forEach((id) => {
+  regionOf(lib, id).owner = "northern_front";
+});
+tickCampaign(lib);
+assert(campaignBeat(lib).now.id === "border", `Border Fury while California and Nevada are still short: ${campaignBeat(lib).now.id}`);
+["sacramento", "los_angeles", "reno", "las_vegas"].forEach((id) => {
   regionOf(lib, id).owner = "northern_front";
 });
 tickCampaign(lib);
@@ -552,8 +562,8 @@ console.log(`ok general slots ${playerGenerals(staff).length}/${MAX_GENERALS} co
 const jobState = createNewGame(content, { seed: 22, difficulty: "easy", name: "Casey Flint", background: "scout" });
 act(jobState, content, "raise_banner");
 seedDemoMissions(jobState);
-const local = openMissions(jobState).find((j) => j.regionId === "bethel");
-assert(local, "demo board has a Bethel job");
+const local = openMissions(jobState).find((j) => j.regionId === "cheyenne");
+assert(local, "demo board has a Cheyenne job");
 const beforeGold = jobState.gold;
 res = act(jobState, content, "mission", { jobId: local.id });
 assert(res.ok, `mission: ${res.message}`);
@@ -562,7 +572,7 @@ assert(local.done, "accepted job is consumed");
 const hartJob = jobState.officers.find((o) => o.id === "hart");
 hartJob.faction = "northern_front";
 hartJob.loyalty = 80;
-hartJob.region = "bethel";
+hartJob.region = "cheyenne";
 hartJob.isGeneral = true;
 assert(setGeneralOrder(jobState, "hart", "mission").ok, "side mission standing order");
 seedDemoMissions(jobState);
@@ -654,7 +664,7 @@ porch.missions.board = [
     id: "job_porch",
     templateId: "porch_challenge",
     name: "Porch challenge",
-    regionId: "bethel",
+    regionId: "cheyenne",
     week: 0,
     ap: 1,
     done: false,
@@ -761,6 +771,7 @@ assert(week0Beat.rows.find((r) => r.id === "crown").status === "next", "Advent C
 assert(week0Beat.rows.map((r) => r.name).join("|") === "Invasion Day|Stall|Advent Crown|Prairie Fire|Gulf Hammer|Border Fury|Foreign desks", "board renders the locked labels");
 assert(holdWord(freshBeat, regionOf(freshBeat, "anchorage")) === "occupied", "POF ground is occupied");
 assert(holdWord(freshBeat, regionOf(freshBeat, "bethel")) === "contested", "empty Bethel is contested");
+assert(holdWord(freshBeat, regionOf(freshBeat, "cheyenne")) === "contested", "empty Cheyenne is the week-0 holdout");
 assert(holdWord(freshBeat, regionOf(freshBeat, "denver")) === "contested", "local Denver banner is contested");
 assert(stateHoldWord(freshBeat, stateControl(freshBeat).find((s) => s.id === "AK")) === "contested", "split Alaska is contested");
 const omaha = regionOf(freshBeat, "omaha");
@@ -769,7 +780,8 @@ const scarYield = geoYield(omaha, { food: 1, commerce: 1 });
 const plainYield = geoYield({ geo: omaha.geo }, { food: 1, commerce: 1 });
 assert(scarYield.food === plainYield.food && scarYield.gold === plainYield.gold, "scar tag does not change yields");
 act(freshBeat, content, "raise_banner");
-assert(holdWord(freshBeat, regionOf(freshBeat, "bethel")) === "held", "raised Bethel is held");
+assert(holdWord(freshBeat, regionOf(freshBeat, "cheyenne")) === "held", "raised Cheyenne is held");
+assert(holdWord(freshBeat, regionOf(freshBeat, "bethel")) === "contested", "Bethel stays contested when the banner is in Cheyenne");
 assert(freshBeat.log.some((l) => /Stall\./.test(l.text)), "raise banner ticks Stall");
 freshBeat.week = 13;
 freshBeat._season = seasonOf(13);
@@ -788,7 +800,7 @@ const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", na
 assert(typeof tease === "string" && tease.length > 4, `weekTease: ${tease}`);
 const hired = createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" });
 act(hired, content, "raise_banner");
-const free = hired.officers.find((o) => !o.faction && o.region === "bethel" && !o.hidden);
+const free = hired.officers.find((o) => !o.faction && o.region === playerOf(hired).region && !o.hidden);
 if (free) {
   hired.gold = 200;
   const hr = act(hired, content, "hire", { officerId: free.id });
