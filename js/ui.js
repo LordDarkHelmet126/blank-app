@@ -1836,7 +1836,7 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   drawMap();
 }
 
-/** East end of the ice approach: Siberia, the Russia desk, and the Korea sponsor. */
+/** East end of the ice approach: Siberia and the Russia desk. Korea is the desk only. */
 function frameBering() {
   frameLonLat(100, 74, 172, 36, 0.9);
 }
@@ -2249,7 +2249,6 @@ function foreignTheaterKind(ring, color) {
   if (mapView.z < 0.3 || mapView.z >= 0.92) return null;
   const b = ringBox(ring);
   if (color === "#d32f2f" && b.maxLat > 70 && b.maxLon > 160 && b.minLon < 40) return "russia";
-  if (color === "#1e88e5" && b.minLon < -120 && b.maxLat > 65 && b.maxLon < -50 && b.w > 60) return "canada";
   if (color === "#e57373" && b.minLon < -110 && b.maxLat > 30 && b.minLat < 18 && b.w > 20) return "mexico";
   if (color === "#e57373" && b.minLon > -86 && b.maxLon < -73 && b.minLat > 19 && b.maxLat < 24) return "cuba";
   if (color === "#e57373" && b.minLat > 10 && b.maxLat < 16 && b.minLon > -90 && b.maxLon < -80 && b.w < 8) return "nicaragua";
@@ -2263,10 +2262,6 @@ function reliefHeight(lon, lat, kind) {
     const ural = Math.exp(-((lon - 60) ** 2) / 22);
     const kam = Math.exp(-((lon - 158) ** 2) / 36) * Math.exp(-((lat - 57) ** 2) / 24);
     return 0.42 + n * 0.22 + ural * 0.34 + kam * 0.28;
-  }
-  if (kind === "canada") {
-    const rockies = Math.exp(-((lon + 120) ** 2) / 28);
-    return 0.4 + n * 0.16 + rockies * 0.36;
   }
   if (kind === "mexico") {
     const sierra = Math.exp(-((lon + 106) ** 2) / 26);
@@ -2342,10 +2337,10 @@ function drawGlobe(ctx) {
 }
 
 /**
- * Sea marks only — not inland roads.
- * Bering→Russia uses nome → bering_strait → far_russia.
- * Gulf uses st_louis → gulf_passage → far_cuba → far_nicaragua.
- * No extra city ids exist inside Russia, Cuba, Nicaragua, Mexico, or Canada.
+ * Sea marks only — locked chains, no new desks.
+ * nome → bering_strait → far_russia.
+ * st_louis → gulf_passage → far_cuba → far_nicaragua.
+ * far_korea stays a desk until the sponsor unlocks. No painted sponsor edge.
  */
 function drawWorldCorridors(ctx) {
   if (mapView.z > 0.92) return;
@@ -2355,12 +2350,7 @@ function drawWorldCorridors(ctx) {
     { color: "#8c4a4a", pts: [[-90.5, 23.8], [-79.5, 21.6]] },
     { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] },
   ];
-  if (mapView.z >= 0.3) {
-    routes.push(
-      { color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] },
-      { color: "#9a3b3b", pts: [[158, 63], [127.2, 38.2]] }
-    );
-  }
+  if (mapView.z >= 0.3) routes.push({ color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] });
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
