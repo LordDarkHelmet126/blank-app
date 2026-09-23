@@ -726,6 +726,7 @@ assert(/world-washes/.test(uiSrc) && /function drawWorldStrikes/.test(uiSrc) && 
 assert(/r\.id === "gulf_passage"/.test(uiSrc) && /function frameGulf/.test(uiSrc), "Gulf Sealift marker is painted on the gulf before travel unlocks");
 assert(/=== "ca"/.test(uiSrc) && /=== "world"/.test(uiSrc), "look demo can frame California or the globe");
 assert(/function frameBering/.test(uiSrc) && /function frameCuba/.test(uiSrc) && /=== "bering"/.test(uiSrc) && /=== "cuba"/.test(uiSrc), "look demo can frame the Bering and Cuba foreign theaters");
+assert(/focus = "bering"/.test(uiSrc) && /focus = "cuba"/.test(uiSrc) && /function topoRgb/.test(uiSrc) && /178\.5, 65\.3/.test(uiSrc), "foreign close-ups keep relief, desk captions, and the locked sea paths in frame");
 assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land");
 assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");
 assert(!/wolverine/i.test(uiSrc) && !/red dawn/i.test(uiSrc), "map copy stays original IP");

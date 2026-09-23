@@ -1763,7 +1763,7 @@ function renderLegend() {
   $("legend").innerHTML = `${phases}<span>Scars ${scars}</span>${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
 }
 
-const mapView = { z: 1, x: 0, y: 0, drag: null };
+const mapView = { z: 1, x: 0, y: 0, drag: null, pacific: false, focus: null };
 
 function canvasPoint(e, canvas) {
   const rect = canvas.getBoundingClientRect();
@@ -1793,7 +1793,13 @@ function frameBox(x0, y0, x1, y1) {
   drawMap();
 }
 
+function clearForeignFrame() {
+  mapView.pacific = false;
+  mapView.focus = null;
+}
+
 function frameWorld() {
+  clearForeignFrame();
   const [xWest, yNorth] = projectLL(-175, 78);
   const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
@@ -1808,6 +1814,7 @@ function frameWorld() {
 }
 
 function frameNear() {
+  clearForeignFrame();
   mapView.z = 0.56;
   mapView.x = 48;
   mapView.y = 72;
@@ -1815,10 +1822,12 @@ function frameNear() {
 }
 
 function frameCa() {
+  clearForeignFrame();
   frameBox(20, 200, 300, 520);
 }
 
 function frameGulf() {
+  clearForeignFrame();
   frameBox(470, 300, 760, 610);
 }
 
@@ -1836,14 +1845,21 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   drawMap();
 }
 
-/** East end of the ice approach: Siberia and the Russia desk. Korea is the desk only. */
+/**
+ * Strait close-up. Longitude wraps so Nome, Bering, and the Russia desk
+ * sit in one frame. Korea stays a desk only — no sponsor stroke.
+ */
 function frameBering() {
-  frameLonLat(100, 74, 172, 36, 0.9);
+  mapView.pacific = true;
+  mapView.focus = "bering";
+  frameLonLat(150, 71, -156, 49, 0.9);
 }
 
-/** Gulf Sealift through Mexico, Cuba, and Nicaragua. Wide enough that the sea card stays lifted. */
+/** Gulf Sealift, Cuba, and Nicaragua, tight enough to read the locked path. */
 function frameCuba() {
-  frameLonLat(-122, 34, -62, 8, 0.9);
+  mapView.pacific = false;
+  mapView.focus = "cuba";
+  frameLonLat(-97, 29, -73, 8.2, 0.88);
 }
 
 function onMapPointerDown(e) {
@@ -2174,6 +2190,7 @@ function drawStateLabels(ctx) {
 }
 
 function projectLL(lon, lat) {
+  if (mapView.pacific && lon > 20) lon -= 360;
   const x = 36 + ((lon + 124.8) / 57.9) * 942;
   const y = 132 + ((49.45 - lat) / 25.05) * 476;
   return [x, y];
@@ -2246,12 +2263,13 @@ function ringBox(ring) {
 
 /** Involved desks only. Flat on the world overview so the faction read stays clean. */
 function foreignTheaterKind(ring, color) {
-  if (mapView.z < 0.3 || mapView.z >= 0.92) return null;
+  if (!mapView.focus && (mapView.z < 0.3 || mapView.z >= 0.92)) return null;
   const b = ringBox(ring);
   if (color === "#d32f2f" && b.maxLat > 70 && b.maxLon > 160 && b.minLon < 40) return "russia";
   if (color === "#e57373" && b.minLon < -110 && b.maxLat > 30 && b.minLat < 18 && b.w > 20) return "mexico";
   if (color === "#e57373" && b.minLon > -86 && b.maxLon < -73 && b.minLat > 19 && b.maxLat < 24) return "cuba";
   if (color === "#e57373" && b.minLat > 10 && b.maxLat < 16 && b.minLon > -90 && b.maxLon < -80 && b.w < 8) return "nicaragua";
+  if (color === "#e57373" && b.minLat > 6 && b.maxLat < 19 && b.minLon > -93 && b.maxLon < -77 && b.w < 12) return "central";
   if (b.minLon > 123 && b.maxLon < 132 && b.minLat > 33 && b.maxLat < 44 && b.w < 8) return "korea";
   return null;
 }
@@ -2260,31 +2278,84 @@ function reliefHeight(lon, lat, kind) {
   const n = Math.sin(lon * 0.17) * Math.cos(lat * 0.21) * 0.45 + Math.sin(lon * 0.37 + 1.7) * Math.cos(lat * 0.33) * 0.25;
   if (kind === "russia") {
     const ural = Math.exp(-((lon - 60) ** 2) / 22);
-    const kam = Math.exp(-((lon - 158) ** 2) / 36) * Math.exp(-((lat - 57) ** 2) / 24);
-    return 0.42 + n * 0.22 + ural * 0.34 + kam * 0.28;
+    const kam = Math.exp(-((lon - 159) ** 2) / 16) * Math.exp(-((lat - 56) ** 2) / 30);
+    const koryak = Math.exp(-((lon - 167) ** 2) / 20) * Math.exp(-((lat - 62) ** 2) / 12);
+    const chuk = Math.exp(-((lon - 176) ** 2) / 26) * Math.exp(-((lat - 66) ** 2) / 10);
+    const stan = Math.exp(-((lon - 140) ** 2) / 80) * Math.exp(-((lat - 56) ** 2) / 7);
+    const grain = Math.sin(lon * 0.55 + lat) * 0.08;
+    return Math.max(0, Math.min(1, 0.2 + grain + ural * 0.34 + kam * 0.72 + koryak * 0.48 + chuk * 0.42 + stan * 0.4));
   }
   if (kind === "mexico") {
     const sierra = Math.exp(-((lon + 106) ** 2) / 26);
     return 0.36 + n * 0.14 + sierra * 0.4;
   }
-  if (kind === "cuba") return 0.32 + Math.exp(-((lat - 21.7) ** 2) / 0.9) * 0.5;
-  if (kind === "nicaragua") return 0.3 + Math.exp(-((lon + 85.5) ** 2) / 1.1) * 0.55;
+  if (kind === "cuba") return 0.18 + Math.exp(-((lat - 21.8) ** 2) / 0.45) * 0.78 + Math.sin(lon * 0.9) * 0.06;
+  if (kind === "nicaragua") return 0.16 + Math.exp(-((lon + 85.6) ** 2) / 0.7) * 0.8;
+  if (kind === "central") return 0.2 + Math.exp(-((lon + 86.2) ** 2) / 1.6) * 0.7 + Math.sin(lat * 1.4) * 0.06;
   if (kind === "korea") return 0.32 + Math.exp(-((lon - 127.4) ** 2) / 1.3) * 0.5;
   return 0.5;
+}
+
+/** Far East close-up. Green lowland, tan ridge, pale high — not a flat red fill. */
+function topoRgb(t) {
+  const stops = [
+    [0, [34, 96, 52]],
+    [0.26, [86, 142, 62]],
+    [0.46, [176, 158, 74]],
+    [0.64, [166, 102, 52]],
+    [0.82, [112, 72, 44]],
+    [1, [226, 214, 186]],
+  ];
+  const u = Math.max(0, Math.min(1, t));
+  let i = 0;
+  while (i < stops.length - 2 && u > stops[i + 1][0]) i += 1;
+  const a = stops[i];
+  const b = stops[i + 1];
+  const f = (u - a[0]) / ((b[0] - a[0]) || 1);
+  const mix = (k) => Math.round(a[1][k] + (b[1][k] - a[1][k]) * f);
+  return `rgb(${mix(0)},${mix(1)},${mix(2)})`;
 }
 
 function shadeWash(hex, t) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  const lift = (Math.max(0, Math.min(1, t)) - 0.42) * 64;
-  const c = (v) => Math.max(0, Math.min(255, Math.round(v + lift)));
-  return `rgb(${c(r)},${c(g)},${c(b)})`;
+  const u = Math.max(0, Math.min(1, t));
+  if (!mapView.focus) {
+    const lift = (u - 0.42) * 64;
+    const c = (v) => Math.max(0, Math.min(255, Math.round(v + lift)));
+    return `rgb(${c(r)},${c(g)},${c(b)})`;
+  }
+  let rr = r;
+  let gg = g;
+  let bb = b;
+  if (u < 0.48) {
+    const k = (0.48 - u) * 1.15;
+    rr = r * (1 - k);
+    gg = g * (1 - k * 0.85);
+    bb = b * (1 - k * 0.55);
+  } else {
+    const k = Math.min(1, (u - 0.48) * 1.7);
+    rr = r + (196 - r) * k;
+    gg = g + (164 - g) * k;
+    bb = b + (92 - b) * k;
+  }
+  const c = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  return `rgb(${c(rr)},${c(gg)},${c(bb)})`;
 }
 
 function paintTheaterRelief(ctx, ring, color, kind) {
   const b = ringBox(ring);
-  const step = kind === "cuba" || kind === "nicaragua" || kind === "korea" ? 0.32 : kind === "mexico" ? 0.85 : 1.45;
+  const close = mapView.focus === "bering" || mapView.focus === "cuba";
+  const step = kind === "russia"
+    ? (close ? 0.4 : 1.45)
+    : kind === "mexico"
+      ? (close ? 0.45 : 0.85)
+      : close
+        ? 0.16
+        : 0.32;
+  const view = mapViewRect();
+  const pad = 40;
   ctx.save();
   ctx.beginPath();
   tracePart(ctx, ring);
@@ -2295,8 +2366,13 @@ function paintTheaterRelief(ctx, ring, color, kind) {
       const [xB, yB] = projectLL(lon + step, lat - step);
       const x = Math.min(xA, xB);
       const y = Math.min(yA, yB);
-      ctx.fillStyle = shadeWash(color, reliefHeight(lon + step * 0.5, lat - step * 0.5, kind));
-      ctx.fillRect(x, y, Math.abs(xB - xA) + 0.6, Math.abs(yB - yA) + 0.6);
+      const extra = close ? 0.8 : 0.6;
+      const w = Math.abs(xB - xA) + extra;
+      const h = Math.abs(yB - yA) + extra;
+      if (close && (x > view.x1 + pad || x + w < view.x0 - pad || y > view.y1 + pad || y + h < view.y0 - pad)) continue;
+      const hgt = reliefHeight(lon + step * 0.5, lat - step * 0.5, kind);
+      ctx.fillStyle = kind === "russia" ? topoRgb(hgt) : shadeWash(color, hgt);
+      ctx.fillRect(x, y, w, h);
     }
   }
   ctx.restore();
@@ -2305,7 +2381,7 @@ function paintTheaterRelief(ctx, ring, color, kind) {
 function drawGlobe(ctx) {
   ctx.save();
   ctx.lineJoin = "round";
-  ctx.lineWidth = Math.max(1.5, 2.05 / mapView.z);
+  ctx.lineWidth = mapView.focus ? Math.max(2.6, 2.6 / mapView.z) : Math.max(1.5, 2.05 / mapView.z);
   ctx.strokeStyle = "#1a140c";
   WORLD_LAND.concat(WORLD_OVERLAY).forEach((land) => {
     coastParts(land.ring).forEach((part) => {
@@ -2331,8 +2407,10 @@ function drawGlobe(ctx) {
     });
   });
   drawWorldStrikes(ctx);
-  drawWorldCorridors(ctx);
-  drawWorldDesks(ctx);
+  if (!mapView.focus) {
+    drawWorldCorridors(ctx);
+    drawWorldDesks(ctx);
+  }
   ctx.restore();
 }
 
@@ -2341,20 +2419,32 @@ function drawGlobe(ctx) {
  * nome → bering_strait → far_russia.
  * st_louis → gulf_passage → far_cuba → far_nicaragua.
  * far_korea stays a desk until the sponsor unlocks. No painted sponsor edge.
+ * The bering close-up draws that same chain the short way across the date line.
  */
 function drawWorldCorridors(ctx) {
-  if (mapView.z > 0.92) return;
-  const routes = [
-    { color: "#7aa0b4", pts: [[-168, 65.6], [-170, 76], [-78, 77]] },
-    { color: "#7aa0b4", pts: [[-18, 76], [40, 74], [100, 70], [158, 63]] },
-    { color: "#8c4a4a", pts: [[-90.5, 23.8], [-79.5, 21.6]] },
-    { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] },
-  ];
-  if (mapView.z >= 0.3) routes.push({ color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] });
+  const focus = mapView.focus;
+  if (mapView.z > 0.92 && !focus) return;
+  const routes = [];
+  if (focus === "bering") {
+    routes.push({
+      color: "#d5e6f2",
+      pts: [[-165.4, 64.5], [-168, 65.6], [178.5, 65.3], [170, 64.2], [158, 63]],
+    });
+  } else {
+    routes.push(
+      { color: "#7aa0b4", pts: [[-168, 65.6], [-170, 76], [-78, 77]] },
+      { color: "#7aa0b4", pts: [[-18, 76], [40, 74], [100, 70], [158, 63]] },
+      { color: "#8c4a4a", pts: [[-90.5, 23.8], [-79.5, 21.6]] },
+      { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] }
+    );
+    if (mapView.z >= 0.3 || focus === "cuba") routes.push({ color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] });
+  }
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   ctx.setLineDash([14 / mapView.z, 9 / mapView.z]);
+  const casing = focus ? Math.max(16, 12 / mapView.z) : Math.max(8, 7 / mapView.z);
+  const core = focus ? Math.max(8, 6 / mapView.z) : Math.max(4, 3.6 / mapView.z);
   routes.forEach((route) => {
     const draw = (width, color) => {
       ctx.beginPath();
@@ -2367,8 +2457,8 @@ function drawWorldCorridors(ctx) {
       ctx.strokeStyle = color;
       ctx.stroke();
     };
-    draw(Math.max(8, 7 / mapView.z), "#1a140c");
-    draw(Math.max(4, 3.6 / mapView.z), route.color);
+    draw(casing, "#1a140c");
+    draw(core, route.color);
   });
   ctx.restore();
 }
@@ -2450,18 +2540,38 @@ function placeNearPlate(pw, ph, candidates) {
   return [Math.round(x), Math.round(y)];
 }
 
+function pinInView(x, y) {
+  const v = mapViewRect();
+  return x > v.x0 - 8 && x < v.x1 + 8 && y > v.y0 - 8 && y < v.y1 + 8;
+}
+
+function drawDeskPlate(ctx, x, y, boxW, boxH, label) {
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(x, y, boxW, boxH);
+  ctx.fillStyle = "#f8d800";
+  ctx.fillText(label, x + 4, y + boxH / 2);
+}
+
 function drawWorldDesks(ctx) {
-  if (mapView.z > 0.92) return;
+  if (mapView.z > 0.92 && !mapView.focus) return;
   const near = nearLabels();
-  const fontPx = near ? Math.max(16, Math.round(13 / mapView.z)) : Math.max(18, Math.round(12 / mapView.z));
+  const focus = mapView.focus;
+  const fontPx = focus
+    ? Math.max(20, Math.round(22 / mapView.z))
+    : near
+      ? Math.max(16, Math.round(13 / mapView.z))
+      : Math.max(18, Math.round(12 / mapView.z));
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.textBaseline = "middle";
-  WORLD_DESKS.forEach((d) => {
+  const desks = focus === "bering"
+    ? [{ id: "nome", lon: -165.4, lat: 64.5, color: "#7aa0b4" }].concat(WORLD_DESKS)
+    : WORLD_DESKS;
+  desks.forEach((d) => {
     const node = regionOf(state, d.id);
     if (!node) return;
-    if (near && d.id === "gulf_passage") return;
+    if (near && d.id === "gulf_passage" && focus !== "cuba") return;
     const [x, y] = projectLL(d.lon, d.lat);
-    const r = Math.max(8, 5 / mapView.z);
+    const r = focus ? Math.max(9, 8 / mapView.z) : Math.max(8, 5 / mapView.z);
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = d.color || "#9a3b3b";
@@ -2469,21 +2579,55 @@ function drawWorldDesks(ctx) {
     ctx.lineWidth = Math.max(2, 1.5 / mapView.z);
     ctx.strokeStyle = "#f8d800";
     ctx.stroke();
+    if (focus && !pinInView(x, y)) return;
     const label = node.short;
     const tw = ctx.measureText(label).width;
     const pad = 6 / mapView.z;
-    if (near && (d.id === "far_cuba" || d.id === "far_nicaragua")) {
-      const boxW = tw + pad + 4;
-      const boxH = fontPx * 1.35;
+    const boxW = tw + pad + 4;
+    const boxH = fontPx * 1.35;
+    if (near && !focus && (d.id === "far_cuba" || d.id === "far_nicaragua")) {
       const [bx, by] = placeNearPlate(boxW, boxH, [
         [x - boxW / 2, y + r + 22 / mapView.z],
         [x + r + 16 / mapView.z, y - boxH / 2],
         [x - boxW - r - 16 / mapView.z, y + r],
       ]);
-      ctx.fillStyle = "#000018";
-      ctx.fillRect(bx, by, boxW, boxH);
-      ctx.fillStyle = "#f8d800";
-      ctx.fillText(label, bx + 4, by + boxH / 2);
+      drawDeskPlate(ctx, bx, by, boxW, boxH, label);
+      return;
+    }
+    const placed = (focus === "bering" && (d.id === "nome" || d.id === "bering_strait" || d.id === "far_russia"))
+      || (focus === "cuba" && (d.id === "gulf_passage" || d.id === "far_cuba" || d.id === "far_nicaragua"));
+    if (placed) {
+      const prefs = {
+        nome: [
+          [x - boxW / 2, y - boxH - r - 16 / mapView.z],
+          [x + r + 14 / mapView.z, y - boxH / 2],
+        ],
+        bering_strait: [
+          [x - boxW / 2, y + r + 18 / mapView.z],
+          [x - boxW - r - 14 / mapView.z, y - boxH / 2],
+        ],
+        far_russia: [
+          [x - boxW - r - 16 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 14 / mapView.z],
+        ],
+        gulf_passage: [
+          [x - boxW - r - 12 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 16 / mapView.z],
+        ],
+        far_cuba: [
+          [x + r + 16 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 16 / mapView.z],
+        ],
+        far_nicaragua: [
+          [x - boxW - r - 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y + r + 18 / mapView.z],
+        ],
+      }[d.id] || [
+        [x - boxW / 2, y + r + 22 / mapView.z],
+        [x + r + 16 / mapView.z, y - boxH / 2],
+      ];
+      const [bx, by] = placeNearPlate(boxW, boxH, prefs);
+      drawDeskPlate(ctx, bx, by, boxW, boxH, label);
       return;
     }
     const lx = x + r + 4 / mapView.z;
@@ -2839,7 +2983,12 @@ function drawMap() {
   ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
   ctx.imageSmoothingEnabled = false;
   drawGlobe(ctx);
-  ctx.drawImage(mapView.z < 0.7 ? theaterLandPlate() : drawMap.off, 0, 0);
+  const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering";
+  ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
+  if (mapView.focus) {
+    drawWorldCorridors(ctx);
+    drawWorldDesks(ctx);
+  }
   ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
