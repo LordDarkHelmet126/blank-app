@@ -113,12 +113,45 @@
             <button type="button" id="battle-auto">Auto-resolve</button>
           </div>
         </header>
+        <section id="siege-board" class="siege-board" aria-label="Siege">
+          <p id="siege-roles" class="siege-roles">YOU are the ATTACKER. THEY are the DEFENDER.</p>
+          <div class="siege-meters">
+            <div class="siege-meter">
+              <span>WORKS</span>
+              <strong id="siege-works-n">0</strong>
+              <div class="siege-track"><i id="siege-works-bar"></i></div>
+              <small>Wall strength. Cut it down.</small>
+            </div>
+            <div class="siege-meter">
+              <span>SUPPRESS</span>
+              <strong id="siege-suppress-n">0</strong>
+              <div class="siege-track"><i id="siege-suppress-bar"></i></div>
+              <small>Parapet pinned. Fill it.</small>
+            </div>
+            <div class="siege-meter">
+              <span>LEVY</span>
+              <strong id="siege-levy-n">0</strong>
+              <div class="siege-track levy"><i id="siege-levy-bar"></i></div>
+              <small>Your column. At 0 the siege lifts.</small>
+            </div>
+          </div>
+          <p id="siege-next" class="siege-next">NEXT: Cut the berm. Do not rush.</p>
+          <div class="siege-ploys">
+            <button type="button" id="siege-cut" data-siege="cut"><b>1</b> Cut the berm<small>Drops WORKS</small></button>
+            <button type="button" id="siege-rake" data-siege="rake"><b>2</b> Rake the parapet<small>Fills SUPPRESS</small></button>
+            <button type="button" id="siege-rush" data-siege="rush"><b>3</b> Rush the gap<small>Takes the settlement</small></button>
+          </div>
+          <ol id="siege-log" class="log siege-log"></ol>
+          <div class="siege-foot">
+            <button type="button" id="siege-auto">Auto-resolve siege</button>
+          </div>
+        </section>
         <div class="battle-stage">
           <canvas id="battle-sky" width="960" height="64" aria-hidden="true"></canvas>
           <canvas id="battle-canvas" width="960" height="520"></canvas>
           <canvas id="battle-charge" width="960" height="96" aria-hidden="true"></canvas>
         </div>
-        <p id="battle-hint" class="hint">FIELD / SIEGE — isometric strip. Yellow unit, then an adjacent diamond. Strength bars over jeeps, M113s (marked 113), and militia. Auto-resolve skips the grid.</p>
+        <p id="battle-hint" class="hint">FIELD — isometric strip. Yellow unit, then an adjacent diamond. Strength bars over jeeps, M113s (marked 113), and militia. Auto-resolve skips the grid. Fortified bowls use the siege board.</p>
         <ol id="battle-log" class="log battle-log"></ol>
       </div>
     </div>

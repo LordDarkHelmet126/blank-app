@@ -7,6 +7,7 @@ import {
   endTacticalTurn,
   autoResolveBattle,
   remainingRatio,
+  siegeCommand,
 } from "./battle.js";
 import {
   hydrateLife,
@@ -1927,13 +1928,29 @@ function doAttack(state, content, extra) {
   }
   state.phase = "battle";
   state.battle = battle;
-  pushLog(state, `March from ${here.short} into ${dest.name} with ${commit}. ${battle.log[0]}`, "war");
-  return { ok: true, message: `Battle in ${dest.name}.`, battle: true };
+  const lead = battle.siege
+    ? `Siege lines on ${dest.short}. WORKS ${battle.siege.works}. You are the attacker.`
+    : battle.log[0];
+  pushLog(state, `March from ${here.short} into ${dest.name} with ${commit}. ${lead}`, "war");
+  return {
+    ok: true,
+    message: battle.siege ? `Siege at ${dest.name}.` : `Battle in ${dest.name}.`,
+    battle: true,
+  };
 }
 
 export function battleCmd(state, content, cmd, extra = {}) {
   if (state.phase !== "battle" || !state.battle) return { ok: false, message: "No field." };
   const b = state.battle;
+  if (b.siege && !b.siege.closed && cmd !== "siege" && cmd !== "auto") {
+    return { ok: false, message: "Siege board is open. Cut the berm, rake the parapet, or rush the gap." };
+  }
+  if (cmd === "siege") {
+    const res = siegeCommand(state, b, extra.kind, playerOf(state).int);
+    if (!res.ok) return res;
+    if (b.result) return resolveBattle(state, b);
+    return { ok: true, message: res.coach };
+  }
   if (cmd === "select") return battleSelect(b, extra.unitId);
   if (cmd === "cell") return battleClickCell(state, b, extra.x, extra.y);
   if (cmd === "ploy") return battlePloy(state, b, extra.kind, playerOf(state).int);

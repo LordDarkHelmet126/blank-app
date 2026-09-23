@@ -73,6 +73,7 @@ import {
   geoTags,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
+import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -88,6 +89,17 @@ function parseDemoFx(params) {
   if (fx === "travel" || demo === "travel" || demo === "fx=travel") return "travel";
   if (fx === "battle" || demo === "battle" || demo === "fx=battle") return "battle";
   return "";
+}
+
+function openDemoSiege() {
+  const home = regionOf(state, "bethel");
+  home.garrison = 100;
+  const bowl = regionOf(state, "anchorage");
+  const walls = Number(new URLSearchParams(location.search).get("walls"));
+  if (Number.isFinite(walls) && walls > 0) bowl.walls = Math.min(90, Math.round(walls));
+  const fight = act(state, content, "attack", { regionId: "anchorage", troops: 80 });
+  if (!fight.ok) toast(fight.message || "Siege demo could not march.");
+  if (fight.battle && state.battle) openBattle();
 }
 
 function openDemoBattle(withHull) {
@@ -161,7 +173,10 @@ export async function boot(loaded) {
       });
     }
     if (fxKind === "travel") pulseTravel("bethel", "fairbanks", { loop: true });
-    if (fxKind === "battle") openDemoBattle(params.get("hull") === "1");
+    if (fxKind === "battle") {
+      if (params.get("siege") === "1") openDemoSiege();
+      else openDemoBattle(params.get("hull") === "1");
+    }
     afterFonts();
     return;
   }
@@ -343,7 +358,18 @@ export async function boot(loaded) {
       showModal(officersHtml(), { kind: "officers" });
       wireAfterRender();
     }
-    if (params.get("fx") === "battle") openDemoBattle(params.get("hull") === "1");
+    if (params.get("fx") === "battle") {
+      if (params.get("siege") === "1") openDemoSiege();
+      else openDemoBattle(params.get("hull") === "1");
+    }
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "siege") {
+    startSliceState();
+    hideModal();
+    render();
+    openDemoSiege();
     afterFonts();
     return;
   }
@@ -427,6 +453,10 @@ function bindChrome() {
   $("modal").onclick = (e) => {
     if (e.target.id === "modal") hideModal();
   };
+  $("siege-cut").onclick = () => doBattle("siege", { kind: "cut" });
+  $("siege-rake").onclick = () => doBattle("siege", { kind: "rake" });
+  $("siege-rush").onclick = () => doBattle("siege", { kind: "rush" });
+  $("siege-auto").onclick = () => doBattle("auto");
   $("ploy-rally").onclick = () => doBattle("ploy", { kind: "rally" });
   $("ploy-ambush").onclick = () => doBattle("ploy", { kind: "ambush" });
   $("ploy-rumor").onclick = () => doBattle("ploy", { kind: "rumor" });
@@ -450,6 +480,12 @@ function bindChrome() {
       if (e.key === "1") pickDuelMove("strike");
       if (e.key === "2") pickDuelMove("guard");
       if (e.key === "3") pickDuelMove("special");
+      return;
+    }
+    if (state?.battle?.siege && !state.battle.siege.closed) {
+      if (e.key === "1") doBattle("siege", { kind: "cut" });
+      if (e.key === "2") doBattle("siege", { kind: "rake" });
+      if (e.key === "3") doBattle("siege", { kind: "rush" });
       return;
     }
     if (e.key === "e" && state && state.phase === "strategy") run("end_week");
@@ -2098,13 +2134,44 @@ function unitAbbrev(u) {
   return (u.label || "UNT").slice(0, 3).toUpperCase();
 }
 
+function paintSiegeHud(b, dest) {
+  const s = b.siege;
+  const rec = siegeRecommend(s);
+  $("battle-title").textContent = `Siege — ${dest?.name || s.place}`;
+  $("battle-meta").textContent = `YOU attacker · THEY defender · WATCH ${s.impulse}/${s.maxImpulses}`;
+  $("siege-roles").textContent = `YOU are the ATTACKER. THEY are the DEFENDER — ${dest?.short || s.place} garrison ${s.garrison}.`;
+  $("siege-works-n").textContent = String(s.works);
+  $("siege-suppress-n").textContent = String(s.suppress);
+  $("siege-levy-n").textContent = String(s.levy);
+  $("siege-works-bar").style.width = `${Math.round((s.works / Math.max(1, s.worksMax)) * 100)}%`;
+  $("siege-suppress-bar").style.width = `${Math.max(0, Math.min(100, s.suppress))}%`;
+  $("siege-levy-bar").style.width = `${Math.round((s.levy / Math.max(1, s.levyMax)) * 100)}%`;
+  $("siege-next").textContent = siegeCoach(s);
+  $("siege-log").innerHTML = s.log.slice(-4).map((l) => `<li>${esc(l)}</li>`).join("");
+  [
+    ["siege-cut", "cut"],
+    ["siege-rake", "rake"],
+    ["siege-rush", "rush"],
+  ].forEach(([id, kind]) => {
+    const btn = $(id);
+    if (!btn) return;
+    btn.classList.toggle("is-next", kind === rec);
+    btn.disabled = !!s.closed;
+  });
+}
+
 function drawBattle(now = performance.now()) {
   const b = state.battle;
   if (!b) return;
   const dest = regionOf(state, b.toId);
   const arctic = isArcticRegion(dest);
-  const siege = (dest.walls || 0) >= 12 || dest.terrainBias === "urban";
-  $("battle-title").textContent = `${siege ? "Siege" : "Field"} — ${dest.name}`;
+  const siegeOn = !!(b.siege && !b.siege.closed);
+  $("battle").classList.toggle("is-siege", siegeOn);
+  if (siegeOn) {
+    paintSiegeHud(b, dest);
+    return;
+  }
+  $("battle-title").textContent = `Field — ${dest.name}`;
   $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
   const sky = $("battle-sky");
@@ -2154,7 +2221,9 @@ function doBattle(cmd, extra) {
   if (!res.ok) toast(res.message);
   if (state.phase !== "battle") {
     $("battle").hidden = true;
+    $("battle").classList.remove("is-siege");
     stopBattleLoop();
+    selectedRegion = playerOf(state).region;
     render();
     if (res.battleEnd) toast(res.message);
     return;

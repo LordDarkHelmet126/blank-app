@@ -27,6 +27,7 @@ import {
   appointCandidates,
   playerCourt,
   duelCmd,
+  battleCmd,
   challengeCandidates,
   actingStats,
   weekTease,
@@ -40,6 +41,15 @@ import {
   geoTags,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
+import {
+  regionIsSiege,
+  createSiege,
+  applySiegePloy,
+  siegeCoach,
+  siegeRecommend,
+  SIEGE_PLOYS,
+  RUSH_WORKS_MAX,
+} from "../js/siege.js";
 import {
   createDuel,
   resolveExchange,
@@ -263,6 +273,83 @@ const fieldSrc = readFileSync(new URL("../js/terrain.js", import.meta.url), "utf
 assert(/u\.type === "ifv"/.test(fieldSrc) && /fillText\("113"/.test(fieldSrc) && /type === "ifv"\) return "113"/.test(fieldSrc), "M113 reads as a tracked hull marked 113");
 assert(/get\("hull"\) === "1"/.test(fieldSrc), "demo battle hull=1 fields the M113");
 console.log("ok M113 field spawn");
+
+assert(hullBattle.siege == null, "Nome field battle does not open a siege");
+assert(!regionIsSiege(regionOf(hullGame, "nome")), "Nome coast stays a field fight");
+assert(regionIsSiege(regionOf(hullGame, "anchorage")), "Anchorage bowl is a siege");
+assert(SIEGE_PLOYS.map((p) => p.id).join(",") === "cut,rake,rush", "three siege ploys");
+
+const siegeGame = createNewGame(content, { seed: 11, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const bowl = createBattle(siegeGame, content, "bethel", "anchorage", 80, 0);
+assert(bowl.siege && bowl.siege.works === regionOf(siegeGame, "anchorage").walls, "siege WORKS copies wall strength");
+assert(bowl.siege.works > RUSH_WORKS_MAX, "Anchorage works start above the rush line");
+assert(/Cut the berm/.test(siegeCoach(bowl.siege)) && /NEXT:/.test(siegeCoach(bowl.siege)), "coach names the next ploy");
+assert(siegeRecommend(bowl.siege) === "cut", "high works recommend Cut the berm");
+const rushed = createSiege({ name: "Bowl", short: "Bowl", walls: 40, garrison: 90 }, 80);
+const rushLevy = rushed.levy;
+applySiegePloy(siegeGame, rushed, "rush", 50);
+assert(rushed.result !== "atk" && rushed.levy < rushLevy, "rush into standing works fails and costs levy");
+assert(/Do not rush/.test(siegeCoach(rushed)), "coach still says do not rush");
+const loud = createSiege({ name: "Bowl", short: "Bowl", walls: 10, garrison: 40 }, 80);
+applySiegePloy(siegeGame, loud, "rush", 50);
+assert(loud.result !== "atk", "open berm with a live parapet does not fall");
+const quiet = createSiege({ name: "Bowl", short: "Bowl", walls: 10, garrison: 40 }, 80);
+quiet.suppress = 40;
+applySiegePloy(siegeGame, quiet, "rush", 50);
+assert(quiet.result === "atk" && quiet.closed, "low WORKS and SUPPRESS take the settlement");
+
+function cutsToOpen(walls) {
+  const st = createNewGame(content, { seed: 4, difficulty: "easy", name: "Siege", background: "fighter" });
+  const s = createSiege({ name: "Bowl", short: "Bowl", walls, garrison: 80 }, 200);
+  let cuts = 0;
+  let guard = 0;
+  while (!s.closed && guard++ < 20) {
+    const kind = siegeRecommend(s);
+    if (kind === "cut") cuts += 1;
+    applySiegePloy(st, s, kind, 50);
+  }
+  return { cuts, result: s.result };
+}
+const lightSiege = cutsToOpen(24);
+const heavySiege = cutsToOpen(72);
+assert(lightSiege.result === "atk" && heavySiege.result === "atk", "coach script takes light and heavy works");
+assert(heavySiege.cuts > lightSiege.cuts, "higher walls need more berm cuts");
+
+const held = createSiege({ name: "Bowl", short: "Bowl", walls: 80, garrison: 40 }, 400);
+let holdSteps = 0;
+while (!held.closed && holdSteps++ < 20) applySiegePloy(siegeGame, held, "rake", 50);
+assert(held.result === "def" && /lifts/.test(held.log[held.log.length - 1]), "watch expiry lifts the siege");
+
+const siegeEnd = autoResolveBattle(siegeGame, bowl, "loyalist");
+assert(siegeEnd === "atk", "auto siege follows the coach and takes Anchorage");
+assert(bowl.units.some((u) => u.side === "atk"), "siege still keeps the field roster for a later fight");
+
+act(siegeGame, content, "raise_banner");
+regionOf(siegeGame, "bethel").garrison = 120;
+siegeGame.ap = 4;
+res = act(siegeGame, content, "attack", { regionId: "anchorage", troops: 80 });
+assert(res.ok && siegeGame.phase === "battle" && siegeGame.battle.siege, `live siege open: ${res.message}`);
+const worksBefore = siegeGame.battle.siege.works;
+const cutRes = battleCmd(siegeGame, content, "siege", { kind: "cut" });
+assert(cutRes.ok && siegeGame.battle.siege.works < worksBefore, "Cut the berm drops WORKS");
+assert(/NEXT:/.test(cutRes.message), "siege command returns the next coach line");
+const blocked = battleCmd(siegeGame, content, "endTurn");
+assert(!blocked.ok, "field end-turn does not run during a siege");
+res = battleCmd(siegeGame, content, "auto");
+assert(res.battleEnd === "atk" || res.battleEnd === "def", `siege auto closes: ${res.message}`);
+assert(siegeGame.phase === "strategy", "siege returns to the map");
+
+const pageSrc = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const siegeCss = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+const siegeUi = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+for (const ploy of SIEGE_PLOYS) assert(pageSrc.includes(ploy.label), `siege button ${ploy.label}`);
+assert(/get\("demo"\) === "siege"/.test(siegeUi), "demo=siege hook");
+assert(/get\("siege"\) === "1"/.test(siegeUi), "battle demo siege=1 hook");
+assert(/\.siege-next \{[^}]*font-size:\s*16px/.test(siegeCss), "siege NEXT type is large");
+assert(/\.siege-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "siege NEXT is high-contrast amber");
+assert(/\.siege-next \{[^}]*color:\s*#000000/.test(siegeCss), "siege NEXT text is black on amber");
+assert(/\.siege-meter strong \{[^}]*font-size:\s*28px/.test(siegeCss), "siege meter numerals are large");
+console.log("ok siege depth");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
 act(spyState, content, "raise_banner");
