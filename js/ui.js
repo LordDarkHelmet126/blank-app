@@ -2157,12 +2157,13 @@ const WORLD_LAND = [
   { color: "#7aa0b4", ring: [[-175, -64], [180, -64], [180, -78], [-175, -78]] },
 ];
 
-/** Existing foreign nodes, placed on the globe. Not new roads. */
+/** Existing nodes only. Pins sit on the globe; neighbor lists stay put. */
 const WORLD_DESKS = [
-  { id: "far_russia", lon: 96, lat: 62 },
-  { id: "far_cuba", lon: -79.5, lat: 21.6 },
-  { id: "far_nicaragua", lon: -85.2, lat: 12.4 },
-  { id: "far_korea", lon: 127.2, lat: 38.2 },
+  { id: "bering_strait", lon: -168, lat: 65.6, color: "#7aa0b4" },
+  { id: "far_russia", lon: 158, lat: 63, color: "#9a3b3b" },
+  { id: "far_cuba", lon: -79.5, lat: 21.6, color: "#8c4a4a" },
+  { id: "far_nicaragua", lon: -85.2, lat: 12.4, color: "#8c4a4a" },
+  { id: "far_korea", lon: 127.2, lat: 38.2, color: "#9a3b3b" },
 ];
 
 function drawGlobe(ctx) {
@@ -2189,26 +2190,38 @@ function drawGlobe(ctx) {
   ctx.restore();
 }
 
-/** Sea marks only. Neighbor lists are unchanged. */
+/**
+ * Sea marks only — not roads.
+ * Bering→Russia uses bering_strait and far_russia.
+ * Gulf→Cuba/Nicaragua uses far_cuba and far_nicaragua.
+ * gulf_passage is not in this data, so no sealift node is painted.
+ */
 function drawWorldCorridors(ctx) {
   if (mapView.z > 0.55) return;
   const routes = [
-    [[-79.5, 21.6], [-89, 25.5]],
-    [[-85.2, 12.4], [-94, 17]],
-    [[150, 62], [176, 65]],
+    { color: "#7aa0b4", pts: [[-168, 65.6], [-170, 76], [-78, 77]] },
+    { color: "#7aa0b4", pts: [[-18, 76], [40, 74], [100, 70], [158, 63]] },
+    { color: "#8c4a4a", pts: [[-90.5, 23.8], [-79.5, 21.6]] },
+    { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] },
   ];
   ctx.save();
-  ctx.lineWidth = Math.max(3, 2.2 / mapView.z);
-  ctx.strokeStyle = "#f8d800";
-  ctx.setLineDash([10 / mapView.z, 8 / mapView.z]);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.setLineDash([14 / mapView.z, 9 / mapView.z]);
   routes.forEach((route) => {
-    ctx.beginPath();
-    route.forEach((p, i) => {
-      const [x, y] = projectLL(p[0], p[1]);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
+    const draw = (width, color) => {
+      ctx.beginPath();
+      route.pts.forEach((p, i) => {
+        const [x, y] = projectLL(p[0], p[1]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.stroke();
+    };
+    draw(Math.max(8, 7 / mapView.z), "#1a140c");
+    draw(Math.max(4, 3.6 / mapView.z), route.color);
   });
   ctx.restore();
 }
@@ -2225,7 +2238,7 @@ function drawWorldDesks(ctx) {
     const r = Math.max(8, 5 / mapView.z);
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = "#9a3b3b";
+    ctx.fillStyle = d.color || "#9a3b3b";
     ctx.fill();
     ctx.lineWidth = Math.max(2, 1.5 / mapView.z);
     ctx.strokeStyle = "#f8d800";
