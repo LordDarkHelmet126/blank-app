@@ -330,6 +330,9 @@ export async function boot(loaded) {
     commandCat = "domestic";
     hideModal();
     render();
+    const view = params.get("view");
+    if (view === "world") frameWorld();
+    else if (view === "ca") frameCa();
     pulseTravel("juneau", "seattle", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -421,6 +424,9 @@ function bindChrome() {
   $("btn-factions").onclick = () => showModal(factionsHtml());
   $("btn-states").onclick = () => showModal(campaignHtml());
   $("btn-legend").onclick = () => toggleLegend();
+  $("btn-zoom-in").onclick = () => zoomBy(1.2);
+  $("btn-zoom-out").onclick = () => zoomBy(1 / 1.2);
+  $("btn-zoom-world").onclick = () => frameWorld();
   $("btn-missions").onclick = () => {
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
@@ -442,8 +448,26 @@ function bindChrome() {
   });
   $("duel-continue").onclick = closeDuel;
   const canvas = $("map");
-  canvas.addEventListener("click", onMapClick);
-  canvas.addEventListener("mousemove", onMapMove);
+  canvas.addEventListener("pointermove", onMapPointerMove);
+  canvas.addEventListener("pointerdown", onMapPointerDown);
+  canvas.addEventListener("pointerup", onMapPointerUp);
+  canvas.addEventListener("pointerleave", () => {
+    mapView.drag = null;
+  });
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      if (!state) return;
+      e.preventDefault();
+      const [sx, sy] = canvasPoint(e, canvas);
+      const next = Math.max(0.16, Math.min(3.2, mapView.z * (e.deltaY > 0 ? 0.88 : 1.14)));
+      mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
+      mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
+      mapView.z = next;
+      drawMap();
+    },
+    { passive: false },
+  );
   const bc = $("battle-canvas");
   bc.addEventListener("click", onBattleClick);
   window.addEventListener("keydown", (e) => {
@@ -1716,10 +1740,84 @@ function renderLegend() {
   $("legend").innerHTML = `${phases}<span>Scars ${scars}</span>${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
 }
 
-function regionAt(mx, my, canvas) {
+const mapView = { z: 1, x: 0, y: 0, drag: null };
+
+function canvasPoint(e, canvas) {
   const rect = canvas.getBoundingClientRect();
-  const x = ((mx - rect.left) / rect.width) * 1000;
-  const y = ((my - rect.top) / rect.height) * 620;
+  return [
+    ((e.clientX - rect.left) / rect.width) * canvas.width,
+    ((e.clientY - rect.top) / rect.height) * canvas.height,
+  ];
+}
+
+function zoomBy(factor) {
+  const sx = 500;
+  const sy = 310;
+  const next = Math.max(0.16, Math.min(3.2, mapView.z * factor));
+  mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
+  mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
+  mapView.z = next;
+  drawMap();
+}
+
+function frameBox(x0, y0, x1, y1) {
+  const z = Math.min(1000 / (x1 - x0), 620 / (y1 - y0)) * 0.88;
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  mapView.z = z;
+  mapView.x = 500 - cx * z;
+  mapView.y = 310 - cy * z;
+  drawMap();
+}
+
+function frameWorld() {
+  const minX = -780;
+  const maxX = 5120;
+  const minY = -360;
+  const maxY = 2200;
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.96;
+  mapView.z = z;
+  mapView.x = (1000 - (minX + maxX) * z) / 2;
+  mapView.y = (620 - (minY + maxY) * z) / 2;
+  drawMap();
+}
+
+function frameCa() {
+  frameBox(20, 200, 300, 520);
+}
+
+function onMapPointerDown(e) {
+  const canvas = $("map");
+  const [sx, sy] = canvasPoint(e, canvas);
+  mapView.drag = { sx, sy, x: mapView.x, y: mapView.y, moved: false };
+  canvas.setPointerCapture?.(e.pointerId);
+}
+
+function onMapPointerMove(e) {
+  if (!mapView.drag) {
+    onMapMove(e);
+    return;
+  }
+  const [sx, sy] = canvasPoint(e, $("map"));
+  const dx = sx - mapView.drag.sx;
+  const dy = sy - mapView.drag.sy;
+  if (Math.hypot(dx, dy) > 3) mapView.drag.moved = true;
+  if (!mapView.drag.moved) return;
+  mapView.x = mapView.drag.x + dx;
+  mapView.y = mapView.drag.y + dy;
+  drawMap();
+}
+
+function onMapPointerUp(e) {
+  const moved = mapView.drag?.moved;
+  mapView.drag = null;
+  if (!moved) onMapClick(e);
+}
+
+function regionAt(mx, my, canvas) {
+  const [sx, sy] = canvasPoint({ clientX: mx, clientY: my }, canvas);
+  const x = (sx - mapView.x) / mapView.z;
+  const y = (sy - mapView.y) / mapView.z;
   return state.regions.find((r) => theaterVisible(state, r) && hitPoly(r.polygon, x, y));
 }
 
@@ -1907,50 +2005,134 @@ const STATE_FILL = {
   mo: "#9a8850",
 };
 
-function drawStateLabels(ctx) {
-  const list = state.stateTheaters || [];
-  const sel = regionOf(state, selectedRegion);
-  const here = playerOf(state);
-  const keep = new Set();
-  if (sel?.stateCode) keep.add(String(sel.stateCode).toUpperCase());
-  if (here?.region) {
-    const home = regionOf(state, here.region);
-    if (home?.stateCode) keep.add(String(home.stateCode).toUpperCase());
+function ringCentroid(ring) {
+  let x = 0;
+  let y = 0;
+  let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const c = ring[i][0] * ring[j][1] - ring[j][0] * ring[i][1];
+    a += c;
+    x += (ring[i][0] + ring[j][0]) * c;
+    y += (ring[i][1] + ring[j][1]) * c;
   }
+  a *= 0.5;
+  if (Math.abs(a) < 1) {
+    const n = ring.length || 1;
+    return [ring.reduce((s, p) => s + p[0], 0) / n, ring.reduce((s, p) => s + p[1], 0) / n];
+  }
+  return [x / (6 * a), y / (6 * a)];
+}
+
+/** Every lower-48 postal, plus Alaska. Small states nudge apart; none are dropped. */
+function drawStateLabels(ctx) {
+  const lines = state.stateLines || [];
   ctx.font = "16px 'Press Start 2P', 'Courier New', monospace";
-  const placed = [];
-  const ordered = [...list].sort((a, b) => {
-    const ak = keep.has(String(a.short || a.id || "").toUpperCase()) ? 0 : 1;
-    const bk = keep.has(String(b.short || b.id || "").toUpperCase()) ? 0 : 1;
-    return ak - bk;
+  const items = [];
+  lines.forEach((line) => {
+    const id = String(line.id || "");
+    if (id.length !== 2 || id === "YT" || !line.ring?.length) return;
+    const [cx, cy] = ringCentroid(line.ring);
+    let minX = 1e9;
+    let maxX = -1e9;
+    let minY = 1e9;
+    let maxY = -1e9;
+    line.ring.forEach(([px, py]) => {
+      minX = Math.min(minX, px);
+      maxX = Math.max(maxX, px);
+      minY = Math.min(minY, py);
+      maxY = Math.max(maxY, py);
+    });
+    const w = Math.ceil(ctx.measureText(id).width) + 10;
+    items.push({
+      id,
+      x: cx,
+      y: cy,
+      w,
+      h: 22,
+      area: Math.max(400, (maxX - minX) * (maxY - minY)),
+    });
   });
-  ordered.forEach((st) => {
-    if (!st.label) return;
-    const [x, y] = st.label;
-    const text = st.short || st.id.toUpperCase();
-    const w = ctx.measureText(text).width;
-    const px = Math.round(x - w / 2 - 4);
-    const py = Math.round(y - 8);
-    const box = { x: px, y: py, w: w + 8, h: 24 };
-    const forced = keep.has(text.toUpperCase());
-    const crowded = placed.some(
-      (p) => box.x < p.x + p.w + 6 && box.x + box.w + 6 > p.x && box.y < p.y + p.h + 4 && box.y + box.h + 4 > p.y,
-    );
-    if (crowded && !forced) return;
-    if (!forced && sel) {
-      const [sx, sy] = cityXY(sel);
-      if (box.x < sx + 88 && box.x + box.w > sx - 88 && box.y < sy + 48 && box.y + box.h > sy - 56) return;
+  for (let n = 0; n < 40; n++) {
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+        const overlapX = a.w / 2 + b.w / 2 + 4 - Math.abs(b.x - a.x);
+        const overlapY = a.h / 2 + b.h / 2 + 2 - Math.abs(b.y - a.y);
+        if (overlapX <= 0 || overlapY <= 0) continue;
+        const dx = b.x - a.x || 1;
+        const dy = b.y - a.y || 0.25;
+        const len = Math.hypot(dx, dy) || 1;
+        const wa = b.area / (a.area + b.area);
+        const wb = a.area / (a.area + b.area);
+        const push = Math.min(overlapX, overlapY) + 1;
+        a.x -= (dx / len) * push * wa;
+        a.y -= (dy / len) * push * wa;
+        b.x += (dx / len) * push * wb;
+        b.y += (dy / len) * push * wb;
+      }
     }
-    placed.push(box);
+  }
+  items.forEach((a) => {
+    a.x = Math.max(6 + a.w / 2, Math.min(994 - a.w / 2, a.x));
+    a.y = Math.max(16, Math.min(604, a.y));
+    const px = Math.round(a.x - a.w / 2);
+    const py = Math.round(a.y - a.h / 2);
     ctx.fillStyle = "#000018";
-    ctx.fillRect(px - 2, py - 2, box.w + 4, box.h + 4);
+    ctx.fillRect(px - 2, py - 2, a.w + 4, a.h + 4);
     ctx.fillStyle = "#f8f8f8";
-    ctx.fillRect(px, py, box.w, box.h);
-    const liberated = (ensureCampaign(state).liberated || []).includes(text);
-    ctx.fillStyle = forced || liberated ? "#f8d800" : "#101050";
-    ctx.fillText(text, px + 4, py + 18);
+    ctx.fillRect(px, py, a.w, a.h);
+    ctx.fillStyle = "#101050";
+    ctx.fillText(a.id, px + 5, py + 16);
   });
   ctx.font = PX_FONT;
+}
+
+function projectLL(lon, lat) {
+  const x = 36 + ((lon + 124.8) / 57.9) * 942;
+  const y = 132 + ((49.45 - lat) / 25.05) * 476;
+  return [x, y];
+}
+
+/** Light political washes for the rest of the world. Not a lower-48 blob. */
+const WORLD_LAND = [
+  { color: "#3a6ea0", ring: [[-141, 60], [-136, 69], [-120, 70], [-95, 68], [-80, 62], [-64, 60], [-64, 52], [-67, 47], [-71, 45], [-82, 42], [-83, 46], [-89, 48], [-95, 49], [-123, 49], [-132, 54], [-141, 60]] },
+  { color: "#7aa0b4", ring: [[-73, 76], [-62, 82], [-22, 81], [-20, 70], [-44, 60], [-68, 60], [-73, 70]] },
+  { color: "#9a3b3b", ring: [[-117, 32], [-106, 31], [-97, 26], [-93, 18], [-87, 15], [-83, 13], [-83, 8], [-77, 8], [-92, 15], [-97, 16], [-105, 19], [-110, 23], [-114, 27], [-117, 32]] },
+  { color: "#9a3b3b", ring: [[-85, 22], [-78, 20], [-74, 20], [-77, 23], [-84, 23]] },
+  { color: "#8c4a4a", ring: [[-87, 13], [-83, 11], [-83, 15], [-87, 14]] },
+  { color: "#a05050", ring: [[-80, 9], [-77, -5], [-75, -15], [-71, -18], [-70, -42], [-74, -52], [-68, -55], [-65, -50], [-55, -35], [-48, -28], [-35, -8], [-35, -5], [-50, 0], [-60, 8], [-70, 12], [-77, 8]] },
+  { color: "#3a6ea0", ring: [[-10, 36], [-9, 43], [-8, 52], [-5, 58], [2, 51], [8, 54], [10, 46], [3, 43], [-2, 36]] },
+  { color: "#3a6ea0", ring: [[-8, 50], [-6, 58], [1, 58], [2, 51], [-5, 50]] },
+  { color: "#3a6ea0", ring: [[5, 58], [5, 63], [12, 68], [20, 70], [28, 70], [24, 60], [12, 58]] },
+  { color: "#9a3b3b", ring: [[18, 48], [22, 42], [28, 41], [40, 47], [48, 42], [60, 50], [80, 55], [100, 60], [140, 70], [170, 68], [170, 62], [140, 50], [120, 42], [100, 40], [80, 45], [60, 44], [40, 43], [30, 46], [22, 52], [18, 55]] },
+  { color: "#9a3b3b", ring: [[73, 54], [80, 50], [90, 48], [110, 52], [130, 48], [135, 42], [125, 32], [120, 23], [108, 20], [100, 22], [90, 28], [80, 32], [75, 40]] },
+  { color: "#c4a06a", ring: [[68, 24], [72, 8], [80, 8], [88, 22], [92, 26], [80, 30], [70, 28]] },
+  { color: "#c4a06a", ring: [[-17, 15], [-16, 28], [-6, 35], [10, 37], [25, 32], [32, 31], [43, 12], [51, 12], [42, -15], [32, -30], [18, -34], [12, -18], [8, 4], [-8, 5], [-15, 12]] },
+  { color: "#3a6ea0", ring: [[113, -22], [128, -14], [145, -12], [153, -25], [150, -38], [136, -35], [115, -34], [114, -26]] },
+  { color: "#3a6ea0", ring: [[130, 31], [131, 34], [140, 41], [145, 43], [141, 35], [134, 33]] },
+];
+
+function drawGlobe(ctx) {
+  ctx.save();
+  ctx.lineWidth = 1.6 / mapView.z;
+  ctx.lineJoin = "round";
+  WORLD_LAND.forEach((land) => {
+    ctx.beginPath();
+    land.ring.forEach((p, i) => {
+      const [x, y] = projectLL(p[0], p[1]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = land.color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#1a140c";
+    ctx.stroke();
+  });
+  ctx.restore();
 }
 
 function plateAwayFromSelected(r, px, py, pw, ph) {
@@ -2180,9 +2362,13 @@ function drawMap() {
     stateWash,
     corridors: foreignCorridors(),
   });
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#2a6890";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
+  drawGlobe(ctx);
+  ctx.drawImage(drawMap.off, 0, 0);
   ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
@@ -2202,6 +2388,7 @@ function drawMap() {
   painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
   drawStateLabels(ctx);
   painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 function drawCityMarkHi(ctx, r, selected) {

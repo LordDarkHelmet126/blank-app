@@ -467,48 +467,42 @@ function paintBase(fields, seasonId) {
   c.height = TH;
   const ctx = c.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  const { land, biome, height, pnw } = fields;
+  const { land } = fields;
   const img = ctx.createImageData(TW, TH);
   const data = img.data;
-  const winter = seasonId === "winter";
-  const fall = seasonId === "fall";
+  void seasonId;
 
   for (let y = 0; y < TH; y++) {
     for (let x = 0; x < TW; x++) {
       const i = y * TW + x;
       const o = i * 4;
+      const insetSea = x < 268 && y < 136;
+      const focusSea = x >= 28 && x <= 986 && y >= 126 && y <= 598;
       if (!land[i]) {
-        const wave = ((x + y + ((x * 3) ^ y)) & 3) === 0;
-        data[o] = wave ? 0x3a : 0x2a;
-        data[o + 1] = wave ? 0x80 : 0x68;
-        data[o + 2] = wave ? 0xa8 : 0x90;
-        data[o + 3] = 255;
+        if (insetSea || focusSea) {
+          const wave = ((x + y + ((x * 3) ^ y)) & 3) === 0;
+          data[o] = wave ? 0x3a : 0x2a;
+          data[o + 1] = wave ? 0x80 : 0x68;
+          data[o + 2] = wave ? 0xa8 : 0x90;
+          data[o + 3] = 255;
+        }
         continue;
       }
-      const b = biome[i];
-      const h = height[i];
-      let rgb = landRgb(x, y);
-      if (winter && (b === BIOME.ice || b === BIOME.tundra || b === BIOME.rockies)) rgb = mixRgb(rgb, TONE.snow, 0.45);
-      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && b !== BIOME.wetforest && pnw[i] !== 1) {
-        rgb = mixRgb(rgb, ((x + y) & 1) === 0 ? FALL_A : FALL_B, 0.35);
-      }
-      if (h > 0.72 && (b === BIOME.rockies || pnw[i] === 2)) rgb = mixRgb(rgb, TONE.snow, (h - 0.72) * 1.4);
+      const grain = ((hash2(x, y) - 0.5) * 8) | 0;
+      let rgb = [198 + grain, 190 + grain, 152 + grain];
       let shore = 0;
       if (x === 0 || !land[i - 1]) shore += 1;
       if (x === TW - 1 || !land[i + 1]) shore += 1;
       if (y === 0 || !land[i - TW]) shore += 1;
       if (y === TH - 1 || !land[i + TW]) shore += 1;
       if (shore) rgb = SHORE_RGB;
-      const se = height[Math.min(TW * TH - 1, i + TW + 1)] || h;
-      const col = mulRgb(rgb, shore ? 0.12 : h - se);
-      data[o] = col[0];
-      data[o + 1] = col[1];
-      data[o + 2] = col[2];
+      data[o] = rgb[0];
+      data[o + 1] = rgb[1];
+      data[o + 2] = rgb[2];
       data[o + 3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
-  scatterFeatures(ctx, fields, seasonId);
   hazeCoast(c, fields);
   return c;
 }
@@ -603,13 +597,8 @@ function hazeCoast(canvas, fields) {
         d[o] = 247;
         d[o + 1] = 243;
         d[o + 2] = 230;
-        continue;
       }
-      if (!wet) continue;
-      const k = 0.18;
-      d[o] = Math.round(d[o] * (1 - k) + 48 * k);
-      d[o + 1] = Math.round(d[o + 1] * (1 - k) + 90 * k);
-      d[o + 2] = Math.round(d[o + 2] * (1 - k) + 108 * k);
+      void wet;
     }
   }
   ctx.putImageData(pix, 0, 0);
@@ -901,7 +890,7 @@ export function paintTheaterTerrain(o, state, opts) {
   });
   o.globalAlpha = 1;
   lines.forEach((line) => {
-    if (line.ring) strokePoly(o, line.ring, "#24180c", 1);
+    if (line.ring) strokePoly(o, line.ring, "#24180c", 1.5);
   });
   lines.forEach((line) => {
     const wash = washOf(line.id);

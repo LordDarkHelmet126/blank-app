@@ -674,6 +674,10 @@ assert(/drawStallFront/.test(uiSrc) && /isAdjacent\(state, prev, r\)/.test(uiSrc
 assert(/OCCUPIED_EAST/.test(uiSrc) && /#9a3b3b/.test(uiSrc) && !/OCCUPIED_EAST[\s\S]{0,80}CA /.test(uiSrc), "east of the stall washes occupied; CA stays bare");
 assert(/function drawNukeScars/.test(uiSrc) && /Offutt/.test(uiSrc) && /Ellsworth/.test(uiSrc) && /Minot/.test(uiSrc), "nuke scars mark DC NY KC Offutt Minot GF Ellsworth");
 assert(/function drawInvasionAxes/.test(uiSrc) && /Prairie Fire/.test(uiSrc) && /Border Fury/.test(uiSrc) && /Bering/.test(uiSrc), "phase names still exist for the banners panel");
+assert(/state\.stateLines/.test(uiSrc) && /lower-48/.test(uiSrc), "every lower-48 postal is labeled on the theater");
+assert(!/\n  scatterFeatures\(ctx, fields/.test(terrainSrc), "theater land does not stamp trees or mesas");
+assert(/function frameWorld/.test(uiSrc) && /function drawGlobe/.test(uiSrc) && /btn-zoom-world/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wheel and World button open a globe peek");
+assert(/=== "ca"/.test(uiSrc) && /=== "world"/.test(uiSrc), "look demo can frame California or the globe");
 assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land");
 assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");
 assert(!/wolverine/i.test(uiSrc) && !/red dawn/i.test(uiSrc), "map copy stays original IP");
