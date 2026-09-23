@@ -2,7 +2,24 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Coach and NEXT sit on Terrain tip `ae6f300`. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
+**Last checkpoint:** 2026-09-23 — Coach siege NEXT is copy only, on Campaign head `daf3dea`. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
+
+## Coach → foreign siege (copy only)
+
+When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six inland desks, a short siege line sits on the existing no-leap approach. Ploys stay **Cut the berm**, **Rake the parapet**, **Rush the gap**. Campaign map labels stay Kamchatka, Siberia, Havana, Managua, Sponsor Lane, and Sheds. The siege line may mirror Combat flavor lightly (Lane, Inland Ridge). Combat owns the siege board; this pass does not edit siege mechanics.
+
+| id | Campaign short | Siege demo |
+|---|---|---|
+| `kamchatka` | Kamchatka | `/?demo=siege&node=kamchatka` |
+| `siberia` | Siberia | `/?demo=siege&node=siberia` |
+| `havana` | Havana | `/?demo=siege&node=havana` |
+| `managua` | Managua | `/?demo=siege&node=managua` |
+| `sponsor_lane` | Sponsor Lane | `/?demo=siege&node=sponsor_lane` |
+| `kr_inland` | Sheds | `/?demo=siege&node=kr_inland` |
+
+Same board: `/?demo=battle&siege=1&node=<id>`. Field mention only: `/?demo=battle&node=<id>`.
+
+Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
 ## How to run
 

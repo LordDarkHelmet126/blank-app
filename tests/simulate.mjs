@@ -717,6 +717,16 @@ assert(/style=brawler|youStyleId/.test(uiSrc), "brawler demo style override");
 assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
 assert(/function parkCoach/.test(uiSrc) && /function flushOverlays/.test(uiSrc), "overlays queue: park coach, one at a time");
 assert(/Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland \(kr_inland\)/.test(uiSrc), "coach names Sheds, the Korea inland road");
+assert(/Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap/.test(uiSrc), "Raise-a-banner coach names the siege ploys");
+["kamchatka", "siberia", "havana", "managua", "sponsor_lane", "kr_inland"].forEach((id) => {
+  assert(uiSrc.includes(`/?demo=siege&node=${id}`), `siege NEXT binds /?demo=siege&node=${id}`);
+});
+assert(/function inlandSiegeCue/.test(uiSrc) && /Siege desk:/.test(uiSrc) && /inlandSiegeCue\(sel\.id\)/.test(uiSrc), "NEXT appends the inland siege cue after the approach");
+assert(/id="coach-siege"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "coach card has a siege line");
+assert(/checkpoint berm \(Lane\)/.test(uiSrc) && /label: "Sponsor Lane"/.test(uiSrc), "Sponsor Lane stays the Campaign short; siege flavor may say Lane");
+assert(/ridge berm \(Inland Ridge\)/.test(uiSrc) && /label: "Sheds"/.test(uiSrc), "Sheds stays the Campaign short; siege flavor may say Inland Ridge");
+assert(/demo"\) === "coach"[\s\S]{0,400}get\("focus"\)/.test(uiSrc), "coach demo reads focus so an inland desk opens its siege cue");
+assert(/Cut the berm, Rake the parapet, Rush the gap/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "travel hint names the same siege ploys");
 assert(/--type:\s*16px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 16px");
 assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
 assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");

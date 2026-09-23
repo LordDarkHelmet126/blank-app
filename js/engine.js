@@ -920,7 +920,7 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: true,
-    hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), and Salt Lake (I-80 basin). Reno uses the Wendover rail. Cuba is Gulf Sealift, then Havana. Nicaragua, then Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). No leaping.",
+    hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), and Salt Lake (I-80 basin). Reno uses the Wendover rail. Cuba is Gulf Sealift, then Havana. Nicaragua, then Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). No leaping. Focus an inland desk and NEXT names its siege board: Cut the berm, Rake the parapet, Rush the gap.",
     needs: "neighbor",
   });
   const camp = ensureCampaign(state);
