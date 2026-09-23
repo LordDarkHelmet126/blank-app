@@ -2505,8 +2505,8 @@ function roadEnds(a, b) {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   const len = Math.hypot(dx, dy) || 1;
-  if (len >= 150) return [a, b];
-  const extra = Math.min(32, (150 - len) * 0.5);
+  if (len >= 160) return [a, b];
+  const extra = Math.min(40, Math.max(18, (160 - len) * 0.55));
   const ux = dx / len;
   const uy = dy / len;
   return [
@@ -2545,6 +2545,7 @@ const CAMPAIGN_ROADS = [
   ["boise", "jackson"],
   ["cheyenne", "salt_lake"],
   ["cheyenne", "lincoln"],
+  ["cheyenne", "denver"],
   ["denver", "lincoln"],
   ["reno", "salt_lake"],
   ["lincoln", "wichita"],
@@ -2563,13 +2564,13 @@ function drawCampaignRoads(ctx) {
     ctx.save();
     ctx.lineCap = "butt";
     ctx.strokeStyle = "#1a0808";
-    ctx.lineWidth = len < 100 ? 11 : 8;
+    ctx.lineWidth = len < 110 ? 15 : 11;
     ctx.beginPath();
     ctx.moveTo(p[0], p[1]);
     ctx.lineTo(q[0], q[1]);
     ctx.stroke();
-    ctx.strokeStyle = "#f8f4e8";
-    ctx.lineWidth = len < 100 ? 5 : 4;
+    ctx.strokeStyle = "#fff6d0";
+    ctx.lineWidth = len < 110 ? 7 : 5;
     ctx.beginPath();
     ctx.moveTo(p[0], p[1]);
     ctx.lineTo(q[0], q[1]);
