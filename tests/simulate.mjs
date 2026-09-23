@@ -378,6 +378,7 @@ assert(!isAdjacent(leap, "bethel", "denver"), "engine marks Denver non-adjacent 
 });
 const gulf = regionOf(leap, "gulf_passage");
 assert(gulf && gulf.type === "sea" && gulf.unlockPhase === 3, "Gulf Sealift is the phase-3 sea gate");
+assert(!travelUnlocked(leap, gulf), "Gulf Sealift stays locked until the foreign desks open");
 const nbrs = (id) => regionOf(leap, id).neighbors;
 assert(nbrs("st_louis").includes("gulf_passage") && nbrs("gulf_passage").includes("st_louis") && nbrs("gulf_passage").includes("far_cuba") && nbrs("far_cuba").includes("gulf_passage") && nbrs("far_cuba").includes("far_nicaragua"), "Gulf approach is St. Louis → Gulf Sealift → Cuba → Nicaragua");
 assert(!nbrs("st_louis").includes("far_cuba"), "Cuba is not a direct road from St. Louis");
@@ -719,6 +720,7 @@ assert(!/\n  scatterFeatures\(ctx, fields/.test(terrainSrc), "theater land does 
 assert(/function frameWorld/.test(uiSrc) && /function drawGlobe/.test(uiSrc) && /btn-zoom-world/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wheel and World button open a globe peek");
 assert(/WORLD_DESKS/.test(uiSrc) && /far_russia/.test(uiSrc) && /far_cuba/.test(uiSrc) && /far_nicaragua/.test(uiSrc) && /function drawWorldCorridors/.test(uiSrc), "world view washes the foreign desks without new roads");
 assert(/world-washes/.test(uiSrc) && /function drawWorldStrikes/.test(uiSrc) && /function frameNear/.test(uiSrc), "world coasts carry faction washes and unlabeled strike marks");
+assert(/r\.id === "gulf_passage"/.test(uiSrc) && /function frameGulf/.test(uiSrc), "Gulf Sealift marker is painted on the gulf before travel unlocks");
 assert(/=== "ca"/.test(uiSrc) && /=== "world"/.test(uiSrc), "look demo can frame California or the globe");
 assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land");
 assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");

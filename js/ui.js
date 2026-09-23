@@ -351,6 +351,7 @@ export async function boot(loaded) {
     if (view === "world") frameWorld();
     else if (view === "near") frameNear();
     else if (view === "ca") frameCa();
+    else if (view === "gulf") frameGulf();
     if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -1814,6 +1815,10 @@ function frameCa() {
   frameBox(20, 200, 300, 520);
 }
 
+function frameGulf() {
+  frameBox(470, 300, 760, 610);
+}
+
 function onMapPointerDown(e) {
   const canvas = $("map");
   const [sx, sy] = canvasPoint(e, canvas);
@@ -2550,7 +2555,7 @@ function drawMap() {
   }
   const o = drawMap.off.getContext("2d");
   o.imageSmoothingEnabled = false;
-  const painted = state.regions.filter((r) => theaterVisible(state, r));
+  const painted = state.regions.filter((r) => theaterVisible(state, r) || r.id === "gulf_passage");
   paintTheaterTerrain(o, state, {
     painted,
     selectedId: selectedRegion,
