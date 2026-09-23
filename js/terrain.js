@@ -488,7 +488,7 @@ function paintBase(fields, seasonId) {
         }
         continue;
       }
-      const grain = ((hash2(x, y) - 0.5) * 8) | 0;
+      const grain = ((hash2(x, y) - 0.5) * 3) | 0;
       let rgb = [198 + grain, 190 + grain, 152 + grain];
       let shore = 0;
       if (x === 0 || !land[i - 1]) shore += 1;
@@ -893,7 +893,9 @@ export function paintTheaterTerrain(o, state, opts) {
   });
   o.globalAlpha = 1;
   lines.forEach((line) => {
-    if (line.ring) strokePoly(o, line.ring, "#24180c", 1.5);
+    if (!line.ring) return;
+    strokePoly(o, line.ring, "#f7f3ea", 3.2);
+    strokePoly(o, line.ring, "#120e0a", 1.7);
   });
   lines.forEach((line) => {
     const wash = washOf(line.id);

@@ -2137,11 +2137,11 @@ function drawStateLabels(ctx) {
       ctx.fillStyle = "#f8d800";
       ctx.fillRect(px - 3, py - 3, a.w + 6, a.h + 6);
     }
-    ctx.fillStyle = "#000018";
+    ctx.fillStyle = "#000010";
     ctx.fillRect(px - 2, py - 2, a.w + 4, a.h + 4);
     ctx.fillStyle = "#f8f8f8";
     ctx.fillRect(px, py, a.w, a.h);
-    ctx.fillStyle = "#101050";
+    ctx.fillStyle = "#000010";
     ctx.fillText(a.id, px + 5, py + 16);
   });
   ctx.font = PX_FONT;
@@ -2326,7 +2326,7 @@ function mapViewRect() {
 }
 
 function hitsClaim(x, y, w, h) {
-  const pad = 10;
+  const pad = 22;
   return labelClaims.some(
     (c) => x < c.x + c.w + pad && x + w + pad > c.x && y < c.y + c.h + pad && y + h + pad > c.y
   );
@@ -2374,9 +2374,9 @@ function drawWorldDesks(ctx) {
       const boxW = tw + pad + 4;
       const boxH = fontPx * 1.35;
       const [bx, by] = placeNearPlate(boxW, boxH, [
-        [x - boxW / 2, y + r + 10 / mapView.z],
-        [x + r + 8 / mapView.z, y - boxH / 2],
-        [x - boxW - r - 8 / mapView.z, y - boxH / 2],
+        [x - boxW / 2, y + r + 22 / mapView.z],
+        [x + r + 16 / mapView.z, y - boxH / 2],
+        [x - boxW - r - 16 / mapView.z, y + r],
       ]);
       ctx.fillStyle = "#000018";
       ctx.fillRect(bx, by, boxW, boxH);
@@ -2422,9 +2422,9 @@ function drawHereChip(ctx, r, x, y) {
   let py = Math.round(y - ph - 12);
   if (nearLabels()) {
     [px, py] = placeNearPlate(pw, ph, [
-      [x - pw - 20, y - ph / 2],
-      [x - pw / 2, y - ph - 40],
-      [x + 24, y - ph / 2],
+      [x - pw - 36, y - ph / 2],
+      [x - pw / 2, y - ph - 56],
+      [x + 36, y - ph / 2],
     ]);
   } else {
     px = Math.max(4, Math.min(996 - pw, px));
@@ -2464,14 +2464,14 @@ function drawCityPlate(ctx, r, selected) {
   if (nearLabels()) {
     const prefs = selected
       ? [
-          [x - pw / 2, y + 34],
-          [x + 26, y + 8],
-          [x - pw - 18, y - ph / 2],
+          [x - pw / 2, y + 52],
+          [x + 40, y + 18],
+          [x - pw - 36, y - ph / 2],
         ]
       : [
-          [x - pw - 18, y - ph / 2],
-          [x - pw / 2, y + 30],
-          [x + 24, y - ph / 2],
+          [x - pw - 36, y - ph / 2],
+          [x - pw / 2, y + 48],
+          [x + 36, y - ph / 2],
         ];
     [px, py] = placeNearPlate(pw, ph, prefs);
   } else {

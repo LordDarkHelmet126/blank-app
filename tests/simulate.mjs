@@ -710,6 +710,7 @@ assert(!/st\.polygon\) fillPoly\(mx/.test(terrainSrc), "state rectangles are not
 assert(/function landRgb/.test(terrainSrc) && /stateLines/.test(terrainSrc), "biomes are texture; state lines are borders");
 assert(/id="legend-card" hidden/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "banner list is hidden and off the map");
 assert(/look-map/.test(uiSrc) && /body\.look-map \.side/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "look demo gives the theater the pane");
+assert(/body\.look-map \.map-caption \{[\s\S]*?text-overflow:\s*clip/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")) && /body\.look-map \.map-caption \{[\s\S]*?white-space:\s*normal/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "theater caption wraps instead of ellipsizing on the look pane");
 assert(/demo"\) === "start"[\s\S]{0,80}look-map/.test(uiSrc), "cold start hides the side column so the map leads");
 assert(/function drawCampaignRoads/.test(uiSrc) && /function roadEnds/.test(uiSrc), "short shared-border roads draw thicker than a one-pixel line");
 assert(/e\.key === "l"/.test(uiSrc) && /function toggleLegend/.test(uiSrc), "L toggles banners without covering the Gulf");

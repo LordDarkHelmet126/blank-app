@@ -258,11 +258,21 @@ body.look-map .objective span { font-size: 11px; }
 body.look-map #btn-coach { padding: 3px 8px; font-size: 10px; }
 body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 2px; gap: 2px; }
 body.look-map .map-wrap { flex: 1; min-height: 0; }
-body.look-map .map-head { padding: 2px 6px; gap: 6px; }
+body.look-map .map-head { padding: 2px 6px 3px; gap: 6px; flex-wrap: wrap; overflow: visible; }
 body.look-map .map-head .panel-title { font-size: 12px; }
 body.look-map .wash-key { font-size: 11px; gap: 6px; }
 body.look-map .wash-key i { width: 12px; height: 12px; margin-right: 3px; border-width: 2px; }
-body.look-map .map-caption { font-size: 10px; }
+body.look-map .map-caption {
+  flex: 1 0 100%;
+  order: 10;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: left;
+  padding: 1px 2px 0;
+}
 body.look-map .zoom-btns button,
 body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 .map-wrap .map-legend-card { flex: 0 0 auto; max-height: 72px; overflow: hidden; }
