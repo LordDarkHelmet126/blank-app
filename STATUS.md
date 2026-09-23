@@ -2,7 +2,21 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — With Gulf Sealift selected, NEXT names that node’s roads (St. Louis, Cuba), not the player’s Alaska neighbors. Cuba selected from Bethel still names St. Louis → Gulf Sealift. Look: `/?demo=look&focus=gulf`. No St. Louis–Cuba leap.
+**Last checkpoint:** 2026-09-23 — Phase board uses the locked labels. Yellow chip is now. `/?demo=phase`. No new roads or cities.
+
+## Phase board (locked labels → our gates)
+
+| Chip | When it is now | Gate already in the game |
+|---|---|---|
+| 1 Invasion Day | Always past at week 0. | Preface of phase 1. Bering + Rio Grande. Scar tag on Omaha only (Offutt glass). DC, Manhattan, Kansas City, and the Dakota sites are not nodes. |
+| 2 Stall | Phase 1, before the failed offensive and before CO / KS / MO fall. | Cheyenne → Kansas / Missouri. Winter dig-in. Yukon stays a road. The line does not cross into Canada. |
+| 3 Advent Crown | Phase 1, weeks 13–38, still before that breakout. | First offensive fails. Pressure on Seattle, Cheyenne, and St. Louis. |
+| 4 Prairie Fire | CO, KS, or MO is held, before the eight-state leader. | West-to-east on states already on the board. Ridge Runners is Front Range copy, not a new owner. Eight west-bloc states still name a national leader. |
+| 5 Gulf Hammer | National leader, Missouri not held yet. Subtitle: Long Rifle. | St. Louis is the gulf gate into Gulf Sealift. No new Gulf or Texas cities. |
+| 6 Border Fury | Missouri is held and Nebraska or Kansas is still short. | Clear the last states on this board. |
+| 7 Foreign desks | Every US state on this board is held. | Phase 3. Russia by Bering. Cuba and Nicaragua by Gulf Sealift. A sponsor may add Korea. |
+
+Ground words, document only (map paint unchanged): **occupied** (invader), **contested** (local banner, empty ground, or a split state), **held** (your color, or a liberated state). Those washes track the fronts above. They are not a new paint pass.
 
 ## How to run
 
@@ -53,9 +67,9 @@ Each territory has farm / mine / fuel / water / sun / weather / defense (0–3).
 
 Examples: Lincoln/Topeka **Farm 3**; Arctic Slope **Fuel 3 + Weather 3**; Klondike **Mine 3**; Grand Junction **Farm 3 + Sun 2**; Kodiak **Water 3 + Defense 2**.
 
-## Campaign (unchanged)
+## Campaign
 
-Phase 1 liberate states. Phase 2 at **8** west-bloc US states (national leader). Phase 3 Russia/Cuba/Nicaragua stubs, reached south only through the Gulf Sealift. Phase 4 sponsor can add Korea.
+Phase 1 is Stall, then Advent Crown. Phase 2 at **8** west-bloc US states is Prairie Fire — national leader — then Gulf Hammer and Border Fury while the states on this board are still short. Phase 3 Foreign desks: Russia by Bering, Cuba and Nicaragua only through Gulf Sealift. Phase 4 sponsor can add Korea. Graph stays 38 nodes / 118 directed roads.
 
 ## Counts (exact)
 

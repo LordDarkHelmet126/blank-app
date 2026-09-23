@@ -404,6 +404,7 @@ export function createNewGame(content, opts = {}) {
     unlockPhase: r.unlockPhase || 0,
     plate: r.plate || "below",
     geo: r.geo || { farm: 0, mine: 0, fuel: 0, water: 0, sun: 0, weather: 0, defense: 0 },
+    scar: r.scar || null,
     prefect: null,
     intel: 0,
   }));
@@ -1203,9 +1204,11 @@ export function geoOf(region) {
 export function geoTags(region) {
   const g = geoOf(region);
   const labels = GEO_LABELS();
-  return Object.keys(labels)
+  const tags = Object.keys(labels)
     .filter((k) => g[k] > 0)
     .map((k) => ({ id: k, label: labels[k], n: g[k] }));
+  if (region?.scar) tags.push({ id: "scar", label: "Scar", n: region.scar });
+  return tags;
 }
 
 export function geoYield(region, season) {
@@ -1704,7 +1707,184 @@ export function initCampaign(spec = {}) {
     },
     sponsorAdded: false,
     restoreWeek: null,
+    seen: ["invasion"],
+    loggedBeat: null,
   };
+}
+
+const BEAT_ORDER = ["invasion", "stall", "crown", "prairie", "gulf", "border", "desks"];
+
+const CHRONOLOGY_FALLBACK = [
+  {
+    id: "invasion",
+    mark: "1",
+    name: "Invasion Day",
+    phase: 1,
+    scan: "Bering + Rio Grande. Omaha scar only.",
+    coach: "Invasion Day is past. Bering and the Rio Grande. Omaha carries the only scar tag.",
+    tick: "Invasion Day is past. Omaha keeps the scar tag.",
+  },
+  {
+    id: "stall",
+    mark: "2",
+    name: "Stall",
+    phase: 1,
+    scan: "Cheyenne to Kansas and Missouri. No Canada.",
+    coach: "Stall. Winter dig-in from Cheyenne into Kansas and Missouri. The line never crosses into Canada.",
+    tick: "Stall. Winter dig-in from Cheyenne toward Kansas and Missouri.",
+  },
+  {
+    id: "crown",
+    mark: "3",
+    name: "Advent Crown",
+    phase: 1,
+    scan: "First offensive fails. Seattle, Cheyenne, St. Louis.",
+    coach: "Advent Crown. The first offensive fails and stalls. Pressure sits on Seattle, Cheyenne, and St. Louis.",
+    tick: "Advent Crown. The first offensive fails. Seattle, Cheyenne, and St. Louis take the pressure.",
+  },
+  {
+    id: "prairie",
+    mark: "4",
+    name: "Prairie Fire",
+    phase: 2,
+    scan: "West to east. Ridge Runners.",
+    coach: "Prairie Fire. Ridge Runners break out west to east on the states already on this board.",
+    tick: "Prairie Fire. Ridge Runners move with the west-to-east breakout.",
+  },
+  {
+    id: "gulf",
+    mark: "5",
+    name: "Gulf Hammer",
+    phase: 2,
+    subtitle: "Long Rifle",
+    scan: "St. Louis opens Gulf Sealift.",
+    coach: "Gulf Hammer. Long Rifle. The gulf gate is St. Louis, then Gulf Sealift. No new coast cities.",
+    tick: "Gulf Hammer. Long Rifle. St. Louis is the gulf gate.",
+  },
+  {
+    id: "border",
+    mark: "6",
+    name: "Border Fury",
+    phase: 2,
+    scan: "Clear the states on this board.",
+    coach: "Border Fury. Clear Nebraska, Kansas, and Missouri — the last states on this board.",
+    tick: "Border Fury. Clear the last states on this board.",
+  },
+  {
+    id: "desks",
+    mark: "7",
+    name: "Foreign desks",
+    phase: 3,
+    scan: "Russia via Bering. Cuba via Gulf Sealift.",
+    coach: "Foreign desks. Russia by the Bering road. Cuba and Nicaragua by Gulf Sealift.",
+    tick: "Foreign desks. Russia by the Bering road. Cuba and Nicaragua by Gulf Sealift.",
+  },
+];
+
+function chronologyRows(state) {
+  const spec = state?.campaignSpec?.chronology?.rows;
+  const rows = Array.isArray(spec) && spec.length ? spec : CHRONOLOGY_FALLBACK;
+  return rows.map((r) => ({
+    id: r.id,
+    mark: String(r.mark ?? ""),
+    name: r.name,
+    phase: r.phase || 1,
+    scan: r.scan || "",
+    subtitle: r.subtitle || "",
+    coach: r.coach || r.scan || "",
+    tick: r.tick || r.scan || r.name,
+  }));
+}
+
+function currentBeatId(state, camp) {
+  const lib = new Set(camp.liberated || []);
+  const has = (id) => lib.has(id);
+  const west = camp.westBloc || [];
+  const east = camp.eastApproach || ["NE", "KS", "MO"];
+  const westDone = !!camp.nationalLeader || (west.length > 0 && west.every(has));
+  const eastDone = east.length > 0 && east.every(has);
+  const us = stateControl(state).filter((s) => s.kind === "us");
+  const conusDone = us.length > 0 && us.every((s) => s.liberated);
+  const prairieOn = has("CO") || has("KS") || has("MO") || westDone || (camp.phase || 1) >= 2;
+  const week = state.week || 0;
+  if (conusDone) return "desks";
+  if (westDone && has("MO") && !conusDone) return "border";
+  if (westDone && !eastDone) return "gulf";
+  if (prairieOn && !westDone) return "prairie";
+  if (!prairieOn && (camp.phase || 1) < 2 && week >= 13 && week < 39) return "crown";
+  return "stall";
+}
+
+export function campaignBeat(state) {
+  const camp = ensureCampaign(state);
+  const rows = chronologyRows(state);
+  const nowId = currentBeatId(state, camp);
+  const order = BEAT_ORDER;
+  const nowI = order.indexOf(nowId);
+  const week = state.week || 0;
+  const painted = rows.map((row) => {
+    const rowI = order.indexOf(row.id);
+    let status = "next";
+    if (row.id === "invasion") status = "past";
+    else if (row.id === nowId) status = "now";
+    else if (row.id === "crown" && nowId === "stall" && week >= 39) status = "past";
+    else if (rowI >= 0 && nowI >= 0 && rowI < nowI) status = "past";
+    let scan = row.scan;
+    if (row.id === "desks" && camp.sponsorAdded) {
+      scan = "Korea is open. Russia stays on the Bering road. Cuba stays on Gulf Sealift.";
+    }
+    return { ...row, status, scan };
+  });
+  const now = painted.find((r) => r.status === "now") || painted.find((r) => r.id === "stall") || painted[0];
+  return { now, rows: painted, phase: camp.phase || 1 };
+}
+
+function noteBeat(state, notes) {
+  const camp = ensureCampaign(state);
+  const beat = campaignBeat(state);
+  const id = beat.now?.id;
+  if (!id || camp.loggedBeat === id) return;
+  camp.loggedBeat = id;
+  if (beat.now.tick) notes.push(beat.now.tick);
+}
+
+export function springPushCard(state, seasonChanged) {
+  if (!seasonChanged || state._season?.id !== "spring") return null;
+  const camp = ensureCampaign(state);
+  if (!camp.seen) camp.seen = ["invasion"];
+  if (camp.seen.includes("spring")) return null;
+  if ((camp.phase || 1) >= 2 || camp.nationalLeader) return null;
+  if ((camp.liberated || []).some((id) => id === "CO" || id === "KS" || id === "MO")) return null;
+  camp.seen.push("spring");
+  const row = chronologyRows(state).find((r) => r.id === "crown");
+  return {
+    kind: "season",
+    id: "season",
+    title: row?.name || "Advent Crown",
+    text: row?.coach || "Advent Crown. The first offensive fails. Seattle, Cheyenne, and St. Louis take the pressure.",
+    season: "spring",
+  };
+}
+
+export function holdWord(state, region) {
+  if (!region) return "contested";
+  const p = playerOf(state);
+  if (p?.faction && region.owner === p.faction) return "held";
+  if (!region.owner) return "contested";
+  const fac = factionOf(state, region.owner);
+  if (fac?.alignment === "invader") return "occupied";
+  return "contested";
+}
+
+export function stateHoldWord(state, row) {
+  if (!row) return "contested";
+  if (row.liberated) return "held";
+  const terrs = row.territories || [];
+  if (!terrs.length) return "contested";
+  const words = terrs.map((t) => holdWord(state, regionOf(state, t.id)));
+  if (words.every((w) => w === "held")) return "held";
+  if (words.every((w) => w === "occupied")) return "occupied";
+  return "contested";
 }
 
 export function ensureCampaign(state) {
@@ -1787,13 +1967,14 @@ export function tickCampaign(state) {
     p.title = "National Leader";
     state.gold += 24;
     state.food += 16;
-    notes.push("West bloc is enough. You are named national leader of the restored United States. A foreign war council sits.");
+    notes.push("Prairie Fire. West bloc is enough — you are named national leader.");
     camp.foreign.forEach((f) => {
       f.unlocked = true;
     });
     camp.phase = 3;
-    notes.push("Phase 3: Far-shore desks (Russia, Cuba, Nicaragua) are on the slate.");
+    notes.push("Foreign desks are on the slate: Russia by the Bering road, Cuba and Nicaragua by Gulf Sealift.");
   }
+  noteBeat(state, notes);
   camp.foreign.forEach((f) => {
     const node = regionOf(state, f.id);
     if (node && p.faction && node.owner === p.faction) f.held = true;
@@ -1829,7 +2010,9 @@ export function fireSponsor(state) {
   }
   const node = regionOf(state, spec.id);
   if (node) node.unlockPhase = 4;
-  const line = spec.copy || "A sponsor intervenes. A new country is now a takeable front.";
+  const line = spec.copy
+    ? `Foreign desks. ${spec.copy} Korea is a takeable front. The Bering road and Gulf Sealift stay the only approaches.`
+    : "Foreign desks. A sponsor intervenes. Korea is now a takeable front.";
   pushLog(state, line, "alert");
   return line;
 }
@@ -2425,6 +2608,8 @@ export function endWeek(state, content) {
   const seasonChanged = state._season?.id !== prevSeason;
   const life = tickLife(state, { year, seasonChanged });
   const chronicle = buildChronicle(state, { year, seasonChanged, lifeEvents: life.events });
+  const spring = springPushCard(state, seasonChanged);
+  if (spring) chronicle.push(spring);
   tryUnlockTech(state, content, true);
   refreshMissionBoard(state);
   state.ap = apMax(state);

@@ -72,6 +72,9 @@ import {
   isAdjacent,
   approachRoads,
   geoTags,
+  campaignBeat,
+  holdWord,
+  stateHoldWord,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 
@@ -205,6 +208,20 @@ export async function boot(loaded) {
     hideModal({ flush: false });
     render();
     showModal(weekReportHtml(state.weekReport || []), { kind: "week" });
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "phase") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    selectedRegion = "bethel";
+    coachOn = false;
+    hideModal();
+    render();
     afterFonts();
     return;
   }
@@ -609,6 +626,11 @@ function hideModal(opts = {}) {
 
 const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
 
+function phaseName(st) {
+  if (!st) return "Stall";
+  return campaignBeat(st).now?.name || "Stall";
+}
+
 function nextHint(st) {
   if (!st || st.gameOver) return "Campaign closed.";
   if (st.phase === "duel") {
@@ -624,36 +646,55 @@ function nextHint(st) {
   const jobs = openMissions(st);
   const localJob = jobs.find((j) => j.regionId === p.region);
   const wait = appointCandidates(st);
+  const beat = phaseName(st);
   if (sel && here && sel.id !== here.id && !isAdjacent(st, here, sel)) {
     const via = approachRoads(st, here, sel).join(", ");
-    return `NEXT: Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Take an adjacent road${via ? ` (${via})` : ""} first.`;
+    return `NEXT · ${beat}: Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Take an adjacent road${via ? ` (${via})` : ""} first.`;
   }
   if (sel && here && sel.id !== here.id && isAdjacent(st, here, sel)) {
-    return `NEXT: ${sel.short} is adjacent — Military → Travel or March. No leaping past it.`;
+    return `NEXT · ${beat}: ${sel.short} is adjacent — Military → Travel or March. No leaping past it.`;
   }
-  if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.";
-  if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
-  if (gens.length === 0) return `NEXT: ${HIRE_LINE}`;
+  if (!p.faction) return `NEXT · ${beat}: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.`;
+  if (st.ap <= 0) return `NEXT · ${beat}: End Week. Next week may bring ${weekTease(st)}.`;
+  if (gens.length === 0) return `NEXT · ${beat}: ${HIRE_LINE}`;
   if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
-    return `NEXT: Plot → Hire (${gens.length}/5). Same path as the ADD chairs.`;
+    return `NEXT · ${beat}: Plot → Hire (${gens.length}/5). Same path as the ADD chairs.`;
   }
   if (gens.length < MAX_GENERALS && wait.length) {
-    return `NEXT: Plot → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
+    return `NEXT · ${beat}: Plot → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
   }
-  if (localJob) return `NEXT: ${st.ap} AP left — Military → Side Mission: ${localJob.name}, or one more tile.`;
-  if (jobs.length) return `NEXT: ${st.ap} AP left — ${jobs.length} jobs on the board, or one more tile.`;
+  if (localJob) return `NEXT · ${beat}: ${st.ap} AP left — Military → Side Mission: ${localJob.name}, or one more tile.`;
+  if (jobs.length) return `NEXT · ${beat}: ${st.ap} AP left — ${jobs.length} jobs on the board, or one more tile.`;
   const rivals = challengeCandidates(st);
-  if (rivals.length) return `NEXT: ${st.ap} AP left — Plot → Challenge ${rivals[0].name}, or one more tile.`;
+  if (rivals.length) return `NEXT · ${beat}: ${st.ap} AP left — Plot → Challenge ${rivals[0].name}, or one more tile.`;
   if (here && ownedHere(st, here) && here.garrison < 24) {
-    return `NEXT: ${st.ap} AP left — Drill, or one more tile before the week turns.`;
+    return `NEXT · ${beat}: ${st.ap} AP left — Drill, or one more tile before the week turns.`;
   }
-  if (st.ap > 0) return `NEXT: ${st.ap} AP left — one more tile before the week turns.`;
-  return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
+  if (st.ap > 0) return `NEXT · ${beat}: ${st.ap} AP left — one more tile before the week turns.`;
+  return `NEXT · ${beat}: End Week. Next week may bring ${weekTease(st)}.`;
 }
 
 function ownedHere(st, here) {
   const p = playerOf(st);
   return !!(p.faction && here && here.owner === p.faction);
+}
+
+function phaseBoardHtml(rows) {
+  return rows
+    .map((row) => {
+      const sub = row.subtitle ? `<small>${esc(row.subtitle)}</small>` : "";
+      const scan = row.status === "now" ? `<small>${esc(row.scan)}</small>` : "";
+      return `<p class="phase-chip ${row.status}"><b>${row.status.toUpperCase()} · ${esc(row.mark)}</b><strong>${esc(row.name)}</strong>${sub}${scan}</p>`;
+    })
+    .join("");
+}
+
+function renderPhaseBoard() {
+  const el = $("phase-board");
+  if (!el || !state) return;
+  const beat = campaignBeat(state);
+  el.hidden = false;
+  el.innerHTML = phaseBoardHtml(beat.rows);
 }
 
 function renderObjective() {
@@ -663,8 +704,9 @@ function renderObjective() {
     return;
   }
   bar.hidden = false;
-  $("obj-kicker").textContent = `WEEK ${state.week} · AP ${state.ap}/${apMax(state)}`;
+  $("obj-kicker").textContent = `NEXT · ${phaseName(state).toUpperCase()}`;
   $("obj-text").textContent = nextHint(state);
+  renderPhaseBoard();
   const end = $("btn-end");
   if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
 }
@@ -681,7 +723,12 @@ function openCoach() {
   parkedCoach = false;
   $("coach").hidden = false;
   $("coach-title").textContent = step.title;
-  $("coach-text").textContent = step.body;
+  const beat = state ? campaignBeat(state).now : null;
+  const body =
+    step.id === "city" && beat
+      ? `${step.body} Phase board now: ${beat.name}. ${beat.scan}`
+      : step.body;
+  $("coach-text").textContent = body;
   $("coach-next").textContent = coachStep >= COACH_STEPS.length - 1 ? "Start playing" : "Got it";
   applyCoachRing();
 }
@@ -750,6 +797,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
+      <li><strong>Phase board:</strong> Yellow chip is now. Invasion Day, Stall, Advent Crown, Prairie Fire, Gulf Hammer, Border Fury, Foreign desks. Occupied / contested / held is who owns the ground. No leaping.</li>
       <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
@@ -875,19 +923,23 @@ function missionsHtml() {
 function campaignHtml() {
   if (!state) return `<p>No game.</p>`;
   const camp = ensureCampaign(state);
+  const beat = campaignBeat(state);
   const here = regionOf(state, playerOf(state).region);
   const blocks = stateControl(state)
     .map((s) => {
-      const mark = s.liberated ? "LIB" : `${s.held}/${s.need} key · ${s.heldTerr}/${s.totalTerr} terr`;
+      const word = stateHoldWord(state, s).toUpperCase();
+      const mark = `${word} · ${s.held}/${s.need} key · ${s.heldTerr}/${s.totalTerr} terr`;
       const terr = (s.territories || [])
         .map((t) => {
+          const region = regionOf(state, t.id);
+          const own = holdWord(state, region).toUpperCase();
           const tags = (t.geo || []).map((g) => g.label).join("/");
           const route = t.here ? "here" : t.adjacent ? "road open" : "route locked";
-          return `<small>${esc(t.short)}${t.key ? " ★" : ""} · ${tags || "—"} · ${route}</small>`;
+          return `<small>${esc(t.short)}${t.key ? " ★" : ""} · ${own} · ${tags || "—"} · ${route}</small>`;
         })
         .join("");
       return `<div class="card" style="margin:8px 0">
-        <h2>${esc(s.name)} · ${esc(s.id)}</h2>
+        <h2>${esc(s.name)} · ${esc(s.id)} · ${word}</h2>
         <p>${esc(mark)}</p>
         ${terr}
       </div>`;
@@ -895,19 +947,25 @@ function campaignHtml() {
     .join("");
   const foreign = (camp.foreign || [])
     .map((f) => {
-      const lock = f.unlocked ? (f.held ? "held" : "open") : `phase ${f.unlockPhase}`;
+      const lock = !f.unlocked ? `phase ${f.unlockPhase}` : f.held ? "held" : "contested";
       return `<p>${esc(f.name)} — ${lock}</p>`;
     })
     .join("");
+  const board = beat.rows
+    .map((row) => `<p class="phase-chip ${row.status}"><b>${row.status.toUpperCase()} · ${esc(row.mark)}</b><strong>${esc(row.name)}</strong>${row.subtitle ? `<small>${esc(row.subtitle)}</small>` : ""}<small>${esc(row.scan)}</small></p>`)
+    .join("");
   return `
+    <h2>Phase board · ${esc(beat.now.name)}</h2>
+    <p class="muted">Yellow chip is now. P# is the campaign gate. Occupied / contested / held tracks liberation. No new roads.</p>
+    <div class="phase-board phase-board-modal">${board}</div>
     <h2>States → territories</h2>
-    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Liberate a state by holding ★ key territories. No leaping — only adjacent roads. Farm/mine/fuel/water/sun/weather/defense change weekly yields.</p>
+    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}) · ${holdWord(state, here).toUpperCase()}. Liberate a state by holding ★ key territories. No leaping — only adjacent roads.</p>
     <div class="city-grid">${stateControl(state)
-      .map((s) => `<span class="pill"><span>${esc(s.id)}</span><strong>${s.liberated ? "LIB" : `${s.held}/${s.need}`}</strong></span>`)
+      .map((s) => `<span class="pill"><span>${esc(s.id)}</span><strong>${stateHoldWord(state, s).toUpperCase()}</strong></span>`)
       .join("")}</div>
     ${blocks}
     <h2>Foreign war council</h2>
-    <p class="muted">After Phase 2 the far-shore desks unlock. A sponsor may add another country as a takeable front.</p>
+    <p class="muted">Prairie Fire names a national leader. Foreign desks open Russia by Bering and Cuba by Gulf Sealift. A sponsor may add Korea.</p>
     ${foreign || "<p class='muted'>No foreign desks yet.</p>"}
     <button type="button" data-close>Close</button>`;
 }
@@ -1230,7 +1288,7 @@ function cityHtml() {
       <div class="oversee-meta">
         <p class="oversee-ap">AP <strong>${state.ap}</strong>/${apMax(state)}</p>
         <h2><i class="banner-tick" style="background:${esc(f?.color || "#607838")}"></i>${esc(r.stateCode || "—")} → ${esc(r.short)}</h2>
-        <p class="muted">${esc(p.name)} · ${kind} · ${f ? esc(f.short) : "OPEN"}</p>
+        <p class="muted">${esc(p.name)} · ${kind} · ${holdWord(state, r).toUpperCase()}${f ? ` · ${esc(f.short)}` : ""}</p>
       </div>
     </div>
     <div class="city-body">
@@ -1251,7 +1309,10 @@ function cityHtml() {
         const adj = here && isAdjacent(state, here, r);
         const at = here?.id === r.id;
         const route = at ? "You are here" : adj ? "Adjacent road open" : "Route locked — not adjacent";
-        const lib = row?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode || "—"} ${row ? `${row.heldTerr}/${row.totalTerr} territories · ${row.held}/${row.need} key` : ""}`;
+        const word = row ? stateHoldWord(state, row).toUpperCase() : holdWord(state, r).toUpperCase();
+        const lib = row?.liberated
+          ? `${word} · Liberated ${r.stateCode}`
+          : `${word} · ${r.stateCode || "—"} ${row ? `${row.heldTerr}/${row.totalTerr} territories · ${row.held}/${row.need} key` : ""}`;
         return `<p class="plus">${esc(lib)}</p><p class="minus">${esc(route)}</p>`;
       })()}
       ${legendBoard(state)
@@ -1714,8 +1775,9 @@ function renderMapCaption() {
   const adj = r && here && isAdjacent(state, here, r);
   const at = r && here && r.id === here.id;
   const route = !r ? "" : at ? "here" : adj ? "adjacent" : "route locked";
-  const hold = row ? `${row.heldTerr}/${row.totalTerr} terr · ${row.held}/${row.need} key` : "";
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${route} · phase ${camp.phase}`;
+  const hold = row ? `${stateHoldWord(state, row)} · ${row.heldTerr}/${row.totalTerr} terr · ${row.held}/${row.need} key` : "";
+  const beat = campaignBeat(state);
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${beat.now?.name || "Stall"} · phase ${camp.phase} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${route}`;
 }
 
 function cityXY(r) {
