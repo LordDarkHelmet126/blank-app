@@ -326,6 +326,7 @@ export async function boot(loaded) {
     return;
   }
   if (params.get("demo") === "start") {
+    document.body.classList.add("look-map");
     state = createNewGame(content, {
       name: "Alex Rourke",
       background: "scout",
@@ -1807,7 +1808,7 @@ function frameWorld() {
 function frameNear() {
   mapView.z = 0.56;
   mapView.x = 48;
-  mapView.y = 18;
+  mapView.y = 72;
   drawMap();
 }
 
@@ -2308,14 +2309,55 @@ function drawWorldStrikes(ctx) {
   });
 }
 
+function nearLabels() {
+  return mapView.z > 0.4 && mapView.z < 0.85;
+}
+
+let labelClaims = [];
+
+function mapViewRect() {
+  const z = mapView.z || 1;
+  return {
+    x0: -mapView.x / z + 14 / z,
+    y0: -mapView.y / z + 16 / z,
+    x1: (1000 - mapView.x) / z - 14 / z,
+    y1: (620 - mapView.y) / z - 14 / z,
+  };
+}
+
+function hitsClaim(x, y, w, h) {
+  const pad = 10;
+  return labelClaims.some(
+    (c) => x < c.x + c.w + pad && x + w + pad > c.x && y < c.y + c.h + pad && y + h + pad > c.y
+  );
+}
+
+function placeNearPlate(pw, ph, candidates) {
+  const v = mapViewRect();
+  for (const [x0, y0] of candidates) {
+    const x = Math.max(v.x0, Math.min(v.x1 - pw, x0));
+    const y = Math.max(v.y0, Math.min(v.y1 - ph, y0));
+    if (!hitsClaim(x, y, pw, ph)) {
+      labelClaims.push({ x, y, w: pw, h: ph });
+      return [Math.round(x), Math.round(y)];
+    }
+  }
+  const x = Math.max(v.x0, Math.min(v.x1 - pw, candidates[0][0]));
+  const y = Math.max(v.y0, Math.min(v.y1 - ph, candidates[0][1]));
+  labelClaims.push({ x, y, w: pw, h: ph });
+  return [Math.round(x), Math.round(y)];
+}
+
 function drawWorldDesks(ctx) {
   if (mapView.z > 0.92) return;
-  const fontPx = Math.max(18, Math.round(12 / mapView.z));
+  const near = nearLabels();
+  const fontPx = near ? Math.max(16, Math.round(13 / mapView.z)) : Math.max(18, Math.round(12 / mapView.z));
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.textBaseline = "middle";
   WORLD_DESKS.forEach((d) => {
     const node = regionOf(state, d.id);
     if (!node) return;
+    if (near && d.id === "gulf_passage") return;
     const [x, y] = projectLL(d.lon, d.lat);
     const r = Math.max(8, 5 / mapView.z);
     ctx.beginPath();
@@ -2328,6 +2370,20 @@ function drawWorldDesks(ctx) {
     const label = node.short;
     const tw = ctx.measureText(label).width;
     const pad = 6 / mapView.z;
+    if (near && (d.id === "far_cuba" || d.id === "far_nicaragua")) {
+      const boxW = tw + pad + 4;
+      const boxH = fontPx * 1.35;
+      const [bx, by] = placeNearPlate(boxW, boxH, [
+        [x - boxW / 2, y + r + 10 / mapView.z],
+        [x + r + 8 / mapView.z, y - boxH / 2],
+        [x - boxW - r - 8 / mapView.z, y - boxH / 2],
+      ]);
+      ctx.fillStyle = "#000018";
+      ctx.fillRect(bx, by, boxW, boxH);
+      ctx.fillStyle = "#f8d800";
+      ctx.fillText(label, bx + 4, by + boxH / 2);
+      return;
+    }
     const lx = x + r + 4 / mapView.z;
     const ly = y;
     ctx.fillStyle = "#000018";
@@ -2364,9 +2420,17 @@ function drawHereChip(ctx, r, x, y) {
   const ph = 28;
   let px = Math.round(x - pw / 2);
   let py = Math.round(y - ph - 12);
-  px = Math.max(4, Math.min(996 - pw, px));
-  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
-  if (py < 4) py = Math.round(y + 18);
+  if (nearLabels()) {
+    [px, py] = placeNearPlate(pw, ph, [
+      [x - pw - 20, y - ph / 2],
+      [x - pw / 2, y - ph - 40],
+      [x + 24, y - ph / 2],
+    ]);
+  } else {
+    px = Math.max(4, Math.min(996 - pw, px));
+    [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+    if (py < 4) py = Math.round(y + 18);
+  }
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 3, py - 3, pw + 6, ph + 6);
   ctx.fillStyle = "#f8f8f8";
@@ -2397,10 +2461,25 @@ function drawCityPlate(ctx, r, selected) {
   const ph = 32;
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
-  px = Math.max(4, Math.min(996 - pw, px));
-  if (py < 4) py = Math.round(y + 20);
-  if (py + ph > 616) py = Math.round(y - 44);
-  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+  if (nearLabels()) {
+    const prefs = selected
+      ? [
+          [x - pw / 2, y + 34],
+          [x + 26, y + 8],
+          [x - pw - 18, y - ph / 2],
+        ]
+      : [
+          [x - pw - 18, y - ph / 2],
+          [x - pw / 2, y + 30],
+          [x + 24, y - ph / 2],
+        ];
+    [px, py] = placeNearPlate(pw, ph, prefs);
+  } else {
+    px = Math.max(4, Math.min(996 - pw, px));
+    if (py < 4) py = Math.round(y + 20);
+    if (py + ph > 616) py = Math.round(y - 44);
+    [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+  }
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
   if (selected) {
@@ -2421,24 +2500,82 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillText(garr, px + pw - 12 - garrW, py + 23);
 }
 
+function roadEnds(a, b) {
+  if (mapView.z < 0.45) return [a, b];
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  if (len >= 150) return [a, b];
+  const extra = Math.min(32, (150 - len) * 0.5);
+  const ux = dx / len;
+  const uy = dy / len;
+  return [
+    [a[0] - ux * extra, a[1] - uy * extra],
+    [b[0] + ux * extra, b[1] + uy * extra],
+  ];
+}
+
 function drawFrontSeg(ctx, a, b) {
+  const [p, q] = roadEnds(a, b);
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const thick = mapView.z >= 0.45 && len < 160;
   ctx.save();
   ctx.lineCap = "butt";
   ctx.strokeStyle = "#1a0808";
-  ctx.lineWidth = 7;
+  ctx.lineWidth = thick ? 11 : 7;
   ctx.setLineDash([]);
   ctx.beginPath();
-  ctx.moveTo(a[0], a[1]);
-  ctx.lineTo(b[0], b[1]);
+  ctx.moveTo(p[0], p[1]);
+  ctx.lineTo(q[0], q[1]);
   ctx.stroke();
   ctx.strokeStyle = "#f8f8f8";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = thick ? 5 : 3;
   ctx.setLineDash([8, 7]);
   ctx.beginPath();
-  ctx.moveTo(a[0], a[1]);
-  ctx.lineTo(b[0], b[1]);
+  ctx.moveTo(p[0], p[1]);
+  ctx.lineTo(q[0], q[1]);
   ctx.stroke();
   ctx.restore();
+}
+
+const CAMPAIGN_ROADS = [
+  ["spokane", "portland"],
+  ["spokane", "bend"],
+  ["boise", "missoula"],
+  ["boise", "jackson"],
+  ["cheyenne", "salt_lake"],
+  ["cheyenne", "lincoln"],
+  ["denver", "lincoln"],
+  ["reno", "salt_lake"],
+  ["lincoln", "wichita"],
+  ["topeka", "st_louis"],
+];
+
+function drawCampaignRoads(ctx) {
+  if (mapView.z < 0.45) return;
+  CAMPAIGN_ROADS.forEach(([aId, bId]) => {
+    const a = regionOf(state, aId);
+    const b = regionOf(state, bId);
+    if (!a || !b || !isAdjacent(state, a, b)) return;
+    const [pa, pb] = [cityXY(a), cityXY(b)];
+    const [p, q] = roadEnds(pa, pb);
+    const len = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1;
+    ctx.save();
+    ctx.lineCap = "butt";
+    ctx.strokeStyle = "#1a0808";
+    ctx.lineWidth = len < 100 ? 11 : 8;
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(q[0], q[1]);
+    ctx.stroke();
+    ctx.strokeStyle = "#f8f4e8";
+    ctx.lineWidth = len < 100 ? 5 : 4;
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(q[0], q[1]);
+    ctx.stroke();
+    ctx.restore();
+  });
 }
 
 function drawAxis(ctx, a, b, color) {
@@ -2572,6 +2709,7 @@ function theaterLandPlate() {
 }
 
 function drawMap() {
+  labelClaims = [];
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -2605,6 +2743,7 @@ function drawMap() {
     const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
     drawPixelRoadFull(ctx, rd.a, rd.b, on);
   });
+  drawCampaignRoads(ctx);
   drawStallFront(ctx);
   drawInvasionAxes(ctx);
   drawNukeScars(ctx);

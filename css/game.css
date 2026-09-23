@@ -241,8 +241,30 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 body.look-map .side,
 body.look-map .court-strip,
 body.look-map .dock { display: none; }
-body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 4px; }
+body.look-map #app { overflow: hidden; }
+body.look-map .status-bar { position: static; }
+body.look-map .cal-cluster { min-width: 0; padding: 2px 8px; gap: 6px; }
+body.look-map .brand-mark { width: 22px; height: 22px; border-width: 3px; font-size: 10px; }
+body.look-map .status-bar h1 { font-size: 13px; }
+body.look-map .tag { font-size: 10px; line-height: 1.25; }
+body.look-map .meter { min-width: 0; padding: 1px 6px; }
+body.look-map .meter span,
+body.look-map .meter strong { font-size: 10px; }
+body.look-map .top-actions button { padding: 4px 8px; font-size: 10px; }
+body.look-map .objective { margin: 2px 4px 0; padding: 2px 8px; gap: 8px; }
+body.look-map .objective-copy { line-height: 1.2; display: flex; gap: 8px; align-items: baseline; }
+body.look-map .objective strong { display: inline; margin: 0; font-size: 11px; }
+body.look-map .objective span { font-size: 11px; }
+body.look-map #btn-coach { padding: 3px 8px; font-size: 10px; }
+body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 2px; gap: 2px; }
 body.look-map .map-wrap { flex: 1; min-height: 0; }
+body.look-map .map-head { padding: 2px 6px; gap: 6px; }
+body.look-map .map-head .panel-title { font-size: 12px; }
+body.look-map .wash-key { font-size: 11px; gap: 6px; }
+body.look-map .wash-key i { width: 12px; height: 12px; margin-right: 3px; border-width: 2px; }
+body.look-map .map-caption { font-size: 10px; }
+body.look-map .zoom-btns button,
+body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 .map-wrap .map-legend-card { flex: 0 0 auto; max-height: 72px; overflow: hidden; }
 .map-legend {
   display: flex;

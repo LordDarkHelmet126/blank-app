@@ -710,6 +710,8 @@ assert(!/st\.polygon\) fillPoly\(mx/.test(terrainSrc), "state rectangles are not
 assert(/function landRgb/.test(terrainSrc) && /stateLines/.test(terrainSrc), "biomes are texture; state lines are borders");
 assert(/id="legend-card" hidden/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "banner list is hidden and off the map");
 assert(/look-map/.test(uiSrc) && /body\.look-map \.side/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "look demo gives the theater the pane");
+assert(/demo"\) === "start"[\s\S]{0,80}look-map/.test(uiSrc), "cold start hides the side column so the map leads");
+assert(/function drawCampaignRoads/.test(uiSrc) && /function roadEnds/.test(uiSrc), "short shared-border roads draw thicker than a one-pixel line");
 assert(/e\.key === "l"/.test(uiSrc) && /function toggleLegend/.test(uiSrc), "L toggles banners without covering the Gulf");
 assert(/drawStallFront/.test(uiSrc) && /isAdjacent\(state, prev, r\)/.test(uiSrc), "stall line follows existing roads only");
 assert(/OCCUPIED_EAST/.test(uiSrc) && /#9a3b3b/.test(uiSrc) && !/OCCUPIED_EAST[\s\S]{0,80}CA /.test(uiSrc), "east of the stall washes occupied; CA stays bare");
