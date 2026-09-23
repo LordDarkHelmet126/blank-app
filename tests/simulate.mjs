@@ -1233,6 +1233,8 @@ assert(/function frameWorld/.test(uiSrc) && /function drawGlobe/.test(uiSrc) && 
 assert(/WORLD_DESKS/.test(uiSrc) && /far_russia/.test(uiSrc) && /far_cuba/.test(uiSrc) && /far_nicaragua/.test(uiSrc) && /function drawWorldCorridors/.test(uiSrc), "world view washes the foreign desks without new roads");
 assert(/world-washes/.test(uiSrc) && /function drawWorldStrikes/.test(uiSrc) && /function frameNear/.test(uiSrc), "world coasts carry faction washes and unlabeled strike marks");
 assert(/r\.id === "gulf_passage"/.test(uiSrc) && /function frameGulf/.test(uiSrc), "Gulf Sealift marker is painted on the gulf before travel unlocks");
+assert(/function gulfDeskCaptionOn/.test(uiSrc) && /seaGate && gulfDeskCaptionOn\(\)/.test(uiSrc), "Gulf Sealift city plate yields when the desk caption is already up");
+assert(/seaGate \? "" : \(known \? String\(r\.garrison\) : "\?"\)/.test(uiSrc), "Gulf Sealift plate does not add a garrison question chip");
 assert(/=== "ca"/.test(uiSrc) && /=== "world"/.test(uiSrc), "look demo can frame California or the globe");
 assert(/function frameBering/.test(uiSrc) && /function frameCuba/.test(uiSrc) && /=== "bering"/.test(uiSrc) && /=== "cuba"/.test(uiSrc), "look demo can frame the Bering and Cuba foreign theaters");
 assert(/focus = "bering"/.test(uiSrc) && /focus = "cuba"/.test(uiSrc) && /function topoRgb/.test(uiSrc) && /178\.5, 65\.3/.test(uiSrc), "foreign close-ups keep relief, desk captions, and the locked sea paths in frame");
