@@ -2,7 +2,15 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Look-demo paint: Bethel here-chip stays in AK; thicker roads/plates; stronger ownership wash.
+**Last checkpoint:** 2026-09-23 — Roster ladder: friends join as players, then promote to officer and general.
+
+## Roster ladder
+
+Dock → **Roster** (same screen as Officers; also the Court strip button). Create a friend with a name, title, and an original face. They start as **Player**. Promote to **Officer**, then **General**. The roster confirms the rank change and lists each rung. Promoted officers in your city can be chosen for a yard duel or to lead a field march.
+
+**Playtest:** `/?demo=roster` (alias `/?demo=ladder`). One screen: create a friend, promote Sam Ivers player → officer → general, and read the ladder. Optional `promote=1` opens with Sam already an officer; `promote=2` opens with Sam already a general.
+
+Campaign adjacency, leap rules, and the theater map are unchanged.
 
 ## How to run
 

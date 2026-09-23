@@ -971,6 +971,116 @@ hr {
 }
 .muted { color: var(--ice-dim); line-height: 1.85; }
 
+.modal-card.officers-card {
+  width: min(960px, 100%);
+  background: #07071a;
+  color: #ffffff;
+}
+.roster-ladder {
+  font-size: 16px;
+  line-height: 1.45;
+  color: #ffffff;
+  background: #050510;
+  border: 4px solid #f8d800;
+  padding: 12px;
+  margin: 0 0 12px;
+}
+.roster-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.roster-head h2 { margin: 0; }
+.roster-head button { font-size: 14px; background: #f8d800; color: #101010; }
+.roster-ladder h2,
+.roster-ladder h3,
+.officers-card h2 {
+  font-size: 18px;
+  color: #fff4a0;
+  line-height: 1.4;
+}
+.roster-ladder h3 { font-size: 16px; color: #ffffff; margin: 14px 0 6px; }
+.roster-lead,
+.roster-empty,
+.officers-card .creator,
+.officers-card .field label,
+.officers-card .creator-stats label,
+.officers-card .muted,
+.officers-card .roster-lead {
+  font-size: 15px;
+  line-height: 1.45;
+  color: #ffffff;
+}
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  margin: 6px 0;
+  background: #101028;
+  border: 3px solid #f8f8f8;
+  color: #ffffff;
+}
+.roster-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.roster-who strong { color: #ffffff; font-size: 16px; text-transform: uppercase; }
+.roster-who span { color: #ffffff; font-size: 13px; }
+.roster-rank,
+.roster-held {
+  background: #f8d800;
+  color: #101010;
+  font-size: 14px;
+  line-height: 1.3;
+  padding: 6px 8px;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+.roster-promote {
+  font-size: 14px;
+  line-height: 1.35;
+  background: #f8d800;
+  color: #101010;
+  border-color: #ffffff;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.roster-promote:hover:not(:disabled) {
+  color: #101010;
+  background: #fff4a0;
+}
+.roster-confirm {
+  background: #f8d800;
+  color: #101010;
+  font-size: 16px;
+  line-height: 1.45;
+  padding: 10px;
+  margin: 0 0 10px;
+}
+.roster-lead-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #ffffff;
+  margin: 8px 0;
+}
+.roster-lead-pick select {
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  background: #000010;
+  color: #ffffff;
+  border: 4px solid #f8d800;
+  padding: 8px;
+}
+.officers-card .field input,
+.officers-card .field select,
+.officers-card .creator-stats input {
+  font-size: 15px;
+  color: #ffffff;
+  background: #000010;
+}
+.officers-card .face-tile { min-height: 36px; }
+.court-strip .chrome-head button {
+  padding: 4px 8px;
+  flex: 0 0 auto;
+}
+
 .battle {
   position: fixed;
   inset: 0;

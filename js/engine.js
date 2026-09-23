@@ -211,9 +211,13 @@ function ensureStaff(state) {
   const court = playerCourt(state);
   const appointed = court.filter((o) => o.isGeneral);
   if (appointed.length === 0 && court.length) {
-    court.slice(0, MAX_GENERALS).forEach((o) => {
-      o.isGeneral = true;
-    });
+    // An explicit officer rung stays an officer until Roster → Promote.
+    court
+      .filter((o) => o.ladder !== "officer")
+      .slice(0, MAX_GENERALS)
+      .forEach((o) => {
+        o.isGeneral = true;
+      });
   }
 }
 
@@ -225,6 +229,114 @@ export function playerGenerals(state) {
 export function appointCandidates(state) {
   ensureStaff(state);
   return playerCourt(state).filter((o) => !o.isGeneral);
+}
+
+export function ladderRankOf(off) {
+  if (!off) return null;
+  if (off.isGeneral) return "general";
+  if (off.ladder === "player" && !off.faction) return "player";
+  if (off.faction) return "officer";
+  if (off.ladder === "player" || off.friend) return "player";
+  return null;
+}
+
+export function ladderLabel(rank) {
+  return { player: "Player", officer: "Officer", general: "General" }[rank] || "Unranked";
+}
+
+export function ladderRoster(state) {
+  const p = playerOf(state);
+  const seen = new Set();
+  const rows = [];
+  const consider = (o) => {
+    if (!o || !p || o.id === p.id || seen.has(o.id) || o.alive === false || o.retired) return;
+    const onLadder = o.friend || o.ladder === "player" || o.ladder === "officer" || o.ladder === "general";
+    const court = p.faction && o.faction === p.faction;
+    if (!onLadder && !court) return;
+    seen.add(o.id);
+    rows.push(o);
+  };
+  livingOfficers(state).forEach(consider);
+  const bucket = { player: [], officer: [], general: [] };
+  rows.forEach((o) => {
+    const rank = ladderRankOf(o);
+    if (rank && bucket[rank]) bucket[rank].push(o);
+  });
+  return bucket;
+}
+
+export function promotedInCity(state) {
+  const p = playerOf(state);
+  if (!p?.faction) return [];
+  return livingOfficers(state).filter((o) => {
+    if (o.id === p.id || o.faction !== p.faction || o.region !== p.region) return false;
+    if (o.retired) return false;
+    const rank = ladderRankOf(o);
+    return rank === "officer" || rank === "general";
+  });
+}
+
+export function promoteLadder(state, officerId) {
+  const p = playerOf(state);
+  if (!p) return { ok: false, message: "No commander." };
+  if (!p.faction) return { ok: false, message: "Raise a banner before promoting." };
+  const t = officerOf(state, officerId);
+  if (!t || t.alive === false) return { ok: false, message: "No such person on the roster." };
+  if (t.id === p.id) return { ok: false, message: "You are the commander. Promote a friend." };
+  if (t.retired) return { ok: false, message: `${t.name} has left the roster.` };
+  const from = ladderRankOf(t);
+  if (from === "general") return { ok: false, message: `${t.name} is already a general.` };
+  if (from === "player") {
+    if (t.region !== p.region) {
+      const city = regionOf(state, p.region)?.short || "your city";
+      return { ok: false, message: `${t.name} must stand in ${city} to take a commission.` };
+    }
+    t.faction = p.faction;
+    t.ladder = "officer";
+    t.friend = true;
+    t.isGeneral = false;
+    t.standingOrder = t.standingOrder || "auto";
+    t.loyalty = Math.min(100, Math.max(t.loyalty || 50, 62));
+    const msg = `${t.name} promoted: Player → Officer.`;
+    pushLog(state, msg, "alert");
+    return {
+      ok: true,
+      from: "player",
+      to: "officer",
+      rankChanged: true,
+      message: msg,
+      officerId: t.id,
+      officerName: t.name,
+    };
+  }
+  if (from === "officer" && t.faction === p.faction) {
+    const gens = playerCourt(state).filter((o) => o.isGeneral);
+    if (gens.length >= MAX_GENERALS) {
+      return { ok: false, message: `Five generals already. ${t.name} stays an officer.` };
+    }
+    t.ladder = "general";
+    t.isGeneral = true;
+    t.standingOrder = t.standingOrder || "auto";
+    const n = playerCourt(state).filter((o) => o.isGeneral).length;
+    const msg = `${t.name} promoted: Officer → General (${n}/${MAX_GENERALS}).`;
+    pushLog(state, msg, "alert");
+    state.ap = Math.min(apMax(state), state.ap + 1);
+    return {
+      ok: true,
+      from: "officer",
+      to: "general",
+      rankChanged: true,
+      chairFilled: true,
+      message: msg,
+      officerId: t.id,
+      officerName: t.name,
+      dings: ["RANK: GENERAL"],
+    };
+  }
+  return {
+    ok: false,
+    message: `${t.name} is not on the player → officer → general ladder. Create a friend, or hire a free officer.`,
+  };
 }
 
 function joinBanner(state, off, preferGeneral) {
@@ -852,6 +964,15 @@ export function listActions(state) {
     needs: "appoint",
   });
   actions.push({
+    id: "promote",
+    label: "Promote",
+    ap: 0,
+    group: "plot",
+    enabled: true,
+    hint: "Roster ladder: a friend starts as a player, then officer, then general.",
+    needs: "roster",
+  });
+  actions.push({
     id: "ally",
     label: "Seek Alliance",
     ap: 1,
@@ -988,7 +1109,13 @@ export function hireCandidates(state) {
   const p = playerOf(state);
   if (!p.faction) return [];
   return visibleOfficers(state).filter(
-    (o) => o.id !== p.id && !o.faction && o.region === p.region && o.alive !== false
+    (o) =>
+      o.id !== p.id &&
+      !o.faction &&
+      o.region === p.region &&
+      o.alive !== false &&
+      o.ladder !== "player" &&
+      !o.friend
   );
 }
 
@@ -1044,10 +1171,15 @@ function doChallenge(state, extra = {}) {
   const foe = officerOf(state, officerId);
   if (!foe) return { ok: false, message: "No such officer." };
   if (foe.region !== p.region) return { ok: false, message: "They are not in this city." };
-  if (foe.id === p.id) return { ok: false, message: "Not yourself." };
+  let actor = p;
+  if (extra.actorId && extra.actorId !== p.id) {
+    actor = promotedInCity(state).find((o) => o.id === extra.actorId);
+    if (!actor) return { ok: false, message: "Pick yourself or a promoted officer in this city." };
+  }
+  if (foe.id === actor.id || foe.id === p.id) return { ok: false, message: "Not yourself." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
-  beginDuel(state, p, foe, {
-    kind: p.faction && foe.faction === p.faction ? "spar" : "challenge",
+  beginDuel(state, actor, foe, {
+    kind: actor.faction && foe.faction === actor.faction ? "spar" : "challenge",
     arenaId: extra.arenaId,
     youStyleId: extra.youStyleId || extra.styleId,
     foeStyleId: extra.foeStyleId,
@@ -1162,6 +1294,7 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "seek_legend") return doSeekLegend(state);
   if (actionId === "hire") return doHire(state, extra.officerId, stats);
   if (actionId === "appoint") return doAppoint(state, extra.officerId);
+  if (actionId === "promote") return promoteLadder(state, extra.officerId);
   if (actionId === "mission") return doMission(state, extra.jobId, extra.officerId);
   if (actionId === "challenge") return doChallenge(state, extra);
   if (actionId === "ally") return doAlly(state, extra.factionId, stats);
@@ -1398,6 +1531,7 @@ function doAppoint(state, officerId) {
   if (!t || t.faction !== p.faction || t.id === p.id) return { ok: false, message: "Pick a court officer." };
   if (t.isGeneral) return { ok: false, message: "Already a general." };
   t.isGeneral = true;
+  t.ladder = "general";
   t.standingOrder = t.standingOrder || "auto";
   const n = playerGenerals(state).length;
   const msg = `${t.name} is appointed general ${n}/${MAX_GENERALS}. Set a standing order on the court strip.`;
@@ -1914,20 +2048,32 @@ function doAttack(state, content, extra) {
   let commit = extra.troops != null ? extra.troops : Math.min(pool, Math.max(8, Math.floor(pool * 0.6)));
   commit = Math.max(8, Math.min(pool, commit));
   if (pool < 8) return { ok: false, message: "Too few troops." };
+  let lead = null;
+  if (extra.commanderId) {
+    lead = promotedInCity(state).find((o) => o.id === extra.commanderId);
+    if (!lead) return { ok: false, message: "That officer cannot lead this march." };
+  }
   if (!spend(state, 2)) return { ok: false, message: "Need 2 AP to march." };
   if (fromHold) here.garrison -= commit;
   else p.retinue -= commit;
-  const techAtk = techAtkBonus(state, content);
+  const techAtk = techAtkBonus(state, content) + (lead ? Math.floor((lead.war || 0) / 40) : 0);
   const battle = createBattle(state, content, here.id, dest.id, commit, techAtk);
   battle.defenderPersonality = defenderPersonality(state, dest);
   battle.fromHold = fromHold;
+  if (lead) {
+    battle.commanderId = lead.id;
+    battle.commanderName = lead.name;
+    battle.commanderRank = ladderRankOf(lead);
+  }
+  const leadBit = lead ? `${ladderLabel(ladderRankOf(lead))} ${lead.name} leads the column. ` : "";
   if (extra.auto) {
+    if (lead) pushLog(state, `${leadBit}March from ${here.short} into ${dest.name} with ${commit}.`, "war");
     autoResolveBattle(state, battle, battle.defenderPersonality);
     return resolveBattle(state, battle);
   }
   state.phase = "battle";
   state.battle = battle;
-  pushLog(state, `March from ${here.short} into ${dest.name} with ${commit}. ${battle.log[0]}`, "war");
+  pushLog(state, `${leadBit}March from ${here.short} into ${dest.name} with ${commit}. ${battle.log[0]}`, "war");
   return { ok: true, message: `Battle in ${dest.name}.`, battle: true };
 }
 
@@ -1967,6 +2113,10 @@ function resolveBattle(state, battle) {
     dest.order = Math.max(10, dest.order - 12);
     p.region = dest.id;
     state.selectedRegion = dest.id;
+    if (battle.commanderId) {
+      const lead = officerOf(state, battle.commanderId);
+      if (lead && lead.region === origin.id) lead.region = dest.id;
+    }
     p.fame += 8;
     state.fame += 8;
     livingOfficers(state)
@@ -2412,6 +2562,10 @@ export function createCustomOfficer(state, spec) {
   if (state.officers.length >= (state.contentMeta.rosterCap || 500)) {
     return { ok: false, message: "Roster cap (500) reached." };
   }
+  if (spec.ladder != null && spec.ladder !== "player") {
+    return { ok: false, message: "New friends start as players. Promote them on the roster." };
+  }
+  const asPlayer = spec.ladder === "player";
   const name = String(spec.name || "").trim().slice(0, 28);
   if (name.length < 2) return { ok: false, message: "Name needs at least two letters." };
   const personality = spec.personality || "loyalist";
@@ -2434,7 +2588,7 @@ export function createCustomOfficer(state, spec) {
   state.officers.push({
     id,
     name,
-    title: (spec.title || "Volunteer").slice(0, 24),
+    title: (spec.title || (asPlayer ? "Friend" : "Volunteer")).slice(0, 24),
     war,
     int: intel,
     pol,
@@ -2449,8 +2603,14 @@ export function createCustomOfficer(state, spec) {
     alive: true,
     retinue: 0,
     fame: 10,
-    bio: spec.bio || `${name} is an original volunteer. Type ${personality} gates ${skills.join(", ")}.`,
+    bio:
+      spec.bio ||
+      (asPlayer
+        ? `${name} is a friend on your roster — a player, not yet an officer. Original person, not a licensed face.`
+        : `${name} is an original volunteer. Type ${personality} gates ${skills.join(", ")}.`),
     custom: true,
+    friend: asPlayer,
+    ladder: asPlayer ? "player" : null,
     skills,
     portrait,
     standingOrder: "auto",
@@ -2460,8 +2620,14 @@ export function createCustomOfficer(state, spec) {
     courtingId: null,
   });
   state.customSlotsUsed += 1;
-  pushLog(state, `${name} [${personality}] added to the free roster in ${currentRegion(state).short}.`, "info");
-  return { ok: true, id, skills, portrait };
+  pushLog(
+    state,
+    asPlayer
+      ? `${name} joins as a player (friend) in ${currentRegion(state).short}. Promote them on the roster.`
+      : `${name} [${personality}] added to the free roster in ${currentRegion(state).short}.`,
+    "info"
+  );
+  return { ok: true, id, skills, portrait, ladder: asPlayer ? "player" : null };
 }
 
 export { DIFFICULTY, alliedFactions };
