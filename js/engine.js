@@ -916,7 +916,7 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: true,
-    hint: "Move to a neighboring city. Alaska → Juneau/Yukon → PNW → Rockies → plains east. US roads open week 0.",
+    hint: "Move to a neighboring city. East spine, no leaps: Omaha → Lincoln → Topeka → Wichita → St. Louis. US roads open week 0.",
     needs: "neighbor",
   });
   const camp = ensureCampaign(state);
@@ -1140,11 +1140,64 @@ function pathNeighbors(state, from, to) {
   return hops;
 }
 
+// Parallel gates share rank 0. The corridor itself is strictly ordered.
+const EAST_SPINE_RANK = {
+  billings: 0,
+  cheyenne: 0,
+  denver: 0,
+  omaha: 1,
+  lincoln: 2,
+  topeka: 3,
+  wichita: 4,
+  st_louis: 5,
+};
+
+// Prefer an existing neighbor that stays on Omaha → Lincoln → Topeka →
+// Wichita → St. Louis. Does not add roads. Shortcuts that skip a spine
+// city (Denver→Topeka when the target is Lincoln, Springs→Wichita when
+// Topeka is the hop) lose to the corridor neighbor.
+function eastSpineRoads(state, from, to) {
+  const toRank = EAST_SPINE_RANK[to.id];
+  if (toRank == null) return null;
+  const fromRank = EAST_SPINE_RANK[from.id];
+  const goingEast = fromRank == null || toRank >= fromRank;
+  const dist = distancesFrom(state, to.id);
+  const goal = dist.get(from.id);
+  if (goal == null || goal <= 1) return null;
+  const towardRank = (rank) => {
+    if (rank == null) return false;
+    if (fromRank == null) return goingEast ? rank <= toRank : rank >= toRank;
+    if (goingEast) return rank > fromRank && rank <= toRank;
+    return rank < fromRank && rank >= toRank;
+  };
+  const candidates = [];
+  for (const id of from.neighbors || []) {
+    const node = regionOf(state, id);
+    if (!node || node.id === to.id || !travelUnlocked(state, node)) continue;
+    const d = dist.get(id);
+    if (d == null || d > goal) continue;
+    const toward = towardRank(EAST_SPINE_RANK[id]);
+    if (d === goal && !toward) continue;
+    candidates.push({ node, d, toward });
+  }
+  const towardHops = candidates.filter((c) => c.toward);
+  const pool = towardHops.length ? towardHops : candidates.filter((c) => c.d === goal - 1);
+  const out = [];
+  const seen = new Set();
+  for (const c of pool) {
+    if (seen.has(c.node.id)) continue;
+    seen.add(c.node.id);
+    out.push(c.node.short);
+    if (out.length >= 3) break;
+  }
+  return out.length ? out : null;
+}
+
 // Names for the no-leap NEXT line. A sea desk names its own roads (Gulf
 // Sealift touches St. Louis and Cuba), not the player's home neighbors.
 // Foreign desks use the destination approach (St. Louis → Gulf Sealift →
-// Cuba). Domestic cities use the adjacent hop that actually shortens the
-// road — not every neighbor of the player.
+// Cuba). East-spine cities name the adjacent corridor hop. Other domestic
+// cities use the adjacent hop that actually shortens the road.
 export function approachRoads(state, fromId, toId) {
   const from = typeof fromId === "string" ? regionOf(state, fromId) : fromId;
   const to = typeof toId === "string" ? regionOf(state, toId) : toId;
@@ -1159,6 +1212,8 @@ export function approachRoads(state, fromId, toId) {
   if (to.type === "foreign" || (to.unlockPhase || 0) > 0) {
     return approachChain(state, from, to).map((r) => r.short);
   }
+  const east = eastSpineRoads(state, from, to);
+  if (east) return east;
   const hops = pathNeighbors(state, from, to);
   if (hops.length) return hops.slice(0, 3).map((r) => r.short);
   return (from.neighbors || [])
@@ -1778,7 +1833,10 @@ export function tickCampaign(state) {
       notes.push(`${row.name} slips — a key city changed hands.`);
     }
   });
-  const usLib = ctrl.filter((r) => r.kind === "us" && camp.liberated.includes(r.id)).length;
+  const bloc = camp.westBloc && camp.westBloc.length ? new Set(camp.westBloc) : null;
+  const usLib = ctrl.filter(
+    (r) => r.kind === "us" && camp.liberated.includes(r.id) && (!bloc || bloc.has(r.id))
+  ).length;
   if (!camp.nationalLeader && usLib >= (camp.restoreThreshold || 8)) {
     camp.nationalLeader = true;
     camp.phase = Math.max(camp.phase, 2);
@@ -2386,7 +2444,10 @@ export function weekTease(state) {
   if (livingOfficers(state).some((o) => o.wound && (o.id === p.id || o.faction === p.faction))) bits.push("a wound fading");
   const here = regionOf(state, p.region);
   if (here && (here.stateCode === "AK" || here.stateCode === "YT")) bits.push("south-pass roads into Washington and Colorado");
-  if (here && here.stateCode === "CO") bits.push("plains roads east toward Nebraska and the river gate");
+  if (here && here.stateCode === "CO") bits.push("plains roads east toward Omaha");
+  if (here && here.stateCode === "NE") bits.push("the Lincoln hop toward Topeka");
+  if (here && here.stateCode === "KS") bits.push("Wichita, then the St. Louis gate");
+  if (here && here.stateCode === "MO") bits.push("the river gate — Cuba stays on the Gulf Sealift");
   if (!bits.length) bits.push("neighbors moving");
   bits.push("a fresh AP pool");
   return bits.slice(0, 3).join(" · ");

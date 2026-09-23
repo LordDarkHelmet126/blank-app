@@ -608,6 +608,31 @@ function hideModal(opts = {}) {
 }
 
 const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
+const EAST_SPINE_LINE = "Omaha → Lincoln → Topeka → Wichita → St. Louis";
+const EAST_CITY = new Set(["omaha", "lincoln", "topeka", "wichita", "st_louis"]);
+
+function eastNextTail(id) {
+  if (id === "omaha") return " Next: Lincoln.";
+  if (id === "lincoln") return " Next: Topeka.";
+  if (id === "topeka") return " Next: Wichita.";
+  if (id === "wichita") return " Next: St. Louis.";
+  if (id === "st_louis") return " Cuba is Gulf Sealift, not a leap.";
+  return "";
+}
+
+function eastCityNote(r) {
+  const notes = {
+    omaha: "NE key. Next city: Lincoln.",
+    lincoln: "Hop: Omaha → Lincoln → Topeka.",
+    topeka: "KS key. Next city: Wichita.",
+    wichita: "Hop: Topeka → Wichita → St. Louis.",
+    st_louis: "MO key. Cuba is Gulf Sealift, not a leap.",
+    denver: "East gates: Omaha and Topeka. No leap to St. Louis.",
+    cheyenne: "East gate: Omaha, then Lincoln.",
+    billings: "East gate: Omaha, then Lincoln.",
+  };
+  return notes[r?.id] || "";
+}
 
 function nextHint(st) {
   if (!st || st.gameOver) return "Campaign closed.";
@@ -626,10 +651,11 @@ function nextHint(st) {
   const wait = appointCandidates(st);
   if (sel && here && sel.id !== here.id && !isAdjacent(st, here, sel)) {
     const via = approachRoads(st, here, sel).join(", ");
-    return `NEXT: Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Take an adjacent road${via ? ` (${via})` : ""} first.`;
+    const spine = EAST_CITY.has(sel.id) ? ` East spine: ${EAST_SPINE_LINE}.` : "";
+    return `NEXT: Cannot leap to ${sel.short} (${sel.stateCode || "—"}).${spine} Take an adjacent road${via ? ` (${via})` : ""} first.`;
   }
   if (sel && here && sel.id !== here.id && isAdjacent(st, here, sel)) {
-    return `NEXT: ${sel.short} is adjacent — Military → Travel or March. No leaping past it.`;
+    return `NEXT: ${sel.short} is adjacent — Military → Travel or March. No leaping past it.${eastNextTail(sel.id)}`;
   }
   if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.";
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
@@ -750,7 +776,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
+      <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. East spine: ${EAST_SPINE_LINE}. Keys: Omaha (NE), Topeka (KS), St. Louis (MO). Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader. Cuba is St. Louis → Gulf Sealift, not a leap.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -876,6 +902,7 @@ function campaignHtml() {
   if (!state) return `<p>No game.</p>`;
   const camp = ensureCampaign(state);
   const here = regionOf(state, playerOf(state).region);
+  const east = new Set(camp.eastApproach || ["NE", "KS", "MO"]);
   const blocks = stateControl(state)
     .map((s) => {
       const mark = s.liberated ? "LIB" : `${s.held}/${s.need} key · ${s.heldTerr}/${s.totalTerr} terr`;
@@ -883,11 +910,12 @@ function campaignHtml() {
         .map((t) => {
           const tags = (t.geo || []).map((g) => g.label).join("/");
           const route = t.here ? "here" : t.adjacent ? "road open" : "route locked";
-          return `<small>${esc(t.short)}${t.key ? " ★" : ""} · ${tags || "—"} · ${route}</small>`;
+          return `<p class="terr-line">${esc(t.short)}${t.key ? " ★" : ""} · ${tags || "—"} · ${route}</p>`;
         })
         .join("");
-      return `<div class="card" style="margin:8px 0">
-        <h2>${esc(s.name)} · ${esc(s.id)}</h2>
+      const spine = east.has(s.id) ? " · east spine" : "";
+      return `<div class="card state-card">
+        <h2>${esc(s.name)} · ${esc(s.id)}${spine}</h2>
         <p>${esc(mark)}</p>
         ${terr}
       </div>`;
@@ -900,16 +928,19 @@ function campaignHtml() {
     })
     .join("");
   return `
+    <div class="states-board">
     <h2>States → territories</h2>
-    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Liberate a state by holding ★ key territories. No leaping — only adjacent roads. Farm/mine/fuel/water/sun/weather/defense change weekly yields.</p>
-    <div class="city-grid">${stateControl(state)
+    <p class="spine-lead">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Hold ★ key cities to liberate a state. No leaping — adjacent roads only.</p>
+    <p class="spine-lead">East spine: Billings / Cheyenne / Denver → ${EAST_SPINE_LINE}. Keys: Omaha (NE), Topeka (KS), St. Louis (MO). Eight west-bloc states name a national leader. Cuba is St. Louis → Gulf Sealift, not a direct road.</p>
+    <div class="state-chips">${stateControl(state)
       .map((s) => `<span class="pill"><span>${esc(s.id)}</span><strong>${s.liberated ? "LIB" : `${s.held}/${s.need}`}</strong></span>`)
       .join("")}</div>
     ${blocks}
     <h2>Foreign war council</h2>
-    <p class="muted">After Phase 2 the far-shore desks unlock. A sponsor may add another country as a takeable front.</p>
-    ${foreign || "<p class='muted'>No foreign desks yet.</p>"}
-    <button type="button" data-close>Close</button>`;
+    <p class="spine-lead">After the west bloc, far-shore desks unlock. St. Louis still reaches Cuba only through the Gulf Sealift.</p>
+    ${foreign || "<p class='spine-lead'>No foreign desks yet.</p>"}
+    <button type="button" data-close>Close</button>
+    </div>`;
 }
 
 function factionsHtml() {
@@ -1250,9 +1281,11 @@ function cityHtml() {
         const here = regionOf(state, playerOf(state).region);
         const adj = here && isAdjacent(state, here, r);
         const at = here?.id === r.id;
-        const route = at ? "You are here" : adj ? "Adjacent road open" : "Route locked — not adjacent";
+        const via = !at && !adj && here ? approachRoads(state, here, r) : [];
+        const route = at ? "You are here" : adj ? "Adjacent road open" : `Route locked — adjacent road${via.length ? ` (${via.join(", ")})` : ""} first`;
         const lib = row?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode || "—"} ${row ? `${row.heldTerr}/${row.totalTerr} territories · ${row.held}/${row.need} key` : ""}`;
-        return `<p class="plus">${esc(lib)}</p><p class="minus">${esc(route)}</p>`;
+        const spine = eastCityNote(r);
+        return `<p class="plus">${esc(lib)}</p><p class="spine-note">${esc(route)}</p>${spine ? `<p class="spine-note">${esc(spine)}</p>` : ""}`;
       })()}
       ${legendBoard(state)
         .filter((h) => h.regionId === r.id)
@@ -1341,7 +1374,7 @@ const COACH_STEPS = [
   {
     id: "city",
     title: "1 / 4  Your city",
-    body: "Yellow nameplate = the city you have selected. Click a city on the map to inspect it. Gold roads between cities are walkable.",
+    body: "Yellow nameplate = the city you have selected. Click a city to inspect it. Gold roads are walkable. East spine, no leaps: Omaha → Lincoln → Topeka → Wichita → St. Louis.",
     target: "#city-stats",
     cat: "domestic",
   },
