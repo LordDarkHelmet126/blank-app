@@ -823,6 +823,70 @@ function inlandSiegeCue(id) {
   return `Siege desk: ${row.label} — ${row.flavor}. Cut the berm, Rake the parapet, Rush the gap. ${row.demo}`;
 }
 
+function arcBoard(st) {
+  const camp = ensureCampaign(st);
+  const board = stateControl(st);
+  const west = camp.westBloc || [];
+  const east = camp.eastApproach || [];
+  const freed = (id) => !!board.find((s) => s.id === id)?.liberated;
+  return {
+    camp,
+    board,
+    west,
+    east,
+    westN: west.filter(freed).length,
+    freed,
+  };
+}
+
+/** One clause for a domestic state the player is inspecting. Foreign desks stay on the approach line. */
+function stateArcClause(st, code) {
+  if (!code) return "";
+  const { camp, board, west, east, westN } = arcBoard(st);
+  const row = board.find((s) => s.id === code);
+  if (!row) return "";
+  if (code === "YT") {
+    return row.liberated
+      ? "Yukon road is held. It is not one of the eight."
+      : "Yukon frees with its ★ key. It is the road south, not one of the eight.";
+  }
+  if (east.includes(code)) {
+    if (!row.liberated) {
+      return camp.nationalLeader
+        ? `Reunify: ${row.name} is next (NE–KS–MO). The title does not leap you.`
+        : `Reunify: ${row.name} is the east walk (NE–KS–MO), still this road.`;
+    }
+    return `${row.name} is free. Reunify keeps walking NE–KS–MO.`;
+  }
+  if (!west.includes(code)) {
+    return row.liberated ? `${row.name} is free.` : `${row.name} frees at ${row.held}/${row.need} ★.`;
+  }
+  if (!row.liberated) {
+    return `${row.name} frees at ${row.held}/${row.need} ★. West bloc ${westN}/8. Eight name you national leader — not a leap.`;
+  }
+  if (!camp.nationalLeader) return `${row.name} is free. West bloc ${westN}/8 — adjacent roads only.`;
+  return `${row.name} is free. You are national leader — a title, not a leap.`;
+}
+
+/** Standing NEXT while the west bloc or the east walk is still open. Empty once both are done. */
+function campaignArcLine(st) {
+  const { camp, board, westN, east, freed } = arcBoard(st);
+  const here = regionOf(st, playerOf(st).region);
+  const row = board.find((s) => s.id === here?.stateCode);
+  if (!camp.nationalLeader) {
+    const hereBit = row?.liberated
+      ? `${row.name} is free (${westN}/8 west bloc).`
+      : row
+        ? `${row.name} ${row.held}/${row.need} ★ (${westN}/8 west bloc).`
+        : `West bloc ${westN}/8.`;
+    return `${hereBit} Hold the next ★ keys on an adjacent road. Eight name you national leader — not a leap.`;
+  }
+  const nextEast = east.find((id) => !freed(id));
+  if (!nextEast) return "";
+  const name = board.find((s) => s.id === nextEast)?.name || nextEast;
+  return `National leader. Reunify: ${name} is next on NE–KS–MO, one adjacent road at a time. The title does not leap you.`;
+}
+
 function routeSentence(st) {
   if (!st) return "";
   const here = regionOf(st, playerOf(st).region);
@@ -852,6 +916,11 @@ function routeSentence(st) {
       const hops = via.join(", ");
       line = `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Next road: ${hops || "an adjacent city"}.`;
     }
+  }
+  const foreignDesk = sel.type === "foreign" || sel.type === "sea" || (sel.unlockPhase || 0) > 0;
+  if (!foreignDesk) {
+    const arc = stateArcClause(st, sel.stateCode);
+    if (arc) line = `${line} ${arc}`;
   }
   const cue = inlandSiegeCue(sel.id);
   return cue ? `${line}\n${cue}` : line;
@@ -883,10 +952,15 @@ function nextHint(st) {
     const route = routeSentence(st);
     if (route) return `NEXT: ${route}`;
   }
-  if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). Then Plot → Hire fills an ADD chair.";
+  if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). A state frees when its ★ keys are yours — Cheyenne frees Wyoming. Then Plot → Hire.";
+  if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
+  const arc = campaignArcLine(st);
+  if (arc) {
+    const hire = gens.length === 0 && !ensureCampaign(st).nationalLeader ? " Then Plot → Hire." : "";
+    return `NEXT: ${arc}${hire}`;
+  }
   const rung = rosterRungHint(st, p);
   if (rung) return rung;
-  if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
   if (gens.length === 0) return `NEXT: ${HIRE_LINE}`;
   if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
     return `NEXT: Plot → Hire (${gens.length}/5). Same path as the ADD chairs.`;
@@ -1023,7 +1097,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
+      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Reunify is the east walk NE–KS–MO.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1265,7 +1339,7 @@ function campaignHtml() {
     .join("");
   return `
     <h2>States → territories</h2>
-    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). Liberate a state by holding ★ key territories. No leaping — only adjacent roads. Farm/mine/fuel/water/sun/weather/defense change weekly yields.</p>
+    <p class="muted">You are in ${esc(here?.short || "?")} (${esc(here?.stateCode || "—")}). A state frees when you hold its ★ keys. West chain, adjacent only: AK–YT–WA–OR–ID–MT–WY–UT–CO (${arcBoard(state).westN}/8 US states; Yukon is the road, not a ninth). ${arcBoard(state).camp.nationalLeader ? "You are national leader — a title, not a leap." : "Eight name you national leader — a title, not a leap."} Reunify is NE–KS–MO on the roads you have.</p>
     <div class="city-grid">${stateControl(state)
       .map((s) => `<span class="pill"><span>${esc(s.id)}</span><strong>${s.liberated ? "LIB" : `${s.held}/${s.need}`}</strong></span>`)
       .join("")}</div>
@@ -1642,7 +1716,11 @@ function cityHtml() {
         const adj = here && isAdjacent(state, here, r);
         const at = here?.id === r.id;
         const route = at ? "You are here" : routeSentence(state) || (adj ? "Adjacent road open" : "Route locked — not adjacent");
-        const lib = row?.liberated ? `Liberated ${r.stateCode}` : `${r.stateCode || "—"} ${row ? `${row.heldTerr}/${row.totalTerr} territories · ${row.held}/${row.need} key` : ""}`;
+        const { westN, camp } = arcBoard(state);
+        const lead = camp.nationalLeader ? " · national leader" : "";
+        const lib = row?.liberated
+          ? `Free ${r.stateCode} · west ${westN}/8${lead}`
+          : `${r.stateCode || "—"} ${row ? `${row.held}/${row.need} ★ · west ${westN}/8` : ""}`;
         return `<p class="plus">${esc(lib)}</p><p class="minus">${esc(route)}</p>`;
       })()}
       ${legendBoard(state)
@@ -1732,14 +1810,14 @@ const COACH_STEPS = [
   {
     id: "city",
     title: "1 / 4  Your city",
-    body: "Yellow nameplate = the city you have selected. Click a city on the map to inspect it. Gold roads between cities are walkable.",
+    body: "Yellow nameplate = the city you have selected. Click a city on the map to inspect it. Gold roads between cities are walkable. A state frees when its ★ keys are yours.",
     target: "#city-stats",
     cat: "domestic",
   },
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
+    body: "Click RAISE BANNER (1 AP) to claim Cheyenne as Northern Front. That frees Wyoming. Eight west-bloc states (AK WA OR ID MT WY UT CO) name you national leader — a title, not a leap. Yukon is the road between, not a ninth. Reunify is the east walk already on the board: NE–KS–MO. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },
@@ -2331,8 +2409,10 @@ function renderMapCaption() {
   const adj = r && here && isAdjacent(state, here, r);
   const at = r && here && r.id === here.id;
   const route = !r ? "" : at ? "here" : adj ? "adjacent" : "route locked";
-  const hold = row ? `${row.heldTerr}/${row.totalTerr} terr · ${row.held}/${row.need} key` : "";
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${route} · phase ${camp.phase}`;
+  const hold = row ? `${row.held}/${row.need} ★` : "";
+  const { westN } = arcBoard(state);
+  const beat = camp.nationalLeader ? "national leader" : `west ${westN}/8`;
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${beat} · ${route} · phase ${camp.phase}`;
 }
 
 function cityXY(r) {
