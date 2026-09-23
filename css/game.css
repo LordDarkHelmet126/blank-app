@@ -584,9 +584,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   padding: 10px 12px;
 }
 .court-chair .mini {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   display: grid;
   place-items: center;
   border: 4px solid var(--amber);
@@ -1028,14 +1028,15 @@ hr {
   padding: 8px;
   margin: 0 0 8px;
 }
+.roster-create .face-grid { grid-template-columns: repeat(4, 1fr); }
 .roster-create .face-tile img {
-  height: 34px;
+  height: 48px;
   object-fit: cover;
   object-position: top;
 }
 .roster-create .face-tile span {
-  font-size: 8px;
-  padding: 2px 1px;
+  font-size: 12px;
+  padding: 4px 2px;
 }
 .roster-create .roster-lead { margin: 0 0 4px; }
 .roster-create #c-add { margin: 6px 0 8px; width: 100%; }
@@ -1112,6 +1113,34 @@ hr {
   margin-bottom: 6px;
   font-size: 14px;
 }
+.roster-added {
+  background: #000000;
+  color: #f8d800;
+  font-size: 16px;
+  line-height: 1.45;
+  padding: 12px;
+  margin: 0 0 10px;
+  border: 4px solid #f8d800;
+}
+.roster-added strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #ffffff;
+  font-size: 14px;
+}
+.roster-row.just-ranked {
+  outline: 4px solid #f8d800;
+  outline-offset: -3px;
+  animation: ring-blink 400ms steps(2) 4;
+}
+.roster-row .portrait {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+}
+.roster-row.rung-player { box-shadow: inset 0 0 0 1px #ffffff; }
+.roster-row.rung-officer,
+.roster-row.rung-general { border-color: #f8d800; }
 .roster-next {
   background: #f8d800;
   color: #101010;
@@ -1122,14 +1151,25 @@ hr {
 }
 .rank-badge {
   display: inline-block;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.35;
-  padding: 4px 6px;
+  padding: 6px 8px;
   text-transform: uppercase;
   margin: 0 0 4px;
   background: #ffffff;
   color: #000000;
 }
+.rank-stripe {
+  width: 8px;
+  align-self: stretch;
+  flex: 0 0 8px;
+  background: #f8d800;
+}
+.rank-stripe.rank-player { background: #ffffff; }
+.rank-stripe.rank-officer { background: #f8d800; }
+.rank-stripe.rank-general,
+.rank-stripe.rank-commander { background: #f8d800; box-shadow: inset 0 0 0 2px #000000; }
+.rank-stripe.rank-empty { background: #404040; }
 .rank-badge.rank-player {
   background: #000000;
   color: #ffffff;
@@ -1171,8 +1211,18 @@ hr {
 }
 .officers-card .face-tile { min-height: 36px; }
 .court-strip .chrome-head button {
-  padding: 4px 8px;
+  padding: 8px 10px;
   flex: 0 0 auto;
+  background: #f8d800;
+  color: #000000;
+  font-size: 12px;
+}
+#btn-roster {
+  background: #f8d800;
+  color: #101010;
+  border-color: #f8d800;
+  font-size: 12px;
+  padding: 8px 10px;
 }
 
 .battle {
@@ -1369,6 +1419,59 @@ hr {
   padding: 12px;
   cursor: pointer;
 }
+.siege-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #000000;
+  padding-bottom: 8px;
+}
+.siege-meter.works,
+.siege-meter.suppress,
+.siege-meter.levy {
+  padding: 8px;
+}
+.siege-meter.works { background: #280808; border: 3px solid #f03030; }
+.siege-meter.suppress { background: #282000; border: 3px solid #f8d800; }
+.siege-meter.levy { background: #181818; border: 3px solid #f8f8f8; }
+.siege-meter.works span,
+.siege-meter.works strong { color: #ff4040; }
+.siege-meter.suppress span,
+.siege-meter.suppress strong { color: #f8d800; }
+.siege-meter.levy span,
+.siege-meter.levy strong { color: #ffffff; }
+.siege-meter.works small { color: #ffb0b0; }
+.siege-meter.suppress small { color: #ffe56a; }
+.siege-meter.levy small { color: #ffffff; }
+.siege-meter span { font-size: 16px; }
+.siege-meter strong.tick { animation: meter-flash 320ms steps(2); }
+@keyframes meter-flash {
+  0% { background: #f8f8f8; color: #000000; }
+  100% { background: transparent; }
+}
+.siege-ploys button.is-wait {
+  border-style: dashed;
+  color: #c8c8c8;
+}
+.siege-ploys button.is-wait small,
+.siege-ploys button.is-wait .ploy-mark { color: #c8c8c8; }
+.siege-ploys button.is-fired { box-shadow: inset 0 0 0 4px #f8f8f8; }
+.siege-ploys button .ploy-mark {
+  display: block;
+  margin-top: 8px;
+  font-style: normal;
+  font-size: 12px;
+  color: #f8d800;
+}
+.siege-ploys button.is-next .ploy-mark { color: #000000; }
+.siege-last {
+  margin: 10px 0 0;
+  color: #f8f8f8;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+.siege-next { border: 4px solid #000000; }
 @media (max-width: 800px) {
   .siege-meters,
   .siege-ploys { grid-template-columns: 1fr; }
@@ -1390,7 +1493,7 @@ hr {
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
   background: var(--panel);
   border: var(--chrome);
   box-shadow: var(--chrome-out);
@@ -1400,9 +1503,14 @@ hr {
 .duel-clock {
   margin-left: auto;
   color: var(--amber);
-  font-size: 18px;
+  font-size: 22px;
   min-width: 52px;
   text-align: right;
+}
+.duel-clock.low {
+  color: #000000;
+  background: #f03030;
+  padding: 2px 6px;
 }
 .duel-underdog {
   color: #000018;
@@ -1413,11 +1521,26 @@ hr {
 }
 .duel-cue {
   margin: 0;
-  padding: 6px 8px;
-  color: var(--ice);
+  padding: 8px 10px;
+  color: #ffffff;
+  background: #000000;
   border-bottom: var(--chrome);
-  line-height: 1.5;
+  line-height: 1.45;
+  font-size: 13px;
   flex: 0 0 auto;
+}
+.duel-next {
+  margin: 0;
+  background: #f8d800;
+  color: #000000;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 8px 10px;
+  flex: 0 0 auto;
+}
+.duel-next.hot {
+  background: #30c030;
+  color: #000000;
 }
 .duel-fighters {
   display: grid;
@@ -1435,8 +1558,22 @@ hr {
   padding: 6px;
 }
 .duel-card.foe { flex-direction: row; justify-content: flex-end; text-align: right; }
-.duel-card h2 { margin: 0 0 4px; color: var(--amber); font-size: var(--type-lg); }
-.duel-card p { margin: 0 0 4px; }
+.duel-card h2 { margin: 0 0 4px; color: var(--amber); font-size: 16px; }
+.duel-card p { margin: 0 0 4px; font-size: 12px; }
+.duel-card.struck { outline: 3px solid #f03030; outline-offset: -3px; }
+.style-stripe { width: 8px; align-self: stretch; flex: 0 0 8px; background: #f8d800; }
+.duel-hp-n { color: #ffffff; font-size: 14px; }
+.duel-hp-n.hurt { color: #f03030; }
+.duel-hit {
+  margin: 0;
+  display: inline-block;
+  font-size: 16px;
+  color: #f03030;
+  background: #000000;
+  padding: 2px 6px;
+}
+.duel-hit.heal { color: #30c030; }
+.duel-hit[hidden] { display: none !important; }
 .duel-card .medallion { width: 48px; height: 48px; flex: 0 0 48px; }
 .duel-card .mini {
   width: 100%;
@@ -1461,15 +1598,19 @@ hr {
 .duel-card.foe .duel-hp i { background: var(--blood); margin-left: auto; }
 .duel-style {
   margin: 0 0 6px;
-  color: var(--amber);
+  color: #ffffff;
+  background: #000000;
   text-transform: uppercase;
-  line-height: 1.7;
+  line-height: 1.45;
+  font-size: 13px;
+  border-left: 8px solid #f8d800;
+  padding: 2px 6px;
 }
 #duel-canvas {
   display: block;
   width: 100%;
-  height: 110px;
-  flex: 0 0 110px;
+  height: 92px;
+  flex: 0 0 92px;
   image-rendering: pixelated;
   background: #082038;
   border-top: var(--chrome);
@@ -1477,12 +1618,13 @@ hr {
 }
 .duel-meter {
   position: relative;
-  height: 12px;
+  height: 18px;
   margin: 6px 8px;
   flex: 0 0 auto;
   background: #000010;
   border: var(--chrome);
 }
+.duel-meter.in-green { box-shadow: 0 0 0 3px #30c030; }
 .duel-green {
   position: absolute;
   top: 0;
@@ -1507,9 +1649,10 @@ hr {
   flex: 0 0 auto;
 }
 .duel-moves button {
-  min-height: 40px;
+  min-height: 52px;
   text-align: left;
   line-height: 1.45;
+  font-size: 12px;
 }
 .duel-moves button b { color: var(--amber); margin-right: 6px; }
 .duel-moves button small { display: block; color: var(--ice); margin-top: 2px; line-height: 1.4; }

@@ -358,6 +358,13 @@ assert(/log\.innerHTML = list\.map/.test(siegeUi), "siege log renders every line
 assert(!/siege-log"\)\.innerHTML = s\.log\.slice\(/.test(siegeUi), "siege log does not drop older lines");
 assert(/\.siege-log \{[^}]*overflow:\s*visible/.test(siegeCss), "siege log does not nest a second scroller");
 assert(/\.siege-log \{[^}]*max-height:\s*none/.test(siegeCss), "siege log is not height-clipped");
+assert(/siege-meter works/.test(pageSrc) && /siege-meter suppress/.test(pageSrc) && /siege-meter levy/.test(pageSrc), "WORKS SUPPRESS LEVY meters are marked");
+assert(/siege-sticky/.test(pageSrc) && /position:\s*sticky/.test(siegeCss), "siege controls stay on screen after several ploys");
+assert(/\.siege-meter\.works strong \{[^}]*#ff4040/.test(siegeCss), "WORKS numeral is red");
+assert(/\.siege-meter\.suppress strong \{[^}]*#f8d800/.test(siegeCss), "SUPPRESS numeral stays amber");
+assert(/\.siege-meter\.levy strong \{[^}]*#ffffff/.test(siegeCss), "LEVY numeral is white");
+assert(/ploy-mark/.test(siegeUi) && /PRESS/.test(siegeUi), "ploy buttons name PRESS");
+assert(/id="siege-last"/.test(pageSrc), "latest siege line stays with the buttons");
 console.log("ok siege depth");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
@@ -798,6 +805,11 @@ assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 
 assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tiles lead with hire/appoint");
 assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
 assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
+assert(/id="duel-next"/.test(pageSrc), "duel NEXT coach line");
+assert(/function duelNextLine/.test(uiSrc), "duel coach names the next press");
+assert(/\.duel-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "duel NEXT is amber");
+assert(/\.duel-next \{[^}]*color:\s*#000000/.test(siegeCss), "duel NEXT text is black");
+assert(/style-stripe/.test(pageSrc) && /duel-you-hit/.test(pageSrc), "duel style stripe and damage read");
 assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
 assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
@@ -958,6 +970,8 @@ assert(/\.court-strip \{[^}]*font-size:\s*13px/.test(cssSrc), "court strip type 
 assert(/\.court-next \{[^}]*#f8d800/.test(cssSrc) && /\.court-next \{[^}]*#000000/.test(cssSrc), "court NEXT is high contrast");
 assert(/\.rank-badge\.rank-general[\s\S]*?#f8d800/.test(cssSrc) && /\.rank-badge\.rank-general[\s\S]*?#000000/.test(cssSrc), "general badge is high contrast");
 assert(!/wolverine|tekken|street fighter|red dawn/i.test(terrainSrc), "face names stay original IP");
+assert(/FRIEND ADDED/.test(uiSrc) && /just-ranked/.test(uiSrc) && /rank-stripe/.test(uiSrc), "friend added banner, rank flash, and rank stripe");
+assert(/\.roster-create \.face-tile span \{[^}]*font-size:\s*12px/.test(cssSrc), "create face names are readable");
 console.log("ok roster ladder");
 
 console.log("ALL TESTS PASSED");
