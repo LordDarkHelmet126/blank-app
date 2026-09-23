@@ -9,7 +9,7 @@ import {
   remainingRatio,
   siegeCommand,
 } from "./battle.js";
-import { inlandDesk } from "./inland.js";
+import { inlandDesk, stampDuelDesk } from "./inland.js";
 import {
   hydrateLife,
   tickLife,
@@ -1164,6 +1164,7 @@ function beginDuel(state, actor, foe, extra = {}) {
     jobTemplateId: extra.jobTemplateId || null,
     deskId: extra.deskId || null,
   });
+  stampDuelDesk(state.duel, extra.deskId || regionId);
   state.duel.actorId = actor.id;
   return state.duel;
 }

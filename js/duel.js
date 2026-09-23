@@ -6,7 +6,7 @@
  * the exchange count, or the hit math.
  */
 
-import { inlandDesk, inlandLook } from "./inland.js";
+import { inlandDesk, inlandLook, stampDuelDesk } from "./inland.js";
 
 export const DUEL_MOVES = [
   { id: "strike", label: "Strike", beats: "special", verb: "cuts through" },
@@ -323,7 +323,7 @@ export function createDuel({
   const youSnap = snapshot(you, youStats, regionId, seasonId, youStyleId);
   const foeSnap = snapshot(foe, foeStats, regionId, seasonId, foeStyleId);
   if (youStyleId === "cycle") youSnap.style = packStyle(styleOf("brawler"));
-  return {
+  const duel = {
     you: youSnap,
     foe: foeSnap,
     youHp: youMax,
@@ -358,6 +358,8 @@ export function createDuel({
     result: null,
     exchangesDone: 0,
   };
+  if (desk) stampDuelDesk(duel, desk);
+  return duel;
 }
 
 export function aiMove(duel, roll01, side = "foe") {

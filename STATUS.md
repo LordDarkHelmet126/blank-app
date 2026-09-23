@@ -6,7 +6,7 @@ Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update 
 
 ## Foreign-desk duel read
 
-A yard duel tied to one of the six locked inland ids keeps the **99s / 11 exchange** clock, the amber NEXT line, hit juice, and the style specials. The backdrop, the panel edge, and a short desk strip now match that siege desk. NEXT leads with the desk name. A duel with no desk id stays the domestic yard.
+A yard duel tied to one of the six locked inland ids keeps the **99s / 11 exchange** clock, the amber NEXT line, hit juice, and the style specials. `/?demo=duel&node=<id>` stamps that siege desk onto the yard after the duel is created, and the chrome also reads `node=` directly. The title is the siege strip (`KAMCHATKA DESK`), the yard paints that theater instead of the snowy roadhouse, and NEXT leads with the desk name and read. A duel with no desk id stays the domestic snowy roadhouse.
 
 | Id | Strip | Read | Yard |
 | --- | --- | --- | --- |

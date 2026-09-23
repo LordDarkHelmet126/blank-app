@@ -79,7 +79,7 @@ import {
   geoTags,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
-import { inlandDesk, inlandLook } from "./inland.js";
+import { inlandDesk, inlandLook, stampDuelDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -103,6 +103,39 @@ function parseDemoFx(params) {
 
 function demoQuery() {
   return new URLSearchParams(location.search);
+}
+
+function openDemoDuel() {
+  const params = demoQuery();
+  startSliceState();
+  const goliath = params.get("goliath") === "1";
+  const style = params.get("style");
+  const arena = params.get("arena");
+  const node = params.get("node");
+  let foe;
+  if (goliath) {
+    foe = state.officers.find((o) => o.id === "marsh");
+    if (foe) {
+      foe.hidden = false;
+      foe.region = "bethel";
+      if (!state.discovered.includes("marsh")) state.discovered.push("marsh");
+      state.marshHunt = 2;
+    }
+  } else {
+    foe = state.officers.find((o) => o.id === "hart");
+  }
+  if (foe) {
+    const res = act(state, content, "challenge", {
+      officerId: foe.id,
+      youStyleId: style || undefined,
+      arenaId: arena || undefined,
+      deskId: node || undefined,
+    });
+    if (!res.ok) toast(res.message);
+  }
+  if (state?.duel) stampDuelDesk(state.duel, node);
+  hideModal();
+  render();
 }
 
 function openDemoSiege() {
@@ -448,34 +481,7 @@ export async function boot(loaded) {
     return;
   }
   if (params.get("demo") === "duel") {
-    startSliceState();
-    const goliath = params.get("goliath") === "1";
-    const style = params.get("style");
-    const arena = params.get("arena");
-    const node = params.get("node");
-    let foe;
-    if (goliath) {
-      foe = state.officers.find((o) => o.id === "marsh");
-      if (foe) {
-        foe.hidden = false;
-        foe.region = "bethel";
-        if (!state.discovered.includes("marsh")) state.discovered.push("marsh");
-        state.marshHunt = 2;
-      }
-    } else {
-      foe = state.officers.find((o) => o.id === "hart");
-    }
-    if (foe) {
-      const res = act(state, content, "challenge", {
-        officerId: foe.id,
-        youStyleId: style || undefined,
-        arenaId: arena || undefined,
-        deskId: node || undefined,
-      });
-      if (!res.ok) toast(res.message);
-    }
-    hideModal();
-    render();
+    openDemoDuel();
     afterFonts();
     return;
   }
@@ -2660,9 +2666,30 @@ function paintStyleStripe(id, style) {
   el.style.background = styleInk(style);
 }
 
+function demoDuelNode() {
+  const params = demoQuery();
+  if (params.get("demo") !== "duel") return null;
+  const node = params.get("node");
+  return inlandLook(node) ? node : null;
+}
+
+function activeDuelDesk(d) {
+  if (inlandLook(d?.deskId)) return d.deskId;
+  return demoDuelNode();
+}
+
+function syncDuelDesk(d) {
+  const id = activeDuelDesk(d);
+  if (d && id) stampDuelDesk(d, id);
+  return id;
+}
+
 function duelDeskPrefix(d) {
-  const line = inlandDesk(d?.deskId)?.line;
-  return line ? `${line}. ` : "";
+  const id = syncDuelDesk(d);
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!desk || !look) return "";
+  return `${desk.line}. ${look.read}. `;
 }
 
 function duelNextLine(d) {
@@ -2707,8 +2734,10 @@ function paintDuelStatic() {
   paintStyleStripe("duel-foe-stripe", foe.style);
   $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""} · WAR ${foe.stats.war}`;
   $("duel-foe-stats").textContent = foe.wound ? "WOUND — WAR cut" : `INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
-  if ($("duel-arena")) $("duel-arena").textContent = inlandDesk(d.deskId)?.line || d.arena?.label || "Yard";
-  paintDuelDesk(d.deskId);
+  const deskId = syncDuelDesk(d);
+  const look = inlandLook(deskId);
+  if ($("duel-arena")) $("duel-arena").textContent = look?.strip || d.arena?.label || "Yard";
+  paintDuelDesk(deskId);
 }
 
 function clearDuelDesk() {
@@ -2796,7 +2825,8 @@ function drawDuelYard(now) {
   const w = canvas.width;
   const h = canvas.height;
   ctx.imageSmoothingEnabled = false;
-  if (!paintInlandDuelYard(ctx, w, h, state.duel.deskId)) {
+  const deskId = syncDuelDesk(state.duel);
+  if (!paintInlandDuelYard(ctx, w, h, deskId)) {
     paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
   }
   const bob = Math.floor(now / 280) % 2;
@@ -2820,6 +2850,7 @@ function drawDuelYard(now) {
     ctx.fillRect(0, 0, w, h);
     ctx.globalAlpha = 1;
   }
+  if (deskId) paintDuelDeskPlate(ctx, w, deskId);
 }
 
 function paintStyleBar(ctx, x, y, color) {
@@ -2846,68 +2877,74 @@ function px(ctx, x, y, w, h, c) {
   ctx.fillRect(x, y, w, h);
 }
 
+function paintDuelDeskPlate(ctx, w, id) {
+  const look = inlandLook(id);
+  const desk = inlandDesk(id);
+  if (!look || !desk) return;
+  px(ctx, 0, 0, w, 42, look.stripBg);
+  px(ctx, 0, 0, w, 4, look.edge);
+  ctx.font = "bold 18px monospace";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = look.ink;
+  ctx.fillText(look.strip, 16, 6);
+  ctx.font = "13px monospace";
+  ctx.fillStyle = look.readInk;
+  ctx.fillText(look.read, 16, 26);
+}
+
 function paintInlandDuelYard(ctx, w, h, id) {
   const look = inlandLook(id);
   if (!look) return false;
   px(ctx, 0, 0, w, h, look.bg);
   if (id === "kamchatka") {
-    px(ctx, 0, 24, w, 36, "#0a2430");
-    px(ctx, 70, 16, 100, 40, "#1a2830");
-    px(ctx, 96, 6, 30, 16, "#8fd4ea");
-    px(ctx, 0, 72, w, h, "#d4eef6");
-    px(ctx, 0, 72, w, 8, "#145068");
-    px(ctx, 36, 88, 16, 30, "#8fd4ea");
-    px(ctx, 540, 84, 22, 34, "#b7e6f4");
+    px(ctx, 0, 0, w, h, "#07141c");
+    px(ctx, 0, 56, w, 16, "#145068");
+    px(ctx, 0, 78, w, h, "#0a3044");
+    px(ctx, 0, 78, w, 6, "#8fd4ea");
+    for (const x of [36, 140, 280, 420, 540]) px(ctx, x, 96, 36, 8, "#8fd4ea");
   } else if (id === "siberia") {
-    px(ctx, 0, 36, w, h, "#1a2a14");
-    for (const x of [20, 64, 520, 576]) {
-      px(ctx, x, 30, 8, 72, "#5a3a18");
-      px(ctx, x - 14, 16, 36, 26, "#243818");
-      px(ctx, x - 8, 4, 24, 16, "#7cb342");
+    px(ctx, 0, 48, w, h, "#142010");
+    for (const x of [24, 80, 500, 560]) {
+      px(ctx, x, 36, 10, 80, "#5a3a18");
+      px(ctx, x - 16, 18, 42, 28, "#243818");
+      px(ctx, x - 8, 6, 26, 16, "#7cb342");
     }
-    px(ctx, 0, 118, w, 12, "#5a3a18");
-    px(ctx, 0, 132, w, 8, "#243818");
+    px(ctx, 0, 124, w, 14, "#5a3a18");
   } else if (id === "havana") {
-    px(ctx, 0, 0, w, 64, "#0c3844");
-    px(ctx, 0, 22, w, 10, "#26c6b0");
-    px(ctx, 0, 44, w, 8, "#8ee0d4");
-    px(ctx, 160, 36, 80, 28, "#d8c0a0");
-    px(ctx, 188, 22, 8, 16, "#f8f8f8");
-    px(ctx, 0, 64, w, 14, "#6a3018");
-    px(ctx, 0, 78, w, h, "#c4a574");
+    px(ctx, 0, 0, w, 70, "#06303c");
+    px(ctx, 0, 28, w, 12, "#26c6b0");
+    px(ctx, 0, 48, w, 8, "#8ee0d4");
+    px(ctx, 0, 70, w, 16, "#6a3018");
+    px(ctx, 0, 86, w, h, "#c4a574");
+    px(ctx, 220, 40, 90, 30, "#d8c0a0");
   } else if (id === "managua") {
-    px(ctx, 0, 30, w, h, "#c47830");
-    px(ctx, 12, 70, 30, 28, "#f0b429");
-    px(ctx, 48, 80, 22, 20, "#6a4018");
-    px(ctx, 500, 64, 40, 34, "#f0b429");
-    px(ctx, 546, 82, 24, 18, "#4a3010");
-    px(ctx, 0, 108, w, 16, "#4a3010");
-    px(ctx, 0, 124, w, 4, "#1a1008");
+    px(ctx, 0, 36, w, h, "#c47830");
+    px(ctx, 20, 78, 36, 32, "#f0b429");
+    px(ctx, 64, 90, 24, 20, "#6a4018");
+    px(ctx, 500, 70, 48, 36, "#f0b429");
+    px(ctx, 0, 118, w, 18, "#4a3010");
   } else if (id === "sponsor_lane") {
-    px(ctx, 0, 44, w, h, "#1c220e");
-    px(ctx, 48, 40, 40, 30, "#3a4018");
-    px(ctx, 54, 46, 28, 8, "#e6ee55");
-    px(ctx, 130, 32, 44, 36, "#2a3010");
-    px(ctx, 136, 40, 32, 8, "#f7f7b0");
-    px(ctx, 470, 28, 52, 42, "#3a4018");
-    px(ctx, 476, 36, 36, 8, "#e6ee55");
-    px(ctx, 280, 58, 8, 54, "#686040");
-    px(ctx, 230, 54, 108, 8, "#e6ee55");
-    px(ctx, 0, 100, w, 8, "#e6ee55");
+    px(ctx, 0, 40, w, h, "#1c220e");
+    px(ctx, 48, 48, 48, 34, "#3a4018");
+    px(ctx, 56, 56, 32, 10, "#e6ee55");
+    px(ctx, 160, 40, 52, 40, "#2a3010");
+    px(ctx, 168, 50, 36, 10, "#f7f7b0");
+    px(ctx, 480, 36, 60, 46, "#3a4018");
+    px(ctx, 220, 70, 120, 10, "#e6ee55");
+    px(ctx, 0, 108, w, 8, "#e6ee55");
   } else if (id === "kr_inland") {
-    px(ctx, 0, 0, w, 70, "#1a1428");
-    px(ctx, 0, 42, 210, 44, "#3a2858");
-    px(ctx, 150, 22, 240, 64, "#2c2040");
-    px(ctx, 340, 12, 200, 74, "#3a2858");
-    px(ctx, 0, 86, w, h, "#120e18");
-    px(ctx, 0, 86, w, 6, "#c9a0e8");
-    px(ctx, 70, 16, 3, 3, "#f3e4ff");
-    px(ctx, 420, 10, 3, 3, "#f3e4ff");
+    px(ctx, 0, 0, w, 80, "#1a1428");
+    px(ctx, 0, 46, 220, 50, "#3a2858");
+    px(ctx, 160, 24, 260, 72, "#2c2040");
+    px(ctx, 360, 14, 220, 80, "#3a2858");
+    px(ctx, 0, 96, w, h, "#120e18");
+    px(ctx, 0, 96, w, 6, "#c9a0e8");
   } else {
-    px(ctx, 0, 36, w, h - 44, look.panel);
+    px(ctx, 0, 40, w, h, look.panel);
   }
-  px(ctx, 0, 0, w, 6, look.edge);
-  px(ctx, 0, h - 6, w, 6, look.edge);
+  px(ctx, 0, 0, 10, h, look.edge);
+  px(ctx, w - 10, 0, 10, h, look.edge);
   return true;
 }
 

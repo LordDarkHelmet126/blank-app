@@ -889,7 +889,9 @@ assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
 assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
 assert(/id="duel-next"/.test(pageSrc), "duel NEXT coach line");
 assert(/function duelNextLine/.test(uiSrc), "duel coach names the next press");
-assert(/duelDeskPrefix/.test(uiSrc) && /inlandDesk\(d\?\.deskId\)/.test(uiSrc), "duel NEXT leads with the desk when one is bound");
+assert(/function openDemoDuel/.test(uiSrc) && /stampDuelDesk\(state\.duel, node\)/.test(uiSrc), "demo=duel stamps node= onto the yard");
+assert(/function activeDuelDesk/.test(uiSrc) && /demoDuelNode/.test(uiSrc), "duel chrome reads node= even if create dropped the desk");
+assert(/duelDeskPrefix/.test(uiSrc) && /look\.read/.test(uiSrc), "duel NEXT leads with the desk read");
 assert(/deskId: node \|\| undefined/.test(uiSrc), "demo=duel&node= binds a desk");
 assert(/id="duel-desk"/.test(pageSrc), "duel desk strip is on the yard");
 assert(/\.duel\[data-desk\]/.test(siegeCss) && /--desk-edge/.test(siegeCss), "duel edge tints from the desk id");
@@ -919,8 +921,31 @@ assert(iceDuel.clockS === homeDuel.clockS && iceDuel.maxExchanges === homeDuel.m
 assert(iceDuel.youMax === homeDuel.youMax && iceDuel.foeMax === homeDuel.foeMax, "desk does not change HP");
 assert(iceDuel.green[0] === homeDuel.green[0] && iceDuel.green[1] === homeDuel.green[1], "desk does not change the green window");
 assert(iceDuel.arena.id === homeDuel.arena.id, "desk does not swap the arena id");
+assert(iceDuel.arena.label === "KAMCHATKA DESK", "desk title uses the siege strip");
 assert(iceDuel.log[0].startsWith("Kamchatka desk"), "opening line names the Kamchatka desk");
+assert(!/Snowy roadhouse/.test(iceDuel.log[0] + iceDuel.arena.label), "desk yard does not keep the roadhouse name");
 assert(homeDuel.log[0].startsWith(homeDuel.arena.label), "domestic opening line stays the arena");
+const winterHome = createDuel({
+  you: { id: "a", name: "A", title: "Scout", personality: "loyalist" },
+  youStats: { war: 55, int: 50, pol: 50, chr: 50 },
+  foe: { id: "b", name: "B", title: "Volunteer", personality: "loyalist" },
+  foeStats: { war: 55, int: 50, pol: 50, chr: 50 },
+  regionId: "bethel",
+  seasonId: "winter",
+});
+const winterDesk = createDuel({
+  you: { id: "a", name: "A", title: "Scout", personality: "loyalist" },
+  youStats: { war: 55, int: 50, pol: 50, chr: 50 },
+  foe: { id: "b", name: "B", title: "Volunteer", personality: "loyalist" },
+  foeStats: { war: 55, int: 50, pol: 50, chr: 50 },
+  regionId: "bethel",
+  seasonId: "winter",
+  deskId: "havana",
+});
+assert(winterHome.deskId == null && winterHome.arena.label === "Snowy roadhouse", "winter Bethel stays the snowy roadhouse");
+assert(winterDesk.deskId === "havana" && winterDesk.arena.label === "HAVANA DESK", "winter desk duel replaces the roadhouse title");
+assert(winterDesk.clockS === winterHome.clockS && winterDesk.maxExchanges === winterHome.maxExchanges, "winter desk keeps 99s / 11");
+assert(winterDesk.youMax === winterHome.youMax && winterDesk.green[0] === winterHome.green[0], "winter desk does not change HP or the green window");
 assert(createDuel({
   you: { id: "a", name: "A", title: "Scout", personality: "loyalist" },
   youStats: { war: 55, int: 40, pol: 40, chr: 40 },
