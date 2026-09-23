@@ -36,7 +36,7 @@
       <div id="objective" class="objective" hidden>
         <div class="objective-copy">
           <strong id="obj-kicker">NEXT</strong>
-          <span id="obj-text">Raise a banner in Bethel.</span>
+          <span id="obj-text">Raise a banner in Cheyenne.</span>
         </div>
         <button type="button" id="btn-coach">Coach</button>
       </div>
@@ -55,12 +55,29 @@
           </section>
         </aside>
         <section class="map-wrap">
-          <header class="chrome-head">
+          <header class="chrome-head map-head">
             <span class="panel-title">Theater</span>
-            <p class="map-caption" id="map-caption">MAP — topo land · pale roads · node + faction flag · 1980s marks</p>
+            <div class="wash-key" aria-label="Wash key">
+              <span><i class="key-occ"></i>Occupied</span>
+              <span><i class="key-con"></i>Contested</span>
+              <span><i class="key-held"></i>Held</span>
+            </div>
+            <p class="map-caption" id="map-caption">MAP — US coastline</p>
+            <div class="zoom-btns">
+              <button type="button" id="btn-zoom-out" title="Zoom out">−</button>
+              <button type="button" id="btn-zoom-in" title="Zoom in">+</button>
+              <button type="button" id="btn-zoom-world" title="World">World</button>
+            </div>
+            <button type="button" id="btn-legend" title="Banners (L)">Banners</button>
           </header>
-          <canvas id="map" width="1000" height="620" aria-label="Western theater map, Alaska through the plains"></canvas>
-          <div class="map-legend" id="legend"></div>
+          <section class="card map-legend-card" id="legend-card" hidden>
+            <div class="chrome-head">
+              <span class="panel-title">Banners</span>
+              <span class="panel-why">L hides this. Not on the map.</span>
+            </div>
+            <div class="map-legend" id="legend"></div>
+          </section>
+          <canvas id="map" width="1000" height="620" aria-label="Continental United States theater map"></canvas>
         </section>
       </main>
 

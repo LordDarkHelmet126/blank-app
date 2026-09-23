@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Look-demo paint: Bethel here-chip stays in AK; thicker roads/plates; stronger ownership wash.
+**Last checkpoint:** 2026-09-23 — California and Nevada cities are on the silhouette. A new game starts in Cheyenne.
 
 ## How to run
 
@@ -16,13 +16,15 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver selected, Cheyenne–Denver pulse). California frame: `/?demo=look&view=ca`. Cold new game: `/?demo=start`. Globe: `/?demo=look&view=world`.
 
-## PNW polish (first theater pass)
+## US silhouette (this pass)
 
-WA–PNW is the hero biome on the look demo. West of the Cascades (Seattle / Olympia / Portland) is darker wet evergreen with Sound mist. A height ridge sits between the Sound and Spokane so the west→east road reads as a climb (no new leap edges). East WA is drier pine, still forest-family. Seattle mark is main-street; Olympia and Spokane are mills.
+The lower 48 is one connected coastline — Florida, Texas, California, the Great Lakes, and New England. State borders are drawn inside that mask (a political map). Biomes are soft texture, not land tiles. Faction washes use each banner’s color: dark edge occupied, light edge contested, gold edge held. States with no cities east of the Cheyenne–Kansas–Missouri stall, including the Gulf and Texas, wash occupied in the existing invader red. Arizona and New Mexico stay unwash. California and Nevada wash from Sacramento, Los Angeles, Reno, and Las Vegas. A dashed stall line runs only on existing roads from Cheyenne through Kansas to St. Louis. Prairie Fire, Gulf, Border Fury, and Bering are names in the Banners panel (L), not plates on the land. Subtle arrows mark the Bering and the Rio Grande. Nuke scars are unlabeled crater marks at DC, Manhattan, Kansas City, Offutt, Minot, Grand Forks, and Ellsworth. The Occupied / Contested / Held key is in the theater header. Alaska is the real outline; Yukon is the northwest spur. Banners sit in the side column, hidden until L or the Banners button — never on the land. `/?demo=look` and `/?demo=start` hide the side column, court, and chronicle, and compress the status strip so the theater leads. The theater caption uses its own line on those demos so season, route, and phase stay fully visible. Short stall links, the Cheyenne–Denver front, and the ten shared-border roads draw as a thicker stroke at US zoom. `/?demo=look&view=near` parks Cheyenne, Denver, Gulf Sealift, Cuba, and Nicaragua so those plates do not stack or run off the canvas. The look demo still opens on the Cheyenne–Denver road. A real new game also starts in Cheyenne: the city is unowned, Raise Banner founds Northern Front there, and the here chip is not Bethel. Cold start: `/?demo=start`. Every lower-48 postal is labeled, including CA and NV. Sacramento, Los Angeles, Reno, and Las Vegas sit on the land with original 80s marks (elevator, street, ranch, tower). Roads are neighbor-only: Eugene–Sacramento, Sacramento–Los Angeles, Sacramento–Reno, Los Angeles–Las Vegas, Reno–Las Vegas, Salt Lake–Las Vegas, plus the shared-border set Spokane–Portland, Spokane–Bend, Boise–Missoula, Boise–Jackson, Cheyenne–Salt Lake, Cheyenne–Lincoln, Denver–Lincoln, Reno–Salt Lake, Lincoln–Wichita, and Topeka–St. Louis. Gulf Sealift (`gulf_passage`) is painted on the gulf from week 0. Travel stays locked until phase 3: St. Louis → Gulf Sealift → Cuba → Nicaragua. `/?demo=look&view=gulf` frames that marker. Russia stays Nome → Bering. No leap edges. Land is a light political field: faction washes and state outlines, no tree or mesa stamps. Wheel, +/−, and drag pan the theater. `/?demo=look&view=world` is a full-globe faction wash (Soviet, bloc, allies, neutrals) on real coasts, with unlabeled strike marks and a header key. On the world view the lower 48 stays the state-line silhouette, with the sea card lifted so the faction coasts show around it. `/?demo=look&view=near` pulls in so that silhouette is readable beside Canada, the Gulf, and Cuba. `/?demo=look&view=bering` frames the strait so Nome, Bering, Russia, Kamchatka, and Siberia share one view, with Far East relief and the locked roads. `/?demo=look&view=cuba` frames Gulf Sealift, Cuba, Havana, Nicaragua, and Managua so those captions and the locked paths sit in the frame. `/?demo=look&view=korea` frames Sponsor Lane into Korea and the peninsula sheds. No direct Russia–Korea leap. Those zooms shade the coasts around the locked desks (`bering_strait`, `far_russia`, `gulf_passage`, `far_cuba`, `far_nicaragua`, `far_korea`). Arizona stays paint-only. No new inland or sponsor edges: Korea is a desk until Campaign unlocks the sponsor link. Sea marks only: Bering→Russia and the Gulf approach→Cuba/Nicaragua. No new roads. The lower 48 stays the state plate. `/?demo=look&view=ca` frames California and Nevada.
 
-Look-demo paint fix: the “you are here” nameplate is a compact chip anchored above the home city (Bethel stays in AK, not on the Seattle box). Roads and selected plates are larger; ownership wash/edge is stronger.
+Terrain paints at 1000×620 (one pixel per map unit). Coasts are a hard cream rim. Roads are a cream line, and short stall and shared-border segments are drawn thicker. 1980s marks stay ranch, elevator, street, mill, tower, bunker, pump. HUD type is 16px; nameplates and state codes sit on solid high-contrast plates. Ownership wash is stronger, with a dark edge under the faction color. Selection and road pulses are steady or slow — no strobe.
+
+PNW still reads on the look demo: wet Sound forest, a Cascades ridge toward Spokane, Seattle as main-street. The new-game here chip is Cheyenne, not Bethel.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 **States demo:** `/?demo=states` or `/?demo=map` still works.
 
@@ -58,7 +60,7 @@ Phase 1 liberate states. Phase 2 at **8** west-bloc US states (national leader).
 
 ## Counts (exact)
 
-- **US states: 11** · **Yukon: 1** · **territories on those units: 33** · **foreign stubs: 4** · **total nodes: 37**
+- **US states: 13** · **Yukon: 1** · **territories on those units: 37** · **foreign stubs: 4** · **total nodes: 41**
 - On-map factions: **17** · AI officers: **153** · legends: **3**
 - Duel clock: **99s** / **11** exchanges
 

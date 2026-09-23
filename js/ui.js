@@ -22,6 +22,7 @@ import {
   paintTheaterTerrain,
   terrainSize,
 } from "./terrain.js";
+import { WORLD_LAND } from "./world-washes.js";
 import {
   createNewGame,
   listActions,
@@ -98,7 +99,7 @@ function startSliceState() {
     seed: 7,
   });
   act(state, content, "raise_banner");
-  selectedRegion = "bethel";
+  selectedRegion = "cheyenne";
   hideModal();
 }
 
@@ -147,6 +148,7 @@ export async function boot(loaded) {
     if (fxKind === "battle") {
       const home = regionOf(state, "bethel");
       home.garrison = 90;
+      playerOf(state).region = "bethel";
       const fight = act(state, content, "attack", { regionId: "nome" });
       if (fight.battle && state.battle) {
         state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
@@ -214,7 +216,7 @@ export async function boot(loaded) {
       difficulty: "normal",
       seed: 7,
     });
-    selectedRegion = "bethel";
+    selectedRegion = "cheyenne";
     commandCat = "domestic";
     coachForced = true;
     coachOn = true;
@@ -323,13 +325,38 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
-  if (params.get("demo") === "look" || params.get("demo") === "terrain") {
-    startSliceState();
-    selectedRegion = params.get("focus") || params.get("city") || "seattle";
-    commandCat = "domestic";
+  if (params.get("demo") === "start") {
+    document.body.classList.add("look-map");
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    selectedRegion = "denver";
     hideModal();
     render();
-    pulseTravel("juneau", "seattle", { loop: true });
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "look" || params.get("demo") === "terrain") {
+    document.body.classList.add("look-map");
+    startSliceState();
+    selectedRegion = params.get("focus") || params.get("city") || "denver";
+    commandCat = "domestic";
+    hideModal();
+    const battleFx = params.get("fx") === "battle";
+    if (!battleFx) playerOf(state).region = "cheyenne";
+    render();
+    const view = params.get("view");
+    if (view === "world") frameWorld();
+    else if (view === "near") frameNear();
+    else if (view === "ca") frameCa();
+    else if (view === "gulf") frameGulf();
+    else if (view === "bering") frameBering();
+    else if (view === "cuba") frameCuba();
+    else if (view === "korea") frameKorea();
+    if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
       wireAfterRender();
@@ -337,6 +364,7 @@ export async function boot(loaded) {
     if (params.get("fx") === "battle") {
       const home = regionOf(state, "bethel");
       home.garrison = 90;
+      playerOf(state).region = "bethel";
       const fight = act(state, content, "attack", { regionId: "nome" });
       if (fight.battle && state.battle) {
         state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
@@ -419,6 +447,10 @@ function bindChrome() {
   };
   $("btn-factions").onclick = () => showModal(factionsHtml());
   $("btn-states").onclick = () => showModal(campaignHtml());
+  $("btn-legend").onclick = () => toggleLegend();
+  $("btn-zoom-in").onclick = () => zoomBy(1.2);
+  $("btn-zoom-out").onclick = () => zoomBy(1 / 1.2);
+  $("btn-zoom-world").onclick = () => frameWorld();
   $("btn-missions").onclick = () => {
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
@@ -440,8 +472,26 @@ function bindChrome() {
   });
   $("duel-continue").onclick = closeDuel;
   const canvas = $("map");
-  canvas.addEventListener("click", onMapClick);
-  canvas.addEventListener("mousemove", onMapMove);
+  canvas.addEventListener("pointermove", onMapPointerMove);
+  canvas.addEventListener("pointerdown", onMapPointerDown);
+  canvas.addEventListener("pointerup", onMapPointerUp);
+  canvas.addEventListener("pointerleave", () => {
+    mapView.drag = null;
+  });
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      if (!state) return;
+      e.preventDefault();
+      const [sx, sy] = canvasPoint(e, canvas);
+      const next = Math.max(0.16, Math.min(3.2, mapView.z * (e.deltaY > 0 ? 0.88 : 1.14)));
+      mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
+      mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
+      mapView.z = next;
+      drawMap();
+    },
+    { passive: false },
+  );
   const bc = $("battle-canvas");
   bc.addEventListener("click", onBattleClick);
   window.addEventListener("keydown", (e) => {
@@ -452,6 +502,9 @@ function bindChrome() {
       return;
     }
     if (e.key === "e" && state && state.phase === "strategy") run("end_week");
+    if ((e.key === "l" || e.key === "L") && state?.phase === "strategy" && e.target?.tagName !== "INPUT" && e.target?.tagName !== "TEXTAREA") {
+      toggleLegend();
+    }
   });
 }
 
@@ -459,7 +512,7 @@ function titleScreenHtml(hasSave) {
   return `
     <p class="muted">Original IP. Alaska-first western theater. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
-    <p><strong>Click Begin week 0.</strong> You start alone in Bethel. First job: raise a banner, spend AP, then End Week.</p>
+    <p><strong>Click Begin week 0.</strong> You start alone in Cheyenne. First job: raise a banner, spend AP, then End Week.</p>
     <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
@@ -499,7 +552,7 @@ function wireTitle() {
     start.onclick = () => {
       const name = $("modal-card").querySelector("#ng-name").value;
       state = createNewGame(content, { name, background: bg, difficulty: diff });
-      selectedRegion = "bethel";
+      selectedRegion = "cheyenne";
       commandCat = "domestic";
       hideModal();
       render();
@@ -739,7 +792,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
+      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1337,7 +1390,7 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Bethel as Northern Front. It costs 1 AP.",
+    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },
@@ -1644,17 +1697,211 @@ function renderLog() {
     .join("");
 }
 
+/** East and Gulf states have no cities. They read occupied up to the Cheyenne–KS/MO stall.
+ *  AZ and NM stay bare. CA and NV wash from their real city owners. */
+const OCCUPIED_EAST = new Set(
+  "ND SD MN IA OK TX AR LA WI IL IN MI OH KY TN MS AL GA FL SC NC VA WV PA NY NJ DE MD CT RI MA VT NH ME".split(" "),
+);
+
+function stateWash(postal) {
+  const code = String(postal || "").toUpperCase();
+  const cities = state.regions.filter((r) => r.stateCode === code && !(r.unlockPhase > 0));
+  if (!cities.length) {
+    if (OCCUPIED_EAST.has(code)) return { color: "#9a3b3b", kind: "occupied" };
+    return null;
+  }
+  const p = playerOf(state);
+  const liberated = (ensureCampaign(state).liberated || []).includes(code);
+  if (liberated || (p?.faction && cities.every((r) => r.owner === p.faction))) {
+    const fac = p?.faction ? factionOf(state, p.faction) : null;
+    return { color: fac?.color || "#d4a056", kind: "held" };
+  }
+  const counts = {};
+  cities.forEach((r) => {
+    if (r.owner) counts[r.owner] = (counts[r.owner] || 0) + 1;
+  });
+  const ids = Object.keys(counts);
+  if (!ids.length) return null;
+  ids.sort((a, b) => counts[b] - counts[a]);
+  const top = factionOf(state, ids[0]);
+  const invaderN = ids.reduce((n, id) => n + (factionOf(state, id)?.alignment === "invader" ? counts[id] : 0), 0);
+  if (invaderN * 2 >= cities.length) {
+    const inv = ids.map((id) => factionOf(state, id)).find((f) => f?.alignment === "invader");
+    return { color: inv?.color || "#9a3b3b", kind: "occupied" };
+  }
+  if (ids.length > 1) return { color: top?.color || "#c9a06a", kind: "contested" };
+  return { color: top?.color || "#6a8f5a", kind: "local" };
+}
+
+function foreignCorridors() {
+  const out = [];
+  const add = (id, b, color) => {
+    const r = regionOf(state, id);
+    if (!r || !theaterVisible(state, r)) return;
+    out.push({ a: cityXY(r), b, color });
+  };
+  add("far_russia", [8, 72], "#7aa0b4");
+  add("far_cuba", [470, 568], "#8c4a4a");
+  add("far_nicaragua", [620, 572], "#8c4a4a");
+  return out;
+}
+
+function toggleLegend() {
+  const card = $("legend-card");
+  if (!card) return;
+  card.hidden = !card.hidden;
+}
+
 function renderLegend() {
-  $("legend").innerHTML = state.factions
+  const phases = ["Prairie Fire", "Gulf", "Border Fury", "Bering"]
+    .map((name) => `<span class="phase-line">${esc(name)}</span>`)
+    .join("");
+  const scars = NUKE_SCARS.map((s) => esc(s.name)).join(" ");
+  const banners = state.factions
     .filter((f) => f.onMap && (f.id !== "northern_front" || f.alive))
     .map((f) => `<span><i style="background:${f.color}"></i>${esc(f.short)}</span>`)
-    .join("") + `<span><i style="background:#5a6a72"></i>Open</span>`;
+    .join("");
+  $("legend").innerHTML = `${phases}<span>Scars ${scars}</span>${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
+}
+
+const mapView = { z: 1, x: 0, y: 0, drag: null, pacific: false, focus: null };
+
+function canvasPoint(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  return [
+    ((e.clientX - rect.left) / rect.width) * canvas.width,
+    ((e.clientY - rect.top) / rect.height) * canvas.height,
+  ];
+}
+
+function zoomBy(factor) {
+  const sx = 500;
+  const sy = 310;
+  const next = Math.max(0.16, Math.min(3.2, mapView.z * factor));
+  mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
+  mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
+  mapView.z = next;
+  drawMap();
+}
+
+function frameBox(x0, y0, x1, y1) {
+  const z = Math.min(1000 / (x1 - x0), 620 / (y1 - y0)) * 0.88;
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  mapView.z = z;
+  mapView.x = 500 - cx * z;
+  mapView.y = 310 - cy * z;
+  drawMap();
+}
+
+function clearForeignFrame() {
+  mapView.pacific = false;
+  mapView.focus = null;
+}
+
+function frameWorld() {
+  clearForeignFrame();
+  const [xWest, yNorth] = projectLL(-175, 78);
+  const [xEast, ySouth] = projectLL(185, -56);
+  const minX = Math.min(xWest, xEast) - 30;
+  const maxX = Math.max(xWest, xEast) + 30;
+  const minY = Math.min(yNorth, ySouth) - 24;
+  const maxY = Math.max(yNorth, ySouth) + 24;
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.98;
+  mapView.z = z;
+  mapView.x = (1000 - (minX + maxX) * z) / 2;
+  mapView.y = (620 - (minY + maxY) * z) / 2;
+  drawMap();
+}
+
+function frameNear() {
+  clearForeignFrame();
+  mapView.z = 0.56;
+  mapView.x = 48;
+  mapView.y = 72;
+  drawMap();
+}
+
+function frameCa() {
+  clearForeignFrame();
+  frameBox(20, 200, 300, 520);
+}
+
+function frameGulf() {
+  clearForeignFrame();
+  frameBox(470, 300, 760, 610);
+}
+
+function frameLonLat(lon0, lat0, lon1, lat1, pad) {
+  const [xA, yA] = projectLL(lon0, lat0);
+  const [xB, yB] = projectLL(lon1, lat1);
+  const minX = Math.min(xA, xB);
+  const maxX = Math.max(xA, xB);
+  const minY = Math.min(yA, yB);
+  const maxY = Math.max(yA, yB);
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
+  mapView.z = Math.max(0.16, Math.min(3.2, z));
+  mapView.x = (1000 - (minX + maxX) * z) / 2;
+  mapView.y = (620 - (minY + maxY) * z) / 2;
+  drawMap();
+}
+
+/**
+ * Strait close-up. Longitude wraps so Nome, Bering, Russia, Kamchatka,
+ * and Siberia share one frame. The sponsor lane stays on the Korea frame.
+ */
+function frameBering() {
+  mapView.pacific = true;
+  mapView.focus = "bering";
+  frameLonLat(136, 72, -154, 50, 0.88);
+}
+
+/** Gulf Sealift, Cuba, Havana, Nicaragua, and Managua. */
+function frameCuba() {
+  mapView.pacific = false;
+  mapView.focus = "cuba";
+  frameLonLat(-97, 29, -73, 8.2, 0.88);
+}
+
+/** Sponsor lane into Korea and the peninsula sheds. No direct Russia–Korea leap. */
+function frameKorea() {
+  mapView.pacific = false;
+  mapView.focus = "korea";
+  frameLonLat(118, 68, 170, 32, 0.88);
+}
+
+function onMapPointerDown(e) {
+  const canvas = $("map");
+  const [sx, sy] = canvasPoint(e, canvas);
+  mapView.drag = { sx, sy, x: mapView.x, y: mapView.y, moved: false };
+  canvas.setPointerCapture?.(e.pointerId);
+}
+
+function onMapPointerMove(e) {
+  if (!mapView.drag) {
+    onMapMove(e);
+    return;
+  }
+  const [sx, sy] = canvasPoint(e, $("map"));
+  const dx = sx - mapView.drag.sx;
+  const dy = sy - mapView.drag.sy;
+  if (Math.hypot(dx, dy) > 3) mapView.drag.moved = true;
+  if (!mapView.drag.moved) return;
+  mapView.x = mapView.drag.x + dx;
+  mapView.y = mapView.drag.y + dy;
+  drawMap();
+}
+
+function onMapPointerUp(e) {
+  const moved = mapView.drag?.moved;
+  mapView.drag = null;
+  if (!moved) onMapClick(e);
 }
 
 function regionAt(mx, my, canvas) {
-  const rect = canvas.getBoundingClientRect();
-  const x = ((mx - rect.left) / rect.width) * 1000;
-  const y = ((my - rect.top) / rect.height) * 620;
+  const [sx, sy] = canvasPoint({ clientX: mx, clientY: my }, canvas);
+  const x = (sx - mapView.x) / mapView.z;
+  const y = (sy - mapView.y) / mapView.z;
   return state.regions.find((r) => theaterVisible(state, r) && hitPoly(r.polygon, x, y));
 }
 
@@ -1692,6 +1939,19 @@ function onMapMove(e) {
   }
 }
 
+const WASH_KEY_US = `<span><i class="key-occ"></i>Occupied</span><span><i class="key-con"></i>Contested</span><span><i class="key-held"></i>Held</span>`;
+const WASH_KEY_WORLD = `<span><i class="key-sov"></i>Soviet</span><span><i class="key-bloc"></i>Bloc</span><span><i class="key-ally"></i>Allies</span><span><i class="key-neu"></i>Neutral</span>`;
+
+function syncWashKey() {
+  const key = document.querySelector(".wash-key");
+  if (!key) return;
+  const mode = mapView.z < 0.5 ? "world" : "us";
+  if (key.dataset.mode === mode) return;
+  key.dataset.mode = mode;
+  key.innerHTML = mode === "world" ? WASH_KEY_WORLD : WASH_KEY_US;
+  key.setAttribute("aria-label", mode === "world" ? "Faction key" : "Wash key");
+}
+
 function renderMapCaption() {
   const cap = $("map-caption");
   if (!cap || !state) return;
@@ -1715,8 +1975,8 @@ function cityXY(r) {
 const MAP_S = terrainSize().scale;
 const LOW_W = terrainSize().w;
 const LOW_H = terrainSize().h;
-const PX_FONT = "8px 'Press Start 2P', 'Courier New', monospace";
-const PLATE_FONT = "10px 'Press Start 2P', 'Courier New', monospace";
+const PX_FONT = "16px 'Press Start 2P', 'Courier New', monospace";
+const PLATE_FONT = "16px 'Press Start 2P', 'Courier New', monospace";
 const ditherCache = new Map();
 
 function lowPt(p) {
@@ -1770,7 +2030,7 @@ function drawPixelRoad(ctx, a, b) {
   const [x0, y0] = lowPt(a);
   const [x1, y1] = lowPt(b);
   const pulse = mapFx?.kind === "travel" && sameRoad(a, b, mapFx.a, mapFx.b);
-  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
+  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
   walkLine(x0, y0, x1, y1, (x, y) => {
     ctx.fillStyle = pulse ? (on ? "#f8d800" : "#886028") : "#503010";
     ctx.fillRect(x - 1, y - 1, 3, 3);
@@ -1813,9 +2073,8 @@ function drawCityMark(ctx, r, selected) {
   draw80sMarker(ctx, markerKind(r), x, y, selected, fill);
   const p = playerOf(state);
   if (p.region === r.id) {
-    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 8, y - 18 + hop, 3, 3);
+    ctx.fillRect(x - 8, y - 18, 4, 4);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
@@ -1843,23 +2102,606 @@ const STATE_FILL = {
   mo: "#9a8850",
 };
 
+function ringCentroid(ring) {
+  let x = 0;
+  let y = 0;
+  let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const c = ring[i][0] * ring[j][1] - ring[j][0] * ring[i][1];
+    a += c;
+    x += (ring[i][0] + ring[j][0]) * c;
+    y += (ring[i][1] + ring[j][1]) * c;
+  }
+  a *= 0.5;
+  if (Math.abs(a) < 1) {
+    const n = ring.length || 1;
+    return [ring.reduce((s, p) => s + p[0], 0) / n, ring.reduce((s, p) => s + p[1], 0) / n];
+  }
+  return [x / (6 * a), y / (6 * a)];
+}
+
+/** Every lower-48 postal, plus Alaska. Small states nudge apart; none are dropped. */
 function drawStateLabels(ctx) {
-  const list = state.stateTheaters || [];
-  ctx.font = "12px 'Press Start 2P', 'Courier New', monospace";
-  list.forEach((st) => {
-    if (!st.label) return;
-    const [x, y] = st.label;
-    const text = st.short || st.id.toUpperCase();
-    const w = ctx.measureText(text).width;
-    const px = Math.round(x - w / 2 - 3);
-    const py = Math.round(y - 6);
-    ctx.fillStyle = "rgba(0,0,24,0.45)";
-    ctx.fillRect(px, py, w + 6, 14);
-    const liberated = (ensureCampaign(state).liberated || []).includes(st.short || st.id.toUpperCase());
-    ctx.fillStyle = liberated ? "#f8d800" : "#e8e0c8";
-    ctx.fillText(text, px + 3, py + 11);
+  const lines = state.stateLines || [];
+  ctx.font = "16px 'Press Start 2P', 'Courier New', monospace";
+  const items = [];
+  lines.forEach((line) => {
+    const id = String(line.id || "");
+    if (id.length !== 2 || id === "YT" || !line.ring?.length) return;
+    const [cx, cy] = ringCentroid(line.ring);
+    let minX = 1e9;
+    let maxX = -1e9;
+    let minY = 1e9;
+    let maxY = -1e9;
+    line.ring.forEach(([px, py]) => {
+      minX = Math.min(minX, px);
+      maxX = Math.max(maxX, px);
+      minY = Math.min(minY, py);
+      maxY = Math.max(maxY, py);
+    });
+    const w = Math.ceil(ctx.measureText(id).width) + 10;
+    const pinned = id === "CA" || id === "NV";
+    items.push({
+      id,
+      x: cx,
+      y: cy,
+      ox: cx,
+      oy: cy,
+      w,
+      h: 22,
+      area: pinned ? 1e9 : Math.max(400, (maxX - minX) * (maxY - minY)),
+      pinned,
+    });
+  });
+  for (let n = 0; n < 40; n++) {
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+        const overlapX = a.w / 2 + b.w / 2 + 4 - Math.abs(b.x - a.x);
+        const overlapY = a.h / 2 + b.h / 2 + 2 - Math.abs(b.y - a.y);
+        if (overlapX <= 0 || overlapY <= 0) continue;
+        const dx = b.x - a.x || 1;
+        const dy = b.y - a.y || 0.25;
+        const len = Math.hypot(dx, dy) || 1;
+        const wa = b.area / (a.area + b.area);
+        const wb = a.area / (a.area + b.area);
+        const push = Math.min(overlapX, overlapY) + 1;
+        a.x -= (dx / len) * push * wa;
+        a.y -= (dy / len) * push * wa;
+        b.x += (dx / len) * push * wb;
+        b.y += (dy / len) * push * wb;
+      }
+    }
+  }
+  items.forEach((a) => {
+    if (a.pinned) {
+      a.x = a.ox;
+      a.y = a.oy;
+    }
+    a.x = Math.max(6 + a.w / 2, Math.min(994 - a.w / 2, a.x));
+    a.y = Math.max(16, Math.min(604, a.y));
+    const px = Math.round(a.x - a.w / 2);
+    const py = Math.round(a.y - a.h / 2);
+    if (a.pinned) {
+      ctx.fillStyle = "#f8d800";
+      ctx.fillRect(px - 3, py - 3, a.w + 6, a.h + 6);
+    }
+    ctx.fillStyle = "#000010";
+    ctx.fillRect(px - 2, py - 2, a.w + 4, a.h + 4);
+    ctx.fillStyle = "#f8f8f8";
+    ctx.fillRect(px, py, a.w, a.h);
+    ctx.fillStyle = "#000010";
+    ctx.fillText(a.id, px + 5, py + 16);
   });
   ctx.font = PX_FONT;
+}
+
+function projectLL(lon, lat) {
+  if (mapView.pacific && lon > 20) lon -= 360;
+  const x = 36 + ((lon + 124.8) / 57.9) * 942;
+  const y = 132 + ((49.45 - lat) / 25.05) * 476;
+  return [x, y];
+}
+
+/** Gate pins. Drawn on the world overview. Neighbor lists stay in the region data. */
+const WORLD_DESKS = [
+  { id: "bering_strait", lon: -168, lat: 65.6, color: "#7aa0b4" },
+  { id: "far_russia", lon: 158, lat: 63, color: "#9a3b3b" },
+  { id: "gulf_passage", lon: -90.5, lat: 23.8, color: "#8c4a4a" },
+  { id: "far_cuba", lon: -79.5, lat: 21.6, color: "#8c4a4a" },
+  { id: "far_nicaragua", lon: -85.2, lat: 12.4, color: "#8c4a4a" },
+  { id: "far_korea", lon: 127.2, lat: 38.2, color: "#9a3b3b" },
+];
+
+/** Inland desks from the locked Campaign list. Close-ups only, so the world overview stays put. */
+const INLAND_DESKS = [
+  { id: "kamchatka", lon: 159.6, lat: 56, color: "#9a3b3b" },
+  { id: "siberia", lon: 148.5, lat: 61.5, color: "#9a3b3b" },
+  { id: "havana", lon: -82.5, lat: 23.15, color: "#8c4a4a" },
+  { id: "managua", lon: -86.3, lat: 12.1, color: "#8c4a4a" },
+  { id: "sponsor_lane", lon: 128, lat: 46, color: "#7aa0b4" },
+  { id: "kr_inland", lon: 127.5, lat: 36.5, color: "#9a3b3b" },
+];
+
+/** Small overlays on top of the coast washes. Original shapes, not a copied atlas. */
+const WORLD_OVERLAY = [
+  {
+    color: "#e57373",
+    ring: [
+      [10.9, 54.1], [12.2, 54.4], [14.2, 54.1], [14.6, 53.3], [14.8, 52.2],
+      [14.9, 51.2], [14.2, 50.9], [12.5, 50.3], [11.6, 50.5], [10.6, 51.0],
+      [10.4, 51.6], [10.9, 52.4], [10.5, 53.2], [10.9, 54.1],
+    ],
+  },
+  {
+    color: "#1565c0",
+    ring: [
+      [-160.2, 22.2], [-159.2, 22.2], [-157.8, 21.6], [-156.5, 20.9],
+      [-155.1, 20.0], [-154.8, 19.4], [-155.6, 19.1], [-157.0, 20.2],
+      [-158.4, 21.3], [-160.2, 22.2],
+    ],
+  },
+];
+
+function coastParts(ring) {
+  const parts = [];
+  let part = [];
+  ring.forEach((pt) => {
+    if (part.length && Math.abs(pt[0] - part[part.length - 1][0]) > 180) {
+      if (part.length > 2) parts.push(part);
+      part = [pt];
+    } else part.push(pt);
+  });
+  if (part.length > 2) parts.push(part);
+  return parts;
+}
+
+function tracePart(ctx, part) {
+  part.forEach((p, i) => {
+    const [x, y] = projectLL(p[0], p[1]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+}
+
+function ringBox(ring) {
+  let minLon = 1e9;
+  let maxLon = -1e9;
+  let minLat = 1e9;
+  let maxLat = -1e9;
+  ring.forEach(([lon, lat]) => {
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  });
+  return { minLon, maxLon, minLat, maxLat, w: maxLon - minLon, h: maxLat - minLat };
+}
+
+/** Involved desks only. Flat on the world overview so the faction read stays clean. */
+function foreignTheaterKind(ring, color) {
+  if (!mapView.focus && (mapView.z < 0.3 || mapView.z >= 0.92)) return null;
+  const b = ringBox(ring);
+  if (color === "#d32f2f" && b.maxLat > 70 && b.maxLon > 160 && b.minLon < 40) return "russia";
+  if (color === "#e57373" && b.minLon < -110 && b.maxLat > 30 && b.minLat < 18 && b.w > 20) return "mexico";
+  if (color === "#e57373" && b.minLon > -86 && b.maxLon < -73 && b.minLat > 19 && b.maxLat < 24) return "cuba";
+  if (color === "#e57373" && b.minLat > 10 && b.maxLat < 16 && b.minLon > -90 && b.maxLon < -80 && b.w < 8) return "nicaragua";
+  if (color === "#e57373" && b.minLat > 6 && b.maxLat < 19 && b.minLon > -93 && b.maxLon < -77 && b.w < 12) return "central";
+  if (b.minLon > 123 && b.maxLon < 132 && b.minLat > 33 && b.maxLat < 44 && b.w < 8) return "korea";
+  return null;
+}
+
+function reliefHeight(lon, lat, kind) {
+  const n = Math.sin(lon * 0.17) * Math.cos(lat * 0.21) * 0.45 + Math.sin(lon * 0.37 + 1.7) * Math.cos(lat * 0.33) * 0.25;
+  if (kind === "russia") {
+    const ural = Math.exp(-((lon - 60) ** 2) / 22);
+    const kam = Math.exp(-((lon - 159) ** 2) / 16) * Math.exp(-((lat - 56) ** 2) / 30);
+    const koryak = Math.exp(-((lon - 167) ** 2) / 20) * Math.exp(-((lat - 62) ** 2) / 12);
+    const chuk = Math.exp(-((lon - 176) ** 2) / 26) * Math.exp(-((lat - 66) ** 2) / 10);
+    const stan = Math.exp(-((lon - 140) ** 2) / 80) * Math.exp(-((lat - 56) ** 2) / 7);
+    const grain = Math.sin(lon * 0.55 + lat) * 0.08;
+    return Math.max(0, Math.min(1, 0.2 + grain + ural * 0.34 + kam * 0.72 + koryak * 0.48 + chuk * 0.42 + stan * 0.4));
+  }
+  if (kind === "mexico") {
+    const sierra = Math.exp(-((lon + 106) ** 2) / 26);
+    return 0.36 + n * 0.14 + sierra * 0.4;
+  }
+  if (kind === "cuba") return 0.18 + Math.exp(-((lat - 21.8) ** 2) / 0.45) * 0.78 + Math.sin(lon * 0.9) * 0.06;
+  if (kind === "nicaragua") return 0.16 + Math.exp(-((lon + 85.6) ** 2) / 0.7) * 0.8;
+  if (kind === "central") return 0.2 + Math.exp(-((lon + 86.2) ** 2) / 1.6) * 0.7 + Math.sin(lat * 1.4) * 0.06;
+  if (kind === "korea") return 0.32 + Math.exp(-((lon - 127.4) ** 2) / 1.3) * 0.5;
+  return 0.5;
+}
+
+/** Far East close-up. Green lowland, tan ridge, pale high — not a flat red fill. */
+function topoRgb(t) {
+  const stops = [
+    [0, [34, 96, 52]],
+    [0.26, [86, 142, 62]],
+    [0.46, [176, 158, 74]],
+    [0.64, [166, 102, 52]],
+    [0.82, [112, 72, 44]],
+    [1, [226, 214, 186]],
+  ];
+  const u = Math.max(0, Math.min(1, t));
+  let i = 0;
+  while (i < stops.length - 2 && u > stops[i + 1][0]) i += 1;
+  const a = stops[i];
+  const b = stops[i + 1];
+  const f = (u - a[0]) / ((b[0] - a[0]) || 1);
+  const mix = (k) => Math.round(a[1][k] + (b[1][k] - a[1][k]) * f);
+  return `rgb(${mix(0)},${mix(1)},${mix(2)})`;
+}
+
+function shadeWash(hex, t) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const u = Math.max(0, Math.min(1, t));
+  if (!mapView.focus) {
+    const lift = (u - 0.42) * 64;
+    const c = (v) => Math.max(0, Math.min(255, Math.round(v + lift)));
+    return `rgb(${c(r)},${c(g)},${c(b)})`;
+  }
+  let rr = r;
+  let gg = g;
+  let bb = b;
+  if (u < 0.48) {
+    const k = (0.48 - u) * 1.15;
+    rr = r * (1 - k);
+    gg = g * (1 - k * 0.85);
+    bb = b * (1 - k * 0.55);
+  } else {
+    const k = Math.min(1, (u - 0.48) * 1.7);
+    rr = r + (196 - r) * k;
+    gg = g + (164 - g) * k;
+    bb = b + (92 - b) * k;
+  }
+  const c = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  return `rgb(${c(rr)},${c(gg)},${c(bb)})`;
+}
+
+function paintTheaterRelief(ctx, ring, color, kind) {
+  const b = ringBox(ring);
+  const close = mapView.focus === "bering" || mapView.focus === "cuba";
+  const step = kind === "russia"
+    ? (close ? 0.4 : 1.45)
+    : kind === "mexico"
+      ? (close ? 0.45 : 0.85)
+      : close
+        ? 0.16
+        : 0.32;
+  const view = mapViewRect();
+  const pad = 40;
+  ctx.save();
+  ctx.beginPath();
+  tracePart(ctx, ring);
+  ctx.clip();
+  for (let lat = b.minLat; lat < b.maxLat; lat += step) {
+    for (let lon = b.minLon; lon < b.maxLon; lon += step) {
+      const [xA, yA] = projectLL(lon, lat);
+      const [xB, yB] = projectLL(lon + step, lat - step);
+      const x = Math.min(xA, xB);
+      const y = Math.min(yA, yB);
+      const extra = close ? 0.8 : 0.6;
+      const w = Math.abs(xB - xA) + extra;
+      const h = Math.abs(yB - yA) + extra;
+      if (close && (x > view.x1 + pad || x + w < view.x0 - pad || y > view.y1 + pad || y + h < view.y0 - pad)) continue;
+      const hgt = reliefHeight(lon + step * 0.5, lat - step * 0.5, kind);
+      ctx.fillStyle = kind === "russia" ? topoRgb(hgt) : shadeWash(color, hgt);
+      ctx.fillRect(x, y, w, h);
+    }
+  }
+  ctx.restore();
+}
+
+function drawGlobe(ctx) {
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.lineWidth = mapView.focus ? Math.max(2.6, 2.6 / mapView.z) : Math.max(1.5, 2.05 / mapView.z);
+  ctx.strokeStyle = "#1a140c";
+  WORLD_LAND.concat(WORLD_OVERLAY).forEach((land) => {
+    coastParts(land.ring).forEach((part) => {
+      ctx.beginPath();
+      tracePart(ctx, part);
+      const a = part[0];
+      const b = part[part.length - 1];
+      if (Math.abs(a[0] - b[0]) > 40) {
+        const pole = Math.min(a[1], b[1]) < 0 ? -90 : 90;
+        const [x1, y1] = projectLL(b[0], pole);
+        const [x2, y2] = projectLL(a[0], pole);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = land.color;
+      ctx.fill();
+      const kind = foreignTheaterKind(part, land.color);
+      if (kind) paintTheaterRelief(ctx, part, land.color, kind);
+      ctx.beginPath();
+      tracePart(ctx, part);
+      ctx.stroke();
+    });
+  });
+  drawWorldStrikes(ctx);
+  if (!mapView.focus) {
+    drawWorldCorridors(ctx);
+    drawWorldDesks(ctx);
+  }
+  ctx.restore();
+}
+
+/**
+ * Locked chains only.
+ * nome → bering_strait → far_russia → kamchatka → siberia.
+ * st_louis → gulf_passage → far_cuba → havana, and far_cuba → far_nicaragua → managua.
+ * far_russia → sponsor_lane → far_korea → kr_inland. No direct far_russia–far_korea leap.
+ * Inland strokes are close-ups only. The world overview keeps the sea approaches.
+ */
+function drawWorldCorridors(ctx) {
+  const focus = mapView.focus;
+  if (mapView.z > 0.92 && !focus) return;
+  const routes = [];
+  const inland = [];
+  if (focus === "bering") {
+    routes.push({
+      color: "#d5e6f2",
+      pts: [[-165.4, 64.5], [-168, 65.6], [178.5, 65.3], [170, 64.2], [158, 63]],
+    });
+    inland.push({ color: "#e4d7a4", pts: [[158, 63], [159.6, 56], [148.5, 61.5]] });
+  } else if (focus === "korea") {
+    routes.push({ color: "#d5e6f2", pts: [[158, 63], [128, 46], [127.2, 38.2]] });
+    inland.push({ color: "#e4d7a4", pts: [[127.2, 38.2], [127.5, 36.5]] });
+  } else {
+    routes.push(
+      { color: "#7aa0b4", pts: [[-168, 65.6], [-170, 76], [-78, 77]] },
+      { color: "#7aa0b4", pts: [[-18, 76], [40, 74], [100, 70], [158, 63]] },
+      { color: "#8c4a4a", pts: [[-90.5, 23.8], [-79.5, 21.6]] },
+      { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] }
+    );
+    if (mapView.z >= 0.3 || focus === "cuba") routes.push({ color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] });
+    if (focus === "cuba") {
+      inland.push(
+        { color: "#e4d7a4", pts: [[-79.5, 21.6], [-82.5, 23.15]] },
+        { color: "#e4d7a4", pts: [[-85.2, 12.4], [-86.3, 12.1]] }
+      );
+    }
+  }
+  const casing = focus ? Math.max(16, 12 / mapView.z) : Math.max(8, 7 / mapView.z);
+  const core = focus ? Math.max(8, 6 / mapView.z) : Math.max(4, 3.6 / mapView.z);
+  const paint = (list, dashed) => {
+    ctx.save();
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    if (dashed) ctx.setLineDash([14 / mapView.z, 9 / mapView.z]);
+    list.forEach((route) => {
+      const draw = (width, color) => {
+        ctx.beginPath();
+        route.pts.forEach((p, i) => {
+          const [x, y] = projectLL(p[0], p[1]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.lineWidth = width;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      };
+      draw(casing, "#1a140c");
+      draw(core, route.color);
+    });
+    ctx.restore();
+  };
+  paint(routes, true);
+  paint(inland, false);
+}
+
+/** Unlabeled strike marks. Same crater language as the US plate, not a copied legend. */
+const WORLD_STRIKES = [
+  [-0.1, 51.5],
+  [2.3, 48.9],
+  [10, 51],
+  [13.4, 52.5],
+  [19, 51],
+  [30, 50],
+  [37.6, 55.7],
+  [44, 48],
+  [68, 48],
+  [104, 36],
+  [114, 31],
+  [121, 31],
+  [127, 39],
+  [139.7, 35.7],
+  [37, 33],
+];
+
+function drawWorldStrikes(ctx) {
+  if (mapView.z > 0.92) return;
+  const rad = Math.max(3.4, 3.1 / mapView.z);
+  WORLD_STRIKES.forEach(([lon, lat]) => {
+    const [x, y] = projectLL(lon, lat);
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a0808";
+    ctx.fill();
+    ctx.lineWidth = Math.max(1.8, 1.6 / mapView.z);
+    ctx.strokeStyle = "#e8a020";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(2, rad * 0.34), 0, Math.PI * 2);
+    ctx.fillStyle = "#f8d800";
+    ctx.fill();
+  });
+}
+
+function nearLabels() {
+  return mapView.z > 0.4 && mapView.z < 0.85;
+}
+
+let labelClaims = [];
+
+function mapViewRect() {
+  const z = mapView.z || 1;
+  return {
+    x0: -mapView.x / z + 14 / z,
+    y0: -mapView.y / z + 16 / z,
+    x1: (1000 - mapView.x) / z - 14 / z,
+    y1: (620 - mapView.y) / z - 14 / z,
+  };
+}
+
+function hitsClaim(x, y, w, h) {
+  const pad = 22;
+  return labelClaims.some(
+    (c) => x < c.x + c.w + pad && x + w + pad > c.x && y < c.y + c.h + pad && y + h + pad > c.y
+  );
+}
+
+function placeNearPlate(pw, ph, candidates) {
+  const v = mapViewRect();
+  for (const [x0, y0] of candidates) {
+    const x = Math.max(v.x0, Math.min(v.x1 - pw, x0));
+    const y = Math.max(v.y0, Math.min(v.y1 - ph, y0));
+    if (!hitsClaim(x, y, pw, ph)) {
+      labelClaims.push({ x, y, w: pw, h: ph });
+      return [Math.round(x), Math.round(y)];
+    }
+  }
+  const x = Math.max(v.x0, Math.min(v.x1 - pw, candidates[0][0]));
+  const y = Math.max(v.y0, Math.min(v.y1 - ph, candidates[0][1]));
+  labelClaims.push({ x, y, w: pw, h: ph });
+  return [Math.round(x), Math.round(y)];
+}
+
+function pinInView(x, y) {
+  const v = mapViewRect();
+  return x > v.x0 - 8 && x < v.x1 + 8 && y > v.y0 - 8 && y < v.y1 + 8;
+}
+
+function drawDeskPlate(ctx, x, y, boxW, boxH, label) {
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(x, y, boxW, boxH);
+  ctx.fillStyle = "#f8d800";
+  ctx.fillText(label, x + 4, y + boxH / 2);
+}
+
+function drawWorldDesks(ctx) {
+  if (mapView.z > 0.92 && !mapView.focus) return;
+  const near = nearLabels();
+  const focus = mapView.focus;
+  const fontPx = focus
+    ? Math.max(20, Math.round(22 / mapView.z))
+    : near
+      ? Math.max(16, Math.round(13 / mapView.z))
+      : Math.max(18, Math.round(12 / mapView.z));
+  ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
+  ctx.textBaseline = "middle";
+  const inland = focus === "bering" || focus === "cuba" || focus === "korea" ? INLAND_DESKS : [];
+  const desks = (focus === "bering" ? [{ id: "nome", lon: -165.4, lat: 64.5, color: "#7aa0b4" }] : [])
+    .concat(WORLD_DESKS)
+    .concat(inland);
+  desks.forEach((d) => {
+    const node = regionOf(state, d.id);
+    if (!node) return;
+    if (near && d.id === "gulf_passage" && focus !== "cuba") return;
+    const [x, y] = projectLL(d.lon, d.lat);
+    const r = focus ? Math.max(9, 8 / mapView.z) : Math.max(8, 5 / mapView.z);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = d.color || "#9a3b3b";
+    ctx.fill();
+    ctx.lineWidth = Math.max(2, 1.5 / mapView.z);
+    ctx.strokeStyle = "#f8d800";
+    ctx.stroke();
+    if (focus && !pinInView(x, y)) return;
+    const label = node.short;
+    const tw = ctx.measureText(label).width;
+    const pad = 6 / mapView.z;
+    const boxW = tw + pad + 4;
+    const boxH = fontPx * 1.35;
+    if (near && !focus && (d.id === "far_cuba" || d.id === "far_nicaragua")) {
+      const [bx, by] = placeNearPlate(boxW, boxH, [
+        [x - boxW / 2, y + r + 22 / mapView.z],
+        [x + r + 16 / mapView.z, y - boxH / 2],
+        [x - boxW - r - 16 / mapView.z, y + r],
+      ]);
+      drawDeskPlate(ctx, bx, by, boxW, boxH, label);
+      return;
+    }
+    const placed = (focus === "bering" && (d.id === "nome" || d.id === "bering_strait" || d.id === "far_russia" || d.id === "kamchatka" || d.id === "siberia"))
+      || (focus === "cuba" && (d.id === "gulf_passage" || d.id === "far_cuba" || d.id === "far_nicaragua" || d.id === "havana" || d.id === "managua"))
+      || (focus === "korea" && (d.id === "far_russia" || d.id === "sponsor_lane" || d.id === "far_korea" || d.id === "kr_inland"));
+    if (placed) {
+      const prefs = {
+        nome: [
+          [x - boxW / 2, y - boxH - r - 16 / mapView.z],
+          [x + r + 14 / mapView.z, y - boxH / 2],
+        ],
+        bering_strait: [
+          [x - boxW / 2, y + r + 18 / mapView.z],
+          [x - boxW - r - 14 / mapView.z, y - boxH / 2],
+        ],
+        far_russia: [
+          [x - boxW - r - 16 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 14 / mapView.z],
+        ],
+        gulf_passage: [
+          [x - boxW - r - 12 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 16 / mapView.z],
+        ],
+        far_cuba: [
+          [x + r + 16 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 16 / mapView.z],
+        ],
+        far_nicaragua: [
+          [x + r + 18 / mapView.z, y - boxH - r - 8 / mapView.z],
+          [x + r + 22 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 28 / mapView.z],
+        ],
+        kamchatka: [
+          [x + r + 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y + r + 16 / mapView.z],
+        ],
+        siberia: [
+          [x - boxW - r - 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 12 / mapView.z],
+        ],
+        havana: [
+          [x - boxW - r - 12 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 14 / mapView.z],
+        ],
+        managua: [
+          [x - boxW / 2, y + r + boxH + 26 / mapView.z],
+          [x - boxW - r - 20 / mapView.z, y + r + 8 / mapView.z],
+          [x + r + 18 / mapView.z, y + r + boxH],
+        ],
+        sponsor_lane: [
+          [x - boxW / 2, y - boxH - r - 14 / mapView.z],
+          [x + r + 12 / mapView.z, y - boxH / 2],
+        ],
+        far_korea: [
+          [x + r + 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 12 / mapView.z],
+        ],
+        kr_inland: [
+          [x - boxW / 2, y + r + 16 / mapView.z],
+          [x + r + 12 / mapView.z, y - boxH / 2],
+        ],
+      }[d.id] || [
+        [x - boxW / 2, y + r + 22 / mapView.z],
+        [x + r + 16 / mapView.z, y - boxH / 2],
+      ];
+      const [bx, by] = placeNearPlate(boxW, boxH, prefs);
+      drawDeskPlate(ctx, bx, by, boxW, boxH, label);
+      return;
+    }
+    const lx = x + r + 4 / mapView.z;
+    const ly = y;
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(lx - 2, ly - fontPx * 0.65, tw + pad, fontPx * 1.3);
+    ctx.fillStyle = "#f8d800";
+    ctx.fillText(label, lx, ly);
+  });
 }
 
 function plateAwayFromSelected(r, px, py, pw, ph) {
@@ -1873,10 +2715,10 @@ function plateAwayFromSelected(r, px, py, pw, ph) {
     h: ph + 4,
   };
   const hit =
-    box.x < sx + 70 &&
-    box.x + box.w > sx - 70 &&
-    box.y < sy + 56 &&
-    box.y + box.h > sy - 40;
+    box.x < sx + 96 &&
+    box.x + box.w > sx - 96 &&
+    box.y < sy + 64 &&
+    box.y + box.h > sy - 48;
   if (!hit) return [px, py];
   const [cx, cy] = cityXY(r);
   return [px, Math.max(4, Math.round(cy - ph - 14))];
@@ -1885,13 +2727,21 @@ function plateAwayFromSelected(r, px, py, pw, ph) {
 function drawHereChip(ctx, r, x, y) {
   ctx.font = PLATE_FONT;
   const nameW = ctx.measureText(r.short).width;
-  const pw = Math.max(48, Math.ceil((nameW + 16) / 4) * 4);
-  const ph = 16;
+  const pw = Math.max(64, Math.ceil((nameW + 24) / 4) * 4);
+  const ph = 28;
   let px = Math.round(x - pw / 2);
   let py = Math.round(y - ph - 12);
-  px = Math.max(4, Math.min(996 - pw, px));
-  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
-  if (py < 4) py = Math.round(y + 18);
+  if (nearLabels()) {
+    [px, py] = placeNearPlate(pw, ph, [
+      [x - pw - 36, y - ph / 2],
+      [x - pw / 2, y - ph - 56],
+      [x + 36, y - ph / 2],
+    ]);
+  } else {
+    px = Math.max(4, Math.min(996 - pw, px));
+    [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+    if (py < 4) py = Math.round(y + 18);
+  }
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 3, py - 3, pw + 6, ph + 6);
   ctx.fillStyle = "#f8f8f8";
@@ -1899,7 +2749,7 @@ function drawHereChip(ctx, r, x, y) {
   ctx.fillStyle = "#101050";
   ctx.fillRect(px + 3, py + 3, pw - 6, ph - 6);
   ctx.fillStyle = "#f8d800";
-  ctx.fillText(r.short, px + 8, py + 12);
+  ctx.fillText(r.short, px + 8, py + 20);
 }
 
 function drawCityPlate(ctx, r, selected) {
@@ -1909,7 +2759,8 @@ function drawCityPlate(ctx, r, selected) {
   const here = p.region === r.id;
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? String(r.garrison) : "?";
-  if (!selected && !here && r.id !== hoverRegion) return;
+  const keepGulf = r.id === "gulf_passage";
+  if (!selected && !here && r.id !== hoverRegion && !keepGulf) return;
   if (here && !selected) {
     drawHereChip(ctx, r, x, y);
     return;
@@ -1917,18 +2768,33 @@ function drawCityPlate(ctx, r, selected) {
   ctx.font = PLATE_FONT;
   const nameW = ctx.measureText(r.short).width;
   const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(88, Math.ceil((nameW + garrW + 28) / 4) * 4);
-  const ph = 20;
+  const pw = Math.max(120, Math.ceil((nameW + garrW + 40) / 4) * 4);
+  const ph = 32;
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
-  px = Math.max(4, Math.min(996 - pw, px));
-  if (py < 4) py = Math.round(y + 20);
-  if (py + ph > 616) py = Math.round(y - 44);
-  [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+  if (nearLabels()) {
+    const prefs = selected
+      ? [
+          [x - pw / 2, y + 52],
+          [x + 40, y + 18],
+          [x - pw - 36, y - ph / 2],
+        ]
+      : [
+          [x - pw - 36, y - ph / 2],
+          [x - pw / 2, y + 48],
+          [x + 36, y - ph / 2],
+        ];
+    [px, py] = placeNearPlate(pw, ph, prefs);
+  } else {
+    px = Math.max(4, Math.min(996 - pw, px));
+    if (py < 4) py = Math.round(y + 20);
+    if (py + ph > 616) py = Math.round(y - 44);
+    [px, py] = plateAwayFromSelected(r, px, py, pw, ph);
+  }
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
   if (selected) {
-    ctx.fillStyle = Math.floor(Date.now() / 240) % 2 === 0 ? "#f8d800" : "#f8f8f8";
+    ctx.fillStyle = "#f8d800";
     ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
     ctx.fillStyle = "#000018";
     ctx.fillRect(px - 2, py - 2, pw + 4, ph + 4);
@@ -1940,12 +2806,222 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillStyle = fac ? fac.color : "#607838";
   ctx.fillRect(px + 4, py + 4, 5, ph - 8);
   ctx.fillStyle = "#f8d800";
-  ctx.fillText(r.short, px + 12, py + 15);
+  ctx.fillText(r.short, px + 14, py + 23);
   ctx.fillStyle = "#f8f8f8";
-  ctx.fillText(garr, px + pw - 10 - garrW, py + 15);
+  ctx.fillText(garr, px + pw - 12 - garrW, py + 23);
+}
+
+function roadEnds(a, b) {
+  if (mapView.z < 0.45) return [a, b];
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  if (len >= 160) return [a, b];
+  const extra = Math.min(40, Math.max(18, (160 - len) * 0.55));
+  const ux = dx / len;
+  const uy = dy / len;
+  return [
+    [a[0] - ux * extra, a[1] - uy * extra],
+    [b[0] + ux * extra, b[1] + uy * extra],
+  ];
+}
+
+function drawFrontSeg(ctx, a, b) {
+  const [p, q] = roadEnds(a, b);
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const thick = mapView.z >= 0.45 && len < 160;
+  ctx.save();
+  ctx.lineCap = "butt";
+  ctx.strokeStyle = "#1a0808";
+  ctx.lineWidth = thick ? 11 : 7;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(p[0], p[1]);
+  ctx.lineTo(q[0], q[1]);
+  ctx.stroke();
+  ctx.strokeStyle = "#f8f8f8";
+  ctx.lineWidth = thick ? 5 : 3;
+  ctx.setLineDash([8, 7]);
+  ctx.beginPath();
+  ctx.moveTo(p[0], p[1]);
+  ctx.lineTo(q[0], q[1]);
+  ctx.stroke();
+  ctx.restore();
+}
+
+const CAMPAIGN_ROADS = [
+  ["spokane", "portland"],
+  ["spokane", "bend"],
+  ["boise", "missoula"],
+  ["boise", "jackson"],
+  ["cheyenne", "salt_lake"],
+  ["cheyenne", "lincoln"],
+  ["cheyenne", "denver"],
+  ["denver", "lincoln"],
+  ["reno", "salt_lake"],
+  ["lincoln", "wichita"],
+  ["topeka", "st_louis"],
+];
+
+function drawCampaignRoads(ctx) {
+  if (mapView.z < 0.45) return;
+  CAMPAIGN_ROADS.forEach(([aId, bId]) => {
+    const a = regionOf(state, aId);
+    const b = regionOf(state, bId);
+    if (!a || !b || !isAdjacent(state, a, b)) return;
+    const [pa, pb] = [cityXY(a), cityXY(b)];
+    const [p, q] = roadEnds(pa, pb);
+    const len = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1;
+    ctx.save();
+    ctx.lineCap = "butt";
+    ctx.strokeStyle = "#1a0808";
+    ctx.lineWidth = len < 110 ? 15 : 11;
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(q[0], q[1]);
+    ctx.stroke();
+    ctx.strokeStyle = "#fff6d0";
+    ctx.lineWidth = len < 110 ? 7 : 5;
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(q[0], q[1]);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawAxis(ctx, a, b, color) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = -uy;
+  const py = ux;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#1a0808";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.lineTo(b[0], b[1]);
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  const tip = b;
+  const baseX = b[0] - ux * 18;
+  const baseY = b[1] - uy * 18;
+  ctx.fillStyle = "#1a0808";
+  ctx.beginPath();
+  ctx.moveTo(tip[0] + ux * 4, tip[1] + uy * 4);
+  ctx.lineTo(baseX + px * 12, baseY + py * 12);
+  ctx.lineTo(baseX - px * 12, baseY - py * 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(tip[0], tip[1]);
+  ctx.lineTo(baseX + px * 8, baseY + py * 8);
+  ctx.lineTo(baseX - px * 8, baseY - py * 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Original geo marks. Dark crater, amber ring — not a copied cloud icon. */
+const NUKE_SCARS = [
+  { x: 813, y: 332, name: "DC" },
+  { x: 844, y: 304, name: "NY" },
+  { x: 528, y: 329, name: "KC" },
+  { x: 506, y: 290, name: "Offutt" },
+  { x: 418, y: 155, name: "Minot" },
+  { x: 488, y: 161, name: "GF" },
+  { x: 390, y: 233, name: "Ellsworth" },
+];
+
+function drawNukeScars(ctx) {
+  NUKE_SCARS.forEach((s) => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a0808";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#e8a020";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = "#f8d800";
+    ctx.fill();
+  });
+}
+
+/** Visual axes only. Names stay in the Banners panel, not on the land. */
+function drawInvasionAxes(ctx) {
+  drawAxis(ctx, [6, 34], [86, 86], "#7aa0b4");
+  drawAxis(ctx, [334, 467], [482, 579], "#8c4a4a");
+}
+
+function drawStallFront(ctx) {
+  const ids = ["cheyenne", "omaha", "lincoln", "topeka", "wichita", "st_louis"];
+  let prev = null;
+  ids.forEach((id) => {
+    const r = regionOf(state, id);
+    if (!r) {
+      prev = null;
+      return;
+    }
+    if (prev && isAdjacent(state, prev, r)) drawFrontSeg(ctx, cityXY(prev), cityXY(r));
+    prev = r;
+  });
+  const end = regionOf(state, "st_louis");
+  if (!end) return;
+  const [x, y] = cityXY(end);
+  ctx.fillStyle = "#1a0808";
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y + 4);
+  ctx.lineTo(x + 28, y + 20);
+  ctx.lineTo(x + 8, y + 22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#f8f8f8";
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y + 8);
+  ctx.lineTo(x + 24, y + 18);
+  ctx.lineTo(x + 12, y + 18);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** World zoom keeps the state silhouette and drops the sea card and Alaska inset. */
+function theaterLandPlate() {
+  const src = drawMap.off;
+  const c = document.createElement("canvas");
+  c.width = src.width;
+  c.height = src.height;
+  const g = c.getContext("2d");
+  g.drawImage(src, 0, 0);
+  const img = g.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  for (let y = 0; y < c.height; y++) {
+    for (let x = 0; x < c.width; x++) {
+      const i = (y * c.width + x) * 4;
+      if (x < 268 && y < 136) {
+        d[i + 3] = 0;
+        continue;
+      }
+      const r = d[i];
+      const gc = d[i + 1];
+      const b = d[i + 2];
+      if (b > 110 && r < 80 && gc < 175 && b > r + 40) d[i + 3] = 0;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
 }
 
 function drawMap() {
+  labelClaims = [];
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -1956,22 +3032,38 @@ function drawMap() {
   }
   const o = drawMap.off.getContext("2d");
   o.imageSmoothingEnabled = false;
-  const painted = state.regions.filter((r) => theaterVisible(state, r));
+  const painted = state.regions.filter((r) => theaterVisible(state, r) || r.id === "gulf_passage");
   paintTheaterTerrain(o, state, {
     painted,
     selectedId: selectedRegion,
     hoverId: hoverRegion,
     factionOf: (r) => (r.owner ? factionOf(state, r.owner) : null),
+    stateWash,
+    corridors: foreignCorridors(),
   });
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  syncWashKey();
+  ctx.fillStyle = mapView.z < 0.5 ? "#b7d4ea" : "#2a6890";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(drawMap.off, 0, 0, 1000, 620);
+  drawGlobe(ctx);
+  const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering" || mapView.focus === "korea";
+  ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
+  if (mapView.focus) {
+    drawWorldCorridors(ctx);
+    drawWorldDesks(ctx);
+  }
   ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
-    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
+    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
     drawPixelRoadFull(ctx, rd.a, rd.b, on);
   });
+  drawCampaignRoads(ctx);
+  drawStallFront(ctx);
+  drawInvasionAxes(ctx);
+  drawNukeScars(ctx);
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;
@@ -1982,6 +3074,7 @@ function drawMap() {
   painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
   drawStateLabels(ctx);
   painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 function drawCityMarkHi(ctx, r, selected) {
@@ -1993,9 +3086,8 @@ function drawCityMarkHi(ctx, r, selected) {
   drawFactionFlag(ctx, x, y, fill, selected);
   const p = playerOf(state);
   if (p.region === r.id) {
-    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 12, y - 22 + hop, 4, 4);
+    ctx.fillRect(x - 12, y - 26, 5, 5);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
@@ -2011,11 +3103,11 @@ function drawCityMarkHi(ctx, r, selected) {
 function ensureMapPulse() {
   if (mapPulseTimer) return;
   mapPulseTimer = setInterval(() => {
-    if (!state || state.phase !== "strategy") return;
+    if (!state || state.phase !== "strategy" || !mapFx) return;
     if ($("battle") && !$("battle").hidden) return;
     if ($("duel") && !$("duel").hidden) return;
     drawMap();
-  }, 240);
+  }, 420);
 }
 
 function openBattle() {
@@ -2344,7 +3436,7 @@ function drawDuelYard(now) {
   const h = canvas.height;
   ctx.imageSmoothingEnabled = false;
   paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
-  const bob = Math.floor(now / 280) % 2;
+  const bob = Math.floor(now / 480) % 2;
   const flash = state.duel.last && state.duel.beat === "resolve";
   const youHit = flash && state.duel.last.youDmg > 0;
   const foeHit = flash && state.duel.last.foeDmg > 0;
@@ -2365,7 +3457,7 @@ function px(ctx, x, y, w, h, c) {
 }
 
 function paintDuelArena(ctx, w, h, id, now) {
-  const twinkle = Math.floor(now / 400) % 2;
+  const twinkle = Math.floor(now / 800) % 2;
   if (id === "roadhouse") {
     px(ctx, 0, 0, w, 56, "#203040");
     px(ctx, 0, 56, w, h, "#d0d8e0");

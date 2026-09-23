@@ -43,7 +43,7 @@ If Python is missing, any static server in this folder works (`npx serve .`, etc
 ### First session (what “done” looks like)
 
 1. New game → **Begin week 0** (name + background + difficulty). A week-1 coach and a yellow **NEXT** strip name the first click.
-2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**. Command opens on **Domestic**.
+2. You start **alone** in **Cheyenne**. Command opens on **Domestic**. Raise a banner there.
 3. **Raise Banner** to found Northern Front (max **5 generals** via Hire / Appoint / Persuade). Extra hires wait in court.
 4. Spend leftover AP (Commerce / Cultivate / a **side mission**), then **End Week**.
 5. AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
@@ -60,7 +60,7 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
 | `data/factions.json` | ~40 original groups. **17** are on the current board (Alaska six + Yukon/Bering + eight western banners); the rest stay off-map. |
-| `data/regions.json` | **12 states/territories** on the mid-step (11 US + Yukon). **33** US/Yukon cities plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
+| `data/regions.json` | **14 states/territories** (13 US + Yukon), including California and Nevada. **37** US/Yukon cities, Gulf Sealift, plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
 | `data/tech.json` | Slow 1985–89 salvage unlocks (M16A2, Jeeps, M113s, Hueys; calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.
@@ -69,7 +69,7 @@ v0.1 ships **153 original AI officers** with distinct personalities (aggressive,
 
 **Liberate the States:** hierarchy is **STATE → territories**. A state is free when you hold its **key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail). Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields. **8 US states** (west bloc AK–CO) names you **national leader**. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua. A late **sponsor** event can add Korea.
 
-**Map unlock:** every US/Yukon city is painted from week 0. Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`. Visual look: `/?demo=look` or `/?demo=terrain` — elevated biomes (WA forest, Rockies, UT desert, plains, AK ice) and 1980s American city markers. Original art only.
+**Map unlock:** every US/Yukon city is painted from week 0 on a continental US coastline (Great Lakes cut in; Alaska/Yukon as a northwest spur). Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`. Visual look: `/?demo=look` or `/?demo=terrain` — full-resolution biomes and 1980s American city markers. Original art only.
 
 You start **alone** and may appoint up to **5 generals**. Hire fills empty general slots first; extras wait in court for **Appoint**. **Side missions** (13 templates, including a **Porch challenge** yard duel) sit on a weekly board — Military → Side Mission, or the Missions dock. Plot/Military → **Challenge** calls out an officer in the same city. Duels last ~**99 seconds** if both stay up (11 exchanges × 9s): Strike / Guard / named Special with a green timing window. Eight arenas (porch, roadhouse, foothills, airstrip, ice ford, gas lot, pine ridge, radio tower), outfit kits, and fighting styles (Brawler, Marksman, Grappler, Cavalry, Guerrilla, Drill-Sergeant, Trapper, Signals). Underdog (much lower WAR) gets a wider window. Original IP — not a licensed fighting game.
 
