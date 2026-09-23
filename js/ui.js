@@ -81,7 +81,7 @@ import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 const SAVE_KEY = "northern-front-v01";
 let content;
 let state;
-let selectedRegion = "bethel";
+let selectedRegion = "cheyenne";
 let hoverRegion = null;
 
 const $ = (id) => document.getElementById(id);
@@ -102,7 +102,7 @@ function startSliceState() {
     seed: 7,
   });
   act(state, content, "raise_banner");
-  selectedRegion = "bethel";
+  selectedRegion = playerOf(state).region;
   hideModal();
 }
 
@@ -149,9 +149,9 @@ export async function boot(loaded) {
     }
     if (fxKind === "travel") pulseTravel("bethel", "fairbanks", { loop: true });
     if (fxKind === "battle") {
-      const home = regionOf(state, "bethel");
+      const home = regionOf(state, "cheyenne");
       home.garrison = 90;
-      const fight = act(state, content, "attack", { regionId: "nome" });
+      const fight = act(state, content, "attack", { regionId: "denver" });
       if (fight.battle && state.battle) {
         state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
         openBattle();
@@ -174,7 +174,7 @@ export async function boot(loaded) {
       hart.loyalty = 80;
       hart.standingOrder = "drill";
     }
-    selectedRegion = "bethel";
+    selectedRegion = playerOf(state).region;
     hideModal();
     render();
     afterFonts();
@@ -218,7 +218,7 @@ export async function boot(loaded) {
       difficulty: "normal",
       seed: 7,
     });
-    selectedRegion = "bethel";
+    selectedRegion = playerOf(state).region;
     coachOn = false;
     hideModal();
     render();
@@ -232,7 +232,7 @@ export async function boot(loaded) {
       difficulty: "normal",
       seed: 7,
     });
-    selectedRegion = "bethel";
+    selectedRegion = playerOf(state).region;
     commandCat = "domestic";
     coachForced = true;
     coachOn = true;
@@ -278,12 +278,12 @@ export async function boot(loaded) {
       const o = state.officers.find((x) => x.id === id);
       if (!o) return;
       o.faction = "northern_front";
-      o.region = "bethel";
+      o.region = "cheyenne";
       o.loyalty = 80;
       o.isGeneral = true;
       o.standingOrder = i === 0 ? "drill" : i === 1 ? "mission" : "commerce";
     });
-    selectedRegion = "bethel";
+    selectedRegion = playerOf(state).region;
     commandCat = "plot";
     hideModal();
     render();
@@ -299,9 +299,9 @@ export async function boot(loaded) {
       hart.loyalty = 80;
       hart.isGeneral = true;
       hart.standingOrder = "mission";
-      hart.region = "bethel";
+      hart.region = "cheyenne";
     }
-    selectedRegion = "bethel";
+    selectedRegion = playerOf(state).region;
     commandCat = "military";
     hideModal();
     render();
@@ -320,12 +320,12 @@ export async function boot(loaded) {
       const o = state.officers.find((x) => x.id === id);
       if (!o) return;
       o.faction = "northern_front";
-      o.region = "bethel";
+      o.region = "cheyenne";
       o.loyalty = 80;
       o.isGeneral = true;
       o.standingOrder = i === 0 ? "drill" : i === 1 ? "mission" : "commerce";
     });
-    selectedRegion = "bethel";
+    selectedRegion = playerOf(state).region;
     commandCat = "domestic";
     hideModal();
     render();
@@ -363,9 +363,9 @@ export async function boot(loaded) {
       wireAfterRender();
     }
     if (params.get("fx") === "battle") {
-      const home = regionOf(state, "bethel");
+      const home = regionOf(state, "cheyenne");
       home.garrison = 90;
-      const fight = act(state, content, "attack", { regionId: "nome" });
+      const fight = act(state, content, "attack", { regionId: "denver" });
       if (fight.battle && state.battle) {
         state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
         openBattle();
@@ -384,7 +384,7 @@ export async function boot(loaded) {
       foe = state.officers.find((o) => o.id === "marsh");
       if (foe) {
         foe.hidden = false;
-        foe.region = "bethel";
+        foe.region = "cheyenne";
         if (!state.discovered.includes("marsh")) state.discovered.push("marsh");
         state.marshHunt = 2;
       }
@@ -485,10 +485,10 @@ function bindChrome() {
 
 function titleScreenHtml(hasSave) {
   return `
-    <p class="muted">Original IP. Alaska-first western theater. Not a licensed war film or Koei title.</p>
+    <p class="muted">Original IP. Stall opens in the mountain west. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
-    <p><strong>Click Begin week 0.</strong> You start alone in Bethel. First job: raise a banner, spend AP, then End Week.</p>
-    <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
+    <p><strong>Click Begin week 0.</strong> You start alone in Cheyenne. First job: raise a banner, spend AP, then End Week.</p>
+    <p>The yards are contested. Denver, Jackson, Billings, and Omaha are the adjacent roads. Alaska is on the map — you do not start there, and you cannot leap to Seattle.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
     <div class="choices" id="ng-bg">
@@ -527,7 +527,7 @@ function wireTitle() {
     start.onclick = () => {
       const name = $("modal-card").querySelector("#ng-name").value;
       state = createNewGame(content, { name, background: bg, difficulty: diff });
-      selectedRegion = "bethel";
+      selectedRegion = playerOf(state).region;
       commandCat = "domestic";
       hideModal();
       render();
@@ -798,7 +798,7 @@ function helpHtml() {
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
       <li><strong>Phase board:</strong> Yellow chip is now. Invasion Day, Stall, Advent Crown, Prairie Fire, Gulf Hammer, Border Fury, Foreign desks. Occupied / contested / held is who owns the ground. No leaping.</li>
-      <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
+      <li><strong>Theater:</strong> The coastline is one US silhouette. Week 0 is Cheyenne, on the Stall corridor — not Bethel, and not a leap to Seattle. California (Sacramento, Los Angeles) and Nevada (Reno, Las Vegas) are states with adjacent roads only. 8 west-bloc states still name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1409,7 +1409,7 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Bethel as Northern Front. It costs 1 AP.",
+    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads only — Denver, Jackson, Billings, Omaha. No leap to Seattle.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },
@@ -1933,16 +1933,13 @@ function seaLanePoints(fromId, toId) {
   if (key === laneKey("st_louis", "gulf_passage")) {
     const s = at("st_louis");
     const g = at("gulf_passage");
-    const south = 604;
-    const pts = [s, [s[0], south], [g[0], south], g];
+    const pts = [s, [s[0], g[1]], g];
     return fromId === "st_louis" ? pts : pts.slice().reverse();
   }
   if (key === laneKey("gulf_passage", "far_cuba")) {
     const g = at("gulf_passage");
     const c = at("far_cuba");
-    const north = 528;
-    const pts = [g, [g[0], north], [c[0], north], c];
-    return fromId === "gulf_passage" ? pts : pts.slice().reverse();
+    return fromId === "gulf_passage" ? [g, c] : [c, g];
   }
   return [a, b];
 }
@@ -2067,15 +2064,6 @@ function drawCityPlate(ctx, r, selected) {
   const ph = 20;
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
-  if (r.id === "gulf_passage") {
-    px = Math.round(x + 10);
-    py = Math.round(y - 46);
-  } else if (r.id === "far_cuba") {
-    px = 4;
-    py = Math.round(y - 58);
-  } else if (r.id === "far_nicaragua") {
-    py = Math.round(y - 28);
-  }
   px = Math.max(4, Math.min(996 - pw, px));
   if (py < 4) py = Math.round(y + 20);
   if (py + ph > 618) py = Math.max(4, Math.round(y - 44));
@@ -2100,6 +2088,42 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillText(garr, px + pw - 10 - garrW, py + 15);
 }
 
+/** East and Gulf states have no cities. CA and NV wash from their own nodes.
+ *  Phase names stay on the dock — this wash is ownership, not a banner. */
+const OCCUPIED_EAST = new Set(
+  "ND SD MN IA OK TX AR LA WI IL IN MI OH KY TN MS AL GA FL SC NC VA WV PA NY NJ DE MD CT RI MA VT NH ME".split(" "),
+);
+
+function stateWash(postal) {
+  const code = String(postal || "").toUpperCase();
+  const cities = state.regions.filter((r) => r.stateCode === code && !(r.unlockPhase > 0));
+  if (!cities.length) {
+    if (OCCUPIED_EAST.has(code)) return { color: "#9a3b3b", kind: "occupied" };
+    return null;
+  }
+  const p = playerOf(state);
+  const liberated = (ensureCampaign(state).liberated || []).includes(code);
+  if (liberated || (p?.faction && cities.every((r) => r.owner === p.faction))) {
+    const fac = p?.faction ? factionOf(state, p.faction) : null;
+    return { color: fac?.color || "#d4a056", kind: "held" };
+  }
+  const counts = {};
+  cities.forEach((r) => {
+    if (r.owner) counts[r.owner] = (counts[r.owner] || 0) + 1;
+  });
+  const ids = Object.keys(counts);
+  if (!ids.length) return null;
+  ids.sort((a, b) => counts[b] - counts[a]);
+  const top = factionOf(state, ids[0]);
+  const invaderN = ids.reduce((n, id) => n + (factionOf(state, id)?.alignment === "invader" ? counts[id] : 0), 0);
+  if (invaderN * 2 >= cities.length) {
+    const inv = ids.map((id) => factionOf(state, id)).find((f) => f?.alignment === "invader");
+    return { color: inv?.color || "#9a3b3b", kind: "occupied" };
+  }
+  if (ids.length > 1) return { color: top?.color || "#c9a06a", kind: "contested" };
+  return { color: top?.color || "#6a8f5a", kind: "local" };
+}
+
 function drawMap() {
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
@@ -2117,6 +2141,7 @@ function drawMap() {
     selectedId: selectedRegion,
     hoverId: hoverRegion,
     factionOf: (r) => (r.owner ? factionOf(state, r.owner) : null),
+    stateWash,
   });
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;

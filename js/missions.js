@@ -19,6 +19,7 @@ export const MISSION_TEMPLATES = [
       yukon_road: "Whitehorse spur. Count southbound trucks that still think a border means something.",
       kenai: "Ranch grade in the western foothills. Horse scouts and pickups share the same dust.",
       bethel: "River road south of Bethel. Jeep tracks in breakup mud.",
+      cheyenne: "Rail grade east of the yards. Jeep tracks in high-plains wind. Not a leap to Seattle.",
       seattle: "Sound grade under occupation stamps. Count wharf trucks, not speeches.",
       denver: "Front Range boulevard. Campus jeeps and a gold-road rumor south of Cheyenne.",
       missoula: "ALCAN rumor south of the Yukon. Count hulls that still think a border means something.",
@@ -411,7 +412,7 @@ export function seedDemoMissions(state) {
   const box = openBoard(state);
   const picks = [
     ["scout_road", "kenai"],
-    ["escort_convoy", "bethel"],
+    ["escort_convoy", "cheyenne"],
     ["radio_run", "yukon_road"],
     ["rescue_officer", "bethel"],
     ["porch_challenge", "bethel"],
