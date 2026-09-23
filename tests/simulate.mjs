@@ -773,6 +773,12 @@ westKeys.forEach((id) => {
 });
 tickCampaign(lib);
 assert(lib.campaign.nationalLeader && lib.campaign.phase >= 2, "8 west-bloc states name a national leader");
+const leaderNote = lib.log.map((l) => l.text).find((t) => /national leader/.test(t));
+assert(leaderNote && /not a leap/.test(leaderNote), `leader note is a title: ${leaderNote}`);
+const reunifyNote = lib.log.map((l) => l.text).find((t) => /Reunify/.test(t));
+assert(reunifyNote && /NE–KS–MO/.test(reunifyNote), `reunify note names the east walk: ${reunifyNote}`);
+const coNote = lib.log.map((l) => l.text).find((t) => /Liberated Colorado/.test(t));
+assert(coNote && /West bloc 2\/8/.test(coNote), `colorado frees into the west count: ${coNote}`);
 assert(lib.campaign.phase >= 3, "Phase 3 foreign desks unlock with the council");
 assert(travelUnlocked(lib, regionOf(lib, "far_russia")), "Russia walkable after restore");
 const sponsorLine = fireSponsor(lib);
@@ -1039,6 +1045,11 @@ assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
 assert(/function parkCoach/.test(uiSrc) && /function flushOverlays/.test(uiSrc), "overlays queue: park coach, one at a time");
 assert(/Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland \(kr_inland\)/.test(uiSrc), "coach names Sheds, the Korea inland road");
 assert(/Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap/.test(uiSrc), "Raise-a-banner coach names the siege ploys");
+assert(/A state frees when its ★ keys are yours/.test(uiSrc), "coach names when a state frees");
+assert(/Reunify is the east walk already on the board: NE–KS–MO/.test(uiSrc), "coach names reunify as the east walk");
+assert(/a title, not a leap/.test(uiSrc), "national leader is a title in the coach");
+assert(/function campaignArcLine/.test(uiSrc) && /Eight name you national leader — not a leap/.test(uiSrc), "standing NEXT sequences the west bloc to the title");
+assert(/foreignDesk/.test(uiSrc) && /return cue \? `\$\{line\}\\n\$\{cue\}` : line/.test(uiSrc), "domestic arc stays off the foreign siege block");
 ["kamchatka", "siberia", "havana", "managua", "sponsor_lane", "kr_inland"].forEach((id) => {
   assert(uiSrc.includes(`/?demo=siege&node=${id}`), `siege NEXT binds /?demo=siege&node=${id}`);
 });

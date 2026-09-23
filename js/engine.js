@@ -863,7 +863,7 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: !hasBanner && !here.owner,
-    hint: hasBanner ? "You already fly a color." : here.owner ? "Cannot raise a banner in occupied ground." : "Found Northern Front and claim this region.",
+    hint: hasBanner ? "You already fly a color." : here.owner ? "Cannot raise a banner in occupied ground." : "Found Northern Front and claim this region. A state frees when its ★ keys are yours. Eight west-bloc states name you national leader — not a leap.",
   });
   const hunt = legendStatus(state);
   const hunts = legendBoard(state);
@@ -1054,8 +1054,8 @@ export function listActions(state) {
     group: "plot",
     enabled: camp.phase >= 2,
     hint: camp.phase >= 2
-      ? "Foreign theaters: Russia, Cuba, Nicaragua. A sponsor may add another country."
-      : `Liberate ${camp.restoreThreshold} US states (west bloc) to sit as national leader.`,
+      ? "National leader. Reunify NE–KS–MO on adjacent roads. Foreign theaters: Russia, Cuba, Nicaragua — still their roads. A sponsor may add another country."
+      : `Free ${camp.restoreThreshold} west-bloc states to be named national leader. The title is not a leap. Reunify east is NE–KS–MO.`,
   });
   const attackOk =
     (hasBanner && ownedByPlayer(state, here) && here.garrison >= 8) ||
@@ -1483,8 +1483,8 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "travel") return doTravel(state, extra.regionId);
   if (actionId === "war_council") {
     const camp = ensureCampaign(state);
-    if (camp.phase < 2) return { ok: false, message: "Liberate the west bloc first." };
-    return { ok: true, council: true, message: "War council. Far-shore desks are on the slate." };
+    if (camp.phase < 2) return { ok: false, message: "Free 8 west-bloc states first. National leader is a title, not a leap." };
+    return { ok: true, council: true, message: "War council. You are national leader. Reunify is NE–KS–MO on adjacent roads. Far-shore desks still wait on their roads." };
   }
   if (actionId === "attack") return doAttack(state, content, extra);
   return { ok: false, message: "Not implemented." };
@@ -2004,6 +2004,22 @@ export function deskControl(state) {
   });
 }
 
+function liberationNote(camp, row) {
+  const west = (camp.westBloc || []).includes(row.id);
+  const east = (camp.eastApproach || []).includes(row.id);
+  if (row.id === "YT") {
+    return "Liberated Yukon (YT). The Yukon road is held. It is not one of the eight.";
+  }
+  if (west) {
+    const n = camp.liberated.filter((id) => (camp.westBloc || []).includes(id)).length;
+    return `Liberated ${row.name} (${row.id}). ★ keys held. West bloc ${n}/8.`;
+  }
+  if (east) {
+    return `Liberated ${row.name} (${row.id}). Reunify walks NE–KS–MO on adjacent roads.`;
+  }
+  return `Liberated ${row.name} (${row.id}). ★ keys are yours.`;
+}
+
 export function tickCampaign(state) {
   const camp = ensureCampaign(state);
   const p = playerOf(state);
@@ -2013,7 +2029,7 @@ export function tickCampaign(state) {
   ctrl.forEach((row) => {
     if (row.liberated && !camp.liberated.includes(row.id)) {
       camp.liberated.push(row.id);
-      notes.push(`Liberated ${row.name} (${row.id}). Key cities are under your color.`);
+      notes.push(liberationNote(camp, row));
     }
     if (!row.liberated && camp.liberated.includes(row.id)) {
       camp.liberated = camp.liberated.filter((id) => id !== row.id);
@@ -2029,12 +2045,12 @@ export function tickCampaign(state) {
     p.title = "National Leader";
     state.gold += 24;
     state.food += 16;
-    notes.push("West bloc is enough. You are named national leader of the restored United States. A foreign war council sits.");
+    notes.push("Eight free states name you national leader — a title, not a leap.");
     camp.foreign.forEach((f) => {
       f.unlocked = true;
     });
     camp.phase = 3;
-    notes.push("Phase 3: Far-shore desks (Russia, Cuba, Nicaragua) are on the slate.");
+    notes.push("Reunify on adjacent roads: NE–KS–MO. War Council sits. Russia, Cuba, and Nicaragua still wait on their roads.");
   }
   camp.foreign.forEach((f) => {
     const node = regionOf(state, f.id);
