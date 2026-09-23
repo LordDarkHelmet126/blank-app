@@ -3,15 +3,15 @@
     "theater": "west",
     "version": "0.2-states",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Continental US silhouette with an Alaska/Yukon spur. STATE \u2192 territories. No leaping: travel only on adjacent roads. City nodes sit on the painted land. Geo tags change weekly yields.",
+    "notes": "Continental US silhouette with an Alaska/Yukon spur. California and Nevada are on the board (Sacramento, Los Angeles, Reno, Las Vegas) by neighbor roads only. Week 0 starts in unowned Cheyenne. No leaping.",
     "unlock": "All US/Yukon cities are painted and walkable from week 0. Foreign nodes unlock at campaign phase 3 (after national leader). Korea appears if a sponsor intervenes.",
     "counts": {
-      "states": 12,
-      "usStates": 11,
+      "states": 14,
+      "usStates": 13,
       "territories": 1,
-      "cities": 37,
+      "cities": 41,
       "alaskaPlusSpurs": 11,
-      "lower48": 22,
+      "lower48": 26,
       "foreign": 4
     }
   },
@@ -2601,6 +2601,166 @@
           387
         ]
       ]
+    },
+    {
+      "id": "ca",
+      "name": "California",
+      "short": "CA",
+      "kind": "us",
+      "keyCities": [
+        "sacramento",
+        "los_angeles"
+      ],
+      "label": [
+        126,
+        363
+      ],
+      "polygon": [
+        [
+          201,
+          406
+        ],
+        [
+          209,
+          420
+        ],
+        [
+          204,
+          424
+        ],
+        [
+          200,
+          437
+        ],
+        [
+          204,
+          446
+        ],
+        [
+          202,
+          450
+        ],
+        [
+          179,
+          452
+        ],
+        [
+          161,
+          453
+        ],
+        [
+          158,
+          444
+        ],
+        [
+          148,
+          433
+        ],
+        [
+          140,
+          431
+        ],
+        [
+          138,
+          425
+        ],
+        [
+          104,
+          414
+        ],
+        [
+          102,
+          404
+        ],
+        [
+          86,
+          385
+        ],
+        [
+          73,
+          354
+        ],
+        [
+          53,
+          331
+        ],
+        [
+          51,
+          316
+        ],
+        [
+          43,
+          306
+        ],
+        [
+          46,
+          274
+        ],
+        [
+          114,
+          274
+        ],
+        [
+          114,
+          331
+        ],
+        [
+          201,
+          406
+        ]
+      ]
+    },
+    {
+      "id": "nv",
+      "name": "Nevada",
+      "short": "NV",
+      "kind": "us",
+      "keyCities": [
+        "reno",
+        "las_vegas"
+      ],
+      "label": [
+        162,
+        340
+      ],
+      "polygon": [
+        [
+          162,
+          274
+        ],
+        [
+          211,
+          274
+        ],
+        [
+          211,
+          385
+        ],
+        [
+          210,
+          388
+        ],
+        [
+          201,
+          385
+        ],
+        [
+          201,
+          406
+        ],
+        [
+          114,
+          331
+        ],
+        [
+          114,
+          274
+        ],
+        [
+          162,
+          274
+        ]
+      ]
     }
   ],
   "regions": [
@@ -3536,7 +3696,8 @@
       ],
       "neighbors": [
         "portland",
-        "bend"
+        "bend",
+        "sacramento"
       ],
       "startOwner": "timberline",
       "garrison": 26,
@@ -3972,7 +4133,7 @@
         "denver",
         "omaha"
       ],
-      "startOwner": "rail_brotherhood",
+      "startOwner": null,
       "garrison": 34,
       "economy": 46,
       "food": 34,
@@ -4032,7 +4193,8 @@
         "boise",
         "moab",
         "grand_junction",
-        "jackson"
+        "jackson",
+        "las_vegas"
       ],
       "startOwner": "rail_brotherhood",
       "garrison": 48,
@@ -4867,6 +5029,248 @@
         "sun": 0,
         "weather": 1,
         "defense": 2
+      }
+    },
+    {
+      "id": "sacramento",
+      "name": "Sacramento Yards",
+      "short": "Sacramento",
+      "state": "CA",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": [
+        "Valley depots",
+        "River lift"
+      ],
+      "minus": [
+        "Open levees",
+        "Long haul south"
+      ],
+      "neighbors": [
+        "eugene",
+        "los_angeles",
+        "reno"
+      ],
+      "startOwner": "pacific_spine",
+      "garrison": 42,
+      "economy": 58,
+      "food": 48,
+      "walls": 22,
+      "order": 48,
+      "population": 276000,
+      "terrainBias": "urban",
+      "plate": "above",
+      "polygon": [
+        [
+          74,
+          326
+        ],
+        [
+          106,
+          326
+        ],
+        [
+          106,
+          352
+        ],
+        [
+          74,
+          352
+        ]
+      ],
+      "label": [
+        90,
+        339
+      ],
+      "geo": {
+        "farm": 3,
+        "mine": 0,
+        "fuel": 0,
+        "water": 2,
+        "sun": 2,
+        "weather": 0,
+        "defense": 0
+      }
+    },
+    {
+      "id": "los_angeles",
+      "name": "Los Angeles Basin",
+      "short": "Los Angeles",
+      "state": "CA",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": [
+        "Port sheds",
+        "Basin labor"
+      ],
+      "minus": [
+        "Thirsty city",
+        "Split freeways"
+      ],
+      "neighbors": [
+        "sacramento",
+        "las_vegas"
+      ],
+      "startOwner": "red_wharf",
+      "garrison": 54,
+      "economy": 72,
+      "food": 34,
+      "walls": 28,
+      "order": 40,
+      "population": 1208000,
+      "terrainBias": "urban",
+      "plate": "below",
+      "polygon": [
+        [
+          127,
+          412
+        ],
+        [
+          159,
+          412
+        ],
+        [
+          159,
+          438
+        ],
+        [
+          140,
+          430
+        ]
+      ],
+      "label": [
+        143,
+        425
+      ],
+      "geo": {
+        "farm": 1,
+        "mine": 0,
+        "fuel": 1,
+        "water": 0,
+        "sun": 3,
+        "weather": 0,
+        "defense": 1
+      }
+    },
+    {
+      "id": "reno",
+      "name": "Reno Grade",
+      "short": "Reno",
+      "state": "NV",
+      "unlockWeek": 0,
+      "type": "rail",
+      "plus": [
+        "Sierra shops",
+        "Pass warehouses"
+      ],
+      "minus": [
+        "Thin water",
+        "Winter grades"
+      ],
+      "neighbors": [
+        "sacramento",
+        "las_vegas"
+      ],
+      "startOwner": "rail_brotherhood",
+      "garrison": 30,
+      "economy": 40,
+      "food": 28,
+      "walls": 18,
+      "order": 50,
+      "population": 100000,
+      "terrainBias": "hills",
+      "plate": "above",
+      "polygon": [
+        [
+          101,
+          307
+        ],
+        [
+          133,
+          307
+        ],
+        [
+          133,
+          333
+        ],
+        [
+          101,
+          333
+        ]
+      ],
+      "label": [
+        117,
+        320
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 1,
+        "fuel": 0,
+        "water": 0,
+        "sun": 2,
+        "weather": 2,
+        "defense": 1
+      }
+    },
+    {
+      "id": "las_vegas",
+      "name": "Las Vegas Strip",
+      "short": "Las Vegas",
+      "state": "NV",
+      "unlockWeek": 0,
+      "type": "urban",
+      "plus": [
+        "Night power",
+        "Desert caches"
+      ],
+      "minus": [
+        "No farms",
+        "Long water haul"
+      ],
+      "neighbors": [
+        "los_angeles",
+        "reno",
+        "salt_lake"
+      ],
+      "startOwner": "idle_hour",
+      "garrison": 36,
+      "economy": 64,
+      "food": 22,
+      "walls": 16,
+      "order": 42,
+      "population": 183000,
+      "terrainBias": "plains",
+      "plate": "below",
+      "polygon": [
+        [
+          177,
+          371
+        ],
+        [
+          209,
+          371
+        ],
+        [
+          209,
+          397
+        ],
+        [
+          177,
+          397
+        ]
+      ],
+      "label": [
+        193,
+        384
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 0,
+        "fuel": 1,
+        "water": 0,
+        "sun": 3,
+        "weather": 1,
+        "defense": 0
       }
     }
   ],

@@ -425,7 +425,7 @@ export function createNewGame(content, opts = {}) {
     chr: clampStat(tpl.chr + (bg.chr || 0)),
     personality: tpl.personality,
     faction: null,
-    region: "bethel",
+    region: "cheyenne",
     loyalty: 100,
     ambition: tpl.ambition,
     hidden: false,
@@ -506,7 +506,7 @@ export function createNewGame(content, opts = {}) {
     weekReport: [],
     phase: "strategy",
     battle: null,
-    selectedRegion: "bethel",
+    selectedRegion: "cheyenne",
     gameOver: null,
     ending: null,
     customSlotsUsed: 0,
@@ -549,7 +549,7 @@ export function createNewGame(content, opts = {}) {
   setRelation(state, "copper_road", "timberline", 28);
   setRelation(state, "copper_road", "pof", 16);
 
-  pushLog(state, `Week 0. Invasion landings at Anchorage and the Slope. The map already shows Washington through Colorado — roads south of Juneau and the Yukon are open.`, "alert");
+  pushLog(state, `Week 0. Stall. You are in the Cheyenne yards, not Alaska. Invasion landings already sit on Anchorage and the Slope. Roads run the Front Range, the plains, and the California–Nevada border. No leaping.`, "alert");
   pushLog(state, `${name} (${bg.name}) — WAR ${player.war} INT ${player.int} POL ${player.pol} CHR ${player.chr}.`, "info");
   return state;
 }
@@ -2134,7 +2134,7 @@ function officerActAI(state, content, off) {
     const grace = DIFFICULTY[state.difficulty].grace;
     const filtered = targets.filter((r) => {
       if (p.faction && r.owner === p.faction && regionsOfFaction(state, p.faction).length <= 1 && state.week < grace) return false;
-      if (!p.faction && (r.id === p.region || (!r.owner && r.id === "bethel")) && state.week < grace + 8) return false;
+      if (!p.faction && (r.id === p.region || (!r.owner && r.id === "cheyenne")) && state.week < grace + 8) return false;
       if (r.owner && getRelation(state, fac.id, r.owner) >= 70) return false;
       return true;
     });
@@ -2290,7 +2290,9 @@ export function weekTease(state) {
   if (livingOfficers(state).some((o) => o.wound && (o.id === p.id || o.faction === p.faction))) bits.push("a wound fading");
   const here = regionOf(state, p.region);
   if (here && (here.stateCode === "AK" || here.stateCode === "YT")) bits.push("south-pass roads into Washington and Colorado");
+  if (here && here.stateCode === "WY") bits.push("Front Range roads into Denver and the Omaha grade");
   if (here && here.stateCode === "CO") bits.push("plains roads east toward Nebraska and the river gate");
+  if (here && here.stateCode === "OR") bits.push("the valley road south into Sacramento");
   if (!bits.length) bits.push("neighbors moving");
   bits.push("a fresh AP pool");
   return bits.slice(0, 3).join(" · ");
@@ -2336,7 +2338,7 @@ export function endWeek(state, content) {
 
   const p = playerOf(state);
   if (p.faction && !regionsOfFaction(state, p.faction).length && !state.regions.some((r) => !r.owner)) {
-    const refuge = state.regions.find((r) => r.id === "bethel") || state.regions[0];
+    const refuge = state.regions.find((r) => r.id === "cheyenne") || state.regions[0];
     p.region = refuge.id;
   }
 

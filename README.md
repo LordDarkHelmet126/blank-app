@@ -43,7 +43,7 @@ If Python is missing, any static server in this folder works (`npx serve .`, etc
 ### First session (what “done” looks like)
 
 1. New game → **Begin week 0** (name + background + difficulty). A week-1 coach and a yellow **NEXT** strip name the first click.
-2. You start **alone** in the **Kuskokwim Lowlands (Bethel)**. Command opens on **Domestic**.
+2. You start **alone** in **Cheyenne**. Command opens on **Domestic**. Raise a banner there.
 3. **Raise Banner** to found Northern Front (max **5 generals** via Hire / Appoint / Persuade). Extra hires wait in court.
 4. Spend leftover AP (Commerce / Cultivate / a **side mission**), then **End Week**.
 5. AI officers act; their log lines include personality tags such as `[aggressive]` or `[schemer]`.
@@ -60,7 +60,7 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 |------|------|
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
 | `data/factions.json` | ~40 original groups. **17** are on the current board (Alaska six + Yukon/Bering + eight western banners); the rest stay off-map. |
-| `data/regions.json` | **12 states/territories** on the mid-step (11 US + Yukon). **33** US/Yukon cities plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
+| `data/regions.json` | **14 states/territories** (13 US + Yukon), including California and Nevada. **37** US/Yukon cities plus **4** foreign stubs (Russia, Cuba, Nicaragua, Korea). |
 | `data/tech.json` | Slow 1985–89 salvage unlocks (M16A2, Jeeps, M113s, Hueys; calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.

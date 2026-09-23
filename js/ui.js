@@ -98,7 +98,7 @@ function startSliceState() {
     seed: 7,
   });
   act(state, content, "raise_banner");
-  selectedRegion = "bethel";
+  selectedRegion = "cheyenne";
   hideModal();
 }
 
@@ -147,6 +147,7 @@ export async function boot(loaded) {
     if (fxKind === "battle") {
       const home = regionOf(state, "bethel");
       home.garrison = 90;
+      playerOf(state).region = "bethel";
       const fight = act(state, content, "attack", { regionId: "nome" });
       if (fight.battle && state.battle) {
         state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
@@ -214,7 +215,7 @@ export async function boot(loaded) {
       difficulty: "normal",
       seed: 7,
     });
-    selectedRegion = "bethel";
+    selectedRegion = "cheyenne";
     commandCat = "domestic";
     coachForced = true;
     coachOn = true;
@@ -323,6 +324,19 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "start") {
+    state = createNewGame(content, {
+      name: "Alex Rourke",
+      background: "scout",
+      difficulty: "normal",
+      seed: 7,
+    });
+    selectedRegion = "denver";
+    hideModal();
+    render();
+    afterFonts();
+    return;
+  }
   if (params.get("demo") === "look" || params.get("demo") === "terrain") {
     document.body.classList.add("look-map");
     startSliceState();
@@ -343,6 +357,7 @@ export async function boot(loaded) {
     if (params.get("fx") === "battle") {
       const home = regionOf(state, "bethel");
       home.garrison = 90;
+      playerOf(state).region = "bethel";
       const fight = act(state, content, "attack", { regionId: "nome" });
       if (fight.battle && state.battle) {
         state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
@@ -490,7 +505,7 @@ function titleScreenHtml(hasSave) {
   return `
     <p class="muted">Original IP. Alaska-first western theater. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
-    <p><strong>Click Begin week 0.</strong> You start alone in Bethel. First job: raise a banner, spend AP, then End Week.</p>
+    <p><strong>Click Begin week 0.</strong> You start alone in Cheyenne. First job: raise a banner, spend AP, then End Week.</p>
     <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
@@ -530,7 +545,7 @@ function wireTitle() {
     start.onclick = () => {
       const name = $("modal-card").querySelector("#ng-name").value;
       state = createNewGame(content, { name, background: bg, difficulty: diff });
-      selectedRegion = "bethel";
+      selectedRegion = "cheyenne";
       commandCat = "domestic";
       hideModal();
       render();
@@ -1368,7 +1383,7 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Bethel as Northern Front. It costs 1 AP.",
+    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },
@@ -1676,7 +1691,7 @@ function renderLog() {
 }
 
 /** East and Gulf states have no cities. They read occupied up to the Cheyenne–KS/MO stall.
- *  CA, NV, AZ, NM stay bare — no invented owners. */
+ *  AZ and NM stay bare. CA and NV wash from their real city owners. */
 const OCCUPIED_EAST = new Set(
   "ND SD MN IA OK TX AR LA WI IL IN MI OH KY TN MS AL GA FL SC NC VA WV PA NY NJ DE MD CT RI MA VT NH ME".split(" "),
 );

@@ -711,7 +711,10 @@ export function invalidateTerrain() {
 }
 
 export function markerKind(r) {
-  if (r?.id === "seattle") return "street";
+  if (r?.id === "seattle" || r?.id === "los_angeles") return "street";
+  if (r?.id === "las_vegas") return "tower";
+  if (r?.id === "reno") return "ranch";
+  if (r?.id === "sacramento") return "elevator";
   if (r?.id === "olympia" || r?.id === "spokane") return "mill";
   const g = r.geo || {};
   if ((g.fuel || 0) >= 2) return "pump";

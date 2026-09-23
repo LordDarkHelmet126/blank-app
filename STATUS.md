@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — one contiguous US coastline (biomes inside the outline, not state rectangles). Look demo still opens on Seattle.
+**Last checkpoint:** 2026-09-23 — California and Nevada cities are on the silhouette. A new game starts in Cheyenne.
 
 ## How to run
 
@@ -16,15 +16,15 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver selected, Cheyenne–Denver pulse). California frame: `/?demo=look&view=ca`. Cold new game: `/?demo=start`. Globe: `/?demo=look&view=world`.
 
 ## US silhouette (this pass)
 
-The lower 48 is one connected coastline — Florida, Texas, California, the Great Lakes, and New England. State borders are drawn inside that mask (a political map). Biomes are soft texture, not land tiles. Faction washes use each banner’s color: dark edge occupied, light edge contested, gold edge held. States with no cities east of the Cheyenne–Kansas–Missouri stall, including the Gulf and Texas, wash occupied in the existing invader red. California, Nevada, Arizona, and New Mexico stay unwash. A dashed stall line runs only on existing roads from Cheyenne through Kansas to St. Louis. Prairie Fire, Gulf, Border Fury, and Bering are names in the Banners panel (L), not plates on the land. Subtle arrows mark the Bering and the Rio Grande. Nuke scars are unlabeled crater marks at DC, Manhattan, Kansas City, Offutt, Minot, Grand Forks, and Ellsworth. The Occupied / Contested / Held key is in the theater header. Alaska is the real outline; Yukon is the northwest spur. Banners sit in the side column, hidden until L or the Banners button — never on the land. `/?demo=look` hides the side column, court, and chronicle so the theater fills the pane. The here chip sits on Cheyenne and the selection opens on Denver, along the existing Cheyenne–Denver road. Campaign start in a new game is still Bethel until that storyline moves. Every lower-48 postal is labeled. CA and NV stay pinned on their washes; those states have no cities or roads yet. Land is a light political field: faction washes and state outlines, no tree or mesa stamps. Wheel, +/−, and drag pan the theater. `/?demo=look&view=world` pulls back to the globe. `/?demo=look&view=ca` frames California and Nevada. Neighbor lists are unchanged.
+The lower 48 is one connected coastline — Florida, Texas, California, the Great Lakes, and New England. State borders are drawn inside that mask (a political map). Biomes are soft texture, not land tiles. Faction washes use each banner’s color: dark edge occupied, light edge contested, gold edge held. States with no cities east of the Cheyenne–Kansas–Missouri stall, including the Gulf and Texas, wash occupied in the existing invader red. Arizona and New Mexico stay unwash. California and Nevada wash from Sacramento, Los Angeles, Reno, and Las Vegas. A dashed stall line runs only on existing roads from Cheyenne through Kansas to St. Louis. Prairie Fire, Gulf, Border Fury, and Bering are names in the Banners panel (L), not plates on the land. Subtle arrows mark the Bering and the Rio Grande. Nuke scars are unlabeled crater marks at DC, Manhattan, Kansas City, Offutt, Minot, Grand Forks, and Ellsworth. The Occupied / Contested / Held key is in the theater header. Alaska is the real outline; Yukon is the northwest spur. Banners sit in the side column, hidden until L or the Banners button — never on the land. `/?demo=look` hides the side column, court, and chronicle so the theater fills the pane. The look demo still opens on the Cheyenne–Denver road. A real new game also starts in Cheyenne: the city is unowned, Raise Banner founds Northern Front there, and the here chip is not Bethel. Cold start: `/?demo=start`. Every lower-48 postal is labeled, including CA and NV. Sacramento, Los Angeles, Reno, and Las Vegas sit on the land with original 80s marks (elevator, street, ranch, tower). Roads are neighbor-only: Eugene–Sacramento, Sacramento–Los Angeles, Sacramento–Reno, Los Angeles–Las Vegas, Reno–Las Vegas, Salt Lake–Las Vegas. No leap edges. Land is a light political field: faction washes and state outlines, no tree or mesa stamps. Wheel, +/−, and drag pan the theater. `/?demo=look&view=world` pulls back to the globe. `/?demo=look&view=ca` frames California and Nevada.
 
 Terrain paints at 1000×620 (one pixel per map unit). Coasts are a hard cream rim. Roads are a thin gold line. 1980s marks stay ranch, elevator, street, mill, tower, bunker, pump. HUD type is 16px; nameplates and state codes sit on solid high-contrast plates. Ownership wash is stronger, with a dark edge under the faction color. Selection and road pulses are steady or slow — no strobe.
 
-PNW still reads on the look demo: wet Sound forest, a Cascades ridge toward Spokane, Seattle as main-street. The “you are here” chip stays on Bethel in Alaska.
+PNW still reads on the look demo: wet Sound forest, a Cascades ridge toward Spokane, Seattle as main-street. The new-game here chip is Cheyenne, not Bethel.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 **States demo:** `/?demo=states` or `/?demo=map` still works.
 
@@ -60,7 +60,7 @@ Phase 1 liberate states. Phase 2 at **8** west-bloc US states (national leader).
 
 ## Counts (exact)
 
-- **US states: 11** · **Yukon: 1** · **territories on those units: 33** · **foreign stubs: 4** · **total nodes: 37**
+- **US states: 13** · **Yukon: 1** · **territories on those units: 37** · **foreign stubs: 4** · **total nodes: 41**
 - On-map factions: **17** · AI officers: **153** · legends: **3**
 - Duel clock: **99s** / **11** exchanges
 
