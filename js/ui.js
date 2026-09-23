@@ -324,6 +324,7 @@ export async function boot(loaded) {
     return;
   }
   if (params.get("demo") === "look" || params.get("demo") === "terrain") {
+    document.body.classList.add("look-map");
     startSliceState();
     selectedRegion = params.get("focus") || params.get("city") || "seattle";
     commandCat = "domestic";

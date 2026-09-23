@@ -668,6 +668,7 @@ assert(/if \(state\.mainland\) fillPoly\(mx, state\.mainland\)/.test(terrainSrc)
 assert(!/st\.polygon\) fillPoly\(mx/.test(terrainSrc), "state rectangles are not the land mask");
 assert(/function landRgb/.test(terrainSrc) && /stateLines/.test(terrainSrc), "biomes are texture; state lines are borders");
 assert(/id="legend-card" hidden/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "banner list is hidden and off the map");
+assert(/look-map/.test(uiSrc) && /body\.look-map \.side/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "look demo gives the theater the pane");
 assert(/e\.key === "l"/.test(uiSrc) && /function toggleLegend/.test(uiSrc), "L toggles banners without covering the Gulf");
 assert(/drawStallFront/.test(uiSrc) && /isAdjacent\(state, prev, r\)/.test(uiSrc), "stall line follows existing roads only");
 assert(/OCCUPIED_EAST/.test(uiSrc) && /#9a3b3b/.test(uiSrc) && !/OCCUPIED_EAST[\s\S]{0,80}CA /.test(uiSrc), "east of the stall washes occupied; CA stays bare");

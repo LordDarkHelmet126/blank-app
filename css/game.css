@@ -186,7 +186,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   width: 100%;
   height: 100%;
   display: block;
-  background: #082038;
+  background: #2a6890;
   object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -210,6 +210,12 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   text-align: right;
 }
 .map-head { flex-wrap: nowrap; align-items: center; }
+/* Look demo: the theater fills the pane. Side, court, and chronicle stay in the DOM. */
+body.look-map .side,
+body.look-map .court-strip,
+body.look-map .dock { display: none; }
+body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 4px; }
+body.look-map .map-wrap { flex: 1; min-height: 0; }
 .map-legend-card { flex: 0 1 auto; max-height: 160px; overflow: auto; }
 .map-legend {
   display: flex;
