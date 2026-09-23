@@ -2,7 +2,31 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Foreign-desk duel read. Same yard clock, per-theater backdrop. Hit math unchanged.
+**Last checkpoint:** 2026-09-23 — Foreign-desk field read. Same M113 grid, per-theater chrome. Combat math unchanged.
+
+## Foreign-desk field read
+
+A field fight tied to one of the six locked inland ids keeps the isometric grid, the M113 / jeep roster, and the Rally / Ambush / Rumor ploys. `/?demo=battle&node=<id>` stamps that siege desk onto the field after the battle is created, and the chrome also reads `node=` directly. The title is `Field — ` plus the siege strip (`HAVANA DESK`), the shell paints that theater, and the amber NEXT line leads with the desk name and read. A field with no desk id stays the domestic Nome strip.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+**Playtest (field):**
+
+- `/?demo=battle&node=kamchatka`
+- `/?demo=battle&node=siberia`
+- `/?demo=battle&node=havana`
+- `/?demo=battle&node=managua`
+- `/?demo=battle&node=sponsor_lane`
+- `/?demo=battle&node=kr_inland`
+
+Domestic field, unchanged: `/?demo=battle` and `/?demo=look&fx=battle&hull=1`. An unknown `node=` stays that domestic field and does not borrow another desk. Siege chrome is still `/?demo=battle&siege=1&node=havana` (swap the id). Yard chrome is still `/?demo=duel&node=havana`.
 
 ## Foreign-desk duel read
 

@@ -1,6 +1,6 @@
 import { nextInt, nextFloat, chance } from "./rng.js";
 import { attachSiege, autoResolveSiege, siegeCommand } from "./siege.js";
-import { combatView, inlandDesk } from "./inland.js";
+import { combatView, inlandDesk, stampBattleDesk } from "./inland.js";
 
 const COLS = 8;
 const ROWS = 6;
@@ -133,6 +133,7 @@ export function createBattle(state, content, fromId, toId, commit, techAtk, opts
   };
   if (opts?.field) battle.siege = null;
   else attachSiege(battle, dest, !!opts?.forceSiege);
+  stampBattleDesk(battle, toId);
   return battle;
 }
 
