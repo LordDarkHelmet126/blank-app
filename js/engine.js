@@ -1465,7 +1465,7 @@ export function act(state, content, actionId, extra = {}) {
   if (actionId === "hire") return doHire(state, extra.officerId, stats);
   if (actionId === "appoint") return doAppoint(state, extra.officerId);
   if (actionId === "promote") return promoteLadder(state, extra.officerId);
-  if (actionId === "mission") return doMission(state, extra.jobId, extra.officerId);
+  if (actionId === "mission") return doMission(state, extra.jobId, extra.officerId, extra.deskId);
   if (actionId === "challenge") return doChallenge(state, extra);
   if (actionId === "ally") return doAlly(state, extra.factionId, stats);
   if (actionId === "break_ally") return doBreak(state, extra.factionId);
@@ -1744,7 +1744,11 @@ function rescueOfficer(state, regionId, actor) {
   return t;
 }
 
-function doMission(state, jobId, officerId) {
+function lockedMissionDesk(id) {
+  return inlandDesk(id) ? id : null;
+}
+
+function doMission(state, jobId, officerId, deskId) {
   const p = playerOf(state);
   if (!p.faction) return { ok: false, message: "Raise a banner first." };
   const job = missionById(state, jobId);
@@ -1752,6 +1756,7 @@ function doMission(state, jobId, officerId) {
   if (p.region !== job.regionId) {
     return { ok: false, message: `Travel to ${regionOf(state, job.regionId)?.short || job.regionId} first.` };
   }
+  const desk = lockedMissionDesk(deskId);
   const t = templateOf(job.templateId);
   if (t.duel) {
     if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
@@ -1760,18 +1765,24 @@ function doMission(state, jobId, officerId) {
     if (!foe) {
       const res = resolveMission(state, job, actor, missionHelpers());
       pushLog(state, res.report || res.message, "player");
-      return { ...res, sceneId: res.sceneId || "mission" };
+      return { ...res, sceneId: res.sceneId || "mission", deskId: desk };
     }
-    beginDuel(state, actor, foe, { jobId: job.id, kind: "mission", jobTemplateId: t.id, regionId: job.regionId });
+    beginDuel(state, actor, foe, {
+      jobId: job.id,
+      kind: "mission",
+      jobTemplateId: t.id,
+      regionId: job.regionId,
+      deskId: desk,
+    });
     const msg = `Porch challenge: ${foe.name} in ${regionOf(state, job.regionId)?.short || "town"}.`;
     pushLog(state, msg, "war");
-    return { ok: true, duel: true, message: msg, sceneId: "porch_challenge" };
+    return { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk };
   }
   if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
   const actor = officerOf(state, officerId) || p;
   const res = resolveMission(state, job, actor, missionHelpers());
   pushLog(state, res.report || res.message, "player");
-  return { ...res, sceneId: res.sceneId || "mission" };
+  return { ...res, sceneId: res.sceneId || "mission", deskId: desk };
 }
 
 function runStandingMission(state, off) {

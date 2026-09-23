@@ -206,6 +206,18 @@ export function stampCourtDesk(view, id) {
 }
 
 /**
+ * Presentation stamp for a mission board already opened.
+ * Unknown ids do nothing. Does not touch jobs, AP, rewards, or the map.
+ */
+export function stampMissionDesk(view, id) {
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!view || !desk || !look) return null;
+  view.deskId = id;
+  return id;
+}
+
+/**
  * Combat view for a locked id. Does not write neighbors, polygons, or biomes.
  * Painted walls (walls > 0) on a live node replace the desk preset.
  */
