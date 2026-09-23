@@ -206,27 +206,33 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   min-width: 0;
   text-align: right;
 }
+.map-head { flex-wrap: wrap; align-items: center; }
 .map-legend {
-  position: absolute;
-  left: 4px;
-  bottom: 4px;
+  position: static;
+  flex: 1 1 240px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  font-size: var(--type);
-  background: #000030;
-  padding: 4px 8px;
-  border: var(--chrome);
+  gap: 4px 8px;
+  margin-left: auto;
+  font-size: 12px;
+  line-height: 1.4;
+  background: transparent;
+  padding: 0;
+  border: 0;
   color: var(--ice);
 }
 .map-legend i {
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   margin-right: 4px;
   vertical-align: middle;
-  border: var(--chrome);
+  border: 2px solid #f8f8f8;
+  background: #101050;
 }
+.map-legend .key-occ { background: #9a3b3b; border-color: #2a0808; }
+.map-legend .key-con { background: #c9a06a; border-color: #f8f8f8; }
+.map-legend .key-held { background: #d4a056; border-color: #f8d800; }
 
 .side { display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: auto; }
 .card {

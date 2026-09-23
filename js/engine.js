@@ -514,6 +514,7 @@ export function createNewGame(content, opts = {}) {
     mainland: content.regions.mainland || null,
     spurs: content.regions.spurs || [],
     lakes: content.regions.lakes || [],
+    stateLines: content.regions.stateLines || [],
     stateTheaters: content.regions.states || [],
     campaignSpec: content.regions.campaign || {},
     campaign: initCampaign(content.regions.campaign || {}),

@@ -20,7 +20,7 @@ node tests/simulate.mjs
 
 ## US silhouette (this pass)
 
-The lower 48 is one connected coastline — Florida, Texas, California, the Great Lakes, and New England. State rectangles are not land and are not painted as separate tiles. Biomes (wet forest, Rockies, desert, plains, eastern woods) sit inside that outline. Alaska and Yukon stay a northwest spur, with a water gap for the Juneau–Seattle ferry. City nodes sit on that land. Neighbor lists are unchanged (no new roads, no leaps). Gulf/foreign desks were not moved.
+The lower 48 is one connected coastline — Florida, Texas, California, the Great Lakes, and New England. State borders are drawn inside that mask (a political map). Biomes are soft texture, not land tiles. Faction washes use each banner’s color: dark edge occupied, light edge contested, gold edge held. A dashed stall line runs only on existing roads from Cheyenne through Kansas to St. Louis. Alaska is the real outline; Yukon is the northwest spur. The faction legend sits in the theater header, not over the Gulf. Neighbor lists are unchanged.
 
 Terrain paints at 1000×620 (one pixel per map unit). Coasts are a hard cream rim. Roads are a thin gold line. 1980s marks stay ranch, elevator, street, mill, tower, bunker, pump. HUD type is 16px; nameplates and state codes sit on solid high-contrast plates. Ownership wash is stronger, with a dark edge under the faction color. Selection and road pulses are steady or slow — no strobe.
 

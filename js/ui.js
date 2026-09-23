@@ -1644,11 +1644,52 @@ function renderLog() {
     .join("");
 }
 
+function stateWash(postal) {
+  const cities = state.regions.filter((r) => r.stateCode === postal && !(r.unlockPhase > 0));
+  if (!cities.length) return null;
+  const p = playerOf(state);
+  const liberated = (ensureCampaign(state).liberated || []).includes(postal);
+  if (liberated || (p?.faction && cities.every((r) => r.owner === p.faction))) {
+    const fac = p?.faction ? factionOf(state, p.faction) : null;
+    return { color: fac?.color || "#d4a056", kind: "held" };
+  }
+  const counts = {};
+  cities.forEach((r) => {
+    if (r.owner) counts[r.owner] = (counts[r.owner] || 0) + 1;
+  });
+  const ids = Object.keys(counts);
+  if (!ids.length) return null;
+  ids.sort((a, b) => counts[b] - counts[a]);
+  const top = factionOf(state, ids[0]);
+  const invaderN = ids.reduce((n, id) => n + (factionOf(state, id)?.alignment === "invader" ? counts[id] : 0), 0);
+  if (invaderN * 2 >= cities.length) {
+    const inv = ids.map((id) => factionOf(state, id)).find((f) => f?.alignment === "invader");
+    return { color: inv?.color || "#9a3b3b", kind: "occupied" };
+  }
+  if (ids.length > 1) return { color: top?.color || "#c9a06a", kind: "contested" };
+  return { color: top?.color || "#6a8f5a", kind: "local" };
+}
+
+function foreignCorridors() {
+  const out = [];
+  const add = (id, b, color) => {
+    const r = regionOf(state, id);
+    if (!r || !theaterVisible(state, r)) return;
+    out.push({ a: cityXY(r), b, color });
+  };
+  add("far_russia", [8, 72], "#7aa0b4");
+  add("far_cuba", [470, 568], "#8c4a4a");
+  add("far_nicaragua", [620, 572], "#8c4a4a");
+  return out;
+}
+
 function renderLegend() {
-  $("legend").innerHTML = state.factions
+  const key = `<span><i class="key-occ"></i>Occupied</span><span><i class="key-con"></i>Contested</span><span><i class="key-held"></i>Held</span>`;
+  const banners = state.factions
     .filter((f) => f.onMap && (f.id !== "northern_front" || f.alive))
     .map((f) => `<span><i style="background:${f.color}"></i>${esc(f.short)}</span>`)
-    .join("") + `<span><i style="background:#5a6a72"></i>Open</span>`;
+    .join("");
+  $("legend").innerHTML = `${key}${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
 }
 
 function regionAt(mx, my, canvas) {
@@ -1972,6 +2013,57 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillText(garr, px + pw - 12 - garrW, py + 23);
 }
 
+function drawFrontSeg(ctx, a, b) {
+  ctx.save();
+  ctx.lineCap = "butt";
+  ctx.strokeStyle = "#1a0808";
+  ctx.lineWidth = 7;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.lineTo(b[0], b[1]);
+  ctx.stroke();
+  ctx.strokeStyle = "#f8f8f8";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 7]);
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.lineTo(b[0], b[1]);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStallFront(ctx) {
+  const ids = ["cheyenne", "omaha", "lincoln", "topeka", "wichita", "st_louis"];
+  let prev = null;
+  ids.forEach((id) => {
+    const r = regionOf(state, id);
+    if (!r) {
+      prev = null;
+      return;
+    }
+    if (prev && isAdjacent(state, prev, r)) drawFrontSeg(ctx, cityXY(prev), cityXY(r));
+    prev = r;
+  });
+  const end = regionOf(state, "st_louis");
+  if (!end) return;
+  const [x, y] = cityXY(end);
+  ctx.fillStyle = "#1a0808";
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y + 4);
+  ctx.lineTo(x + 28, y + 20);
+  ctx.lineTo(x + 8, y + 22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#f8f8f8";
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y + 8);
+  ctx.lineTo(x + 24, y + 18);
+  ctx.lineTo(x + 12, y + 18);
+  ctx.closePath();
+  ctx.fill();
+}
+
 function drawMap() {
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
@@ -1989,6 +2081,8 @@ function drawMap() {
     selectedId: selectedRegion,
     hoverId: hoverRegion,
     factionOf: (r) => (r.owner ? factionOf(state, r.owner) : null),
+    stateWash,
+    corridors: foreignCorridors(),
   });
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
@@ -1999,6 +2093,7 @@ function drawMap() {
     const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
     drawPixelRoadFull(ctx, rd.a, rd.b, on);
   });
+  drawStallFront(ctx);
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;

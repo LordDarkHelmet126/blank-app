@@ -336,6 +336,8 @@ function buildFields(state) {
     if (poly) fillPoly(mx, poly);
   });
   const landPix = mx.getImageData(0, 0, TW, TH).data;
+  maskC.width = 0;
+  maskC.height = 0;
   for (let i = 0; i < TW * TH; i++) land[i] = landPix[i * 4] > 20 ? 1 : 0;
 
   for (let y = 0; y < TH; y++) {
@@ -384,6 +386,81 @@ function buildFields(state) {
   return { land, biome, height, pnw };
 }
 
+function mixRgb(a, b, t) {
+  const u = Math.max(0, Math.min(1, t));
+  return [
+    (a[0] + (b[0] - a[0]) * u + 0.5) | 0,
+    (a[1] + (b[1] - a[1]) * u + 0.5) | 0,
+    (a[2] + (b[2] - a[2]) * u + 0.5) | 0,
+  ];
+}
+
+function blendRgb(parts) {
+  let w = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const ww = parts[i][1];
+    if (ww <= 0) continue;
+    w += ww;
+    r += parts[i][0][0] * ww;
+    g += parts[i][0][1] * ww;
+    b += parts[i][0][2] * ww;
+  }
+  if (w <= 0) return [127, 148, 64];
+  return [(r / w + 0.5) | 0, (g / w + 0.5) | 0, (b / w + 0.5) | 0];
+}
+
+const TONE = {
+  ice: [214, 224, 228],
+  tundra: [132, 146, 112],
+  pine: [62, 102, 68],
+  wet: [18, 78, 52],
+  forest: [46, 108, 58],
+  hills: [154, 128, 68],
+  rock: [108, 112, 108],
+  snow: [236, 240, 244],
+  desert: [214, 146, 64],
+  plains: [154, 168, 72],
+  farm: [214, 184, 72],
+};
+
+/** Soft texture inside the coastline. Weights fade; they are not state rectangles. */
+function landRgb(x, y) {
+  const grain = ((hash2(x, y) - 0.5) * 16) | 0;
+  const bump = (rgb) => rgb.map((c) => Math.max(0, Math.min(255, c + grain)));
+  if (y < 130) {
+    const t = Math.max(0, Math.min(1, (y - 14) / 100));
+    const n = fbm(x * 0.02, y * 0.02);
+    return bump(blendRgb([
+      [TONE.ice, (1 - t) * (0.85 + n * 0.2)],
+      [TONE.tundra, (1 - Math.abs(t - 0.45) * 1.4) * 0.8],
+      [TONE.pine, t * t * 1.1 + (x > 160 ? 0.35 : 0)],
+    ]));
+  }
+  const n = fbm(x * 0.008, y * 0.008);
+  const [lon, lat] = lonLatOf(x + (n - 0.5) * 34, y + (fbm(y * 0.009, x * 0.009) - 0.5) * 14);
+  const rock = Math.exp(-((lon + 108.6) ** 2) / 26) * (lat > 31.5 && lat < 49.2 ? 1 : 0.15);
+  const desert = Math.exp(-((lon + 112.5) ** 2) / 28) * Math.exp(-((lat - 35.2) ** 2) / 18);
+  const wet = Math.max(0, (-120.2 - lon) / 5.5) * Math.max(0, (lat - 40.5) / 7);
+  const forest = Math.max(0, (lon + 91) / 7);
+  const farm = Math.exp(-((lon + 97) ** 2) / 55) * Math.exp(-((lat - 39) ** 2) / 28);
+  const hills = Math.exp(-((lon + 83) ** 2) / 22) * Math.exp(-((lat - 35.5) ** 2) / 16);
+  const snow = Math.max(0, rock - 0.62) * 2.2;
+  return bump(blendRgb([
+    [TONE.plains, 0.42],
+    [TONE.farm, farm],
+    [TONE.forest, forest * 0.9],
+    [TONE.hills, hills],
+    [TONE.desert, desert],
+    [TONE.wet, wet],
+    [TONE.pine, wet * 0.35 + rock * 0.25],
+    [TONE.rock, rock],
+    [TONE.snow, snow],
+  ]));
+}
+
 function paintBase(fields, seasonId) {
   const c = document.createElement("canvas");
   c.width = TW;
@@ -409,27 +486,21 @@ function paintBase(fields, seasonId) {
         continue;
       }
       const b = biome[i];
-      const pal = PAL_RGB[b] || PAL_RGB[BIOME.plains];
       const h = height[i];
-      const se = height[Math.min(TW * TH - 1, i + TW + 1)] || h;
-      const slope = h - se;
-      const high = h > 0.72;
-      let rgb = toneRgb(pal, (x + y * 3 + (h * 8) | 0) & 3, high);
-      if (winter && (b === BIOME.ice || b === BIOME.tundra)) rgb = pal[3] || rgb;
-      if (winter && high && (b === BIOME.rockies || b === BIOME.hills || (b === BIOME.pine && pnw[i] === 2))) rgb = pal[3] || rgb;
-      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && !high && b !== BIOME.wetforest && pnw[i] !== 1) {
-        rgb = ((x + y) & 1) === 0 ? FALL_A : FALL_B;
+      let rgb = landRgb(x, y);
+      if (winter && (b === BIOME.ice || b === BIOME.tundra || b === BIOME.rockies)) rgb = mixRgb(rgb, TONE.snow, 0.45);
+      if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && b !== BIOME.wetforest && pnw[i] !== 1) {
+        rgb = mixRgb(rgb, ((x + y) & 1) === 0 ? FALL_A : FALL_B, 0.35);
       }
-      if (b === BIOME.wetforest) rgb = toneRgb(PAL_RGB[BIOME.wetforest], (x + y * 2) & 3, false);
-      if (pnw[i] === 2 && high) rgb = PEAK_RGB;
-      if (b === BIOME.rockies && h > 0.84) rgb = (x + y) % 3 === 0 ? SNOW_A : SNOW_B;
+      if (h > 0.72 && (b === BIOME.rockies || pnw[i] === 2)) rgb = mixRgb(rgb, TONE.snow, (h - 0.72) * 1.4);
       let shore = 0;
       if (x === 0 || !land[i - 1]) shore += 1;
       if (x === TW - 1 || !land[i + 1]) shore += 1;
       if (y === 0 || !land[i - TW]) shore += 1;
       if (y === TH - 1 || !land[i + TW]) shore += 1;
       if (shore) rgb = SHORE_RGB;
-      const col = mulRgb(rgb, shore ? 0.15 : slope);
+      const se = height[Math.min(TW * TH - 1, i + TW + 1)] || h;
+      const col = mulRgb(rgb, shore ? 0.12 : h - se);
       data[o] = col[0];
       data[o + 1] = col[1];
       data[o + 2] = col[2];
@@ -437,18 +508,15 @@ function paintBase(fields, seasonId) {
     }
   }
   ctx.putImageData(img, 0, 0);
-  const elev = displaceLand(c, fields);
-  scatterFeatures(elev.getContext("2d"), fields, seasonId);
-  hazeCoast(elev, fields);
-  return elev;
+  scatterFeatures(ctx, fields, seasonId);
+  hazeCoast(c, fields);
+  return c;
 }
 
-function liftFor(h, b) {
-  if (b === BIOME.rockies) return Math.floor(h * 26);
-  if (b === BIOME.desert) return Math.floor(h * 12);
-  if (b === BIOME.hills || b === BIOME.ice) return Math.floor(h * 14);
-  if (b === BIOME.farm || b === BIOME.plains) return Math.floor(h * 5);
-  return Math.floor(h * ELEV);
+function liftFor() {
+  // Keep the coastline on the polygon. Relief is color, not a pixel shift
+  // that turns Florida, Texas, and the Great Lakes into blocks.
+  return 0;
 }
 
 function cliffRGB(b, band) {
@@ -809,21 +877,49 @@ export function drawPixelRoadHi(ctx, a, b, pulseOn) {
 export function paintTheaterTerrain(o, state, opts) {
   const cache = ensureTheaterTerrain(state);
   o.drawImage(cache.canvas, 0, 0);
-  const painted = opts.painted || [];
-  painted.forEach((r) => {
-    const fac = opts.factionOf ? opts.factionOf(r) : null;
-    if (!r.polygon) return;
-    o.globalAlpha = fac ? 0.46 : 0.12;
-    o.fillStyle = fac ? fac.color : "#607838";
-    fillPoly(o, r.polygon);
-    o.globalAlpha = 1;
-    if (fac) {
-      strokePoly(o, r.polygon, "#000018", 3);
-      strokePoly(o, r.polygon, fac.color, 2);
-    }
-    if (r.id === opts.selectedId || r.id === opts.hoverId) {
-      strokePoly(o, r.polygon, r.id === opts.selectedId ? "#f8d800" : "#f8f8f8", 2);
-    }
+  const lines = state.stateLines || [];
+  const washOf = opts.stateWash || (() => null);
+  (opts.corridors || []).forEach((cor) => {
+    if (!cor || !cor.a || !cor.b) return;
+    o.save();
+    o.strokeStyle = cor.color || "#8c4a4a";
+    o.lineWidth = 16;
+    o.lineCap = "round";
+    o.globalAlpha = 0.55;
+    o.beginPath();
+    o.moveTo(cor.a[0], cor.a[1]);
+    o.lineTo(cor.b[0], cor.b[1]);
+    o.stroke();
+    o.restore();
+  });
+  lines.forEach((line) => {
+    const wash = washOf(line.id);
+    if (!wash || !line.ring) return;
+    o.globalAlpha = wash.kind === "held" || wash.kind === "occupied" ? 0.46 : 0.32;
+    o.fillStyle = wash.color;
+    fillPoly(o, line.ring);
+  });
+  o.globalAlpha = 1;
+  lines.forEach((line) => {
+    if (line.ring) strokePoly(o, line.ring, "#140e08", 2);
+  });
+  lines.forEach((line) => {
+    const wash = washOf(line.id);
+    if (!wash || !line.ring || wash.kind === "local") return;
+    const edge = wash.kind === "held" ? "#f8d800" : wash.kind === "occupied" ? "#2a0808" : "#f8f8f8";
+    strokePoly(o, line.ring, edge, wash.kind === "occupied" ? 3 : 2);
+  });
+  if (state.mainland) {
+    strokePoly(o, state.mainland, "#102018", 4);
+    strokePoly(o, state.mainland, "#f4efe2", 2);
+  }
+  if (state.coast) {
+    strokePoly(o, state.coast, "#102018", 3);
+    strokePoly(o, state.coast, "#f4efe2", 2);
+  }
+  (state.spurs || []).forEach((poly) => {
+    strokePoly(o, poly, "#102018", 3);
+    strokePoly(o, poly, "#f4efe2", 2);
   });
 }
 
