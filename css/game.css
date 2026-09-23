@@ -1278,7 +1278,7 @@ hr {
   margin-bottom: 4px;
   font-size: var(--type-lg);
 }
-.objective span { color: var(--ice); white-space: normal; overflow-wrap: anywhere; }
+.objective span { color: var(--ice); white-space: pre-wrap; overflow-wrap: anywhere; }
 .objective #btn-coach { flex: 0 0 auto; }
 .coach {
   position: fixed;
@@ -1308,7 +1308,7 @@ hr {
 .coach-card h2 { margin: 0 0 10px; color: var(--amber); font-weight: 400; font-size: var(--type-lg); }
 .coach-card p { line-height: 1.85; color: var(--ice); }
 #coach-text { overflow: auto; min-height: 0; flex: 1 1 auto; }
-#coach-siege { flex: 0 0 auto; overflow-wrap: anywhere; }
+#coach-siege { flex: 0 0 auto; overflow-wrap: anywhere; white-space: pre-wrap; }
 .coach-ring {
   outline: 4px solid #f8d800;
   outline-offset: 2px;

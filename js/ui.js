@@ -709,7 +709,7 @@ function routeSentence(st) {
     }
   }
   const cue = inlandSiegeCue(sel.id);
-  return cue ? `${line} ${cue}` : line;
+  return cue ? `${line}\n${cue}` : line;
 }
 
 function frameForInlandFocus(id) {
