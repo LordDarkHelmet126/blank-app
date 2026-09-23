@@ -316,8 +316,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .medallion .tick.bl { bottom: -6px; left: -6px; }
 .medallion .tick.br { bottom: -6px; right: -6px; }
 .officer-meta { min-width: 0; flex: 1; line-height: 1.55; }
-.officer-meta h2 { margin: 0 0 2px; color: var(--amber); font-size: var(--type-lg); text-transform: uppercase; }
-.officer-meta p { margin: 0 0 2px; }
+.officer-meta h2 { margin: 0 0 4px; color: var(--amber); font-size: 16px; text-transform: uppercase; }
+.officer-meta p { margin: 0 0 4px; color: #ffffff; font-size: 12px; line-height: 1.5; }
+.officer-meta .muted { color: #ffffff; }
 .stat-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -547,11 +548,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   margin: 0 6px 6px;
-  border: var(--chrome);
-  background: var(--panel);
+  border: 4px solid #f8f8f8;
+  background: #000000;
+  color: #ffffff;
   box-shadow: var(--chrome-out);
   flex: 0 0 auto;
   min-height: 0;
+  font-size: 13px;
 }
 .court-strip .chrome-head {
   grid-column: 1 / -1;
@@ -562,14 +565,24 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 }
 .court-chair {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  padding: 4px 8px;
-  border-left: var(--chrome);
+  padding: 8px 10px;
+  border-left: 4px solid #f8f8f8;
   min-width: 0;
-  background: #000030;
+  background: #000000;
+  color: #ffffff;
 }
-.court-chair:nth-child(2) { border-left: 0; }
+.court-next + .court-chair { border-left: 0; }
+.court-next {
+  grid-column: 1 / -1;
+  margin: 0;
+  background: #f8d800;
+  color: #000000;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
 .court-chair .mini {
   width: 32px;
   height: 32px;
@@ -588,21 +601,27 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .court-chair .who { min-width: 0; flex: 1; }
 .court-chair .who strong {
   display: block;
-  color: var(--amber);
+  color: #f8d800;
   font-weight: 400;
+  font-size: 13px;
   text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.45;
 }
-.court-chair .who small { color: var(--ice); display: block; margin: 2px 0 4px; line-height: 1.7; }
+.court-chair .who small { color: #ffffff; display: block; margin: 4px 0; line-height: 1.45; font-size: 12px; }
+.court-chair .mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
 .court-chair select {
   font-family: "Press Start 2P", monospace;
-  font-size: var(--type);
-  background: #000018;
-  color: var(--ice);
-  border: var(--chrome);
-  padding: 2px 4px;
+  font-size: 12px;
+  background: #000000;
+  color: #ffffff;
+  border: 3px solid #f8f8f8;
+  padding: 4px;
   max-width: 100%;
   border-radius: 0;
 }
@@ -933,16 +952,40 @@ hr {
   box-shadow: var(--chrome-in);
 }
 .face-tile {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
   min-height: 0;
   border: 2px solid #4040a0;
   background: #000010;
+  color: #ffffff;
 }
 .face-tile img {
   display: block;
   width: 100%;
   height: auto;
   image-rendering: pixelated;
+}
+.face-tile span {
+  display: block;
+  color: #ffffff;
+  background: #000000;
+  font-size: 9px;
+  line-height: 1.35;
+  padding: 4px 2px;
+  text-align: center;
+}
+.face-tile.is-on span {
+  color: #000000;
+  background: #f8d800;
+}
+.face-name {
+  margin: 0 0 8px;
+  color: #000000;
+  background: #f8d800;
+  font-size: 15px;
+  line-height: 1.4;
+  padding: 8px;
 }
 .face-tile.is-on {
   border-color: var(--amber);
@@ -1007,6 +1050,7 @@ hr {
   line-height: 1.45;
   color: #ffffff;
 }
+.roster-row .rank-badge { flex: 0 0 auto; margin: 0; }
 .roster-row {
   display: flex;
   align-items: center;
@@ -1046,10 +1090,49 @@ hr {
 .roster-confirm {
   background: #f8d800;
   color: #101010;
+  font-size: 18px;
+  line-height: 1.45;
+  padding: 12px;
+  margin: 0 0 10px;
+  border: 4px solid #000000;
+}
+.roster-confirm strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.roster-next {
+  background: #f8d800;
+  color: #101010;
   font-size: 16px;
   line-height: 1.45;
   padding: 10px;
-  margin: 0 0 10px;
+  margin: 0;
+}
+.rank-badge {
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 4px 6px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+  background: #ffffff;
+  color: #000000;
+}
+.rank-badge.rank-player {
+  background: #000000;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+}
+.rank-badge.rank-officer {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: inset 0 0 0 3px #f8d800;
+}
+.rank-badge.rank-general,
+.rank-badge.rank-commander {
+  background: #f8d800;
+  color: #000000;
 }
 .roster-lead-pick {
   display: flex;
@@ -1137,6 +1220,148 @@ hr {
 #battle-charge { height: 96px; background: #8a7840; }
 .hint { color: var(--ice-dim); text-align: center; }
 .battle-log { max-height: 120px; }
+
+.siege-board { display: none; }
+.battle.is-siege .battle-stage,
+.battle.is-siege .battle-cmds,
+.battle.is-siege #battle-hint,
+.battle.is-siege #battle-log { display: none; }
+.battle.is-siege .siege-board {
+  display: block;
+  max-width: 960px;
+  margin: 12px auto;
+  background: #000000;
+  color: #f8f8f8;
+  border: 4px solid #f8f8f8;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.battle.is-siege .battle-bar {
+  background: #000000;
+  border-color: #f8f8f8;
+  color: #f8f8f8;
+}
+.battle.is-siege .battle-bar h2 {
+  color: #f8d800;
+  font-size: 18px;
+}
+.battle.is-siege #battle-meta {
+  color: #f8f8f8;
+  font-size: 14px;
+}
+.siege-roles {
+  margin: 0 0 12px;
+  color: #f8f8f8;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.siege-meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.siege-meter span {
+  display: block;
+  color: #f8f8f8;
+  font-size: 13px;
+}
+.siege-meter strong {
+  display: block;
+  color: #f8d800;
+  font-size: 28px;
+  line-height: 1.3;
+  margin: 4px 0;
+}
+.siege-meter small {
+  display: block;
+  color: #f8f8f8;
+  font-size: 11px;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.siege-track {
+  height: 18px;
+  background: #000000;
+  border: 3px solid #f8f8f8;
+}
+.siege-track i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #f03030;
+}
+#siege-suppress-bar { background: #f8d800; }
+.siege-track.levy i { background: #f8f8f8; }
+.siege-next {
+  background: #f8d800;
+  color: #000000;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 14px;
+  margin: 14px 0;
+}
+.siege-ploys {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.siege-ploys button {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  background: #000000;
+  color: #f8f8f8;
+  border: 4px solid #f8f8f8;
+  padding: 12px 8px;
+  min-height: 92px;
+  cursor: pointer;
+  text-align: left;
+}
+.siege-ploys button b { color: #f8d800; margin-right: 6px; }
+.siege-ploys button small {
+  display: block;
+  color: #f8f8f8;
+  margin-top: 8px;
+  font-size: 11px;
+}
+.siege-ploys button.is-next {
+  background: #f8d800;
+  color: #000000;
+  border-color: #f8d800;
+}
+.siege-ploys button.is-next b,
+.siege-ploys button.is-next small { color: #000000; }
+.siege-ploys button.is-next::before {
+  content: "NEXT · ";
+  color: #000000;
+}
+.siege-log {
+  max-height: none;
+  overflow: visible;
+  flex: none;
+  color: #f8f8f8;
+  font-size: 14px;
+  line-height: 1.65;
+  background: #000000;
+  border: 3px solid #f8f8f8;
+  margin: 12px 0 0;
+  padding: 10px 12px 10px 28px;
+}
+.siege-foot { margin-top: 8px; }
+.siege-foot button {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 13px;
+  background: #000000;
+  color: #f8f8f8;
+  border: 4px solid #f8f8f8;
+  padding: 12px;
+  cursor: pointer;
+}
+@media (max-width: 800px) {
+  .siege-meters,
+  .siege-ploys { grid-template-columns: 1fr; }
+}
 
 .duel {
   position: fixed;
@@ -1380,7 +1605,7 @@ hr {
   }
   .cmd-actions button { min-height: 32px; }
   .cmd-thumb { height: 28px; }
-  .court-chair { padding: 2px 6px; }
+  .court-chair { padding: 6px 8px; }
   .court-strip .chrome-head { padding: 4px 8px; }
   .city-stats .plus,
   .city-stats .minus { display: none; }

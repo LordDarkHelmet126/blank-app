@@ -1,4 +1,5 @@
 import { nextInt, nextFloat, chance } from "./rng.js";
+import { attachSiege, autoResolveSiege, siegeCommand } from "./siege.js";
 
 const COLS = 8;
 const ROWS = 6;
@@ -7,6 +8,8 @@ const UNIT_STATS = {
   militia: { hp: 8, atk: 3, def: 2, move: 2, label: "Militia" },
   regular: { hp: 10, atk: 4, def: 3, move: 2, label: "Regulars" },
   technical: { hp: 12, atk: 6, def: 3, move: 3, label: "Jeep pickup" },
+  // One cannibalized M113: aluminum hull, pintle gun, not a Bradley company.
+  ifv: { hp: 18, atk: 7, def: 5, move: 3, label: "M113" },
 };
 
 function terrainForRegion(region, season, x, y) {
@@ -30,13 +33,26 @@ function terrainDef(t) {
   return 0;
 }
 
-function countUnits(troops, unlocked) {
+function unlocksUnit(unlocked, content, unitId) {
+  if (!Array.isArray(unlocked)) return false;
+  if (unlocked.includes(unitId)) return true;
+  const tracks = content?.tech?.tracks || [];
+  return tracks.some((t) => t.battle?.unlockUnit === unitId && unlocked.includes(t.id));
+}
+
+function countUnits(troops, unlocked, content) {
   const n = Math.max(1, Math.min(6, Math.round(troops / 18)));
   const units = [];
   for (let i = 0; i < n; i++) {
     let type = troops >= 40 ? "regular" : "militia";
     if (unlocked.includes("technical") && i === n - 1 && troops >= 50) type = "technical";
     units.push(type);
+  }
+  // tracked_hulls.unlockUnit is "ifv". One hull, and only if the levy can crew it.
+  // The jeep keeps the last slot when that older gate already claimed it.
+  if (unlocksUnit(unlocked, content, "ifv") && troops >= 64 && n >= 1) {
+    const slot = units[n - 1] === "technical" ? n - 2 : n - 1;
+    if (slot >= 0) units[slot] = "ifv";
   }
   return units;
 }
@@ -77,8 +93,8 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
   }
   const unlocked = state.research.unlocked;
   const defTroops = Math.max(6, dest.garrison);
-  const atkTypes = countUnits(commit, unlocked);
-  const defTypes = countUnits(defTroops, unlocked);
+  const atkTypes = countUnits(commit, unlocked, content);
+  const defTypes = countUnits(defTroops, unlocked, content);
   const units = [
     ...place(atkTypes, "atk", techAtk),
     ...place(defTypes, "def", dest.owner === "pof" || dest.owner === "banner" ? 1 : 0),
@@ -92,7 +108,7 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
     morale.atk -= 6;
     morale.def += 2;
   }
-  return {
+  const battle = {
     fromId,
     toId,
     commit,
@@ -110,6 +126,8 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
     cols: COLS,
     rows: ROWS,
   };
+  attachSiege(battle, dest);
+  return battle;
 }
 
 function weatherLabel(w) {
@@ -169,7 +187,7 @@ function checkEnd(battle) {
 function strike(state, battle, attacker, defender) {
   const terrain = battle.grid[defender.y][defender.x];
   const tdef = terrainDef(terrain);
-  const snow = battle.weather === "snow" && attacker.type !== "technical" ? -1 : 0;
+  const snow = battle.weather === "snow" && attacker.type !== "technical" && attacker.type !== "ifv" ? -1 : 0;
   const roll = nextInt(state, 1, 6);
   const dmg = Math.max(1, attacker.atk + roll + snow - defender.def - tdef);
   defender.hp -= dmg;
@@ -302,6 +320,10 @@ export function endTacticalTurn(state, battle, defenderPersonality) {
 }
 
 export function autoResolveBattle(state, battle, defenderPersonality) {
+  if (battle.siege && !battle.siege.closed) {
+    autoResolveSiege(state, battle);
+    return battle.result;
+  }
   let guard = 0;
   while (!battle.result && guard++ < 80) {
     const mine = living(battle, "atk");
@@ -338,6 +360,10 @@ export function autoResolveBattle(state, battle, defenderPersonality) {
 }
 
 export function remainingRatio(battle, side) {
+  if (battle.siege?.closed) {
+    if (side === "atk") return Math.max(0, battle.siege.levy) / Math.max(1, battle.siege.levyMax || battle.commit || 1);
+    return Math.max(0, battle.siege.garrison) / Math.max(1, battle.siege.garrison0 || 1);
+  }
   const all = battle.units.filter((u) => u.side === side);
   const max = all.reduce((s, u) => s + u.maxHp, 0) || 1;
   const now = all.reduce((s, u) => s + Math.max(0, u.hp), 0);
@@ -352,4 +378,4 @@ export function terrainGlyph(t) {
   return "flat";
 }
 
-export { COLS, ROWS, nextFloat, chance };
+export { COLS, ROWS, nextFloat, chance, siegeCommand };
