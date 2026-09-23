@@ -701,6 +701,7 @@ assert(/function drawInvasionAxes/.test(uiSrc) && /Prairie Fire/.test(uiSrc) && 
 assert(/state\.stateLines/.test(uiSrc) && /lower-48/.test(uiSrc), "every lower-48 postal is labeled on the theater");
 assert(!/\n  scatterFeatures\(ctx, fields/.test(terrainSrc), "theater land does not stamp trees or mesas");
 assert(/function frameWorld/.test(uiSrc) && /function drawGlobe/.test(uiSrc) && /btn-zoom-world/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wheel and World button open a globe peek");
+assert(/WORLD_DESKS/.test(uiSrc) && /far_russia/.test(uiSrc) && /far_cuba/.test(uiSrc) && /far_nicaragua/.test(uiSrc) && /function drawWorldCorridors/.test(uiSrc), "world view washes the foreign desks without new roads");
 assert(/=== "ca"/.test(uiSrc) && /=== "world"/.test(uiSrc), "look demo can frame California or the globe");
 assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land");
 assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");

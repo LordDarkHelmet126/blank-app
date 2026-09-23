@@ -1788,11 +1788,13 @@ function frameBox(x0, y0, x1, y1) {
 }
 
 function frameWorld() {
-  const minX = -780;
-  const maxX = 5120;
-  const minY = -360;
-  const maxY = 2200;
-  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.96;
+  const [xWest, yNorth] = projectLL(-175, 80);
+  const [xEast, ySouth] = projectLL(185, -72);
+  const minX = Math.min(xWest, xEast) - 30;
+  const maxX = Math.max(xWest, xEast) + 30;
+  const minY = Math.min(yNorth, ySouth) - 24;
+  const maxY = Math.max(yNorth, ySouth) + 24;
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.98;
   mapView.z = z;
   mapView.x = (1000 - (minX + maxX) * z) / 2;
   mapView.y = (620 - (minY + maxY) * z) / 2;
@@ -2123,29 +2125,50 @@ function projectLL(lon, lat) {
   return [x, y];
 }
 
-/** Light political washes for the rest of the world. Not a lower-48 blob. */
+/** Faction washes for the rest of the world. The lower 48 stays the state plate, not a blob. */
 const WORLD_LAND = [
-  { color: "#3a6ea0", ring: [[-141, 60], [-136, 69], [-120, 70], [-95, 68], [-80, 62], [-64, 60], [-64, 52], [-67, 47], [-71, 45], [-82, 42], [-83, 46], [-89, 48], [-95, 49], [-123, 49], [-132, 54], [-141, 60]] },
-  { color: "#7aa0b4", ring: [[-73, 76], [-62, 82], [-22, 81], [-20, 70], [-44, 60], [-68, 60], [-73, 70]] },
-  { color: "#9a3b3b", ring: [[-117, 32], [-106, 31], [-97, 26], [-93, 18], [-87, 15], [-83, 13], [-83, 8], [-77, 8], [-92, 15], [-97, 16], [-105, 19], [-110, 23], [-114, 27], [-117, 32]] },
-  { color: "#9a3b3b", ring: [[-85, 22], [-78, 20], [-74, 20], [-77, 23], [-84, 23]] },
-  { color: "#8c4a4a", ring: [[-87, 13], [-83, 11], [-83, 15], [-87, 14]] },
-  { color: "#a05050", ring: [[-80, 9], [-77, -5], [-75, -15], [-71, -18], [-70, -42], [-74, -52], [-68, -55], [-65, -50], [-55, -35], [-48, -28], [-35, -8], [-35, -5], [-50, 0], [-60, 8], [-70, 12], [-77, 8]] },
-  { color: "#3a6ea0", ring: [[-10, 36], [-9, 43], [-8, 52], [-5, 58], [2, 51], [8, 54], [10, 46], [3, 43], [-2, 36]] },
-  { color: "#3a6ea0", ring: [[-8, 50], [-6, 58], [1, 58], [2, 51], [-5, 50]] },
-  { color: "#3a6ea0", ring: [[5, 58], [5, 63], [12, 68], [20, 70], [28, 70], [24, 60], [12, 58]] },
-  { color: "#9a3b3b", ring: [[18, 48], [22, 42], [28, 41], [40, 47], [48, 42], [60, 50], [80, 55], [100, 60], [140, 70], [170, 68], [170, 62], [140, 50], [120, 42], [100, 40], [80, 45], [60, 44], [40, 43], [30, 46], [22, 52], [18, 55]] },
-  { color: "#9a3b3b", ring: [[73, 54], [80, 50], [90, 48], [110, 52], [130, 48], [135, 42], [125, 32], [120, 23], [108, 20], [100, 22], [90, 28], [80, 32], [75, 40]] },
-  { color: "#c4a06a", ring: [[68, 24], [72, 8], [80, 8], [88, 22], [92, 26], [80, 30], [70, 28]] },
-  { color: "#c4a06a", ring: [[-17, 15], [-16, 28], [-6, 35], [10, 37], [25, 32], [32, 31], [43, 12], [51, 12], [42, -15], [32, -30], [18, -34], [12, -18], [8, 4], [-8, 5], [-15, 12]] },
-  { color: "#3a6ea0", ring: [[113, -22], [128, -14], [145, -12], [153, -25], [150, -38], [136, -35], [115, -34], [114, -26]] },
-  { color: "#3a6ea0", ring: [[130, 31], [131, 34], [140, 41], [145, 43], [141, 35], [134, 33]] },
+  { color: "#3a6ea0", ring: [[-166, 54], [-168, 60], [-166, 68], [-158, 71], [-148, 71], [-141, 69], [-141, 60], [-153, 59], [-161, 55], [-166, 54]] },
+  { color: "#3a6ea0", ring: [[-141, 60], [-136, 69], [-120, 72], [-95, 70], [-70, 66], [-62, 60], [-64, 52], [-78, 50], [-95, 49], [-123, 49], [-132, 54], [-141, 60]] },
+  { color: "#7aa0b4", ring: [[-73, 78], [-68, 83], [-50, 83], [-30, 82], [-20, 73], [-40, 62], [-55, 60], [-68, 64], [-73, 72]] },
+  { color: "#9a3b3b", ring: [[-117, 23.2], [-110, 22], [-106, 19], [-100, 16], [-97, 15.2], [-92, 16], [-90, 20], [-96, 22], [-106, 23], [-114, 23.2]] },
+  { color: "#8c4a4a", ring: [[-92, 16], [-90, 18], [-86, 16], [-83, 13], [-83, 9], [-85, 8], [-87, 11], [-90, 13], [-92, 15]] },
+  { color: "#9a3b3b", ring: [[-85, 22.4], [-82, 23.2], [-78, 23], [-74, 20.2], [-77, 19.6], [-82, 19.8], [-85, 21.2]] },
+  { color: "#a05050", ring: [[-80, 10], [-77, 6], [-70, 12], [-60, 10], [-52, 5], [-48, 0], [-35, -5], [-40, -22], [-48, -28], [-55, -35], [-68, -55], [-75, -52], [-72, -18], [-76, -8], [-80, 2]] },
+  { color: "#3a6ea0", ring: [[-74, -52], [-68, -55], [-65, -50], [-71, -42], [-74, -46]] },
+  { color: "#3a6ea0", ring: [[-10, 51], [-8, 58], [-3, 59], [2, 51], [-5, 50]] },
+  { color: "#3a6ea0", ring: [[-9, 44], [-9, 36], [-6, 36], [-1, 37], [3, 43], [-2, 44], [-6, 44]] },
+  { color: "#3a6ea0", ring: [[-5, 43], [-4, 49], [0, 51], [8, 54], [12, 50], [8, 44], [3, 42], [-2, 43]] },
+  { color: "#3a6ea0", ring: [[8, 44], [12, 45], [14, 42], [18, 40], [16, 37], [12, 40], [9, 43]] },
+  { color: "#3a6ea0", ring: [[5, 58], [5, 64], [12, 70], [20, 71], [26, 70], [18, 64], [12, 58]] },
+  { color: "#9a3b3b", ring: [[14, 56], [22, 56], [30, 60], [32, 52], [28, 46], [22, 44], [16, 46], [12, 50]] },
+  { color: "#9a3b3b", ring: [[28, 70], [40, 74], [70, 76], [110, 76], [150, 72], [170, 68], [178, 66], [170, 60], [155, 52], [140, 48], [130, 42], [118, 48], [100, 50], [80, 52], [60, 56], [44, 50], [32, 52], [28, 60]] },
+  { color: "#c45a5a", ring: [[74, 50], [88, 48], [104, 42], [118, 44], [128, 42], [122, 28], [112, 20], [100, 22], [90, 28], [80, 34], [74, 42]] },
+  { color: "#c4a06a", ring: [[68, 32], [72, 24], [70, 8], [78, 8], [88, 22], [80, 28], [74, 32]] },
+  { color: "#c4a06a", ring: [[36, 36], [40, 30], [48, 30], [56, 27], [60, 22], [48, 16], [40, 14], [34, 28]] },
+  { color: "#9a3b3b", ring: [[92, 22], [100, 20], [108, 14], [108, 2], [100, 4], [96, 10], [92, 16]] },
+  { color: "#3a6ea0", ring: [[130, 31], [132, 35], [140, 41], [145, 43], [142, 36], [136, 33], [131, 31]] },
+  { color: "#9a3b3b", ring: [[124, 40], [126, 41], [130, 38], [128, 34], [125, 37]] },
+  { color: "#3a6ea0", ring: [[113, -14], [128, -12], [146, -12], [153, -28], [146, -39], [130, -36], [114, -34], [113, -22]] },
+  { color: "#3a6ea0", ring: [[166, -41], [174, -35], [178, -37], [174, -46], [167, -46]] },
+  { color: "#9a3b3b", ring: [[-17, 21], [-10, 32], [10, 33], [25, 32], [32, 22], [24, 12], [10, 5], [-6, 5], [-14, 12]] },
+  { color: "#c4a06a", ring: [[-16, 14], [-10, 6], [8, 4], [20, 4], [30, -2], [28, -12], [18, -18], [8, -6], [-4, 2], [-12, 8]] },
+  { color: "#3a6ea0", ring: [[12, -18], [18, -22], [32, -26], [32, -34], [20, -35], [14, -28]] },
+  { color: "#c4a06a", ring: [[43, -12], [50, -16], [50, -25], [44, -25], [43, -16]] },
+  { color: "#7aa0b4", ring: [[-175, -64], [180, -64], [180, -78], [-175, -78]] },
+];
+
+/** Existing foreign nodes, placed on the globe. Not new roads. */
+const WORLD_DESKS = [
+  { id: "far_russia", lon: 96, lat: 62 },
+  { id: "far_cuba", lon: -79.5, lat: 21.6 },
+  { id: "far_nicaragua", lon: -85.2, lat: 12.4 },
+  { id: "far_korea", lon: 127.2, lat: 38.2 },
 ];
 
 function drawGlobe(ctx) {
   ctx.save();
-  ctx.lineWidth = 1.6 / mapView.z;
   ctx.lineJoin = "round";
+  ctx.lineWidth = Math.max(1.2, 1.4 / mapView.z);
   WORLD_LAND.forEach((land) => {
     ctx.beginPath();
     land.ring.forEach((p, i) => {
@@ -2154,14 +2177,69 @@ function drawGlobe(ctx) {
       else ctx.lineTo(x, y);
     });
     ctx.closePath();
-    ctx.globalAlpha = 0.72;
+    ctx.globalAlpha = 0.94;
     ctx.fillStyle = land.color;
     ctx.fill();
     ctx.globalAlpha = 1;
     ctx.strokeStyle = "#1a140c";
     ctx.stroke();
   });
+  drawWorldCorridors(ctx);
+  drawWorldDesks(ctx);
   ctx.restore();
+}
+
+/** Sea marks only. Neighbor lists are unchanged. */
+function drawWorldCorridors(ctx) {
+  if (mapView.z > 0.55) return;
+  const routes = [
+    [[-79.5, 21.6], [-89, 25.5]],
+    [[-85.2, 12.4], [-94, 17]],
+    [[150, 62], [176, 65]],
+  ];
+  ctx.save();
+  ctx.lineWidth = Math.max(3, 2.2 / mapView.z);
+  ctx.strokeStyle = "#f8d800";
+  ctx.setLineDash([10 / mapView.z, 8 / mapView.z]);
+  routes.forEach((route) => {
+    ctx.beginPath();
+    route.forEach((p, i) => {
+      const [x, y] = projectLL(p[0], p[1]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawWorldDesks(ctx) {
+  if (mapView.z > 0.55) return;
+  const fontPx = Math.max(18, Math.round(12 / mapView.z));
+  ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
+  ctx.textBaseline = "middle";
+  WORLD_DESKS.forEach((d) => {
+    const node = regionOf(state, d.id);
+    if (!node) return;
+    const [x, y] = projectLL(d.lon, d.lat);
+    const r = Math.max(8, 5 / mapView.z);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#9a3b3b";
+    ctx.fill();
+    ctx.lineWidth = Math.max(2, 1.5 / mapView.z);
+    ctx.strokeStyle = "#f8d800";
+    ctx.stroke();
+    const label = node.short;
+    const tw = ctx.measureText(label).width;
+    const pad = 6 / mapView.z;
+    const lx = x + r + 4 / mapView.z;
+    const ly = y;
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(lx - 2, ly - fontPx * 0.65, tw + pad, fontPx * 1.3);
+    ctx.fillStyle = "#f8d800";
+    ctx.fillText(label, lx, ly);
+  });
 }
 
 function plateAwayFromSelected(r, px, py, pw, ph) {
