@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — California and Nevada are playable states on the silhouette. Week 0 starts in Cheyenne (`cheyenne`). Phase names stay on the dock. `/?demo=states`.
+**Last checkpoint:** 2026-09-23 — Routes assigned. Ten shared-border roads fill the Stall corridor, the Northwest, the Nevada rail, and the I-70 gate. Week 0 still starts in Cheyenne (`cheyenne`). Phase names stay on the dock. `/?demo=states`.
 
 ## Phase board (locked labels → our gates)
 
@@ -58,8 +58,13 @@ Theater is a painted topo (olive plains, brown mountains, blue water, coast haze
 - Plains grade **Billings–Omaha** vs Cheyenne yards
 - High desert **Salt Lake–Jackson** vs Junction orchards
 - Redrock sun road **Moab–Denver** vs Junction
-- Front Range **Denver–Omaha** / **Denver–Topeka** vs the long river-bluff chain
-- Caribbean **St. Louis → Gulf Sealift → Cuba** (Phase 3). No direct leap. A later southern wire would still use that channel.
+- Front Range **Denver–Omaha** / **Denver–Topeka** / **Denver–Lincoln** vs the long river-bluff chain
+- Columbia Gorge **Spokane–Portland** and inland **Spokane–Bend** vs the Sound
+- Bitterroot **Boise–Missoula** vs the panhandle; Teton **Boise–Jackson** vs Salt Lake
+- I-80 **Cheyenne–Salt Lake** and **Cheyenne–Lincoln**; Wendover **Reno–Salt Lake** vs Las Vegas
+- US-81 **Lincoln–Wichita** vs Topeka; I-70 **Topeka–St. Louis** vs Wichita
+- Bering **Nome → Bering → Russia** (Phase 3). No Nome–Russia teleport
+- Caribbean **St. Louis → Gulf Sealift → Cuba → Nicaragua** (Phase 3). No direct leap. A later southern wire would still use that channel. Arizona is silhouette paint only — no node, so no Las Vegas–Moab strip.
 
 ## Geo tags (weekly yields)
 
@@ -69,7 +74,7 @@ Examples: Lincoln/Topeka **Farm 3**; Arctic Slope **Fuel 3 + Weather 3**; Klondi
 
 ## Campaign
 
-Phase 1 is Stall, then Advent Crown. Phase 2 at **8** west-bloc US states (AK–CO, not CA/NV) is Prairie Fire — national leader — then Gulf Hammer and Border Fury while any state on this board is still short. Phase 3 Foreign desks: Russia by Bering, Cuba and Nicaragua only through Gulf Sealift. Phase 4 sponsor can add Korea. Graph is 42 nodes / 130 directed roads. Start region id: `cheyenne`. New node ids: `sacramento`, `los_angeles`, `reno`, `las_vegas`.
+Phase 1 is Stall, then Advent Crown. Phase 2 at **8** west-bloc US states (AK–CO, not CA/NV) is Prairie Fire — national leader — then Gulf Hammer and Border Fury while any state on this board is still short. Phase 3 Foreign desks: Russia by Bering, Cuba and Nicaragua only through Gulf Sealift. Phase 4 sponsor can add Korea. Graph is 42 nodes / 150 directed roads (75 undirected). Start region id: `cheyenne`. Node ids unchanged from the California/Nevada pass: `sacramento`, `los_angeles`, `reno`, `las_vegas`, plus the earlier board. New roads: Spokane–Portland, Spokane–Bend, Boise–Missoula, Boise–Jackson, Cheyenne–Salt Lake, Cheyenne–Lincoln, Denver–Lincoln, Reno–Salt Lake, Lincoln–Wichita, Topeka–St. Louis.
 
 ## Counts (exact)
 

@@ -488,7 +488,7 @@ function titleScreenHtml(hasSave) {
     <p class="muted">Original IP. Stall opens in the mountain west. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
     <p><strong>Click Begin week 0.</strong> You start alone in Cheyenne. First job: raise a banner, spend AP, then End Week.</p>
-    <p>The yards are contested. Denver, Jackson, Billings, and Omaha are the adjacent roads. Alaska is on the map — you do not start there, and you cannot leap to Seattle.</p>
+    <p>The yards are contested. Denver, Jackson, Billings, Omaha, Lincoln, and Salt Lake are the adjacent roads. Alaska is on the map — you do not start there, and you cannot leap to Seattle.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
     <div class="choices" id="ng-bg">
@@ -798,7 +798,7 @@ function helpHtml() {
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
       <li><strong>Phase board:</strong> Yellow chip is now. Invasion Day, Stall, Advent Crown, Prairie Fire, Gulf Hammer, Border Fury, Foreign desks. Occupied / contested / held is who owns the ground. No leaping.</li>
-      <li><strong>Theater:</strong> The coastline is one US silhouette. Week 0 is Cheyenne, on the Stall corridor — not Bethel, and not a leap to Seattle. California (Sacramento, Los Angeles) and Nevada (Reno, Las Vegas) are states with adjacent roads only. 8 west-bloc states still name a national leader.</li>
+      <li><strong>Theater:</strong> The coastline is one US silhouette. Week 0 is Cheyenne, on the Stall corridor — not Bethel, and not a leap to Seattle. California (Sacramento, Los Angeles) and Nevada (Reno, Las Vegas) keep their border roads. Extra corridors stay on a shared border (gorge, I-80, I-70). Arizona is paint only. 8 west-bloc states still name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1409,7 +1409,7 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads only — Denver, Jackson, Billings, Omaha. No leap to Seattle.",
+    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads only — Denver, Jackson, Billings, Omaha, Lincoln, Salt Lake. No leap to Seattle.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },

@@ -1,9 +1,9 @@
 {
   "meta": {
     "theater": "west",
-    "version": "0.3-ca-nv",
+    "version": "0.4-routes",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Continental US silhouette. Terrain paints the coastline. STATE \u2192 territories. No leaping: travel only on adjacent roads. California (Sacramento, Los Angeles) and Nevada (Reno, Las Vegas) join on deliberate border roads. Gulf Sealift stays St. Louis \u2192 gulf water \u2192 Cuba.",
+    "notes": "Continental US silhouette. Terrain paints the coastline. STATE \u2192 territories. No leaping: travel only on adjacent roads. Route pass adds dual corridors that stay inside the two states they join (Columbia Gorge, inland Bend, Bitterroot, Teton, I-80, I-76, US-81, I-70). California and Nevada keys stay. Arizona is silhouette paint only \u2014 no node and no strip leap. Gulf Sealift stays St. Louis \u2192 gulf water \u2192 Cuba \u2192 Nicaragua. Russia stays Nome \u2192 Bering.",
     "unlock": "All US/Yukon cities, including California and Nevada, are painted and walkable from week 0. Week 0 starts in contested Cheyenne, on the Stall corridor. Foreign nodes unlock at campaign phase 3. Gulf Sealift opens with those desks \u2014 Cuba is not a direct road from St. Louis.",
     "counts": {
       "states": 14,
@@ -3644,7 +3644,9 @@
       "neighbors": [
         "seattle",
         "coeur_dalene",
-        "missoula"
+        "missoula",
+        "portland",
+        "bend"
       ],
       "startOwner": "timberline",
       "garrison": 34,
@@ -3706,7 +3708,8 @@
         "seattle",
         "olympia",
         "eugene",
-        "bend"
+        "bend",
+        "spokane"
       ],
       "startOwner": "pacific_spine",
       "garrison": 44,
@@ -3828,7 +3831,8 @@
       "neighbors": [
         "portland",
         "eugene",
-        "boise"
+        "boise",
+        "spokane"
       ],
       "startOwner": "timberline",
       "garrison": 30,
@@ -3950,7 +3954,9 @@
       "neighbors": [
         "coeur_dalene",
         "bend",
-        "salt_lake"
+        "salt_lake",
+        "missoula",
+        "jackson"
       ],
       "startOwner": "copper_road",
       "garrison": 38,
@@ -4013,7 +4019,8 @@
         "spokane",
         "coeur_dalene",
         "billings",
-        "jackson"
+        "jackson",
+        "boise"
       ],
       "startOwner": "timberline",
       "garrison": 32,
@@ -4139,7 +4146,8 @@
         "cheyenne",
         "grand_junction",
         "denver",
-        "salt_lake"
+        "salt_lake",
+        "boise"
       ],
       "startOwner": "idle_hour",
       "garrison": 18,
@@ -4201,7 +4209,9 @@
         "billings",
         "jackson",
         "denver",
-        "omaha"
+        "omaha",
+        "salt_lake",
+        "lincoln"
       ],
       "startOwner": null,
       "garrison": 34,
@@ -4264,7 +4274,9 @@
         "moab",
         "grand_junction",
         "jackson",
-        "las_vegas"
+        "las_vegas",
+        "cheyenne",
+        "reno"
       ],
       "startOwner": "rail_brotherhood",
       "garrison": 48,
@@ -4453,7 +4465,8 @@
         "omaha",
         "topeka",
         "jackson",
-        "moab"
+        "moab",
+        "lincoln"
       ],
       "startOwner": "ember_campus",
       "garrison": 40,
@@ -4637,7 +4650,10 @@
       ],
       "neighbors": [
         "omaha",
-        "topeka"
+        "topeka",
+        "cheyenne",
+        "denver",
+        "wichita"
       ],
       "startOwner": "idle_hour",
       "garrison": 20,
@@ -4698,7 +4714,8 @@
       "neighbors": [
         "lincoln",
         "wichita",
-        "denver"
+        "denver",
+        "st_louis"
       ],
       "startOwner": "idle_hour",
       "garrison": 22,
@@ -4759,7 +4776,8 @@
       "neighbors": [
         "topeka",
         "colorado_springs",
-        "st_louis"
+        "st_louis",
+        "lincoln"
       ],
       "startOwner": "copper_road",
       "garrison": 34,
@@ -4819,7 +4837,8 @@
       ],
       "neighbors": [
         "wichita",
-        "gulf_passage"
+        "gulf_passage",
+        "topeka"
       ],
       "startOwner": "red_wharf",
       "garrison": 48,
@@ -5061,7 +5080,8 @@
       ],
       "neighbors": [
         "sacramento",
-        "las_vegas"
+        "las_vegas",
+        "salt_lake"
       ],
       "startOwner": "rail_brotherhood",
       "garrison": 30,
@@ -5478,6 +5498,90 @@
       "vs": "bend-boise-salt_lake-las_vegas-los_angeles",
       "kind": "valley",
       "note": "I-5 valley into Sacramento vs the long desert swing"
+    },
+    {
+      "a": "spokane",
+      "b": "portland",
+      "vs": "spokane-seattle-portland",
+      "kind": "pass",
+      "note": "Columbia Gorge vs the Puget Sound"
+    },
+    {
+      "a": "spokane",
+      "b": "bend",
+      "vs": "spokane-portland-bend",
+      "kind": "pass",
+      "note": "Inland high desert vs the gorge"
+    },
+    {
+      "a": "boise",
+      "b": "missoula",
+      "vs": "boise-coeur_dalene-missoula",
+      "kind": "pass",
+      "note": "Bitterroot pass vs the panhandle"
+    },
+    {
+      "a": "boise",
+      "b": "jackson",
+      "vs": "boise-salt_lake-jackson",
+      "kind": "pass",
+      "note": "Teton pass vs the Salt Lake swing"
+    },
+    {
+      "a": "cheyenne",
+      "b": "salt_lake",
+      "vs": "cheyenne-jackson-salt_lake",
+      "kind": "pass",
+      "note": "I-80 basin rail vs the Jackson pass"
+    },
+    {
+      "a": "cheyenne",
+      "b": "lincoln",
+      "vs": "cheyenne-omaha-lincoln",
+      "kind": "plains",
+      "note": "I-80 to the Nebraska capital vs the Omaha grade"
+    },
+    {
+      "a": "denver",
+      "b": "lincoln",
+      "vs": "denver-omaha-lincoln",
+      "kind": "plains",
+      "note": "I-76 Front Range cut vs the Omaha rail"
+    },
+    {
+      "a": "reno",
+      "b": "salt_lake",
+      "vs": "reno-las_vegas-salt_lake",
+      "kind": "pass",
+      "note": "I-80 Wendover vs the Las Vegas strip. Not an Oregon or Idaho leap into Reno."
+    },
+    {
+      "a": "lincoln",
+      "b": "wichita",
+      "vs": "lincoln-topeka-wichita",
+      "kind": "plains",
+      "note": "US-81 meridian vs the Topeka capital"
+    },
+    {
+      "a": "topeka",
+      "b": "st_louis",
+      "vs": "topeka-wichita-st_louis",
+      "kind": "plains",
+      "note": "I-70 river rail vs the Wichita swing. Kansas City is not a node."
+    },
+    {
+      "a": "nome",
+      "b": "bering_strait",
+      "vs": "no-nome-russia",
+      "kind": "ferry",
+      "note": "Bering gate. Nome does not teleport to the Russia desk."
+    },
+    {
+      "a": "far_cuba",
+      "b": "far_nicaragua",
+      "vs": "no-gulf-nicaragua",
+      "kind": "sealift",
+      "note": "Nicaragua is the next sea hop after Cuba, not a direct Gulf Sealift leap."
     }
   ],
   "spurs": [

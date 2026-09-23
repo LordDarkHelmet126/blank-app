@@ -115,7 +115,38 @@ const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filt
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
 const cities = content.regions.regions;
 assert(cities.length === 42, `graph is 42 nodes with CA/NV, got ${cities.length}`);
-assert(cities.reduce((n, r) => n + (r.neighbors || []).length, 0) === 130, "CA/NV add only the six deliberate roads");
+assert(cities.reduce((n, r) => n + (r.neighbors || []).length, 0) === 150, "route pass adds ten shared-border roads");
+assert(!cities.some((r) => r.state === "AZ"), "Arizona stays silhouette paint; no AZ node");
+const linked = (a, b) => {
+  const ra = cities.find((r) => r.id === a);
+  const rb = cities.find((r) => r.id === b);
+  assert(ra && rb && ra.neighbors.includes(b) && rb.neighbors.includes(a), `${a}–${b} road`);
+};
+[
+  ["spokane", "portland"],
+  ["spokane", "bend"],
+  ["boise", "missoula"],
+  ["boise", "jackson"],
+  ["cheyenne", "salt_lake"],
+  ["cheyenne", "lincoln"],
+  ["denver", "lincoln"],
+  ["reno", "salt_lake"],
+  ["lincoln", "wichita"],
+  ["topeka", "st_louis"],
+].forEach(([a, b]) => linked(a, b));
+const unlinked = (a, b, why) => {
+  const ra = cities.find((r) => r.id === a);
+  assert(ra && !ra.neighbors.includes(b), why);
+};
+unlinked("las_vegas", "moab", "no Arizona-strip leap");
+unlinked("salt_lake", "denver", "I-70 still stops at Junction");
+unlinked("cheyenne", "colorado_springs", "I-25 still stops at Denver");
+unlinked("nome", "far_russia", "no Nome–Russia teleport");
+unlinked("gulf_passage", "far_nicaragua", "Nicaragua is past Cuba");
+unlinked("omaha", "st_louis", "Omaha–St. Louis would skip Iowa");
+unlinked("sacramento", "las_vegas", "Sacramento–Las Vegas would skip Reno");
+unlinked("bend", "reno", "no Oregon leap into Reno");
+unlinked("boise", "reno", "no Idaho leap into Reno");
 assert(!["washington_dc", "manhattan", "kansas_city", "casper", "vancouver", "fargo", "minot"].some((id) => cities.some((r) => r.id === id)), "no silhouette-fight cities");
 assert(!/wolverine/i.test(JSON.stringify(content.regions) + JSON.stringify(content.factions)), "no Wolverines trademark");
 assert(content.regions.campaign?.chronology?.cell === "Ridge Runners", "Front Range cell is Ridge Runners");
@@ -387,7 +418,11 @@ assert(isAdjacent(leap, "eugene", "sacramento"), "Eugene opens northern Californ
 assert(isAdjacent(leap, "sacramento", "reno"), "Sacramento opens Reno");
 assert(isAdjacent(leap, "los_angeles", "las_vegas"), "Los Angeles opens Las Vegas");
 assert(isAdjacent(leap, "salt_lake", "las_vegas"), "Salt Lake opens the desert road");
+assert(isAdjacent(leap, "reno", "salt_lake"), "Wendover rail is the northern Nevada alternate");
+assert(isAdjacent(leap, "cheyenne", "lincoln"), "I-80 reaches Lincoln from the yards");
+assert(isAdjacent(leap, "topeka", "st_louis"), "I-70 reaches St. Louis");
 assert(!isAdjacent(leap, "bend", "reno") && !isAdjacent(leap, "boise", "reno"), "no OR/ID leap into Reno");
+assert(!isAdjacent(leap, "las_vegas", "moab"), "no Arizona-strip leap");
 assert(!isAdjacent(leap, "los_angeles", "salt_lake") && !isAdjacent(leap, "eugene", "las_vegas"), "no cross-state leap past Nevada");
 const cubaRoads = approachRoads(leap, "cheyenne", "far_cuba");
 assert(cubaRoads.join(", ") === "St. Louis, Gulf Sealift", `Cuba approach from Cheyenne: ${cubaRoads.join(", ")}`);
