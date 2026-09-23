@@ -1,4 +1,5 @@
 import { nextInt, nextFloat, chance } from "./rng.js";
+import { attachSiege, autoResolveSiege, siegeCommand } from "./siege.js";
 
 const COLS = 8;
 const ROWS = 6;
@@ -107,7 +108,7 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
     morale.atk -= 6;
     morale.def += 2;
   }
-  return {
+  const battle = {
     fromId,
     toId,
     commit,
@@ -125,6 +126,8 @@ export function createBattle(state, content, fromId, toId, commit, techAtk) {
     cols: COLS,
     rows: ROWS,
   };
+  attachSiege(battle, dest);
+  return battle;
 }
 
 function weatherLabel(w) {
@@ -317,6 +320,10 @@ export function endTacticalTurn(state, battle, defenderPersonality) {
 }
 
 export function autoResolveBattle(state, battle, defenderPersonality) {
+  if (battle.siege && !battle.siege.closed) {
+    autoResolveSiege(state, battle);
+    return battle.result;
+  }
   let guard = 0;
   while (!battle.result && guard++ < 80) {
     const mine = living(battle, "atk");
@@ -353,6 +360,10 @@ export function autoResolveBattle(state, battle, defenderPersonality) {
 }
 
 export function remainingRatio(battle, side) {
+  if (battle.siege?.closed) {
+    if (side === "atk") return Math.max(0, battle.siege.levy) / Math.max(1, battle.siege.levyMax || battle.commit || 1);
+    return Math.max(0, battle.siege.garrison) / Math.max(1, battle.siege.garrison0 || 1);
+  }
   const all = battle.units.filter((u) => u.side === side);
   const max = all.reduce((s, u) => s + u.maxHp, 0) || 1;
   const now = all.reduce((s, u) => s + Math.max(0, u.hp), 0);
@@ -367,4 +378,4 @@ export function terrainGlyph(t) {
   return "flat";
 }
 
-export { COLS, ROWS, nextFloat, chance };
+export { COLS, ROWS, nextFloat, chance, siegeCommand };

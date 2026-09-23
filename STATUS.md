@@ -2,7 +2,13 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Field battles spawn one M113 (`ifv`) when `tracked_hulls` is unlocked and the levy is at least 64. Militia, regulars, and jeep pickups are unchanged without that unlock.
+**Last checkpoint:** 2026-09-23 — Settlement assaults use a siege board (WORKS / SUPPRESS / LEVY). Field fights, including the M113 spawn, stay on the isometric grid. Yard duel stays 99s / 11 exchanges.
+
+## Siege board
+
+Fortified bowls (walls ≥ 24, or urban) open a siege instead of treating walls as defender morale. You are the attacker. The garrison is the defender. **WORKS** is wall strength. Three ploys: **Cut the berm** (drops WORKS), **Rake the parapet** (fills SUPPRESS), **Rush the gap** (takes the place only when WORKS are low and the parapet is quiet). The amber NEXT line names the ploy. The siege **lifts** if the levy hits 0 or the watch runs out.
+
+**Demo:** `/?demo=siege` (Anchorage from Bethel). Harder berm: `/?demo=siege&walls=72`. Same board from the battle hook: `/?demo=battle&siege=1`. Field M113 check is still `/?demo=look&fx=battle&hull=1` (Nome, not a siege).
 
 ## How to run
 
