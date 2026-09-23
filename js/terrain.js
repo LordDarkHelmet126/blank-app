@@ -2,15 +2,15 @@
  * Painterly western theater + 1980s American markers.
  * Original IP only — no Koei / licensed portraits, roofs, or chrome.
  *
- * Biomes: AK ice/coast, WA evergreen, CO/WY Rockies, UT redrock desert,
- * plains farms, Yukon boreal. City marks are bunkers, ranch houses,
- * grain elevators, oil pumps, radio towers, main-street blocks.
+ * Land is a continental US silhouette plus an Alaska/Yukon spur.
+ * Biomes: AK ice, WA evergreen, Rockies, UT desert, plains farms, eastern forest.
+ * City marks are bunkers, ranch houses, grain elevators, oil pumps, radio towers, main-street blocks.
  */
 
-const TW = 500;
-const TH = 310;
-const MAP_S = 2;
-const ELEV = 18;
+const TW = 1000;
+const TH = 620;
+const MAP_S = 1;
+const ELEV = 14;
 
 const BIOME = {
   sea: 0,
@@ -62,10 +62,10 @@ const PAL = {
   [BIOME.wetforest]: ["#143828", "#1c4834", "#0c241c", "#2a5840"],
   [BIOME.pine]: ["#4a7048", "#5a8858", "#385838", "#6a9868"],
   [BIOME.hills]: ["#8a7848", "#a09058", "#6a5838", "#c0b070"],
-  [BIOME.rockies]: ["#8a6840", "#a08050", "#5a4830", "#c8b080"],
-  [BIOME.desert]: ["#c89858", "#d8b070", "#9a6838", "#e8d090"],
-  [BIOME.plains]: ["#7a8a48", "#8a9a58", "#5a6840", "#a8b868"],
-  [BIOME.farm]: ["#8a9a50", "#a0b060", "#687038", "#c0c878"],
+  [BIOME.rockies]: ["#5e635c", "#7e847c", "#3a4048", "#f4f7fb"],
+  [BIOME.desert]: ["#d09848", "#e8b868", "#9a5420", "#f0d090"],
+  [BIOME.plains]: ["#7f9440", "#a4b858", "#4e6228", "#d0dc78"],
+  [BIOME.farm]: ["#d4b44a", "#ecd070", "#7a5c20", "#f4e090"],
   [BIOME.urban]: ["#7a7a68", "#9a9a88", "#5a5a50", "#b0b0a0"],
 };
 
@@ -155,21 +155,48 @@ function rasterMask(poly) {
   return x.getImageData(0, 0, TW, TH).data;
 }
 
+/** One canvas read for every territory, instead of a full-frame mask per polygon. */
+function stampBiomeLayer(entries) {
+  const biome = new Uint8Array(TW * TH);
+  const band = new Uint8Array(TW * TH);
+  if (!entries.length) return { biome, band };
+  const c = document.createElement("canvas");
+  c.width = TW;
+  c.height = TH;
+  const x = c.getContext("2d");
+  x.imageSmoothingEnabled = false;
+  x.clearRect(0, 0, TW, TH);
+  entries.forEach((e, n) => {
+    x.fillStyle = `rgb(${n + 1},0,0)`;
+    fillPoly(x, e.polygon);
+  });
+  const pix = x.getImageData(0, 0, TW, TH).data;
+  for (let i = 0; i < TW * TH; i++) {
+    const id = pix[i * 4];
+    if (!id || id > entries.length) continue;
+    const e = entries[id - 1];
+    biome[i] = e.biome;
+    band[i] = e.band || 0;
+  }
+  return { biome, band };
+}
+
 function biomeOf(stateId, bias) {
+  const id = String(stateId || "").toLowerCase();
   if (BIAS_BIOME[bias] != null && (bias === "ice" || bias === "coast" || bias === "urban" || bias === "tundra")) {
     return BIAS_BIOME[bias];
   }
-  if (stateId === "ut" || (bias === "plains" && stateId === "ut")) return BIOME.desert;
-  if (stateId === "co" || stateId === "wy") {
+  if (id === "ut") return BIOME.desert;
+  if (id === "co" || id === "wy") {
     if (bias === "urban") return BIOME.urban;
     if (bias === "plains") return BIOME.hills;
     return BIOME.rockies;
   }
-  if (stateId === "wa") return BIOME.wetforest;
-  if (stateId === "or" && bias !== "hills" && bias !== "plains") return BIOME.wetforest;
-  if ((stateId === "ne" || stateId === "ks") && bias !== "urban") return BIOME.farm;
+  if (id === "wa") return BIOME.wetforest;
+  if (id === "or" && bias !== "hills" && bias !== "plains") return BIOME.wetforest;
+  if ((id === "ne" || id === "ks") && bias !== "urban") return BIOME.farm;
   if (BIAS_BIOME[bias] != null) return BIAS_BIOME[bias];
-  return STATE_BIOME[stateId] || BIOME.plains;
+  return STATE_BIOME[id] || BIOME.plains;
 }
 
 function baseHeight(biome) {
@@ -186,16 +213,33 @@ function baseHeight(biome) {
   return 0.1;
 }
 
-function shade(hex, slope) {
+function hexRgb(hex) {
   const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) & 255;
-  let g = (n >> 8) & 255;
-  let b = n & 255;
-  const k = 1 + Math.max(-0.55, Math.min(0.5, slope * 2.4));
-  r = Math.max(0, Math.min(255, Math.round(r * k)));
-  g = Math.max(0, Math.min(255, Math.round(g * k)));
-  b = Math.max(0, Math.min(255, Math.round(b * k)));
-  return `rgb(${r},${g},${b})`;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+const PAL_RGB = Object.fromEntries(
+  Object.entries(PAL).map(([k, arr]) => [k, arr.map(hexRgb)]),
+);
+const SHORE_RGB = hexRgb("#f7f3e6");
+const SNOW_A = hexRgb("#f7f8fc");
+const SNOW_B = hexRgb("#d5dee8");
+const FALL_A = hexRgb("#a05020");
+const FALL_B = hexRgb("#d08830");
+const PEAK_RGB = hexRgb("#d8d0c0");
+
+function toneRgb(pal, n, high) {
+  if (high && pal[3]) return pal[3];
+  return pal[n % 3];
+}
+
+function mulRgb(rgb, slope) {
+  const k = 1 + Math.max(-0.62, Math.min(0.42, slope * 3.1));
+  return [
+    Math.max(0, Math.min(255, (rgb[0] * k + 0.5) | 0)),
+    Math.max(0, Math.min(255, (rgb[1] * k + 0.5) | 0)),
+    Math.max(0, Math.min(255, (rgb[2] * k + 0.5) | 0)),
+  ];
 }
 
 function pickTone(pal, n, high) {
@@ -206,7 +250,38 @@ function pickTone(pal, n, high) {
 function cacheKey(state) {
   const season = state._season?.id || "summer";
   const n = (state.regions || []).length;
-  return `v5|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}`;
+  return `v6|${season}|${n}|${(state.coast || []).length}|${(state.mainland || []).length}|${(state.lakes || []).length}`;
+}
+
+const US_BOX = { x0: 36, y0: 132, x1: 978, y1: 608, lon0: -124.8, lon1: -66.9, lat0: 49.45, lat1: 24.4 };
+
+function lonLatOf(x, y) {
+  const lon = US_BOX.lon0 + ((x - US_BOX.x0) / (US_BOX.x1 - US_BOX.x0)) * (US_BOX.lon1 - US_BOX.lon0);
+  const lat = US_BOX.lat0 - ((y - US_BOX.y0) / (US_BOX.y1 - US_BOX.y0)) * (US_BOX.lat0 - US_BOX.lat1);
+  return [lon, lat];
+}
+
+/** Geographic base so the whole outline reads — not only the eleven named states.
+ *  Boundaries wander with low-frequency noise so biomes blend instead of tiling. */
+function geoBiome(x, y) {
+  if (y < 130) {
+    if (y < 36 || x < 50) return BIOME.ice;
+    if (x > 165 && y < 108) return BIOME.pine;
+    if (y > 98) return BIOME.coast;
+    return BIOME.tundra;
+  }
+  const wob = (fbm(x * 0.011, y * 0.011) - 0.5) * 40;
+  const [lon, lat] = lonLatOf(x + wob, y + wob * 0.25);
+  if (lat < 31.15 && lon > -88.2) return BIOME.coast;
+  if (lat > 42.0 && lon < -121.0) return BIOME.wetforest;
+  if (lat > 43.8 && lon < -116.0 && lon >= -121.0) return BIOME.pine;
+  if (lon < -120.2 && lat <= 42.0 && lat > 33.8) return BIOME.hills;
+  if (lat < 37.4 && lon < -108.8 && lon > -120.5) return BIOME.desert;
+  if (lon >= -114.4 && lon <= -104.0 && lat >= 32.5 && lat <= 49.2) return BIOME.rockies;
+  if (lat < 33.4 && lon >= -99.5 && lon <= -83.5) return BIOME.hills;
+  if (lon > -89.5) return BIOME.forest;
+  if (lon > -102.5 && lat > 35.5 && lat < 44.5) return BIOME.farm;
+  return BIOME.plains;
 }
 
 const WET_IDS = new Set(["seattle", "olympia", "portland"]);
@@ -217,6 +292,24 @@ function pnwBandOf(r) {
   if (WET_IDS.has(r.id)) return 1;
   if (RAIN_SHADOW_IDS.has(r.id)) return 3;
   return 0;
+}
+
+function paintCityBand(land, biome, pnw, r, mode, biomeId) {
+  if (!r?.label) return;
+  const [cx, cy] = r.label;
+  const rad = 34;
+  const r2 = rad * rad;
+  for (let y = Math.max(0, cy - rad); y <= Math.min(TH - 1, cy + rad); y++) {
+    for (let x = Math.max(0, cx - rad); x <= Math.min(TW - 1, cx + rad); x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy > r2) continue;
+      const i = y * TW + x;
+      if (!land[i]) continue;
+      pnw[i] = mode;
+      biome[i] = biomeId;
+    }
+  }
 }
 
 function buildFields(state) {
@@ -232,40 +325,30 @@ function buildFields(state) {
   mx.fillStyle = "#000000";
   mx.fillRect(0, 0, TW, TH);
   mx.fillStyle = "#ffffff";
+  // Land is the continental outline only — state rectangles are not land.
   if (state.coast) fillPoly(mx, state.coast);
   if (state.mainland) fillPoly(mx, state.mainland);
-  (state.stateTheaters || []).forEach((st) => {
-    if (st.polygon) fillPoly(mx, st.polygon);
+  (state.spurs || []).forEach((poly) => {
+    if (poly) fillPoly(mx, poly);
+  });
+  mx.fillStyle = "#000000";
+  (state.lakes || []).forEach((poly) => {
+    if (poly) fillPoly(mx, poly);
   });
   const landPix = mx.getImageData(0, 0, TW, TH).data;
   for (let i = 0; i < TW * TH; i++) land[i] = landPix[i * 4] > 20 ? 1 : 0;
 
-  (state.stateTheaters || []).forEach((st) => {
-    if (!st.polygon) return;
-    const pix = rasterMask(st.polygon);
-    const b0 = STATE_BIOME[st.id] || BIOME.plains;
-    for (let i = 0; i < TW * TH; i++) {
-      if (pix[i * 4] > 20) biome[i] = b0;
+  for (let y = 0; y < TH; y++) {
+    for (let x = 0; x < TW; x++) {
+      const i = y * TW + x;
+      if (land[i]) biome[i] = geoBiome(x, y);
     }
-  });
+  }
 
   (state.regions || []).forEach((r) => {
-    if (!r.polygon) return;
-    const pix = rasterMask(r.polygon);
-    let b = biomeOf(r.stateCode, r.terrainBias);
-    if (WET_IDS.has(r.id)) b = BIOME.wetforest;
-    if (RAIN_SHADOW_IDS.has(r.id)) b = BIOME.pine;
-    const band = pnwBandOf(r);
-    const geo = r.geo || {};
-    const extra = ((geo.mine || 0) + (geo.defense || 0)) * 0.06 - (geo.farm || 0) * 0.03;
-    for (let i = 0; i < TW * TH; i++) {
-      if (pix[i * 4] > 20) {
-        biome[i] = b;
-        land[i] = 1;
-        height[i] += extra;
-        if (band) pnw[i] = band;
-      }
-    }
+    if (r.unlockPhase > 0) return;
+    if (WET_IDS.has(r.id)) paintCityBand(land, biome, pnw, r, 1, BIOME.wetforest);
+    else if (RAIN_SHADOW_IDS.has(r.id)) paintCityBand(land, biome, pnw, r, 3, BIOME.pine);
   });
 
   for (let y = 0; y < TH; y++) {
@@ -277,21 +360,24 @@ function buildFields(state) {
         continue;
       }
       const b = biome[i] || BIOME.plains;
-      const n = fbm(x * 0.035, y * 0.04);
-      let h = baseHeight(b) + (n - 0.5) * 0.42 + height[i];
-      if (b === BIOME.desert && n > 0.62) h += 0.22;
-      if (b === BIOME.rockies && n > 0.55) h += 0.2;
-      if (b === BIOME.ice && n > 0.5) h += 0.12;
-      if (b === BIOME.wetforest) h += 0.04;
-      // Cascades climb: between Puget Sound (wet) and Spokane (rain-shadow).
-      if (x >= 82 && x <= 120 && y >= 118 && y <= 198 && pnw[i] !== 1 && pnw[i] !== 3) {
-        if (b === BIOME.wetforest || b === BIOME.forest || b === BIOME.pine || b === BIOME.hills || b === BIOME.urban) {
+      const n = fbm(x * 0.0075, y * 0.0085);
+      let h = baseHeight(b) + (n - 0.5) * 0.14;
+      if (b === BIOME.desert && n > 0.64) h += 0.14;
+      if (b === BIOME.rockies) {
+        h = Math.max(h, 0.74);
+        if (n > 0.5) h += 0.16;
+      }
+      if (b === BIOME.ice && n > 0.55) h += 0.08;
+      // Cascades: between the Sound and Spokane on the US projection.
+      if (x >= 104 && x <= 132 && y >= 145 && y <= 200 && pnw[i] !== 1 && pnw[i] !== 3) {
+        if (b === BIOME.wetforest || b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) {
           pnw[i] = 2;
-          h = Math.min(1, Math.max(h, 0.58) + 0.2 + (n - 0.45) * 0.22);
+          h = Math.min(1, Math.max(h, 0.6) + 0.14 + (n - 0.45) * 0.1);
           biome[i] = BIOME.pine;
         }
       }
-      if (pnw[i] === 3) h = Math.max(0.18, h - 0.06);
+      if (pnw[i] === 3) h = Math.max(0.16, h - 0.08);
+      if (b === BIOME.farm || b === BIOME.plains) h = Math.min(h, 0.2);
       height[i] = Math.max(0.02, Math.min(1, h));
     }
   }
@@ -323,100 +409,139 @@ function paintBase(fields, seasonId) {
         continue;
       }
       const b = biome[i];
-      const pal = PAL[b] || PAL[BIOME.plains];
+      const pal = PAL_RGB[b] || PAL_RGB[BIOME.plains];
       const h = height[i];
       const se = height[Math.min(TW * TH - 1, i + TW + 1)] || h;
       const slope = h - se;
       const high = h > 0.72;
-      let hex = pickTone(pal, (x + y * 3 + (h * 8) | 0) & 3, high);
-      if (winter && (b === BIOME.ice || b === BIOME.tundra)) hex = pal[3] || "#e8f0f4";
-      if (winter && high && (b === BIOME.rockies || b === BIOME.hills || (b === BIOME.pine && pnw[i] === 2))) hex = pal[3] || "#e8f0f4";
+      let rgb = toneRgb(pal, (x + y * 3 + (h * 8) | 0) & 3, high);
+      if (winter && (b === BIOME.ice || b === BIOME.tundra)) rgb = pal[3] || rgb;
+      if (winter && high && (b === BIOME.rockies || b === BIOME.hills || (b === BIOME.pine && pnw[i] === 2))) rgb = pal[3] || rgb;
       if (fall && (b === BIOME.forest || b === BIOME.pine || b === BIOME.hills) && !high && b !== BIOME.wetforest && pnw[i] !== 1) {
-        hex = ((x + y) & 1) === 0 ? "#a05020" : "#d08830";
+        rgb = ((x + y) & 1) === 0 ? FALL_A : FALL_B;
       }
-      if (b === BIOME.wetforest) hex = pickTone(PAL[BIOME.wetforest], (x + y * 2) & 3, false);
-      if (pnw[i] === 2 && high) hex = "#d8d0c0";
-      const col = shade(hex, slope);
-      const m = col.match(/\d+/g);
-      data[o] = Number(m[0]);
-      data[o + 1] = Number(m[1]);
-      data[o + 2] = Number(m[2]);
+      if (b === BIOME.wetforest) rgb = toneRgb(PAL_RGB[BIOME.wetforest], (x + y * 2) & 3, false);
+      if (pnw[i] === 2 && high) rgb = PEAK_RGB;
+      if (b === BIOME.rockies && h > 0.84) rgb = (x + y) % 3 === 0 ? SNOW_A : SNOW_B;
+      let shore = 0;
+      if (x === 0 || !land[i - 1]) shore += 1;
+      if (x === TW - 1 || !land[i + 1]) shore += 1;
+      if (y === 0 || !land[i - TW]) shore += 1;
+      if (y === TH - 1 || !land[i + TW]) shore += 1;
+      if (shore) rgb = SHORE_RGB;
+      const col = mulRgb(rgb, shore ? 0.15 : slope);
+      data[o] = col[0];
+      data[o + 1] = col[1];
+      data[o + 2] = col[2];
       data[o + 3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
+  const elev = displaceLand(c, fields);
+  scatterFeatures(elev.getContext("2d"), fields, seasonId);
+  hazeCoast(elev, fields);
+  return elev;
+}
 
+function liftFor(h, b) {
+  if (b === BIOME.rockies) return Math.floor(h * 26);
+  if (b === BIOME.desert) return Math.floor(h * 12);
+  if (b === BIOME.hills || b === BIOME.ice) return Math.floor(h * 14);
+  if (b === BIOME.farm || b === BIOME.plains) return Math.floor(h * 5);
+  return Math.floor(h * ELEV);
+}
+
+function cliffRGB(b, band) {
+  if (b === BIOME.desert) return [138, 68, 28];
+  if (b === BIOME.ice) return [78, 102, 118];
+  if (band === 2) return [42, 52, 40];
+  if (b === BIOME.wetforest || b === BIOME.forest || b === BIOME.pine) return [12, 32, 20];
+  if (b === BIOME.rockies) return [32, 36, 44];
+  if (b === BIOME.farm || b === BIOME.plains) return [96, 78, 28];
+  return [42, 36, 28];
+}
+
+function displaceLand(srcCanvas, fields) {
+  const { land, biome, height, pnw } = fields;
+  const srcCtx = typeof srcCanvas.getImageData === "function" ? srcCanvas : srcCanvas.getContext("2d");
+  const src = srcCtx.getImageData(0, 0, TW, TH).data;
+  const out = new Uint8ClampedArray(TW * TH * 4);
+  for (let i = 0; i < TW * TH; i++) {
+    if (land[i]) continue;
+    const o = i * 4;
+    out[o] = src[o];
+    out[o + 1] = src[o + 1];
+    out[o + 2] = src[o + 2];
+    out[o + 3] = 255;
+  }
+  for (let y = 0; y < TH; y++) {
+    for (let x = 0; x < TW; x++) {
+      const i = y * TW + x;
+      if (!land[i]) continue;
+      const b = biome[i];
+      const lift = liftFor(height[i], b);
+      const dy = Math.max(0, y - lift);
+      const [cr, cg, cb] = cliffRGB(b, pnw[i]);
+      for (let yy = dy + 1; yy <= y; yy++) {
+        const o = (yy * TW + x) * 4;
+        out[o] = cr;
+        out[o + 1] = cg;
+        out[o + 2] = cb;
+        out[o + 3] = 255;
+      }
+      const o = (dy * TW + x) * 4;
+      const s = i * 4;
+      out[o] = src[s];
+      out[o + 1] = src[s + 1];
+      out[o + 2] = src[s + 2];
+      out[o + 3] = 255;
+      if (height[i] > 0.82 && (b === BIOME.rockies || b === BIOME.ice || pnw[i] === 2) && dy > 0) {
+        const so = ((dy - 1) * TW + x) * 4;
+        out[so] = 244;
+        out[so + 1] = 247;
+        out[so + 2] = 252;
+        out[so + 3] = 255;
+      }
+    }
+  }
   const elev = document.createElement("canvas");
   elev.width = TW;
   elev.height = TH;
   const ex = elev.getContext("2d");
   ex.imageSmoothingEnabled = false;
-  ex.fillStyle = "#082038";
-  ex.fillRect(0, 0, TW, TH);
-  const src = ctx.getImageData(0, 0, TW, TH).data;
-  for (let y = 0; y < TH; y++) {
-    for (let x = 0; x < TW; x++) {
-      const i = y * TW + x;
-      if (!land[i]) {
-        const o = i * 4;
-        ex.fillStyle = `rgb(${src[o]},${src[o + 1]},${src[o + 2]})`;
-        ex.fillRect(x, y, 1, 1);
-        continue;
-      }
-      const lift = Math.floor(height[i] * ELEV);
-      const dy = y - lift;
-      const o = i * 4;
-      if (lift > 1) {
-        const cliff =
-          biome[i] === BIOME.desert
-            ? "#8a5028"
-            : biome[i] === BIOME.ice
-              ? "#6a8494"
-              : pnw[i] === 2
-                ? "#3a4030"
-                : biome[i] === BIOME.wetforest
-                  ? "#0e2418"
-                  : "#3a3020";
-        ex.fillStyle = cliff;
-        ex.fillRect(x, dy + 1, 1, lift);
-      }
-      ex.fillStyle = `rgb(${src[o]},${src[o + 1]},${src[o + 2]})`;
-      ex.fillRect(x, dy, 1, 1);
-      if (height[i] > 0.8 && (biome[i] === BIOME.rockies || biome[i] === BIOME.ice || pnw[i] === 2)) {
-        ex.fillStyle = "#f4f0e4";
-        ex.fillRect(x, dy - 1, 1, 1);
-      }
-    }
-  }
-  scatterFeatures(ex, fields, seasonId);
-  hazeCoast(ex, fields);
+  const img = ex.createImageData(TW, TH);
+  img.data.set(out);
+  ex.putImageData(img, 0, 0);
   return elev;
 }
 
-function hazeCoast(ctx, fields) {
+function hazeCoast(canvas, fields) {
   const { land, pnw } = fields;
+  const ctx = canvas.getContext("2d");
   const pix = ctx.getImageData(0, 0, TW, TH);
   const d = pix.data;
-  const sea = [42, 104, 144];
-  const sound = [48, 90, 108];
   for (let y = 1; y < TH - 1; y++) {
     for (let x = 1; x < TW - 1; x++) {
       const i = y * TW + x;
+      const o = i * 4;
       if (!land[i]) continue;
+      const wet = pnw && pnw[i] === 1;
       let near = 0;
       if (!land[i - 1]) near += 1;
       if (!land[i + 1]) near += 1;
       if (!land[i - TW]) near += 1;
       if (!land[i + TW]) near += 1;
-      const wet = pnw && pnw[i] === 1;
-      if (!near && !wet) continue;
-      const o = i * 4;
-      const mist = wet ? sound : sea;
-      const k = wet ? Math.min(0.42, 0.12 + 0.16 * near) : near ? Math.min(0.55, 0.18 * near) : 0;
-      if (!k) continue;
-      d[o] = Math.round(d[o] * (1 - k) + mist[0] * k);
-      d[o + 1] = Math.round(d[o + 1] * (1 - k) + mist[1] * k);
-      d[o + 2] = Math.round(d[o + 2] * (1 - k) + mist[2] * k);
+      if (near) {
+        d[o] = 247;
+        d[o + 1] = 243;
+        d[o + 2] = 230;
+        continue;
+      }
+      if (!wet) continue;
+      const k = 0.18;
+      d[o] = Math.round(d[o] * (1 - k) + 48 * k);
+      d[o + 1] = Math.round(d[o + 1] * (1 - k) + 90 * k);
+      d[o + 2] = Math.round(d[o + 2] * (1 - k) + 108 * k);
     }
   }
   ctx.putImageData(pix, 0, 0);
@@ -424,13 +549,13 @@ function hazeCoast(ctx, fields) {
 
 function scatterFeatures(ctx, fields, seasonId) {
   const { land, biome, height, pnw } = fields;
-  for (let y = 4; y < TH - 4; y += 5) {
-    for (let x = 4; x < TW - 4; x += 5) {
+  for (let y = 8; y < TH - 8; y += 14) {
+    for (let x = 8; x < TW - 8; x += 14) {
       const i = y * TW + x;
       if (!land[i]) continue;
       const n = hash2(x * 17, y * 13);
       const b = biome[i];
-      const lift = Math.floor(height[i] * ELEV);
+      const lift = liftFor(height[i], b);
       const py = y - lift;
       const band = pnw ? pnw[i] : 0;
       if (b === BIOME.wetforest || band === 1) {
@@ -562,7 +687,7 @@ export function draw80sMarker(ctx, kind, x, y, selected, fill, scale) {
   ctx.save();
   ctx.translate(Math.round(x), Math.round(y));
   ctx.scale(s, s);
-  px(ctx, -6, 1, 14, 3, "#00000055");
+  px(ctx, -6, 2, 14, 2, "#000018");
   if (kind === "elevator") {
     px(ctx, -2, -16, 5, 16, conc);
     px(ctx, -3, -18, 7, 3, roof);
@@ -580,7 +705,7 @@ export function draw80sMarker(ctx, kind, x, y, selected, fill, scale) {
     px(ctx, -3, -12, 7, 1, ink);
     px(ctx, -2, -8, 5, 1, ink);
     px(ctx, -1, -4, 3, 1, ink);
-    px(ctx, -1, -20, 3, 2, Math.floor(Date.now() / 400) % 2 ? "#f03030" : gold);
+    px(ctx, -1, -20, 3, 2, "#f03030");
   } else if (kind === "bunker") {
     px(ctx, -7, -6, 14, 6, conc);
     px(ctx, -8, -3, 16, 4, "#5a5848");
@@ -635,10 +760,10 @@ export function drawPixelRoadFull(ctx, a, b, pulseOn) {
   let y = y0;
   let i = 0;
   for (;;) {
-    ctx.fillStyle = pulseOn ? "#886028" : "#403830";
-    ctx.fillRect(x - 2, y - 2, 5, 5);
-    ctx.fillStyle = pulseOn ? "#fff0a0" : i % 5 < 3 ? "#f8f4e8" : "#e0d8c4";
+    ctx.fillStyle = pulseOn ? "#5a3c08" : "#201810";
     ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = pulseOn ? "#f8d800" : i % 6 < 4 ? "#f8f4e8" : "#e4d7a4";
+    ctx.fillRect(x, y, 1, 1);
     if (x === x1 && y === y1) break;
     const e2 = err * 2;
     if (e2 > -dy) {
@@ -688,11 +813,14 @@ export function paintTheaterTerrain(o, state, opts) {
   painted.forEach((r) => {
     const fac = opts.factionOf ? opts.factionOf(r) : null;
     if (!r.polygon) return;
-    o.globalAlpha = fac ? 0.36 : 0.1;
+    o.globalAlpha = fac ? 0.46 : 0.12;
     o.fillStyle = fac ? fac.color : "#607838";
     fillPoly(o, r.polygon);
     o.globalAlpha = 1;
-    if (fac) strokePoly(o, r.polygon, fac.color, 1);
+    if (fac) {
+      strokePoly(o, r.polygon, "#000018", 3);
+      strokePoly(o, r.polygon, fac.color, 2);
+    }
     if (r.id === opts.selectedId || r.id === opts.hoverId) {
       strokePoly(o, r.polygon, r.id === opts.selectedId ? "#f8d800" : "#f8f8f8", 2);
     }
@@ -814,7 +942,7 @@ export function paintIsoField(ctx, battle, dest, now) {
   }
   if (battle.flash) {
     const [fx, fy] = cellToIso(battle.flash.x, battle.flash.y, layout);
-    diamond(ctx, fx, fy, layout.tw, layout.th, Math.floor(now / 70) % 2 ? "#f8d800" : "#f8f8f8", "#f03030");
+    diamond(ctx, fx, fy, layout.tw, layout.th, Math.floor(now / 220) % 2 ? "#f8d800" : "#f8f8f8", "#f03030");
   }
   battle.units.forEach((u) => {
     if (u.hp <= 0) return;
@@ -877,7 +1005,7 @@ function paintSiegeWall(ctx, layout, battle, dest) {
 
 function drawFieldUnit(ctx, u, x, y, selected, now) {
   const col = u.side === "atk" ? "#f8d800" : "#f03030";
-  const hop = Math.floor(now / 160) % 2 * 2;
+  const hop = Math.floor(now / 320) % 2 * 2;
   if (selected) {
     diamond(ctx, x, y + 8, 48, 22, "#f8f8f8", "#f8d800");
   }

@@ -118,7 +118,9 @@ assert(cities.find((r) => r.id === "juneau").neighbors.includes("seattle"), "Jun
 assert(cities.find((r) => r.id === "yukon_road").neighbors.includes("missoula"), "ALCAN into Montana");
 assert(cities.find((r) => r.id === "denver").neighbors.includes("omaha"), "Colorado opens the plains east");
 assert(cities.find((r) => r.id === "st_louis"), "east-approach St. Louis");
-assert(content.regions.mainland?.length >= 6, "lower-48 landmass");
+assert(content.regions.mainland?.length >= 80, "lower-48 coastline is a real US outline");
+assert(content.regions.coast?.length >= 40, "Alaska spur is a real coastline");
+assert(Array.isArray(content.regions.lakes) && content.regions.lakes.length >= 5, "Great Lakes cut the silhouette");
 assert((content.regions.states || []).filter((s) => s.kind === "us").length === 11, "11 US states on this mid-step");
 assert(content.regions.campaign?.restoreThreshold === 8, "Phase 2 at 8 liberated US states");
 assert(["far_russia", "far_cuba", "far_nicaragua", "far_korea"].every((id) => cities.some((r) => r.id === id)), "foreign theater stubs");
@@ -641,7 +643,7 @@ assert(/get\("style"\)/.test(uiSrc) && /get\("arena"\)/.test(uiSrc), "demo=duel&
 assert(/style=brawler|youStyleId/.test(uiSrc), "brawler demo style override");
 assert(/Special · \$\{/.test(uiSrc), "duel HUD unifies Special · style move");
 assert(/function parkCoach/.test(uiSrc) && /function flushOverlays/.test(uiSrc), "overlays queue: park coach, one at a time");
-assert(/--type:\s*10px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 10px");
+assert(/--type:\s*16px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 16px");
 assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
 assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
 assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 3 is hire into ADD chair");
@@ -659,7 +661,10 @@ assert(/id === "seattle"/.test(terrainSrc) && /olympia/.test(terrainSrc) && /spo
 assert(/paintTheaterTerrain/.test(terrainSrc) && /draw80sMarker/.test(terrainSrc), "painterly terrain + 80s markers");
 assert(/drawFactionFlag/.test(terrainSrc) && /drawCityNode/.test(terrainSrc), "city node + faction flag overlay");
 assert(/#f8f4e8/.test(terrainSrc) && /hazeCoast/.test(terrainSrc), "pale topo roads and coast haze");
-assert(/0\.36/.test(terrainSrc), "ownership wash contrast");
+assert(/0\.46/.test(terrainSrc), "ownership wash contrast");
+assert(/const TW = 1000/.test(terrainSrc) && /const MAP_S = 1/.test(terrainSrc), "terrain paints at map resolution");
+assert(/if \(state\.mainland\) fillPoly\(mx, state\.mainland\)/.test(terrainSrc), "mainland outline is the land fill");
+assert(!/st\.polygon\) fillPoly\(mx/.test(terrainSrc), "state rectangles are not the land mask");
 assert(/function drawHereChip/.test(uiSrc) && /plateAwayFromSelected/.test(uiSrc), "here chip stays off selected city");
 assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
 assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");

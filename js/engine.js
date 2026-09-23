@@ -512,6 +512,8 @@ export function createNewGame(content, opts = {}) {
     customSlotsUsed: 0,
     coast: content.regions.coast,
     mainland: content.regions.mainland || null,
+    spurs: content.regions.spurs || [],
+    lakes: content.regions.lakes || [],
     stateTheaters: content.regions.states || [],
     campaignSpec: content.regions.campaign || {},
     campaign: initCampaign(content.regions.campaign || {}),

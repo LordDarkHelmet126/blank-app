@@ -739,7 +739,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Painterly elevated biomes (WA evergreen, CO/WY Rockies, UT desert, plains farms, AK ice) with 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
+      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). 8 west-bloc states name a national leader.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1715,8 +1715,8 @@ function cityXY(r) {
 const MAP_S = terrainSize().scale;
 const LOW_W = terrainSize().w;
 const LOW_H = terrainSize().h;
-const PX_FONT = "8px 'Press Start 2P', 'Courier New', monospace";
-const PLATE_FONT = "10px 'Press Start 2P', 'Courier New', monospace";
+const PX_FONT = "16px 'Press Start 2P', 'Courier New', monospace";
+const PLATE_FONT = "16px 'Press Start 2P', 'Courier New', monospace";
 const ditherCache = new Map();
 
 function lowPt(p) {
@@ -1770,7 +1770,7 @@ function drawPixelRoad(ctx, a, b) {
   const [x0, y0] = lowPt(a);
   const [x1, y1] = lowPt(b);
   const pulse = mapFx?.kind === "travel" && sameRoad(a, b, mapFx.a, mapFx.b);
-  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
+  const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
   walkLine(x0, y0, x1, y1, (x, y) => {
     ctx.fillStyle = pulse ? (on ? "#f8d800" : "#886028") : "#503010";
     ctx.fillRect(x - 1, y - 1, 3, 3);
@@ -1813,9 +1813,8 @@ function drawCityMark(ctx, r, selected) {
   draw80sMarker(ctx, markerKind(r), x, y, selected, fill);
   const p = playerOf(state);
   if (p.region === r.id) {
-    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 8, y - 18 + hop, 3, 3);
+    ctx.fillRect(x - 8, y - 18, 4, 4);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
@@ -1845,19 +1844,46 @@ const STATE_FILL = {
 
 function drawStateLabels(ctx) {
   const list = state.stateTheaters || [];
-  ctx.font = "12px 'Press Start 2P', 'Courier New', monospace";
-  list.forEach((st) => {
+  const sel = regionOf(state, selectedRegion);
+  const here = playerOf(state);
+  const keep = new Set();
+  if (sel?.stateCode) keep.add(String(sel.stateCode).toUpperCase());
+  if (here?.region) {
+    const home = regionOf(state, here.region);
+    if (home?.stateCode) keep.add(String(home.stateCode).toUpperCase());
+  }
+  ctx.font = "16px 'Press Start 2P', 'Courier New', monospace";
+  const placed = [];
+  const ordered = [...list].sort((a, b) => {
+    const ak = keep.has(String(a.short || a.id || "").toUpperCase()) ? 0 : 1;
+    const bk = keep.has(String(b.short || b.id || "").toUpperCase()) ? 0 : 1;
+    return ak - bk;
+  });
+  ordered.forEach((st) => {
     if (!st.label) return;
     const [x, y] = st.label;
     const text = st.short || st.id.toUpperCase();
     const w = ctx.measureText(text).width;
-    const px = Math.round(x - w / 2 - 3);
-    const py = Math.round(y - 6);
-    ctx.fillStyle = "rgba(0,0,24,0.45)";
-    ctx.fillRect(px, py, w + 6, 14);
-    const liberated = (ensureCampaign(state).liberated || []).includes(st.short || st.id.toUpperCase());
-    ctx.fillStyle = liberated ? "#f8d800" : "#e8e0c8";
-    ctx.fillText(text, px + 3, py + 11);
+    const px = Math.round(x - w / 2 - 4);
+    const py = Math.round(y - 8);
+    const box = { x: px, y: py, w: w + 8, h: 24 };
+    const forced = keep.has(text.toUpperCase());
+    const crowded = placed.some(
+      (p) => box.x < p.x + p.w + 6 && box.x + box.w + 6 > p.x && box.y < p.y + p.h + 4 && box.y + box.h + 4 > p.y,
+    );
+    if (crowded && !forced) return;
+    if (!forced && sel) {
+      const [sx, sy] = cityXY(sel);
+      if (box.x < sx + 88 && box.x + box.w > sx - 88 && box.y < sy + 48 && box.y + box.h > sy - 56) return;
+    }
+    placed.push(box);
+    ctx.fillStyle = "#000018";
+    ctx.fillRect(px - 2, py - 2, box.w + 4, box.h + 4);
+    ctx.fillStyle = "#f8f8f8";
+    ctx.fillRect(px, py, box.w, box.h);
+    const liberated = (ensureCampaign(state).liberated || []).includes(text);
+    ctx.fillStyle = forced || liberated ? "#f8d800" : "#101050";
+    ctx.fillText(text, px + 4, py + 18);
   });
   ctx.font = PX_FONT;
 }
@@ -1873,10 +1899,10 @@ function plateAwayFromSelected(r, px, py, pw, ph) {
     h: ph + 4,
   };
   const hit =
-    box.x < sx + 70 &&
-    box.x + box.w > sx - 70 &&
-    box.y < sy + 56 &&
-    box.y + box.h > sy - 40;
+    box.x < sx + 96 &&
+    box.x + box.w > sx - 96 &&
+    box.y < sy + 64 &&
+    box.y + box.h > sy - 48;
   if (!hit) return [px, py];
   const [cx, cy] = cityXY(r);
   return [px, Math.max(4, Math.round(cy - ph - 14))];
@@ -1885,8 +1911,8 @@ function plateAwayFromSelected(r, px, py, pw, ph) {
 function drawHereChip(ctx, r, x, y) {
   ctx.font = PLATE_FONT;
   const nameW = ctx.measureText(r.short).width;
-  const pw = Math.max(48, Math.ceil((nameW + 16) / 4) * 4);
-  const ph = 16;
+  const pw = Math.max(64, Math.ceil((nameW + 24) / 4) * 4);
+  const ph = 28;
   let px = Math.round(x - pw / 2);
   let py = Math.round(y - ph - 12);
   px = Math.max(4, Math.min(996 - pw, px));
@@ -1899,7 +1925,7 @@ function drawHereChip(ctx, r, x, y) {
   ctx.fillStyle = "#101050";
   ctx.fillRect(px + 3, py + 3, pw - 6, ph - 6);
   ctx.fillStyle = "#f8d800";
-  ctx.fillText(r.short, px + 8, py + 12);
+  ctx.fillText(r.short, px + 8, py + 20);
 }
 
 function drawCityPlate(ctx, r, selected) {
@@ -1909,7 +1935,8 @@ function drawCityPlate(ctx, r, selected) {
   const here = p.region === r.id;
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? String(r.garrison) : "?";
-  if (!selected && !here && r.id !== hoverRegion) return;
+  const keepGulf = r.id === "gulf_passage";
+  if (!selected && !here && r.id !== hoverRegion && !keepGulf) return;
   if (here && !selected) {
     drawHereChip(ctx, r, x, y);
     return;
@@ -1917,8 +1944,8 @@ function drawCityPlate(ctx, r, selected) {
   ctx.font = PLATE_FONT;
   const nameW = ctx.measureText(r.short).width;
   const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(88, Math.ceil((nameW + garrW + 28) / 4) * 4);
-  const ph = 20;
+  const pw = Math.max(120, Math.ceil((nameW + garrW + 40) / 4) * 4);
+  const ph = 32;
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
   px = Math.max(4, Math.min(996 - pw, px));
@@ -1928,7 +1955,7 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillStyle = "#000018";
   ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
   if (selected) {
-    ctx.fillStyle = Math.floor(Date.now() / 240) % 2 === 0 ? "#f8d800" : "#f8f8f8";
+    ctx.fillStyle = "#f8d800";
     ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
     ctx.fillStyle = "#000018";
     ctx.fillRect(px - 2, py - 2, pw + 4, ph + 4);
@@ -1940,9 +1967,9 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillStyle = fac ? fac.color : "#607838";
   ctx.fillRect(px + 4, py + 4, 5, ph - 8);
   ctx.fillStyle = "#f8d800";
-  ctx.fillText(r.short, px + 12, py + 15);
+  ctx.fillText(r.short, px + 14, py + 23);
   ctx.fillStyle = "#f8f8f8";
-  ctx.fillText(garr, px + pw - 10 - garrW, py + 15);
+  ctx.fillText(garr, px + pw - 12 - garrW, py + 23);
 }
 
 function drawMap() {
@@ -1969,7 +1996,7 @@ function drawMap() {
   ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
-    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0;
+    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
     drawPixelRoadFull(ctx, rd.a, rd.b, on);
   });
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
@@ -1993,9 +2020,8 @@ function drawCityMarkHi(ctx, r, selected) {
   drawFactionFlag(ctx, x, y, fill, selected);
   const p = playerOf(state);
   if (p.region === r.id) {
-    const hop = mapFx?.hop && Math.floor((performance.now() - mapFx.t0) / 90) % 2 === 0 ? -4 : 0;
     ctx.fillStyle = "#f8d800";
-    ctx.fillRect(x - 12, y - 22 + hop, 4, 4);
+    ctx.fillRect(x - 12, y - 26, 5, 5);
   }
   if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
     ctx.fillStyle = "#d080f8";
@@ -2011,11 +2037,11 @@ function drawCityMarkHi(ctx, r, selected) {
 function ensureMapPulse() {
   if (mapPulseTimer) return;
   mapPulseTimer = setInterval(() => {
-    if (!state || state.phase !== "strategy") return;
+    if (!state || state.phase !== "strategy" || !mapFx) return;
     if ($("battle") && !$("battle").hidden) return;
     if ($("duel") && !$("duel").hidden) return;
     drawMap();
-  }, 240);
+  }, 420);
 }
 
 function openBattle() {
@@ -2344,7 +2370,7 @@ function drawDuelYard(now) {
   const h = canvas.height;
   ctx.imageSmoothingEnabled = false;
   paintDuelArena(ctx, w, h, state.duel.arena?.id || "porch", now);
-  const bob = Math.floor(now / 280) % 2;
+  const bob = Math.floor(now / 480) % 2;
   const flash = state.duel.last && state.duel.beat === "resolve";
   const youHit = flash && state.duel.last.youDmg > 0;
   const foeHit = flash && state.duel.last.foeDmg > 0;
@@ -2365,7 +2391,7 @@ function px(ctx, x, y, w, h, c) {
 }
 
 function paintDuelArena(ctx, w, h, id, now) {
-  const twinkle = Math.floor(now / 400) % 2;
+  const twinkle = Math.floor(now / 800) % 2;
   if (id === "roadhouse") {
     px(ctx, 0, 0, w, 56, "#203040");
     px(ctx, 0, 56, w, h, "#d0d8e0");

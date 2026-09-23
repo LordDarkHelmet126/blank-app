@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — Look-demo paint: Bethel here-chip stays in AK; thicker roads/plates; stronger ownership wash.
+**Last checkpoint:** 2026-09-23 — one contiguous US coastline (biomes inside the outline, not state rectangles). Look demo still opens on Seattle.
 
 ## How to run
 
@@ -18,11 +18,13 @@ node tests/simulate.mjs
 
 **Theater look:** `/?demo=look` or `/?demo=terrain` (Seattle selected, Juneau–Seattle pulse). Focus: `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`.
 
-## PNW polish (first theater pass)
+## US silhouette (this pass)
 
-WA–PNW is the hero biome on the look demo. West of the Cascades (Seattle / Olympia / Portland) is darker wet evergreen with Sound mist. A height ridge sits between the Sound and Spokane so the west→east road reads as a climb (no new leap edges). East WA is drier pine, still forest-family. Seattle mark is main-street; Olympia and Spokane are mills.
+The lower 48 is one connected coastline — Florida, Texas, California, the Great Lakes, and New England. State rectangles are not land and are not painted as separate tiles. Biomes (wet forest, Rockies, desert, plains, eastern woods) sit inside that outline. Alaska and Yukon stay a northwest spur, with a water gap for the Juneau–Seattle ferry. City nodes sit on that land. Neighbor lists are unchanged (no new roads, no leaps). Gulf/foreign desks were not moved.
 
-Look-demo paint fix: the “you are here” nameplate is a compact chip anchored above the home city (Bethel stays in AK, not on the Seattle box). Roads and selected plates are larger; ownership wash/edge is stronger.
+Terrain paints at 1000×620 (one pixel per map unit). Coasts are a hard cream rim. Roads are a thin gold line. 1980s marks stay ranch, elevator, street, mill, tower, bunker, pump. HUD type is 16px; nameplates and state codes sit on solid high-contrast plates. Ownership wash is stronger, with a dark edge under the faction color. Selection and road pulses are steady or slow — no strobe.
+
+PNW still reads on the look demo: wet Sound forest, a Cascades ridge toward Spokane, Seattle as main-street. The “you are here” chip stays on Bethel in Alaska.
 **States board:** dock → States (state → territories held/key · geo tags · adjacent or locked).
 **States demo:** `/?demo=states` or `/?demo=map` still works.
 
