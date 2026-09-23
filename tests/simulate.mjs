@@ -39,6 +39,10 @@ import {
   geoOf,
   geoYield,
   geoTags,
+  campaignBeat,
+  holdWord,
+  stateHoldWord,
+  springPushCard,
 } from "../js/engine.js";
 import {
   createDuel,
@@ -110,7 +114,17 @@ assert(
 const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
 const cities = content.regions.regions;
-assert(cities.length >= 32 && cities.length <= 42, `Need Alaska + west + east-approach + foreign stubs, got ${cities.length}`);
+assert(cities.length === 38, `graph frozen at 38 nodes, got ${cities.length}`);
+assert(cities.reduce((n, r) => n + (r.neighbors || []).length, 0) === 118, "no new adjacency edges");
+assert(!["washington_dc", "manhattan", "kansas_city", "casper", "vancouver", "fargo", "minot"].some((id) => cities.some((r) => r.id === id)), "no silhouette-fight cities");
+assert(!/wolverine/i.test(JSON.stringify(content.regions) + JSON.stringify(content.factions)), "no Wolverines trademark");
+assert(content.regions.campaign?.chronology?.cell === "Ridge Runners", "Front Range cell is Ridge Runners");
+assert(
+  content.regions.campaign.chronology.rows.map((r) => r.name).join("|") ===
+    "Invasion Day|Stall|Advent Crown|Prairie Fire|Gulf Hammer|Border Fury|Foreign desks",
+  "locked phase board labels"
+);
+assert(content.regions.campaign.chronology.rows.find((r) => r.id === "gulf").subtitle === "Long Rifle", "Gulf Hammer subtitle is Long Rifle");
 const stateCodes = [...new Set(cities.map((r) => r.state))].sort();
 assert(["AK", "CO", "ID", "KS", "MO", "MT", "NE", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
 assert(cities.filter((r) => r.state === "CO").map((r) => r.id).sort().join() === "colorado_springs,denver,grand_junction", "Colorado city cluster");
@@ -414,6 +428,18 @@ westKeys.forEach((id) => {
 tickCampaign(lib);
 assert(lib.campaign.nationalLeader && lib.campaign.phase >= 2, "8 west-bloc states name a national leader");
 assert(lib.campaign.phase >= 3, "Phase 3 foreign desks unlock with the council");
+assert(campaignBeat(lib).now.id === "gulf", `Gulf Hammer while Missouri is still short: ${campaignBeat(lib).now.id}`);
+assert(campaignBeat(lib).now.name === "Gulf Hammer", "Gulf Hammer label");
+assert(lib.log.some((l) => /Prairie Fire/.test(l.text)), "tick copy names Prairie Fire");
+assert(lib.log.some((l) => /Foreign desks/.test(l.text)), "tick copy names Foreign desks");
+regionOf(lib, "st_louis").owner = "northern_front";
+tickCampaign(lib);
+assert(campaignBeat(lib).now.id === "border", `Border Fury once Missouri is held and the plains are short: ${campaignBeat(lib).now.id}`);
+["omaha", "topeka"].forEach((id) => {
+  regionOf(lib, id).owner = "northern_front";
+});
+tickCampaign(lib);
+assert(campaignBeat(lib).now.id === "desks" && campaignBeat(lib).now.name === "Foreign desks", `Foreign desks after the states on the board are held: ${campaignBeat(lib).now.name}`);
 assert(travelUnlocked(lib, regionOf(lib, "far_russia")), "Russia walkable after restore");
 assert(travelUnlocked(lib, regionOf(lib, "gulf_passage")), "Gulf Sealift walkable after Phase 3");
 assert(travelUnlocked(lib, regionOf(lib, "far_cuba")), "Cuba walkable after Phase 3");
@@ -430,7 +456,8 @@ assert(res.ok && playerOf(lib).region === "far_cuba", `travel Cuba: ${res.messag
 res = act(lib, content, "travel", { regionId: "far_nicaragua" });
 assert(res.ok && playerOf(lib).region === "far_nicaragua", `travel Nicaragua: ${res.message}`);
 const sponsorLine = fireSponsor(lib);
-assert(sponsorLine && lib.campaign.phase === 4 && lib.campaign.sponsorAdded, "sponsor adds Korea front");
+assert(sponsorLine && /Foreign desks/.test(sponsorLine) && lib.campaign.phase === 4 && lib.campaign.sponsorAdded, "sponsor adds Korea front");
+assert(/Gulf Sealift/.test(campaignBeat(lib).now.scan) || campaignBeat(lib).now.id === "desks", "Foreign desks still name Gulf Sealift");
 assert(travelUnlocked(lib, regionOf(lib, "far_korea")), "Korea walkable after sponsor");
 console.log("ok campaign phases 1–4");
 
@@ -720,6 +747,41 @@ assert(/function campaignHtml/.test(uiSrc) && /btn-states/.test(uiSrc), "States 
 assert(/Cannot leap/.test(uiSrc) && /route locked/.test(uiSrc), "NEXT and board explain no-leap");
 assert(/approachRoads\(st, here, sel\)/.test(uiSrc), "NEXT leap copy uses destination approach roads");
 assert(/Geo:/.test(uiSrc), "city report shows geo tags");
+assert(/phase-board/.test(uiSrc) && /campaignBeat/.test(uiSrc), "phase board is on the HUD");
+assert(/demo"\) === "phase"/.test(uiSrc), "demo=phase opens the board");
+assert(/NEXT ·/.test(uiSrc), "NEXT names the current phase");
+const engineSrc = readFileSync(new URL("../js/engine.js", import.meta.url), "utf8");
+assert(/return "occupied"/.test(engineSrc) && /return "contested"/.test(engineSrc) && /return "held"/.test(engineSrc), "occupied / contested / held");
+assert(/holdWord/.test(uiSrc) && /stateHoldWord/.test(uiSrc), "city and states use hold words");
+const freshBeat = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+const week0Beat = campaignBeat(freshBeat);
+assert(week0Beat.now.id === "stall" && week0Beat.now.name === "Stall", `week 0 beat is Stall: ${week0Beat.now.name}`);
+assert(week0Beat.rows.find((r) => r.id === "invasion").status === "past", "Invasion Day is already past");
+assert(week0Beat.rows.find((r) => r.id === "crown").status === "next", "Advent Crown is next at week 0");
+assert(week0Beat.rows.map((r) => r.name).join("|") === "Invasion Day|Stall|Advent Crown|Prairie Fire|Gulf Hammer|Border Fury|Foreign desks", "board renders the locked labels");
+assert(holdWord(freshBeat, regionOf(freshBeat, "anchorage")) === "occupied", "POF ground is occupied");
+assert(holdWord(freshBeat, regionOf(freshBeat, "bethel")) === "contested", "empty Bethel is contested");
+assert(holdWord(freshBeat, regionOf(freshBeat, "denver")) === "contested", "local Denver banner is contested");
+assert(stateHoldWord(freshBeat, stateControl(freshBeat).find((s) => s.id === "AK")) === "contested", "split Alaska is contested");
+const omaha = regionOf(freshBeat, "omaha");
+assert(omaha.scar === "Offutt glass" && geoTags(omaha).some((t) => t.id === "scar"), "Omaha scar tag");
+const scarYield = geoYield(omaha, { food: 1, commerce: 1 });
+const plainYield = geoYield({ geo: omaha.geo }, { food: 1, commerce: 1 });
+assert(scarYield.food === plainYield.food && scarYield.gold === plainYield.gold, "scar tag does not change yields");
+act(freshBeat, content, "raise_banner");
+assert(holdWord(freshBeat, regionOf(freshBeat, "bethel")) === "held", "raised Bethel is held");
+assert(freshBeat.log.some((l) => /Stall\./.test(l.text)), "raise banner ticks Stall");
+freshBeat.week = 13;
+freshBeat._season = seasonOf(13);
+const springCard = springPushCard(freshBeat, true);
+assert(springCard && springCard.title === "Advent Crown", `Advent Crown chronicle: ${springCard && springCard.title}`);
+assert(/Seattle/.test(springCard.text) && /Cheyenne/.test(springCard.text) && /St\. Louis/.test(springCard.text), "Advent Crown uses cities on the graph");
+assert(!/Vancouver|Casper|Wolverine|Kansas City/.test(springCard.text), "Advent Crown does not invent cities");
+assert(!springPushCard(freshBeat, true), "Advent Crown fires once");
+assert(campaignBeat(freshBeat).now.name === "Advent Crown", "week 13 board is Advent Crown");
+freshBeat.week = 40;
+assert(campaignBeat(freshBeat).now.name === "Stall", "second winter returns to Stall");
+assert(campaignBeat(freshBeat).rows.find((r) => r.id === "crown").status === "past", "Advent Crown stays past after summer");
 assert(/id: "war_council"/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "war council action");
 assert(/flashDing/.test(uiSrc) && /CHAIR FILLED/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "chair/fame ding");
 const tease = weekTease(createNewGame(content, { seed: 3, difficulty: "easy", name: "Casey Flint", background: "scout" }));

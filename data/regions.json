@@ -58,6 +58,76 @@
       "name": "Peninsula — Korea",
       "short": "Korea",
       "copy": "A far-shore desk offers crates to the occupation. That country is now a takeable front."
+    },
+    "chronology": {
+      "cell": "Ridge Runners",
+      "note": "Locked labels on the gates already in the campaign. No new roads, no new cities. Ridge Runners is copy for the Front Range cell, not a new owner. Nuke scars are tags only where a city already exists.",
+      "rows": [
+        {
+          "id": "invasion",
+          "mark": "1",
+          "name": "Invasion Day",
+          "phase": 1,
+          "scan": "Bering + Rio Grande. Omaha scar only.",
+          "coach": "Invasion Day is past. Bering and the Rio Grande. Omaha carries the only scar tag. No new cities.",
+          "tick": "Invasion Day is past. Omaha keeps the scar tag."
+        },
+        {
+          "id": "stall",
+          "mark": "2",
+          "name": "Stall",
+          "phase": 1,
+          "scan": "Cheyenne to Kansas and Missouri. No Canada.",
+          "coach": "Stall. Winter dig-in from Cheyenne into Kansas and Missouri. The line never crosses into Canada.",
+          "tick": "Stall. Winter dig-in from Cheyenne toward Kansas and Missouri."
+        },
+        {
+          "id": "crown",
+          "mark": "3",
+          "name": "Advent Crown",
+          "phase": 1,
+          "scan": "First offensive fails. Seattle, Cheyenne, St. Louis.",
+          "coach": "Advent Crown. The first offensive fails and stalls. Pressure sits on Seattle, Cheyenne, and St. Louis.",
+          "tick": "Advent Crown. The first offensive fails. Seattle, Cheyenne, and St. Louis take the pressure."
+        },
+        {
+          "id": "prairie",
+          "mark": "4",
+          "name": "Prairie Fire",
+          "phase": 2,
+          "scan": "West to east. Ridge Runners.",
+          "coach": "Prairie Fire. Ridge Runners break out west to east on the states already on this board.",
+          "tick": "Prairie Fire. Ridge Runners move with the west-to-east breakout."
+        },
+        {
+          "id": "gulf",
+          "mark": "5",
+          "name": "Gulf Hammer",
+          "phase": 2,
+          "subtitle": "Long Rifle",
+          "scan": "St. Louis opens Gulf Sealift.",
+          "coach": "Gulf Hammer. Long Rifle. The gulf gate is St. Louis, then Gulf Sealift. No new coast cities.",
+          "tick": "Gulf Hammer. Long Rifle. St. Louis is the gulf gate."
+        },
+        {
+          "id": "border",
+          "mark": "6",
+          "name": "Border Fury",
+          "phase": 2,
+          "scan": "Clear the states on this board.",
+          "coach": "Border Fury. Clear Nebraska, Kansas, and Missouri — the last states on this board.",
+          "tick": "Border Fury. Clear the last states on this board."
+        },
+        {
+          "id": "desks",
+          "mark": "7",
+          "name": "Foreign desks",
+          "phase": 3,
+          "scan": "Russia via Bering. Cuba via Gulf Sealift.",
+          "coach": "Foreign desks. Russia by the Bering road. Cuba and Nicaragua by Gulf Sealift.",
+          "tick": "Foreign desks. Russia by the Bering road. Cuba and Nicaragua by Gulf Sealift."
+        }
+      ]
     }
   },
   "coast": [
@@ -2381,7 +2451,8 @@
         "sun": 1,
         "weather": 0,
         "defense": 0
-      }
+      },
+      "scar": "Offutt glass"
     },
     {
       "id": "lincoln",
