@@ -144,6 +144,17 @@ function openDemoDuel() {
   render();
 }
 
+function standOnBethel(garrison) {
+  const home = regionOf(state, "bethel");
+  const player = playerOf(state);
+  player.region = home.id;
+  if (!player.faction && !home.owner) act(state, content, "raise_banner");
+  if (player.faction && !home.owner) home.owner = player.faction;
+  if (home.owner === player.faction) home.garrison = garrison;
+  state.ap = Math.max(state.ap, 4);
+  return home;
+}
+
 function openDemoSiege() {
   const params = demoQuery();
   const node = params.get("node");
@@ -157,8 +168,7 @@ function openDemoSiege() {
     if (fight.battle && state.battle) openBattle();
     return;
   }
-  const home = regionOf(state, "bethel");
-  home.garrison = 100;
+  standOnBethel(100);
   const bowl = regionOf(state, "anchorage");
   const walls = Number(params.get("walls"));
   if (Number.isFinite(walls) && walls > 0) bowl.walls = Math.min(90, Math.round(walls));
@@ -179,8 +189,7 @@ function openDemoBattle(withHull) {
     }
     return;
   }
-  const home = regionOf(state, "bethel");
-  home.garrison = 90;
+  standOnBethel(90);
   if (withHull) {
     if (!state.research.unlocked.includes("tracked_hulls")) state.research.unlocked.push("tracked_hulls");
     regionOf(state, "nome").garrison = 80;
@@ -189,6 +198,7 @@ function openDemoBattle(withHull) {
     regionId: "nome",
     troops: withHull ? 90 : undefined,
   });
+  if (!fight.ok) toast(fight.message || "Field demo could not march.");
   if (fight.battle && state.battle) {
     state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
     openBattle();
