@@ -222,13 +222,14 @@ function startSliceState() {
 export async function boot(loaded) {
   content = loaded;
   bindChrome();
+  // Reveal the shell before scene photos. A hung image must not leave #boot up.
+  $("app").hidden = false;
+  $("boot").hidden = true;
   try {
     await bakeScenes();
   } catch (err) {
     console.warn("scene bake failed", err);
   }
-  $("app").hidden = false;
-  $("boot").hidden = true;
   const params = new URLSearchParams(location.search);
   const fxKind = parseDemoFx(params);
   if (params.get("demo") === "slice" || fxKind) {
