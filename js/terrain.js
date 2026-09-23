@@ -428,7 +428,7 @@ const TONE = {
 
 /** Soft texture inside the coastline. Weights fade; they are not state rectangles. */
 function landRgb(x, y) {
-  const grain = ((hash2(x, y) - 0.5) * 16) | 0;
+  const grain = ((hash2(x, y) - 0.5) * 8) | 0;
   const bump = (rgb) => rgb.map((c) => Math.max(0, Math.min(255, c + grain)));
   if (y < 130) {
     const t = Math.max(0, Math.min(1, (y - 14) / 100));
@@ -895,13 +895,13 @@ export function paintTheaterTerrain(o, state, opts) {
   lines.forEach((line) => {
     const wash = washOf(line.id);
     if (!wash || !line.ring) return;
-    o.globalAlpha = wash.kind === "held" || wash.kind === "occupied" ? 0.46 : 0.32;
+    o.globalAlpha = wash.kind === "held" || wash.kind === "occupied" ? 0.28 : 0.16;
     o.fillStyle = wash.color;
     fillPoly(o, line.ring);
   });
   o.globalAlpha = 1;
   lines.forEach((line) => {
-    if (line.ring) strokePoly(o, line.ring, "#140e08", 2);
+    if (line.ring) strokePoly(o, line.ring, "#24180c", 1);
   });
   lines.forEach((line) => {
     const wash = washOf(line.id);
@@ -910,11 +910,11 @@ export function paintTheaterTerrain(o, state, opts) {
     strokePoly(o, line.ring, edge, wash.kind === "occupied" ? 3 : 2);
   });
   if (state.mainland) {
-    strokePoly(o, state.mainland, "#102018", 4);
+    strokePoly(o, state.mainland, "#102018", 5);
     strokePoly(o, state.mainland, "#f4efe2", 2);
   }
   if (state.coast) {
-    strokePoly(o, state.coast, "#102018", 3);
+    strokePoly(o, state.coast, "#102018", 4);
     strokePoly(o, state.coast, "#f4efe2", 2);
   }
   (state.spurs || []).forEach((poly) => {

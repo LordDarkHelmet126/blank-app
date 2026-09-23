@@ -53,12 +53,19 @@
             <div class="cmd-tabs" id="cmd-tabs"></div>
             <div id="cmd-actions" class="cmd-actions"></div>
           </section>
+          <section class="card map-legend-card" id="legend-card" hidden>
+            <div class="chrome-head">
+              <span class="panel-title">Banners</span>
+              <span class="panel-why">L hides this. Not on the map.</span>
+            </div>
+            <div class="map-legend" id="legend"></div>
+          </section>
         </aside>
         <section class="map-wrap">
           <header class="chrome-head map-head">
             <span class="panel-title">Theater</span>
-            <p class="map-caption" id="map-caption">MAP — US coastline · state washes · pale roads</p>
-            <div class="map-legend" id="legend"></div>
+            <p class="map-caption" id="map-caption">MAP — US coastline</p>
+            <button type="button" id="btn-legend" title="Banners (L)">Banners</button>
           </header>
           <canvas id="map" width="1000" height="620" aria-label="Continental United States theater map"></canvas>
         </section>

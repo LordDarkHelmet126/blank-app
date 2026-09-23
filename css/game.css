@@ -204,20 +204,21 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
   pointer-events: none;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: right;
 }
-.map-head { flex-wrap: wrap; align-items: center; }
+.map-head { flex-wrap: nowrap; align-items: center; }
+.map-legend-card { flex: 0 1 auto; max-height: 160px; overflow: auto; }
 .map-legend {
-  position: static;
-  flex: 1 1 240px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  margin-left: auto;
-  font-size: 12px;
+  gap: 6px 8px;
+  padding: 8px;
+  font-size: 16px;
   line-height: 1.4;
   background: transparent;
-  padding: 0;
   border: 0;
   color: var(--ice);
 }

@@ -419,6 +419,7 @@ function bindChrome() {
   };
   $("btn-factions").onclick = () => showModal(factionsHtml());
   $("btn-states").onclick = () => showModal(campaignHtml());
+  $("btn-legend").onclick = () => toggleLegend();
   $("btn-missions").onclick = () => {
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
@@ -452,6 +453,9 @@ function bindChrome() {
       return;
     }
     if (e.key === "e" && state && state.phase === "strategy") run("end_week");
+    if ((e.key === "l" || e.key === "L") && state?.phase === "strategy" && e.target?.tagName !== "INPUT" && e.target?.tagName !== "TEXTAREA") {
+      toggleLegend();
+    }
   });
 }
 
@@ -1644,11 +1648,21 @@ function renderLog() {
     .join("");
 }
 
+/** East and Gulf states have no cities. They read occupied up to the Cheyenne–KS/MO stall.
+ *  CA, NV, AZ, NM stay bare — no invented owners. */
+const OCCUPIED_EAST = new Set(
+  "ND SD MN IA OK TX AR LA WI IL IN MI OH KY TN MS AL GA FL SC NC VA WV PA NY NJ DE MD CT RI MA VT NH ME".split(" "),
+);
+
 function stateWash(postal) {
-  const cities = state.regions.filter((r) => r.stateCode === postal && !(r.unlockPhase > 0));
-  if (!cities.length) return null;
+  const code = String(postal || "").toUpperCase();
+  const cities = state.regions.filter((r) => r.stateCode === code && !(r.unlockPhase > 0));
+  if (!cities.length) {
+    if (OCCUPIED_EAST.has(code)) return { color: "#9a3b3b", kind: "occupied" };
+    return null;
+  }
   const p = playerOf(state);
-  const liberated = (ensureCampaign(state).liberated || []).includes(postal);
+  const liberated = (ensureCampaign(state).liberated || []).includes(code);
   if (liberated || (p?.faction && cities.every((r) => r.owner === p.faction))) {
     const fac = p?.faction ? factionOf(state, p.faction) : null;
     return { color: fac?.color || "#d4a056", kind: "held" };
@@ -1681,6 +1695,12 @@ function foreignCorridors() {
   add("far_cuba", [470, 568], "#8c4a4a");
   add("far_nicaragua", [620, 572], "#8c4a4a");
   return out;
+}
+
+function toggleLegend() {
+  const card = $("legend-card");
+  if (!card) return;
+  card.hidden = !card.hidden;
 }
 
 function renderLegend() {
@@ -2033,6 +2053,98 @@ function drawFrontSeg(ctx, a, b) {
   ctx.restore();
 }
 
+function drawMapPlate(ctx, text, x, y, ink) {
+  ctx.font = PX_FONT;
+  const w = Math.ceil(ctx.measureText(text).width);
+  const pw = w + 12;
+  const ph = 22;
+  const px = Math.max(2, Math.min(998 - pw, Math.round(x)));
+  const py = Math.max(2, Math.min(616 - ph, Math.round(y)));
+  ctx.fillStyle = "#000018";
+  ctx.fillRect(px - 2, py - 2, pw + 4, ph + 4);
+  ctx.fillStyle = "#f8f8f8";
+  ctx.fillRect(px, py, pw, ph);
+  ctx.fillStyle = ink || "#101050";
+  ctx.fillText(text, px + 6, py + 16);
+}
+
+function drawAxis(ctx, a, b, color) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = -uy;
+  const py = ux;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#1a0808";
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.lineTo(b[0], b[1]);
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  const tip = b;
+  const baseX = b[0] - ux * 18;
+  const baseY = b[1] - uy * 18;
+  ctx.fillStyle = "#1a0808";
+  ctx.beginPath();
+  ctx.moveTo(tip[0] + ux * 4, tip[1] + uy * 4);
+  ctx.lineTo(baseX + px * 12, baseY + py * 12);
+  ctx.lineTo(baseX - px * 12, baseY - py * 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(tip[0], tip[1]);
+  ctx.lineTo(baseX + px * 8, baseY + py * 8);
+  ctx.lineTo(baseX - px * 8, baseY - py * 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Original geo marks. Dark crater, amber ring — not a copied cloud icon. */
+const NUKE_SCARS = [
+  { x: 813, y: 332, name: "DC", lx: 12, ly: -26 },
+  { x: 844, y: 304, name: "NY", lx: -46, ly: -26 },
+  { x: 528, y: 329, name: "KC", lx: -40, ly: 14 },
+  { x: 506, y: 290, name: "Offutt", lx: -112, ly: 6 },
+  { x: 418, y: 155, name: "Minot", lx: -16, ly: 14 },
+  { x: 488, y: 161, name: "GF", lx: 12, ly: 8 },
+  { x: 390, y: 233, name: "Ellsworth", lx: -36, ly: 14 },
+];
+
+function drawNukeScars(ctx) {
+  NUKE_SCARS.forEach((s) => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a0808";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#e8a020";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "#f8d800";
+    ctx.fill();
+    drawMapPlate(ctx, s.name, s.x + s.lx, s.y + s.ly, "#6a2808");
+  });
+}
+
+/** Visual axes only. They are not roads and do not change adjacency. */
+function drawInvasionAxes(ctx) {
+  drawAxis(ctx, [6, 34], [86, 86], "#7aa0b4");
+  drawMapPlate(ctx, "BERING", 8, 4, "#103040");
+  drawAxis(ctx, [334, 467], [482, 579], "#8c4a4a");
+  drawMapPlate(ctx, "Border Fury", 348, 418, "#101050");
+  drawMapPlate(ctx, "Prairie Fire", 408, 296, "#101050");
+  drawMapPlate(ctx, "Gulf", 612, 448, "#101050");
+}
+
 function drawStallFront(ctx) {
   const ids = ["cheyenne", "omaha", "lincoln", "topeka", "wichita", "st_louis"];
   let prev = null;
@@ -2094,6 +2206,8 @@ function drawMap() {
     drawPixelRoadFull(ctx, rd.a, rd.b, on);
   });
   drawStallFront(ctx);
+  drawInvasionAxes(ctx);
+  drawNukeScars(ctx);
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;
