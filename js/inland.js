@@ -194,6 +194,18 @@ export function stampBattleDesk(battle, id) {
 }
 
 /**
+ * Presentation stamp for a court / officers view already opened.
+ * Unknown ids do nothing. Does not touch officers, chairs, ranks, or the map.
+ */
+export function stampCourtDesk(view, id) {
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!view || !desk || !look) return null;
+  view.deskId = id;
+  return id;
+}
+
+/**
  * Combat view for a locked id. Does not write neighbors, polygons, or biomes.
  * Painted walls (walls > 0) on a live node replace the desk preset.
  */

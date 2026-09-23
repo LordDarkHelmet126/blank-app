@@ -1291,6 +1291,82 @@ hr {
   color: #000000;
   font-size: 12px;
 }
+.court-desk,
+.officers-desk {
+  display: none;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 4px solid #f8f8f8;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.court-desk { grid-column: 1 / -1; margin: 0; border-left: 0; border-right: 0; }
+.court-desk strong,
+.officers-desk strong { font-size: 15px; letter-spacing: 0.04em; }
+.court-desk span,
+.officers-desk span { font-size: 12px; line-height: 1.45; text-align: right; }
+.court-strip[data-desk] {
+  background-color: var(--desk-bg, #000010);
+  background-image: var(--desk-backdrop, none);
+  border-color: var(--desk-edge, #f8f8f8);
+  padding: 8px;
+  gap: 4px;
+}
+.court-strip[data-desk] .chrome-head,
+.court-strip[data-desk] .court-chair {
+  background: var(--desk-panel, #000000);
+  border-color: var(--desk-edge, #f8f8f8);
+}
+.court-strip[data-desk] .court-desk {
+  display: flex;
+  background: var(--desk-strip, #181818);
+  border-color: var(--desk-edge, #f8f8f8);
+  color: var(--desk-ink, #f8f8f8);
+}
+.court-strip[data-desk] .court-desk strong { color: var(--desk-ink, #f8f8f8); }
+.court-strip[data-desk] .court-desk span { color: var(--desk-read, #f8f8f8); }
+.court-strip[data-desk] .panel-title { color: #f8d800; }
+.court-strip[data-desk] .court-next {
+  background: #f8d800;
+  color: #000000;
+}
+.modal-card.officers-card[data-desk] {
+  background-color: var(--desk-bg, #07071a);
+  background-image: var(--desk-backdrop, none);
+  border-color: var(--desk-edge, #f8f8f8);
+  box-shadow: 0 0 0 4px var(--desk-edge, #f8f8f8);
+}
+.modal-card.officers-card[data-desk] .officers-desk {
+  display: flex;
+  background: var(--desk-strip, #181818);
+  border-color: var(--desk-edge, #f8f8f8);
+  color: var(--desk-ink, #f8f8f8);
+}
+.modal-card.officers-card[data-desk] .officers-desk strong { color: var(--desk-ink, #f8f8f8); }
+.modal-card.officers-card[data-desk] .officers-desk span { color: var(--desk-read, #f8f8f8); }
+.modal-card.officers-card[data-desk] .roster-ladder,
+.modal-card.officers-card[data-desk] .roster-create,
+.modal-card.officers-card[data-desk] .officer-row {
+  background: var(--desk-panel, #050510);
+  border-color: var(--desk-edge, #f8f8f8);
+}
+.modal-card.officers-card[data-desk] .roster-create {
+  border: 4px solid var(--desk-edge, #f8f8f8);
+  padding: 8px;
+}
+.modal-card.officers-card[data-desk] .roster-next,
+.modal-card.officers-card[data-desk] .roster-confirm,
+.modal-card.officers-card[data-desk] .roster-promote {
+  background: #f8d800;
+  color: #101010;
+}
+.modal-card.officers-card[data-desk] .roster-added {
+  background: #000000;
+  color: #f8d800;
+  border-color: #f8d800;
+}
 #btn-roster {
   background: #f8d800;
   color: #101010;

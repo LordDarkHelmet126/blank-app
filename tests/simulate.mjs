@@ -51,7 +51,7 @@ import {
   startInlandBattle,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
-import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk } from "../js/inland.js";
+import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk } from "../js/inland.js";
 import {
   regionIsSiege,
   createSiege,
@@ -510,6 +510,32 @@ for (const id of INLAND_IDS) assert(statusSrc.includes(`node=${id}`), `STATUS do
 for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=battle&node=${id}`), `STATUS documents field ${id}`);
 assert(statusSrc.includes("demo=battle&siege=1&node="), "STATUS documents the battle siege hook");
 assert(statusSrc.includes("Domestic field, unchanged: `/?demo=battle`"), "STATUS notes the default field");
+assert(/function stampCourtDesk/.test(readFileSync(new URL("../js/inland.js", import.meta.url), "utf8")), "court stamp lives with the desk tokens");
+assert(/stampCourtDesk\(courtView, params\.get\("node"\)\)/.test(siegeUi), "demo=officers and demo=court stamp node= onto the court view");
+assert(/function activeCourtDesk/.test(siegeUi) && /function demoCourtNode/.test(siegeUi), "court chrome reads node= even if create dropped the desk");
+assert(/Court — \$\{look\.strip\}/.test(siegeUi) && /Roster — \$\{look\.strip\}/.test(siegeUi), "court and roster titles use the siege strip");
+assert(/class="court-desk"/.test(siegeUi) && /class="officers-desk"/.test(siegeUi), "court and officers strips name the desk");
+assert(/NEXT: \$\{desk\.line\}\. \$\{look\.read\}\. \$\{courtBase\.replace/.test(siegeUi), "court NEXT names the desk then the existing order");
+assert(/NEXT: \$\{desk\.line\}\. \$\{look\.read\}\. \$\{baseNext\.replace/.test(siegeUi), "roster NEXT names the desk then the existing order");
+assert(/get\("demo"\) === "court"/.test(siegeUi), "demo=court hook");
+assert(/demo === "battle" \|\| demo === "duel" \|\| demo === "siege"/.test(siegeUi), "field, yard, and siege demos do not tint the court");
+assert(/\.court-strip\[data-desk\]/.test(siegeCss) && /\.modal-card\.officers-card\[data-desk\]/.test(siegeCss), "court and officers shells tint from the desk id");
+assert(/\.court-strip\[data-desk\] \.court-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "desk court NEXT stays amber");
+assert(/officers-card\[data-desk\] \.roster-confirm[\s\S]*?#f8d800/.test(siegeCss), "RANK CONFIRMED stays amber on a desk");
+assert(/officers-card\[data-desk\] \.roster-added[\s\S]*?#f8d800/.test(siegeCss), "FRIEND ADDED stays readable on a desk");
+const courtHost = { chairs: 5 };
+assert(stampCourtDesk(courtHost, "havana") === "havana" && courtHost.deskId === "havana" && courtHost.chairs === 5, "court stamp stores the desk and leaves the chairs");
+assert(stampCourtDesk(courtHost, "anchorage") == null && courtHost.deskId === "havana", "unknown court node= does not clear the desk");
+assert(stampCourtDesk({}, "nome") == null, "a domestic id is not a court desk");
+for (const id of INLAND_IDS) {
+  const host = {};
+  assert(stampCourtDesk(host, id) === id && host.deskId === id, `${id} court stamp`);
+  assert(inlandLook(id).strip && inlandDesk(id).line && inlandLook(id).read, `${id} court can read the siege look`);
+}
+for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=officers&node=${id}`), `STATUS documents officers ${id}`);
+for (const id of INLAND_IDS) assert(statusSrc.includes(`demo=court&node=${id}`), `STATUS documents court ${id}`);
+assert(statusSrc.includes("Domestic officers, unchanged: `/?demo=officers`"), "STATUS notes the default officers screen");
+assert(statusSrc.includes("Domestic court, unchanged: `/?demo=court`"), "STATUS notes the default court");
 console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });

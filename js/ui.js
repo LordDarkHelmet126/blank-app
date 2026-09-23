@@ -85,7 +85,7 @@ import {
   roadLabel,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
-import { inlandDesk, inlandLook, stampBattleDesk, stampDuelDesk } from "./inland.js";
+import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -94,6 +94,8 @@ let state;
 let selectedRegion = "bethel";
 let hoverRegion = null;
 let ladderNotice = "";
+/** Presentation-only court/officers desk. Not saved and not a map node. */
+const courtView = { deskId: null };
 let ladderKind = "rank";
 let ladderFlashId = "";
 
@@ -514,9 +516,20 @@ export async function boot(loaded) {
     }
     selectedRegion = "bethel";
     commandCat = "plot";
+    stampCourtDesk(courtView, params.get("node"));
     hideModal();
     render();
     showModal(officersHtml(), { kind: "officers" });
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "court") {
+    startSliceState();
+    stampCourtDesk(courtView, params.get("node"));
+    selectedRegion = "bethel";
+    commandCat = "plot";
+    hideModal();
+    render();
     afterFonts();
     return;
   }
@@ -766,7 +779,10 @@ function showModal(html, opts = {}) {
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
-  if (opts.kind === "officers") $("modal-card").scrollTop = 0;
+  if (opts.kind === "officers") {
+    paintCourtDesk();
+    $("modal-card").scrollTop = 0;
+  } else clearDeskPaint($("modal-card"));
   wireTitle();
   wireAfterRender();
   const close = $("modal-card").querySelector("[data-close]");
@@ -1073,16 +1089,26 @@ function rosterRow(o) {
 }
 
 function rosterChromeHtml() {
+  const deskId = syncCourtDesk();
+  const look = inlandLook(deskId);
+  const desk = inlandDesk(deskId);
+  const baseNext = rosterModalNext();
+  const next = desk && look ? `NEXT: ${desk.line}. ${look.read}. ${baseNext.replace(/^NEXT:\s*/, "")}` : baseNext;
+  const title = look ? `Roster — ${look.strip}` : "Roster ladder";
+  const strip =
+    look
+      ? `<p class="officers-desk"><strong>${esc(look.strip)}</strong><span>${esc(look.read)}</span></p>`
+      : "";
   const note = !ladderNotice
     ? ""
     : ladderKind === "friend"
       ? `<p class="roster-added" role="status"><strong>FRIEND ADDED</strong>${esc(ladderNotice)}</p>`
       : `<p class="roster-confirm" role="status"><strong>RANK CONFIRMED</strong>${esc(ladderNotice)}</p>`;
-  return `<section class="roster-ladder roster-top">
-    <div class="roster-head"><h2>Roster ladder</h2><button type="button" data-close>Close</button></div>
+  return `${strip}<section class="roster-ladder roster-top">
+    <div class="roster-head"><h2>${esc(title)}</h2><button type="button" data-close>Close</button></div>
     <p class="roster-lead">Friends join as players. Promote them here: Player → Officer → General.</p>
     ${note}
-    <p class="roster-next" role="status">${esc(rosterModalNext())}</p>
+    <p class="roster-next" role="status">${esc(next)}</p>
   </section>`;
 }
 
@@ -1452,6 +1478,7 @@ export function render() {
   $("officer-plate").innerHTML = officerHtml();
   $("city-stats").innerHTML = cityHtml();
   if ($("court-strip")) $("court-strip").innerHTML = courtHtml();
+  paintCourtDesk();
   renderActions();
   renderLog();
   renderLegend();
@@ -1523,7 +1550,15 @@ function courtHtml() {
   const fac = p.faction ? factionOf(state, p.faction) : null;
   const stripe = fac?.color || "#a0a0d0";
   const rung = rosterRungHint(state, p);
-  const courtNext = rung || "NEXT: Roster → Create a friend (they start as Player), or Plot → Hire fills an ADD chair.";
+  const deskId = syncCourtDesk();
+  const look = inlandLook(deskId);
+  const desk = inlandDesk(deskId);
+  const courtBase = rung || "NEXT: Roster → Create a friend (they start as Player), or Plot → Hire fills an ADD chair.";
+  const courtNext = desk && look ? `NEXT: ${desk.line}. ${look.read}. ${courtBase.replace(/^NEXT:\s*/, "")}` : courtBase;
+  const courtTitle = look ? `Court — ${look.strip}` : "Court";
+  const courtStrip = look
+    ? `<p class="court-desk"><strong>${esc(look.strip)}</strong><span>${esc(look.read)}</span></p>`
+    : "";
   const chairs = [];
   for (let i = 0; i < MAX_GENERALS; i++) {
     const g = gens[i];
@@ -1558,7 +1593,7 @@ function courtHtml() {
       </button>`);
     }
   }
-  return `<div class="chrome-head"><span class="panel-title">Court</span><button type="button" data-open-roster>Roster</button><span class="panel-why">Five chairs. Player → Officer → General.</span></div><p class="court-next">${esc(courtNext)}</p>${chairs.join("")}`;
+  return `<div class="chrome-head"><span class="panel-title">${esc(courtTitle)}</span><button type="button" data-open-roster>Roster</button><span class="panel-why">Five chairs. Player → Officer → General.</span></div>${courtStrip}<p class="court-next">${esc(courtNext)}</p>${chairs.join("")}`;
 }
 
 function cityHtml() {
@@ -3547,6 +3582,64 @@ function pulseSiegeMeter(id, value) {
 }
 
 const DESK_VARS = ["--desk-bg", "--desk-panel", "--desk-edge", "--desk-strip", "--desk-ink", "--desk-read", "--desk-backdrop"];
+
+function clearDeskPaint(el) {
+  if (!el) return;
+  delete el.dataset.desk;
+  DESK_VARS.forEach((name) => el.style.removeProperty(name));
+}
+
+function paintDeskHost(el, id) {
+  if (!el) return;
+  const look = inlandLook(id);
+  if (!look) {
+    clearDeskPaint(el);
+    return;
+  }
+  el.dataset.desk = id;
+  el.style.setProperty("--desk-bg", look.bg);
+  el.style.setProperty("--desk-panel", look.panel);
+  el.style.setProperty("--desk-edge", look.edge);
+  el.style.setProperty("--desk-strip", look.stripBg);
+  el.style.setProperty("--desk-ink", look.ink);
+  el.style.setProperty("--desk-read", look.readInk);
+  el.style.setProperty("--desk-backdrop", look.backdrop);
+}
+
+function demoCourtNode() {
+  const params = demoQuery();
+  const demo = params.get("demo");
+  if (demo === "battle" || demo === "duel" || demo === "siege") return null;
+  const courtish =
+    demo === "officers" ||
+    demo === "roster" ||
+    demo === "ladder" ||
+    demo === "court" ||
+    params.get("panel") === "officers";
+  if (!courtish) return null;
+  const node = params.get("node");
+  return inlandLook(node) ? node : null;
+}
+
+function activeCourtDesk() {
+  const fromDemo = demoCourtNode();
+  if (fromDemo) return fromDemo;
+  if (inlandLook(courtView.deskId)) return courtView.deskId;
+  return null;
+}
+
+function syncCourtDesk() {
+  const id = activeCourtDesk();
+  if (id) stampCourtDesk(courtView, id);
+  return inlandLook(courtView.deskId) ? courtView.deskId : null;
+}
+
+function paintCourtDesk() {
+  const id = syncCourtDesk();
+  paintDeskHost($("court-strip"), id);
+  const card = $("modal-card");
+  if (card && card.classList.contains("officers-card")) paintDeskHost(card, id);
+}
 
 function hideFieldDesk() {
   const strip = $("field-desk");

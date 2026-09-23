@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues open live Combat boards. Siege, yard, and field chrome name the six locked inland desks. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
+**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues open live Combat boards. Siege, yard, and field chrome name the six locked inland desks. Court and officers chrome does the same when `node=` is set. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
 
 ## Coach → foreign siege
 
@@ -29,6 +29,30 @@ Same board: `/?demo=battle&siege=1&node=<id>`. Field spawn and yard, one URL per
 Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
 On the look demo the approach chain and the siege desk are separate blocks in the NEXT strip (the line break is kept). On the coach demo the Raise-a-banner copy scrolls in `#coach-text` while the siege desk line stays pinned under it.
+
+## Foreign-desk court read
+
+Court and the officers ladder tied to one of the six locked inland ids keep the five chairs, create-a-friend, and Player → Officer → General. `/?demo=officers&node=<id>` and `/?demo=court&node=<id>` stamp that siege desk after the view opens, and the chrome also reads `node=` directly. The title is `Court — ` or `Roster — ` plus the siege strip (`HAVANA DESK`), the shell paints that theater, and the amber NEXT line leads with the desk name and read. FRIEND ADDED and RANK CONFIRMED stay on the ladder. A court with no desk id stays the domestic black strip.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+**Playtest (court / officers):**
+
+- `/?demo=officers&node=kamchatka` · `/?demo=court&node=kamchatka`
+- `/?demo=officers&node=siberia` · `/?demo=court&node=siberia`
+- `/?demo=officers&node=havana` · `/?demo=court&node=havana`
+- `/?demo=officers&node=managua` · `/?demo=court&node=managua`
+- `/?demo=officers&node=sponsor_lane` · `/?demo=court&node=sponsor_lane`
+- `/?demo=officers&node=kr_inland` · `/?demo=court&node=kr_inland`
+
+Domestic officers, unchanged: `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Domestic court, unchanged: `/?demo=court`. An unknown `node=` stays that domestic court and does not borrow another desk. Field chrome is still `/?demo=battle&node=havana`. Yard chrome is still `/?demo=duel&node=havana`.
 
 ## Foreign-desk field read
 
