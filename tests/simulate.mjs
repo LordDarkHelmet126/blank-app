@@ -656,7 +656,8 @@ assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
 assert(/get\("demo"\) === "look"/.test(uiSrc) && /demo"\) === "terrain"/.test(uiSrc), "demo=look / demo=terrain hook");
 const terrainSrc = readFileSync(new URL("../js/terrain.js", import.meta.url), "utf8");
-assert(/get\("focus"\)/.test(uiSrc) && /"seattle"/.test(uiSrc) && /pulseTravel\("juneau", "seattle"/.test(uiSrc), "look demo defaults to Seattle + Juneau ferry pulse");
+assert(/playerOf\(state\)\.region = "cheyenne"/.test(uiSrc) && /pulseTravel\("cheyenne", "denver"/.test(uiSrc), "look demo here-chip is Cheyenne and the pulse stays on the Front Range road");
+assert(!content.regions.regions.some((r) => r.state === "CA" || r.state === "NV"), "CA and NV cities are not invented ahead of the campaign");
 assert(/BIOME\.wetforest/.test(terrainSrc) && /WET_IDS/.test(terrainSrc) && /RAIN_SHADOW/.test(terrainSrc), "PNW wet forest / rain-shadow bands");
 assert(/id === "seattle"/.test(terrainSrc) && /olympia/.test(terrainSrc) && /spokane/.test(terrainSrc), "PNW city marker kinds");
 assert(/paintTheaterTerrain/.test(terrainSrc) && /draw80sMarker/.test(terrainSrc), "painterly terrain + 80s markers");

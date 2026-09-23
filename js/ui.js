@@ -326,14 +326,16 @@ export async function boot(loaded) {
   if (params.get("demo") === "look" || params.get("demo") === "terrain") {
     document.body.classList.add("look-map");
     startSliceState();
-    selectedRegion = params.get("focus") || params.get("city") || "seattle";
+    selectedRegion = params.get("focus") || params.get("city") || "denver";
     commandCat = "domestic";
     hideModal();
+    const battleFx = params.get("fx") === "battle";
+    if (!battleFx) playerOf(state).region = "cheyenne";
     render();
     const view = params.get("view");
     if (view === "world") frameWorld();
     else if (view === "ca") frameCa();
-    pulseTravel("juneau", "seattle", { loop: true });
+    if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
       wireAfterRender();
@@ -2043,13 +2045,17 @@ function drawStateLabels(ctx) {
       maxY = Math.max(maxY, py);
     });
     const w = Math.ceil(ctx.measureText(id).width) + 10;
+    const pinned = id === "CA" || id === "NV";
     items.push({
       id,
       x: cx,
       y: cy,
+      ox: cx,
+      oy: cy,
       w,
       h: 22,
-      area: Math.max(400, (maxX - minX) * (maxY - minY)),
+      area: pinned ? 1e9 : Math.max(400, (maxX - minX) * (maxY - minY)),
+      pinned,
     });
   });
   for (let n = 0; n < 40; n++) {
@@ -2074,10 +2080,18 @@ function drawStateLabels(ctx) {
     }
   }
   items.forEach((a) => {
+    if (a.pinned) {
+      a.x = a.ox;
+      a.y = a.oy;
+    }
     a.x = Math.max(6 + a.w / 2, Math.min(994 - a.w / 2, a.x));
     a.y = Math.max(16, Math.min(604, a.y));
     const px = Math.round(a.x - a.w / 2);
     const py = Math.round(a.y - a.h / 2);
+    if (a.pinned) {
+      ctx.fillStyle = "#f8d800";
+      ctx.fillRect(px - 3, py - 3, a.w + 6, a.h + 6);
+    }
     ctx.fillStyle = "#000018";
     ctx.fillRect(px - 2, py - 2, a.w + 4, a.h + 4);
     ctx.fillStyle = "#f8f8f8";
