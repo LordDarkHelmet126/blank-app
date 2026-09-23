@@ -550,7 +550,7 @@ export function createNewGame(content, opts = {}) {
   setRelation(state, "copper_road", "timberline", 28);
   setRelation(state, "copper_road", "pof", 16);
 
-  pushLog(state, `Week 0. Stall. You are in the Cheyenne yards, not Alaska. Invasion landings already sit on Anchorage and the Slope. Roads run the Front Range, the plains, and the California–Nevada border. No leaping.`, "alert");
+  pushLog(state, `Week 0. Stall. You are in the Cheyenne yards, not Alaska. Invasion landings already sit on Anchorage and the Slope. Roads run the Front Range, the I-80 plains, and the California–Nevada border. No leaping.`, "alert");
   pushLog(state, `${name} (${bg.name}) — WAR ${player.war} INT ${player.int} POL ${player.pol} CHR ${player.chr}.`, "info");
   return state;
 }
@@ -920,7 +920,7 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: true,
-    hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, and Omaha. California is Eugene → Sacramento. No leaping.",
+    hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, Omaha, Lincoln, and Salt Lake. California is Eugene → Sacramento. Reno reaches Salt Lake on the Wendover rail, not from Bend or Boise. No leaping.",
     needs: "neighbor",
   });
   const camp = ensureCampaign(state);
