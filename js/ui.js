@@ -22,6 +22,7 @@ import {
   paintTheaterTerrain,
   terrainSize,
 } from "./terrain.js";
+import { WORLD_LAND } from "./world-washes.js";
 import {
   createNewGame,
   listActions,
@@ -348,6 +349,7 @@ export async function boot(loaded) {
     render();
     const view = params.get("view");
     if (view === "world") frameWorld();
+    else if (view === "near") frameNear();
     else if (view === "ca") frameCa();
     if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
     if (params.get("panel") === "officers") {
@@ -1801,6 +1803,13 @@ function frameWorld() {
   drawMap();
 }
 
+function frameNear() {
+  mapView.z = 0.78;
+  mapView.x = 36;
+  mapView.y = 8;
+  drawMap();
+}
+
 function frameCa() {
   frameBox(20, 200, 300, 520);
 }
@@ -1872,6 +1881,19 @@ function onMapMove(e) {
     hoverRegion = id;
     drawMap();
   }
+}
+
+const WASH_KEY_US = `<span><i class="key-occ"></i>Occupied</span><span><i class="key-con"></i>Contested</span><span><i class="key-held"></i>Held</span>`;
+const WASH_KEY_WORLD = `<span><i class="key-sov"></i>Soviet</span><span><i class="key-bloc"></i>Bloc</span><span><i class="key-ally"></i>Allies</span><span><i class="key-neu"></i>Neutral</span>`;
+
+function syncWashKey() {
+  const key = document.querySelector(".wash-key");
+  if (!key) return;
+  const mode = mapView.z < 0.5 ? "world" : "us";
+  if (key.dataset.mode === mode) return;
+  key.dataset.mode = mode;
+  key.innerHTML = mode === "world" ? WASH_KEY_WORLD : WASH_KEY_US;
+  key.setAttribute("aria-label", mode === "world" ? "Faction key" : "Wash key");
 }
 
 function renderMapCaption() {
@@ -2125,38 +2147,6 @@ function projectLL(lon, lat) {
   return [x, y];
 }
 
-/** Faction washes for the rest of the world. The lower 48 stays the state plate, not a blob. */
-const WORLD_LAND = [
-  { color: "#3a6ea0", ring: [[-166, 54], [-168, 60], [-166, 68], [-158, 71], [-148, 71], [-141, 69], [-141, 60], [-153, 59], [-161, 55], [-166, 54]] },
-  { color: "#3a6ea0", ring: [[-141, 60], [-136, 69], [-120, 72], [-95, 70], [-70, 66], [-62, 60], [-64, 52], [-78, 50], [-95, 49], [-123, 49], [-132, 54], [-141, 60]] },
-  { color: "#7aa0b4", ring: [[-73, 78], [-68, 83], [-50, 83], [-30, 82], [-20, 73], [-40, 62], [-55, 60], [-68, 64], [-73, 72]] },
-  { color: "#9a3b3b", ring: [[-117, 23.2], [-110, 22], [-106, 19], [-100, 16], [-97, 15.2], [-92, 16], [-90, 20], [-96, 22], [-106, 23], [-114, 23.2]] },
-  { color: "#8c4a4a", ring: [[-92, 16], [-90, 18], [-86, 16], [-83, 13], [-83, 9], [-85, 8], [-87, 11], [-90, 13], [-92, 15]] },
-  { color: "#9a3b3b", ring: [[-85, 22.4], [-82, 23.2], [-78, 23], [-74, 20.2], [-77, 19.6], [-82, 19.8], [-85, 21.2]] },
-  { color: "#a05050", ring: [[-80, 10], [-77, 6], [-70, 12], [-60, 10], [-52, 5], [-48, 0], [-35, -5], [-40, -22], [-48, -28], [-55, -35], [-68, -55], [-75, -52], [-72, -18], [-76, -8], [-80, 2]] },
-  { color: "#3a6ea0", ring: [[-74, -52], [-68, -55], [-65, -50], [-71, -42], [-74, -46]] },
-  { color: "#3a6ea0", ring: [[-10, 51], [-8, 58], [-3, 59], [2, 51], [-5, 50]] },
-  { color: "#3a6ea0", ring: [[-9, 44], [-9, 36], [-6, 36], [-1, 37], [3, 43], [-2, 44], [-6, 44]] },
-  { color: "#3a6ea0", ring: [[-5, 43], [-4, 49], [0, 51], [8, 54], [12, 50], [8, 44], [3, 42], [-2, 43]] },
-  { color: "#3a6ea0", ring: [[8, 44], [12, 45], [14, 42], [18, 40], [16, 37], [12, 40], [9, 43]] },
-  { color: "#3a6ea0", ring: [[5, 58], [5, 64], [12, 70], [20, 71], [26, 70], [18, 64], [12, 58]] },
-  { color: "#9a3b3b", ring: [[14, 56], [22, 56], [30, 60], [32, 52], [28, 46], [22, 44], [16, 46], [12, 50]] },
-  { color: "#9a3b3b", ring: [[28, 70], [40, 74], [70, 76], [110, 76], [150, 72], [170, 68], [178, 66], [170, 60], [155, 52], [140, 48], [130, 42], [118, 48], [100, 50], [80, 52], [60, 56], [44, 50], [32, 52], [28, 60]] },
-  { color: "#c45a5a", ring: [[74, 50], [88, 48], [104, 42], [118, 44], [128, 42], [122, 28], [112, 20], [100, 22], [90, 28], [80, 34], [74, 42]] },
-  { color: "#c4a06a", ring: [[68, 32], [72, 24], [70, 8], [78, 8], [88, 22], [80, 28], [74, 32]] },
-  { color: "#c4a06a", ring: [[36, 36], [40, 30], [48, 30], [56, 27], [60, 22], [48, 16], [40, 14], [34, 28]] },
-  { color: "#9a3b3b", ring: [[92, 22], [100, 20], [108, 14], [108, 2], [100, 4], [96, 10], [92, 16]] },
-  { color: "#3a6ea0", ring: [[130, 31], [132, 35], [140, 41], [145, 43], [142, 36], [136, 33], [131, 31]] },
-  { color: "#9a3b3b", ring: [[124, 40], [126, 41], [130, 38], [128, 34], [125, 37]] },
-  { color: "#3a6ea0", ring: [[113, -14], [128, -12], [146, -12], [153, -28], [146, -39], [130, -36], [114, -34], [113, -22]] },
-  { color: "#3a6ea0", ring: [[166, -41], [174, -35], [178, -37], [174, -46], [167, -46]] },
-  { color: "#9a3b3b", ring: [[-17, 21], [-10, 32], [10, 33], [25, 32], [32, 22], [24, 12], [10, 5], [-6, 5], [-14, 12]] },
-  { color: "#c4a06a", ring: [[-16, 14], [-10, 6], [8, 4], [20, 4], [30, -2], [28, -12], [18, -18], [8, -6], [-4, 2], [-12, 8]] },
-  { color: "#3a6ea0", ring: [[12, -18], [18, -22], [32, -26], [32, -34], [20, -35], [14, -28]] },
-  { color: "#c4a06a", ring: [[43, -12], [50, -16], [50, -25], [44, -25], [43, -16]] },
-  { color: "#7aa0b4", ring: [[-175, -64], [180, -64], [180, -78], [-175, -78]] },
-];
-
 /** Existing nodes only. Pins sit on the globe; neighbor lists stay put. */
 const WORLD_DESKS = [
   { id: "bering_strait", lon: -168, lat: 65.6, color: "#7aa0b4" },
@@ -2166,25 +2156,74 @@ const WORLD_DESKS = [
   { id: "far_korea", lon: 127.2, lat: 38.2, color: "#9a3b3b" },
 ];
 
+/** Small overlays on top of the coast washes. Original shapes, not a copied atlas. */
+const WORLD_OVERLAY = [
+  {
+    color: "#e57373",
+    ring: [
+      [10.9, 54.1], [12.2, 54.4], [14.2, 54.1], [14.6, 53.3], [14.8, 52.2],
+      [14.9, 51.2], [14.2, 50.9], [12.5, 50.3], [11.6, 50.5], [10.6, 51.0],
+      [10.4, 51.6], [10.9, 52.4], [10.5, 53.2], [10.9, 54.1],
+    ],
+  },
+  {
+    color: "#1565c0",
+    ring: [
+      [-160.2, 22.2], [-159.2, 22.2], [-157.8, 21.6], [-156.5, 20.9],
+      [-155.1, 20.0], [-154.8, 19.4], [-155.6, 19.1], [-157.0, 20.2],
+      [-158.4, 21.3], [-160.2, 22.2],
+    ],
+  },
+];
+
+function coastParts(ring) {
+  const parts = [];
+  let part = [];
+  ring.forEach((pt) => {
+    if (part.length && Math.abs(pt[0] - part[part.length - 1][0]) > 180) {
+      if (part.length > 2) parts.push(part);
+      part = [pt];
+    } else part.push(pt);
+  });
+  if (part.length > 2) parts.push(part);
+  return parts;
+}
+
+function tracePart(ctx, part) {
+  part.forEach((p, i) => {
+    const [x, y] = projectLL(p[0], p[1]);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+}
+
 function drawGlobe(ctx) {
   ctx.save();
   ctx.lineJoin = "round";
-  ctx.lineWidth = Math.max(1.2, 1.4 / mapView.z);
-  WORLD_LAND.forEach((land) => {
-    ctx.beginPath();
-    land.ring.forEach((p, i) => {
-      const [x, y] = projectLL(p[0], p[1]);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+  ctx.lineWidth = Math.max(1.35, 1.75 / mapView.z);
+  ctx.strokeStyle = "#1a140c";
+  WORLD_LAND.concat(WORLD_OVERLAY).forEach((land) => {
+    coastParts(land.ring).forEach((part) => {
+      ctx.beginPath();
+      tracePart(ctx, part);
+      const a = part[0];
+      const b = part[part.length - 1];
+      if (Math.abs(a[0] - b[0]) > 40) {
+        const pole = Math.min(a[1], b[1]) < 0 ? -90 : 90;
+        const [x1, y1] = projectLL(b[0], pole);
+        const [x2, y2] = projectLL(a[0], pole);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = land.color;
+      ctx.fill();
+      ctx.beginPath();
+      tracePart(ctx, part);
+      ctx.stroke();
     });
-    ctx.closePath();
-    ctx.globalAlpha = 0.94;
-    ctx.fillStyle = land.color;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#1a140c";
-    ctx.stroke();
   });
+  drawWorldStrikes(ctx);
   drawWorldCorridors(ctx);
   drawWorldDesks(ctx);
   ctx.restore();
@@ -2197,7 +2236,7 @@ function drawGlobe(ctx) {
  * gulf_passage is not in this data, so no sealift node is painted.
  */
 function drawWorldCorridors(ctx) {
-  if (mapView.z > 0.55) return;
+  if (mapView.z > 0.92) return;
   const routes = [
     { color: "#7aa0b4", pts: [[-168, 65.6], [-170, 76], [-78, 77]] },
     { color: "#7aa0b4", pts: [[-18, 76], [40, 74], [100, 70], [158, 63]] },
@@ -2226,8 +2265,46 @@ function drawWorldCorridors(ctx) {
   ctx.restore();
 }
 
+/** Unlabeled strike marks. Same crater language as the US plate, not a copied legend. */
+const WORLD_STRIKES = [
+  [-0.1, 51.5],
+  [2.3, 48.9],
+  [10, 51],
+  [13.4, 52.5],
+  [19, 51],
+  [30, 50],
+  [37.6, 55.7],
+  [44, 48],
+  [68, 48],
+  [104, 36],
+  [114, 31],
+  [121, 31],
+  [127, 39],
+  [139.7, 35.7],
+  [37, 33],
+];
+
+function drawWorldStrikes(ctx) {
+  if (mapView.z > 0.92) return;
+  const rad = Math.max(3.4, 3.1 / mapView.z);
+  WORLD_STRIKES.forEach(([lon, lat]) => {
+    const [x, y] = projectLL(lon, lat);
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a0808";
+    ctx.fill();
+    ctx.lineWidth = Math.max(1.8, 1.6 / mapView.z);
+    ctx.strokeStyle = "#e8a020";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(2, rad * 0.34), 0, Math.PI * 2);
+    ctx.fillStyle = "#f8d800";
+    ctx.fill();
+  });
+}
+
 function drawWorldDesks(ctx) {
-  if (mapView.z > 0.55) return;
+  if (mapView.z > 0.92) return;
   const fontPx = Math.max(18, Math.round(12 / mapView.z));
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.textBaseline = "middle";
@@ -2483,7 +2560,8 @@ function drawMap() {
     corridors: foreignCorridors(),
   });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "#2a6890";
+  syncWashKey();
+  ctx.fillStyle = mapView.z < 0.5 ? "#b7d4ea" : "#2a6890";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
   ctx.imageSmoothingEnabled = false;
