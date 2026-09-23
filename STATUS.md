@@ -2,7 +2,17 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Officers final: create-a-friend sits at the top of the roster, faces use original names, the siege log keeps older lines, and the court strip shows the next rank.
+**Last checkpoint:** 2026-09-23 — Combat polish: yard NEXT and damage reads, siege meter contrast with sticky ploys, friend-added banner and rank stripes.
+
+## Combat polish
+
+Yard duel stays **99s / 11 exchanges**. An amber **NEXT** line names the green-window press (1 Strike, 2 Guard, 3 Special · the style move) and turns green while the needle is in the band. Each fighter has a style stripe. Damage shows as **−N** on the card and over the yard.
+
+Siege **WORKS** is red, **SUPPRESS** is amber, **LEVY** is white. The recommended ploy says **PRESS**; the others say **WAIT** or **LATER**. Meters, the amber NEXT line, and the ploy buttons stay stuck to the top so later impulses do not bury the controls. The siege log still lists every line.
+
+Create-a-friend stays above the ladder. A new friend shows **FRIEND ADDED**. Promote still shows **RANK CONFIRMED**, and that row flashes. Rank stripes sit on the roster and the court chairs. Face names on the create grid are larger.
+
+**Playtest:** `/?demo=duel` · `/?demo=officers` (`promote=1` / `promote=2`) · `/?demo=siege` (`walls=72`) · `/?demo=battle&siege=1` · `/?demo=look&fx=battle&hull=1`
 
 ## Officers final
 

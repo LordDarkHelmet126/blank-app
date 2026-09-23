@@ -86,6 +86,8 @@ let state;
 let selectedRegion = "bethel";
 let hoverRegion = null;
 let ladderNotice = "";
+let ladderKind = "rank";
+let ladderFlashId = "";
 
 const $ = (id) => document.getElementById(id);
 
@@ -387,11 +389,19 @@ export async function boot(loaded) {
     const steps = Number(params.get("promote") || 0);
     if (made.ok && steps >= 1) {
       const r1 = act(state, content, "promote", { officerId: made.id });
-      if (r1.rankChanged) ladderNotice = r1.message;
+      if (r1.rankChanged) {
+        ladderNotice = r1.message;
+        ladderKind = "rank";
+        ladderFlashId = made.id;
+      }
     }
     if (made.ok && steps >= 2) {
       const r2 = act(state, content, "promote", { officerId: made.id });
-      if (r2.rankChanged) ladderNotice = r2.message;
+      if (r2.rankChanged) {
+        ladderNotice = r2.message;
+        ladderKind = "rank";
+        ladderFlashId = made.id;
+      }
     }
     selectedRegion = "bethel";
     commandCat = "plot";
@@ -876,13 +886,16 @@ function rosterRow(o) {
       : rank === "officer"
         ? `<button type="button" class="roster-promote" data-promote="${o.id}">Promote to general</button>`
         : `<span class="roster-held">Rank held</span>`;
-  return `<div class="roster-row">${rosterFace(o)}${rankBadge(rank)}<span class="roster-who"><strong>${esc(o.name)}</strong><span>${esc(o.title || "Friend")} · ${esc(city)} · WAR ${o.war} · ${esc(o.personality)}</span></span>${action}</div>`;
+  const flash = o.id === ladderFlashId ? " just-ranked" : "";
+  return `<div class="roster-row rung-${esc(rank)}${flash}"><i class="rank-stripe rank-${esc(rank)}"></i>${rosterFace(o)}${rankBadge(rank)}<span class="roster-who"><strong>${esc(o.name)}</strong><span>${esc(o.title || "Friend")} · ${esc(city)} · WAR ${o.war} · ${esc(o.personality)}</span></span>${action}</div>`;
 }
 
 function rosterChromeHtml() {
-  const note = ladderNotice
-    ? `<p class="roster-confirm" role="status"><strong>RANK CONFIRMED</strong>${esc(ladderNotice)}</p>`
-    : "";
+  const note = !ladderNotice
+    ? ""
+    : ladderKind === "friend"
+      ? `<p class="roster-added" role="status"><strong>FRIEND ADDED</strong>${esc(ladderNotice)}</p>`
+      : `<p class="roster-confirm" role="status"><strong>RANK CONFIRMED</strong>${esc(ladderNotice)}</p>`;
   return `<section class="roster-ladder roster-top">
     <div class="roster-head"><h2>Roster ladder</h2><button type="button" data-close>Close</button></div>
     <p class="roster-lead">Friends join as players. Promote them here: Player → Officer → General.</p>
@@ -1324,7 +1337,8 @@ function courtHtml() {
     const g = gens[i];
     if (g) {
       const rank = ladderRankOf(g);
-      chairs.push(`<div class="court-chair${chairFlashId === g.id ? " just-in" : ""}">
+      chairs.push(`<div class="court-chair rung-${esc(rank)}${chairFlashId === g.id ? " just-in" : ""}">
+        <i class="rank-stripe rank-${esc(rank)}"></i>
         <span class="mini" style="border-color:${esc(stripe)}">${faceSrc(g.portrait) ? `<img src="${faceSrc(g.portrait)}" alt="${esc(faceLabel(g.portrait) || portraitInitials(g.name))}" />` : esc(portraitInitials(g.name))}</span>
         <div class="who">
           ${rankBadge(rank)}
@@ -1346,6 +1360,7 @@ function courtHtml() {
       else if (ladderRoster(state).player.some((o) => o.region === p.region)) hint = "Roster → Promote a player to officer.";
       else hint = "Plot → Hire fills this ADD chair.";
       chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
+        <i class="rank-stripe rank-empty"></i>
         <span class="mini empty-mini">+</span>
         <div class="who"><strong>${i + 1}. ADD</strong><small>${hint}</small></div>
       </button>`);
@@ -2284,12 +2299,20 @@ function paintSiegeLog(lines) {
   if (log.dataset.sig === sig) return;
   log.dataset.sig = sig;
   log.innerHTML = list.map((l) => `<li>${esc(l)}</li>`).join("");
-  const pane = $("battle");
-  const last = log.lastElementChild;
-  if (!pane || !last) return;
-  const paneBox = pane.getBoundingClientRect();
-  const lastBox = last.getBoundingClientRect();
-  if (lastBox.bottom > paneBox.bottom - 12) pane.scrollTop += lastBox.bottom - paneBox.bottom + 20;
+  const chip = $("siege-last");
+  if (chip) chip.textContent = list.length ? list[list.length - 1] : "";
+}
+
+function pulseSiegeMeter(id, value) {
+  const el = $(id);
+  if (!el) return;
+  const next = String(value);
+  if (el.dataset.v != null && el.dataset.v !== next) {
+    el.classList.remove("tick");
+    void el.offsetWidth;
+    el.classList.add("tick");
+  }
+  el.dataset.v = next;
 }
 
 function paintSiegeHud(b, dest) {
@@ -2301,6 +2324,9 @@ function paintSiegeHud(b, dest) {
   $("siege-works-n").textContent = String(s.works);
   $("siege-suppress-n").textContent = String(s.suppress);
   $("siege-levy-n").textContent = String(s.levy);
+  pulseSiegeMeter("siege-works-n", s.works);
+  pulseSiegeMeter("siege-suppress-n", s.suppress);
+  pulseSiegeMeter("siege-levy-n", s.levy);
   $("siege-works-bar").style.width = `${Math.round((s.works / Math.max(1, s.worksMax)) * 100)}%`;
   $("siege-suppress-bar").style.width = `${Math.max(0, Math.min(100, s.suppress))}%`;
   $("siege-levy-bar").style.width = `${Math.round((s.levy / Math.max(1, s.levyMax)) * 100)}%`;
@@ -2313,8 +2339,18 @@ function paintSiegeHud(b, dest) {
   ].forEach(([id, kind]) => {
     const btn = $(id);
     if (!btn) return;
-    btn.classList.toggle("is-next", kind === rec);
+    const pressed = kind === rec && !s.closed;
+    btn.classList.toggle("is-next", pressed);
+    btn.classList.toggle("is-wait", !s.closed && kind !== rec);
+    btn.classList.toggle("is-fired", $("siege-board")?.dataset.fired === kind && !s.closed);
     btn.disabled = !!s.closed;
+    const mark = btn.querySelector(".ploy-mark");
+    if (mark) {
+      if (s.closed) mark.textContent = "CLOSED";
+      else if (pressed) mark.textContent = "PRESS";
+      else if (kind === "rush") mark.textContent = "WAIT";
+      else mark.textContent = "LATER";
+    }
   });
 }
 
@@ -2377,6 +2413,9 @@ function enemyAt(x, y) {
 
 function doBattle(cmd, extra) {
   const res = battleCmd(state, content, cmd, extra || {});
+  if (res.ok && cmd === "siege" && extra?.kind && $("siege-board")) {
+    $("siege-board").dataset.fired = extra.kind;
+  }
   if (!res.ok) toast(res.message);
   if (state.phase !== "battle") {
     $("battle").hidden = true;
@@ -2444,6 +2483,11 @@ function stepDuel(now) {
   if (!d) return;
   const left = remainingClock(now);
   $("duel-clock").textContent = String(left);
+  $("duel-clock").classList.toggle("low", left > 0 && left <= 20 && !d.result);
+  if (d.beat !== "pick") {
+    $("duel-meter")?.classList.remove("in-green");
+    $("duel-next")?.classList.remove("hot");
+  }
   if (d.result) {
     d.beat = "done";
     paintDuelHud();
@@ -2462,7 +2506,11 @@ function stepDuel(now) {
   }
   if (d.beat === "pick") {
     const t = (now - d.beatT0) / (d.pickMs || DUEL_PICK_MS);
-    $("duel-needle").style.left = `${Math.min(1, Math.max(0, t)) * 100}%`;
+    const clamped = Math.min(1, Math.max(0, t));
+    $("duel-needle").style.left = `${clamped * 100}%`;
+    const hot = clamped >= d.green[0] && clamped <= d.green[1];
+    $("duel-meter")?.classList.toggle("in-green", hot);
+    $("duel-next")?.classList.toggle("hot", hot);
     if (t >= 1) {
       duelCmd(state, "move", { move: null, timing: 1 });
       d.resolveUntil = now + (d.resolveMs || DUEL_RESOLVE_MS);
@@ -2516,6 +2564,49 @@ function closeDuel() {
   }
 }
 
+function styleInk(style) {
+  const map = {
+    brawler: "#f03030",
+    marksman: "#f8d800",
+    grappler: "#c8a038",
+    cavalry: "#886038",
+    guerrilla: "#88a040",
+    drill: "#f8f8f8",
+    trapper: "#80d0f8",
+    signals: "#80c0f8",
+  };
+  return map[style?.id] || style?.fx || "#f8d800";
+}
+
+function paintStyleStripe(id, style) {
+  const el = $(id);
+  if (!el) return;
+  el.style.background = styleInk(style);
+}
+
+function duelNextLine(d) {
+  const spec = d.you.style?.specialLabel || "Special";
+  if (d.result === "you") return "NEXT: You hold the yard. Back to map.";
+  if (d.result === "foe") return "NEXT: They hold the yard. Back to map.";
+  if (d.result) return "NEXT: Draw. Back to map.";
+  if (d.beat === "resolve" && d.last) {
+    const you = d.last.youDmg ? `You -${d.last.youDmg}` : d.last.youHeal ? `You +${d.last.youHeal}` : "You clean";
+    const foe = d.last.foeDmg ? `Foe -${d.last.foeDmg}` : d.last.foeHeal ? `Foe +${d.last.foeHeal}` : "Foe clean";
+    return `HIT: ${you} · ${foe}.${d.last.timed ? " Green window." : ""}`;
+  }
+  if (d.underdog) return `NEXT: Wider green. Press 1 Strike, 2 Guard, or 3 Special · ${spec} inside the band.`;
+  return `NEXT: Needle in the green, then 1 Strike, 2 Guard, or 3 Special · ${spec}.`;
+}
+
+function paintDuelHit(id, dmg, heal, show) {
+  const el = $(id);
+  if (!el) return;
+  const text = show && dmg ? `-${dmg}` : show && heal ? `+${heal}` : "";
+  el.hidden = !text;
+  el.textContent = text;
+  el.classList.toggle("heal", !!(show && heal && !dmg));
+}
+
 function paintDuelStatic() {
   const d = state.duel;
   const you = d.you;
@@ -2523,11 +2614,15 @@ function paintDuelStatic() {
   $("duel-you-face").src = PORTRAIT_SRC;
   $("duel-you-name").textContent = you.name;
   $("duel-you-style").textContent = `${you.style?.label || "Style"} · ${you.outfit?.label || "kit"}`;
+  $("duel-you-style").style.borderLeftColor = styleInk(you.style);
+  paintStyleStripe("duel-you-stripe", you.style);
   $("duel-you-meta").textContent = `AGE ${you.age} · ${you.title} · WAR ${you.stats.war}`;
   $("duel-you-stats").textContent = you.wound ? "WOUND — WAR cut" : `INT ${you.stats.int}  POL ${you.stats.pol}  CHR ${you.stats.chr}`;
   $("duel-foe-face").textContent = foe.portrait || portraitInitials(foe.name);
   $("duel-foe-name").textContent = foe.name;
   $("duel-foe-style").textContent = `${foe.style?.label || "Style"} · ${foe.outfit?.label || "kit"}`;
+  $("duel-foe-style").style.borderLeftColor = styleInk(foe.style);
+  paintStyleStripe("duel-foe-stripe", foe.style);
   $("duel-foe-meta").textContent = `AGE ${foe.age} · ${foe.title}${foe.legend ? " · LEGEND" : ""} · WAR ${foe.stats.war}`;
   $("duel-foe-stats").textContent = foe.wound ? "WOUND — WAR cut" : `INT ${foe.stats.int}  POL ${foe.stats.pol}  CHR ${foe.stats.chr}`;
   if ($("duel-arena")) $("duel-arena").textContent = d.arena?.label || "Yard";
@@ -2538,8 +2633,15 @@ function paintDuelHp() {
   if (!d) return;
   $("duel-you-hp").style.width = `${Math.round((d.youHp / d.youMax) * 100)}%`;
   $("duel-foe-hp").style.width = `${Math.round((d.foeHp / d.foeMax) * 100)}%`;
+  const show = d.beat === "resolve" && d.last;
   $("duel-you-hp-n").textContent = `${d.youHp} / ${d.youMax}`;
   $("duel-foe-hp-n").textContent = `${d.foeHp} / ${d.foeMax}`;
+  $("duel-you-hp-n").classList.toggle("hurt", !!(show && d.last.youDmg > 0));
+  $("duel-foe-hp-n").classList.toggle("hurt", !!(show && d.last.foeDmg > 0));
+  $("duel-you")?.classList.toggle("struck", !!(show && d.last.youDmg > 0));
+  $("duel-foe")?.classList.toggle("struck", !!(show && d.last.foeDmg > 0));
+  paintDuelHit("duel-you-hit", d.last?.youDmg, d.last?.youHeal, show);
+  paintDuelHit("duel-foe-hit", d.last?.foeDmg, d.last?.foeHeal, show);
 }
 
 function paintDuelHud() {
@@ -2547,12 +2649,16 @@ function paintDuelHud() {
   if (!d) return;
   $("duel-exchange").textContent = `EX ${Math.min(d.exchange, d.maxExchanges)} / ${d.maxExchanges}`;
   const specName = d.you.style?.specialLabel || "Special";
-  const stakes = d.underdog
-    ? `UNDERDOG — wider green. Winner: gold + fame.`
+  $("duel-cue").textContent = d.result
+    ? d.log[d.log.length - 1]
     : d.you?.wound
-      ? `Wound cuts WAR. Special · ${specName}.`
-      : `Stakes: gold, fame, a wound. Special · ${specName}.`;
-  $("duel-cue").textContent = d.result ? d.log[d.log.length - 1] : stakes;
+      ? `Wound cuts WAR. Strike beats Special · Special beats Guard · Guard beats Strike.`
+      : "Strike beats Special · Special beats Guard · Guard beats Strike.";
+  const next = $("duel-next");
+  if (next) {
+    next.textContent = duelNextLine(d);
+    if (d.beat !== "pick") next.classList.remove("hot");
+  }
   const spec = $("duel-special");
   if (spec) {
     spec.innerHTML = `<b>3</b> Special · ${esc(specName)}<small>beats Guard</small>`;
@@ -2578,8 +2684,16 @@ function drawDuelYard(now) {
   const flash = state.duel.last && state.duel.beat === "resolve";
   const youHit = flash && state.duel.last.youDmg > 0;
   const foeHit = flash && state.duel.last.foeDmg > 0;
-  drawDuelFighter(ctx, 150, 78 + bob, state.duel.you.outfit, false, youHit, state.duel.last?.youMove);
-  drawDuelFighter(ctx, 430, 78 + (1 - bob), state.duel.foe.outfit, true, foeHit, state.duel.last?.foeMove);
+  const youY = 78 + bob;
+  const foeY = 78 + (1 - bob);
+  drawDuelFighter(ctx, 150, youY, state.duel.you.outfit, false, youHit, state.duel.last?.youMove);
+  drawDuelFighter(ctx, 430, foeY, state.duel.foe.outfit, true, foeHit, state.duel.last?.foeMove);
+  paintStyleBar(ctx, 150, youY, styleInk(state.duel.you.style));
+  paintStyleBar(ctx, 430, foeY, styleInk(state.duel.foe.style));
+  if (flash && state.duel.last) {
+    paintDuelDamage(ctx, 150, youY, state.duel.last.youDmg, state.duel.last.youHeal);
+    paintDuelDamage(ctx, 430, foeY, state.duel.last.foeDmg, state.duel.last.foeHeal);
+  }
   if (flash) {
     const fx = state.duel.last.youFx || state.duel.last.foeFx || "#f8f8f8";
     ctx.fillStyle = fx;
@@ -2587,6 +2701,25 @@ function drawDuelYard(now) {
     ctx.fillRect(0, 0, w, h);
     ctx.globalAlpha = 1;
   }
+}
+
+function paintStyleBar(ctx, x, y, color) {
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(x - 4, y + 64, 36, 8);
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 2, y + 66, 32, 4);
+}
+
+function paintDuelDamage(ctx, x, y, dmg, heal) {
+  const text = dmg ? `-${dmg}` : heal ? `+${heal}` : "";
+  if (!text) return;
+  ctx.font = "bold 18px monospace";
+  ctx.textAlign = "center";
+  const w = ctx.measureText(text).width + 12;
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(x + 12 - w / 2, y - 28, w, 20);
+  ctx.fillStyle = dmg ? "#f03030" : "#30c030";
+  ctx.fillText(text, x + 12, y - 12);
 }
 
 function px(ctx, x, y, w, h, c) {
@@ -2805,7 +2938,11 @@ function wireAfterRender() {
         chr: Number(document.getElementById("c-chr")?.value),
         ladder: "player",
       });
-      if (res.ok) ladderNotice = "";
+      if (res.ok) {
+        ladderNotice = `${name} joins as a Player. Promote them on this ladder.`;
+        ladderKind = "friend";
+        ladderFlashId = res.id;
+      }
       toast(res.ok ? `${name} joins as a player. Promote them on the ladder.` : res.message);
       showModal(officersHtml(), { kind: "officers" });
       wireDynamicModals();
@@ -2817,6 +2954,8 @@ function wireAfterRender() {
       const res = act(state, content, "promote", { officerId: btn.dataset.promote });
       if (res.ok && res.rankChanged) {
         ladderNotice = res.message;
+        ladderKind = "rank";
+        ladderFlashId = btn.dataset.promote;
         flashDing(`${ladderLabel(res.from)} → ${ladderLabel(res.to)}`);
       } else {
         toast(res.message);

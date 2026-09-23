@@ -115,37 +115,40 @@
           </div>
         </header>
         <section id="siege-board" class="siege-board" aria-label="Siege">
-          <p id="siege-roles" class="siege-roles">YOU are the ATTACKER. THEY are the DEFENDER.</p>
-          <div class="siege-meters">
-            <div class="siege-meter">
-              <span>WORKS</span>
-              <strong id="siege-works-n">0</strong>
-              <div class="siege-track"><i id="siege-works-bar"></i></div>
-              <small>Wall strength. Cut it down.</small>
+          <div class="siege-sticky">
+            <p id="siege-roles" class="siege-roles">YOU are the ATTACKER. THEY are the DEFENDER.</p>
+            <div class="siege-meters">
+              <div class="siege-meter works">
+                <span>WORKS</span>
+                <strong id="siege-works-n">0</strong>
+                <div class="siege-track"><i id="siege-works-bar"></i></div>
+                <small>Wall strength. Cut it down.</small>
+              </div>
+              <div class="siege-meter suppress">
+                <span>SUPPRESS</span>
+                <strong id="siege-suppress-n">0</strong>
+                <div class="siege-track"><i id="siege-suppress-bar"></i></div>
+                <small>Parapet pinned. Fill it.</small>
+              </div>
+              <div class="siege-meter levy">
+                <span>LEVY</span>
+                <strong id="siege-levy-n">0</strong>
+                <div class="siege-track levy"><i id="siege-levy-bar"></i></div>
+                <small>Your column. At 0 the siege lifts.</small>
+              </div>
             </div>
-            <div class="siege-meter">
-              <span>SUPPRESS</span>
-              <strong id="siege-suppress-n">0</strong>
-              <div class="siege-track"><i id="siege-suppress-bar"></i></div>
-              <small>Parapet pinned. Fill it.</small>
+            <p id="siege-next" class="siege-next">NEXT: Cut the berm. Do not rush.</p>
+            <div class="siege-ploys">
+              <button type="button" id="siege-cut" data-siege="cut"><b>1</b> Cut the berm<small>Drops WORKS</small><em class="ploy-mark">PRESS</em></button>
+              <button type="button" id="siege-rake" data-siege="rake"><b>2</b> Rake the parapet<small>Fills SUPPRESS</small><em class="ploy-mark">LATER</em></button>
+              <button type="button" id="siege-rush" data-siege="rush"><b>3</b> Rush the gap<small>Takes the settlement</small><em class="ploy-mark">WAIT</em></button>
             </div>
-            <div class="siege-meter">
-              <span>LEVY</span>
-              <strong id="siege-levy-n">0</strong>
-              <div class="siege-track levy"><i id="siege-levy-bar"></i></div>
-              <small>Your column. At 0 the siege lifts.</small>
+            <p id="siege-last" class="siege-last"></p>
+            <div class="siege-foot">
+              <button type="button" id="siege-auto">Auto-resolve siege</button>
             </div>
-          </div>
-          <p id="siege-next" class="siege-next">NEXT: Cut the berm. Do not rush.</p>
-          <div class="siege-ploys">
-            <button type="button" id="siege-cut" data-siege="cut"><b>1</b> Cut the berm<small>Drops WORKS</small></button>
-            <button type="button" id="siege-rake" data-siege="rake"><b>2</b> Rake the parapet<small>Fills SUPPRESS</small></button>
-            <button type="button" id="siege-rush" data-siege="rush"><b>3</b> Rush the gap<small>Takes the settlement</small></button>
           </div>
           <ol id="siege-log" class="log siege-log"></ol>
-          <div class="siege-foot">
-            <button type="button" id="siege-auto">Auto-resolve siege</button>
-          </div>
         </section>
         <div class="battle-stage">
           <canvas id="battle-sky" width="960" height="64" aria-hidden="true"></canvas>
@@ -165,9 +168,11 @@
           <span id="duel-clock" class="duel-clock">99</span>
           <span id="duel-underdog" class="duel-underdog" hidden>UNDERDOG</span>
         </header>
-        <p id="duel-cue" class="duel-cue">Green window = bonus. Strike beats Special · Special beats Guard · Guard beats Strike.</p>
+        <p id="duel-cue" class="duel-cue">Strike beats Special · Special beats Guard · Guard beats Strike.</p>
+        <p id="duel-next" class="duel-next">NEXT: Needle in the green, then 1 Strike, 2 Guard, or 3 Special.</p>
         <div class="duel-fighters">
           <article class="duel-card" id="duel-you">
+            <i id="duel-you-stripe" class="style-stripe"></i>
             <div class="medallion"><img id="duel-you-face" alt="" /></div>
             <div>
               <h2 id="duel-you-name">You</h2>
@@ -175,7 +180,8 @@
               <p id="duel-you-meta" class="muted"></p>
               <p id="duel-you-stats"></p>
               <div class="duel-hp"><i id="duel-you-hp"></i></div>
-              <p id="duel-you-hp-n" class="muted"></p>
+              <p id="duel-you-hp-n" class="duel-hp-n"></p>
+              <p id="duel-you-hit" class="duel-hit" hidden></p>
             </div>
           </article>
           <article class="duel-card foe" id="duel-foe">
@@ -185,9 +191,11 @@
               <p id="duel-foe-meta" class="muted"></p>
               <p id="duel-foe-stats"></p>
               <div class="duel-hp"><i id="duel-foe-hp"></i></div>
-              <p id="duel-foe-hp-n" class="muted"></p>
+              <p id="duel-foe-hp-n" class="duel-hp-n"></p>
+              <p id="duel-foe-hit" class="duel-hit" hidden></p>
             </div>
             <div class="medallion"><span id="duel-foe-face" class="mini"></span></div>
+            <i id="duel-foe-stripe" class="style-stripe"></i>
           </article>
         </div>
         <canvas id="duel-canvas" width="640" height="180" aria-label="Yard"></canvas>
