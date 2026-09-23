@@ -9,6 +9,7 @@ import {
   remainingRatio,
   siegeCommand,
 } from "./battle.js";
+import { inlandDesk } from "./inland.js";
 import {
   hydrateLife,
   tickLife,
@@ -2112,8 +2113,50 @@ export function battleCmd(state, content, cmd, extra = {}) {
   return { ok: false, message: "Unknown battle command." };
 }
 
+export function startInlandBattle(state, content, nodeId, extra = {}) {
+  const desk = inlandDesk(nodeId);
+  if (!desk) return { ok: false, message: "Unknown inland node." };
+  const from = regionOf(state, desk.approach) || currentRegion(state);
+  if (!from) return { ok: false, message: "No column to march." };
+  const field = !!extra.field;
+  const troops = extra.troops != null ? extra.troops : 80;
+  const battle = createBattle(state, content, from.id, nodeId, troops, 0, {
+    walls: extra.walls,
+    field,
+    forceSiege: !field,
+  });
+  battle.defenderPersonality = defenderPersonality(state, regionOf(state, nodeId) || battle.deskRegion || { id: nodeId, owner: null });
+  battle.fromHold = false;
+  state.phase = "battle";
+  state.battle = battle;
+  const name = battle.deskRegion?.name || nodeId;
+  const short = battle.deskRegion?.short || nodeId;
+  const openLine = battle.siege
+    ? `Siege lines on ${short}. WORKS ${battle.siege.works}. You are the attacker.`
+    : battle.log[0];
+  pushLog(state, `Column from ${from.short} onto ${name}. ${openLine}`, "war");
+  return {
+    ok: true,
+    battle: true,
+    message: battle.siege ? `Siege at ${name}.` : `Battle in ${name}.`,
+  };
+}
+
 function resolveBattle(state, battle) {
   const dest = regionOf(state, battle.toId);
+  if (!dest) {
+    const name = battle.deskRegion?.name || battle.toId;
+    const short = battle.deskRegion?.short || name;
+    state.phase = "strategy";
+    state.battle = null;
+    const won = battle.result === "atk";
+    pushLog(state, won ? `Taken: ${name}.` : `Repulsed from ${short}.`, "war");
+    return {
+      ok: true,
+      message: won ? `Victory at ${name}.` : `Defeat at ${name}.`,
+      battleEnd: battle.result,
+    };
+  }
   const origin = regionOf(state, battle.fromId);
   const atkR = remainingRatio(battle, "atk");
   const defR = remainingRatio(battle, "def");
