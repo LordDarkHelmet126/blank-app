@@ -93,7 +93,9 @@ Season tint only: `/?demo=season`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
 **Expanded theater (AK→CO):** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle road pulses).
-**Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (PNW hero: Seattle + Juneau–Seattle pulse). `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`.
+**Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (PNW hero: Seattle + Juneau–Seattle pulse). `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`. M113 hulls: `/?demo=look&fx=battle&hull=1`.
+**Officers final:** `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Create a friend at the top, pick a named face, then promote. `promote=1` opens Sam Ivers as an officer; `promote=2` opens Sam as a general.
+**Siege board:** `/?demo=siege`. Harder berm: `/?demo=siege&walls=72`. Battle hook: `/?demo=battle&siege=1`.
 **Yard duel (~99s):** `/?demo=duel`. Underdog: `/?demo=duel&goliath=1`. Style: `/?demo=duel&style=brawler` (also marksman, grappler, cavalry, guerrilla, drill, trapper, signals, or `cycle`). Arena: `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower). HUD uses `3 Special · Dust Feint`. Coach / NEXT / ADD chairs share one hire path. End Week teases the next week. Coach parks while a result scene is open.
 
 ## Layout

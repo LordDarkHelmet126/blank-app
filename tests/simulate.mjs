@@ -27,7 +27,13 @@ import {
   appointCandidates,
   playerCourt,
   duelCmd,
+  battleCmd,
   challengeCandidates,
+  hireCandidates,
+  ladderRankOf,
+  ladderLabel,
+  ladderRoster,
+  promotedInCity,
   actingStats,
   weekTease,
   stateControl,
@@ -42,7 +48,19 @@ import {
   geoOf,
   geoYield,
   geoTags,
+  startInlandBattle,
 } from "../js/engine.js";
+import { createBattle, autoResolveBattle } from "../js/battle.js";
+import { INLAND_IDS, inlandDesk } from "../js/inland.js";
+import {
+  regionIsSiege,
+  createSiege,
+  applySiegePloy,
+  siegeCoach,
+  siegeRecommend,
+  SIEGE_PLOYS,
+  RUSH_WORKS_MAX,
+} from "../js/siege.js";
 import {
   createDuel,
   resolveExchange,
@@ -216,6 +234,205 @@ assert(res.battleEnd === "atk" || res.battleEnd === "def", "battle must resolve"
 assert(battleState.phase === "strategy", "returned from battle");
 assert(battleState.log.some((l) => l.kind === "war"), "war log");
 console.log(`ok battle: ${res.message}`);
+
+const hullTrack = content.tech.tracks.find((t) => t.id === "tracked_hulls");
+assert(hullTrack?.battle?.unlockUnit === "ifv", "M113 tech unlocks unit ifv");
+function sideTypes(battle, side) {
+  return battle.units.filter((u) => u.side === side).map((u) => u.type);
+}
+const plainBattle = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const noHull = createBattle(plainBattle, content, "bethel", "nome", 90, 0);
+assert(sideTypes(noHull, "atk").every((t) => t === "regular"), "90 troops without unlock stay regulars");
+assert(!noHull.units.some((u) => u.type === "ifv" || u.type === "technical"), "no M113 or jeep without those unlocks");
+const militiaBattle = createBattle(plainBattle, content, "bethel", "nome", 20, 0);
+assert(sideTypes(militiaBattle, "atk").every((t) => t === "militia"), "small levy stays militia");
+const jeepOnly = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+jeepOnly.research.unlocked = ["small_arms", "technical"];
+const jeepBattle = createBattle(jeepOnly, content, "bethel", "nome", 90, 0);
+assert(sideTypes(jeepBattle, "atk").filter((t) => t === "technical").length === 1, "jeep still takes the last slot");
+assert(!jeepBattle.units.some((u) => u.type === "ifv"), "jeep unlock does not field an M113");
+const thinHull = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+thinHull.research.unlocked = ["small_arms", "tracked_hulls"];
+const underCrew = createBattle(thinHull, content, "bethel", "nome", 50, 0);
+assert(!underCrew.units.some((u) => u.type === "ifv"), "M113 waits until the levy can crew a hull");
+assert(sideTypes(underCrew, "atk").every((t) => t === "regular"), "50 troops with only tracked hulls stay regulars");
+const hullGame = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+hullGame.research.unlocked = ["small_arms", "tracked_hulls"];
+regionOf(hullGame, "nome").garrison = 80;
+const hullBattle = createBattle(hullGame, content, "bethel", "nome", 90, 0);
+const atkHull = hullBattle.units.filter((u) => u.side === "atk" && u.type === "ifv");
+const defHull = hullBattle.units.filter((u) => u.side === "def" && u.type === "ifv");
+assert(atkHull.length === 1 && defHull.length === 1, "one M113 per side when tracked_hulls is unlocked");
+assert(atkHull[0].label === "M113" && atkHull[0].maxHp === 18 && atkHull[0].atk === 7 && atkHull[0].def === 5 && atkHull[0].move === 3, "M113 salvage stats");
+assert(sideTypes(hullBattle, "atk").filter((t) => t === "regular").length >= 1, "foot regulars still deploy with the hull");
+assert(hullBattle.weather === "snow", "week-0 field is snow");
+const hullEnd = autoResolveBattle(hullGame, hullBattle, "loyalist");
+assert(hullEnd === "atk" || hullEnd === "def", "M113 battle auto-resolves");
+const mixed = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+mixed.research.unlocked = ["small_arms", "technical", "tracked_hulls"];
+const mixedBattle = createBattle(mixed, content, "bethel", "nome", 90, 0);
+const mixedAtk = sideTypes(mixedBattle, "atk");
+assert(mixedAtk.filter((t) => t === "technical").length === 1, "jeep survives beside the M113");
+assert(mixedAtk.filter((t) => t === "ifv").length === 1, "M113 takes the slot ahead of the jeep");
+assert(mixedAtk.at(-1) === "technical" && mixedAtk.at(-2) === "ifv", "jeep keeps the last slot");
+const liveHull = createNewGame(content, { seed: 8, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+act(liveHull, content, "raise_banner");
+regionOf(liveHull, "bethel").garrison = 120;
+liveHull.research.unlocked.push("tracked_hulls");
+liveHull.ap = 4;
+res = act(liveHull, content, "attack", { regionId: "nome", auto: true, troops: 90 });
+assert(res.ok && (res.battleEnd === "atk" || res.battleEnd === "def"), `live M113 attack: ${res.message}`);
+assert(liveHull.phase === "strategy", "M113 auto-resolve returns to the map");
+const fieldSrc = readFileSync(new URL("../js/terrain.js", import.meta.url), "utf8") + readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+assert(/u\.type === "ifv"/.test(fieldSrc) && /fillText\("113"/.test(fieldSrc) && /type === "ifv"\) return "113"/.test(fieldSrc), "M113 reads as a tracked hull marked 113");
+assert(/get\("hull"\) === "1"/.test(fieldSrc), "demo battle hull=1 fields the M113");
+console.log("ok M113 field spawn");
+
+assert(hullBattle.siege == null, "Nome field battle does not open a siege");
+assert(!regionIsSiege(regionOf(hullGame, "nome")), "Nome coast stays a field fight");
+assert(regionIsSiege(regionOf(hullGame, "anchorage")), "Anchorage bowl is a siege");
+assert(SIEGE_PLOYS.map((p) => p.id).join(",") === "cut,rake,rush", "three siege ploys");
+
+const siegeGame = createNewGame(content, { seed: 11, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const bowl = createBattle(siegeGame, content, "bethel", "anchorage", 80, 0);
+assert(bowl.siege && bowl.siege.works === regionOf(siegeGame, "anchorage").walls, "siege WORKS copies wall strength");
+assert(bowl.siege.works > RUSH_WORKS_MAX, "Anchorage works start above the rush line");
+assert(/Cut the berm/.test(siegeCoach(bowl.siege)) && /NEXT:/.test(siegeCoach(bowl.siege)), "coach names the next ploy");
+assert(siegeRecommend(bowl.siege) === "cut", "high works recommend Cut the berm");
+const rushed = createSiege({ name: "Bowl", short: "Bowl", walls: 40, garrison: 90 }, 80);
+const rushLevy = rushed.levy;
+applySiegePloy(siegeGame, rushed, "rush", 50);
+assert(rushed.result !== "atk" && rushed.levy < rushLevy, "rush into standing works fails and costs levy");
+assert(/Do not rush/.test(siegeCoach(rushed)), "coach still says do not rush");
+const loud = createSiege({ name: "Bowl", short: "Bowl", walls: 10, garrison: 40 }, 80);
+applySiegePloy(siegeGame, loud, "rush", 50);
+assert(loud.result !== "atk", "open berm with a live parapet does not fall");
+const quiet = createSiege({ name: "Bowl", short: "Bowl", walls: 10, garrison: 40 }, 80);
+quiet.suppress = 40;
+applySiegePloy(siegeGame, quiet, "rush", 50);
+assert(quiet.result === "atk" && quiet.closed, "low WORKS and SUPPRESS take the settlement");
+
+function cutsToOpen(walls) {
+  const st = createNewGame(content, { seed: 4, difficulty: "easy", name: "Siege", background: "fighter" });
+  const s = createSiege({ name: "Bowl", short: "Bowl", walls, garrison: 80 }, 200);
+  let cuts = 0;
+  let guard = 0;
+  while (!s.closed && guard++ < 20) {
+    const kind = siegeRecommend(s);
+    if (kind === "cut") cuts += 1;
+    applySiegePloy(st, s, kind, 50);
+  }
+  return { cuts, result: s.result };
+}
+const lightSiege = cutsToOpen(24);
+const heavySiege = cutsToOpen(72);
+assert(lightSiege.result === "atk" && heavySiege.result === "atk", "coach script takes light and heavy works");
+assert(heavySiege.cuts > lightSiege.cuts, "higher walls need more berm cuts");
+
+const held = createSiege({ name: "Bowl", short: "Bowl", walls: 80, garrison: 40 }, 400);
+let holdSteps = 0;
+while (!held.closed && holdSteps++ < 20) applySiegePloy(siegeGame, held, "rake", 50);
+assert(held.result === "def" && /lifts/.test(held.log[held.log.length - 1]), "watch expiry lifts the siege");
+
+const siegeEnd = autoResolveBattle(siegeGame, bowl, "loyalist");
+assert(siegeEnd === "atk", "auto siege follows the coach and takes Anchorage");
+assert(bowl.units.some((u) => u.side === "atk"), "siege still keeps the field roster for a later fight");
+
+act(siegeGame, content, "raise_banner");
+regionOf(siegeGame, "bethel").garrison = 120;
+siegeGame.ap = 4;
+res = act(siegeGame, content, "attack", { regionId: "anchorage", troops: 80 });
+assert(res.ok && siegeGame.phase === "battle" && siegeGame.battle.siege, `live siege open: ${res.message}`);
+const worksBefore = siegeGame.battle.siege.works;
+const cutRes = battleCmd(siegeGame, content, "siege", { kind: "cut" });
+assert(cutRes.ok && siegeGame.battle.siege.works < worksBefore, "Cut the berm drops WORKS");
+assert(/NEXT:/.test(cutRes.message), "siege command returns the next coach line");
+const blocked = battleCmd(siegeGame, content, "endTurn");
+assert(!blocked.ok, "field end-turn does not run during a siege");
+res = battleCmd(siegeGame, content, "auto");
+assert(res.battleEnd === "atk" || res.battleEnd === "def", `siege auto closes: ${res.message}`);
+assert(siegeGame.phase === "strategy", "siege returns to the map");
+
+const pageSrc = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const siegeCss = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+const siegeUi = readFileSync(new URL("../js/ui.js", import.meta.url), "utf8");
+for (const ploy of SIEGE_PLOYS) assert(pageSrc.includes(ploy.label), `siege button ${ploy.label}`);
+assert(/get\("demo"\) === "siege"/.test(siegeUi), "demo=siege hook");
+assert(/get\("siege"\) === "1"/.test(siegeUi), "battle demo siege=1 hook");
+assert(/\.siege-next \{[^}]*font-size:\s*16px/.test(siegeCss), "siege NEXT type is large");
+assert(/\.siege-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "siege NEXT is high-contrast amber");
+assert(/\.siege-next \{[^}]*color:\s*#000000/.test(siegeCss), "siege NEXT text is black on amber");
+assert(/\.siege-meter strong \{[^}]*font-size:\s*28px/.test(siegeCss), "siege meter numerals are large");
+assert(/log\.innerHTML = list\.map/.test(siegeUi), "siege log renders every line");
+assert(!/siege-log"\)\.innerHTML = s\.log\.slice\(/.test(siegeUi), "siege log does not drop older lines");
+assert(/\.siege-log \{[^}]*overflow:\s*visible/.test(siegeCss), "siege log does not nest a second scroller");
+assert(/\.siege-log \{[^}]*max-height:\s*none/.test(siegeCss), "siege log is not height-clipped");
+assert(/siege-meter works/.test(pageSrc) && /siege-meter suppress/.test(pageSrc) && /siege-meter levy/.test(pageSrc), "WORKS SUPPRESS LEVY meters are marked");
+assert(/siege-sticky/.test(pageSrc) && /position:\s*sticky/.test(siegeCss), "siege controls stay on screen after several ploys");
+assert(/\.siege-meter\.works strong \{[^}]*#ff4040/.test(siegeCss), "WORKS numeral is red");
+assert(/\.siege-meter\.suppress strong \{[^}]*#f8d800/.test(siegeCss), "SUPPRESS numeral stays amber");
+assert(/\.siege-meter\.levy strong \{[^}]*#ffffff/.test(siegeCss), "LEVY numeral is white");
+assert(/ploy-mark/.test(siegeUi) && /PRESS/.test(siegeUi), "ploy buttons name PRESS");
+assert(/id="siege-last"/.test(pageSrc), "latest siege line stays with the buttons");
+console.log("ok siege depth");
+
+const inlandGame = createNewGame(content, { seed: 12, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const mapIds = new Set(content.regions.regions.map((r) => r.id));
+const neighborBlob = JSON.stringify(content.regions.regions.map((r) => r.neighbors));
+for (const id of INLAND_IDS) {
+  assert(inlandDesk(id), `desk ${id}`);
+  assert(!mapIds.has(id), `${id} is not a map node`);
+  assert(!neighborBlob.includes(`"${id}"`), `${id} is not a road`);
+  const fight = createBattle(inlandGame, content, inlandDesk(id).approach, id, 80, 0);
+  assert(fight.deskOnly, `${id} fight does not require a map node`);
+  assert(fight.siege && fight.siege.works === inlandDesk(id).walls, `${id} WORKS uses the desk preset`);
+  assert(fight.siege.suppress === inlandDesk(id).pressure, `${id} opens at the pressure preset`);
+  assert(/You are the attacker/.test(fight.siege.log[0]), `${id} siege log keeps the attacker line`);
+  assert(/NEXT:/.test(siegeCoach(fight.siege)) && inlandDesk(id).flavor && siegeCoach(fight.siege).includes(inlandDesk(id).flavor), `${id} coach keeps NEXT and the desk line`);
+  assert(fight.units.some((u) => u.side === "atk") && fight.units.some((u) => u.side === "def"), `${id} keeps the field roster`);
+  assert(!regionOf(inlandGame, id), `${id} battle does not insert a map node`);
+}
+assert(inlandDesk("kamchatka").walls > inlandDesk("havana").walls, "Kamchatka berm is heavier than Havana");
+assert(inlandDesk("havana").walls > inlandDesk("managua").walls, "Havana berm is heavier than Managua");
+assert(siegeRecommend(createBattle(inlandGame, content, "far_cuba", "havana", 80, 0).siege) === "cut", "Havana still opens on Cut the berm");
+const inlandEnd = autoResolveBattle(inlandGame, createBattle(inlandGame, content, "far_russia", "kamchatka", 80, 0), "loyalist");
+assert(inlandEnd === "atk", "coach script takes the Kamchatka preset");
+const managuaEnd = autoResolveBattle(inlandGame, createBattle(inlandGame, content, "far_nicaragua", "managua", 80, 0), "loyalist");
+assert(managuaEnd === "atk", "coach script takes the Managua preset");
+const sibField = createBattle(inlandGame, content, "far_russia", "siberia", 80, 0, { field: true });
+assert(sibField.siege == null && sibField.grid.some((row) => row.includes("forest")), "inland field spawn skips the siege board");
+const painted = createNewGame(content, { seed: 13, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+painted.regions.push({
+  id: "kr_inland",
+  name: "Campaign Ridge",
+  short: "Ridge",
+  walls: 30,
+  garrison: 22,
+  terrainBias: "hills",
+  neighbors: [],
+});
+const paintedFight = createBattle(painted, content, "far_korea", "kr_inland", 80, 0);
+assert(paintedFight.siege && paintedFight.siege.works === 30 && !paintedFight.deskOnly, "painted walls replace the desk preset");
+assert(painted.regions.find((r) => r.id === "kr_inland").neighbors.length === 0, "combat hook does not add a road");
+const low = createNewGame(content, { seed: 14, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+low.regions.push({ id: "managua", name: "Managua", short: "Managua", walls: 10, garrison: 12, terrainBias: "forest", neighbors: ["far_nicaragua"] });
+assert(!createBattle(low, content, "far_nicaragua", "managua", 80, 0).siege, "authored low walls stay a field fight");
+assert(createBattle(low, content, "far_nicaragua", "managua", 80, 0, { forceSiege: true }).siege, "siege demo can still force the board");
+act(inlandGame, content, "raise_banner");
+const lane = startInlandBattle(inlandGame, content, "sponsor_lane", { troops: 80 });
+assert(lane.ok && inlandGame.phase === "battle" && inlandGame.battle.siege, `sponsor lane siege: ${lane.message}`);
+const laneWorks = inlandGame.battle.siege.works;
+const laneCut = battleCmd(inlandGame, content, "siege", { kind: "cut" });
+assert(laneCut.ok && inlandGame.battle.siege.works < laneWorks, "inland Cut the berm drops WORKS");
+res = battleCmd(inlandGame, content, "auto");
+assert(res.battleEnd === "atk" || res.battleEnd === "def", `inland siege auto closes: ${res.message}`);
+assert(inlandGame.phase === "strategy" && !regionOf(inlandGame, "sponsor_lane"), "inland siege returns without adding a node");
+assert(/get\("node"\)/.test(siegeUi) && /startInlandBattle/.test(siegeUi), "demo node= starts an inland battle");
+assert(/field: true/.test(siegeUi), "demo=battle&node= opens a field spawn");
+const statusSrc = readFileSync(new URL("../STATUS.md", import.meta.url), "utf8");
+for (const id of INLAND_IDS) assert(statusSrc.includes(`node=${id}`), `STATUS documents ${id}`);
+assert(statusSrc.includes("demo=battle&siege=1&node="), "STATUS documents the battle siege hook");
+console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
 act(spyState, content, "raise_banner");
@@ -738,6 +955,11 @@ assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 
 assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tiles lead with hire/appoint");
 assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
 assert(/max-height: 40px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "duel log compact");
+assert(/id="duel-next"/.test(pageSrc), "duel NEXT coach line");
+assert(/function duelNextLine/.test(uiSrc), "duel coach names the next press");
+assert(/\.duel-next \{[^}]*background:\s*#f8d800/.test(siegeCss), "duel NEXT is amber");
+assert(/\.duel-next \{[^}]*color:\s*#000000/.test(siegeCss), "duel NEXT text is black");
+assert(/style-stripe/.test(pageSrc) && /duel-you-hit/.test(pageSrc), "duel style stripe and damage read");
 assert(/Next week may bring/.test(uiSrc), "week tease on NEXT and week report");
 assert(/get\("demo"\) === "week"/.test(uiSrc) && /weekReportHtml/.test(uiSrc), "demo=week shows the week report");
 assert(/get\("demo"\) === "states"/.test(uiSrc) && /demo"\) === "map"/.test(uiSrc), "demo=states / demo=map hook");
@@ -808,4 +1030,131 @@ console.log("ok yard duel 99s");
 
 const personalities = new Set(content.officers.officers.map((o) => o.personality));
 assert(personalities.size >= 6, "distinct personalities in data");
+
+const lad = createNewGame(content, { seed: 31, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(lad, content, "raise_banner");
+assert(!createCustomOfficer(lad, { name: "Skip Rank", ladder: "general", personality: "loyalist" }).ok, "cannot create a general");
+assert(
+  !createCustomOfficer(lad, { name: "Over Budget", ladder: "player", war: 80, int: 80, pol: 80, chr: 80, personality: "loyalist" }).ok,
+  "friend stats stay inside the budget"
+);
+const made = createCustomOfficer(lad, {
+  name: "Sam Ivers",
+  title: "Friend",
+  personality: "loyalist",
+  portrait: "F2",
+  war: 58,
+  int: 52,
+  pol: 48,
+  chr: 62,
+  ladder: "player",
+});
+assert(made.ok && made.ladder === "player", "friend created as a player");
+const sam = lad.officers.find((o) => o.id === made.id);
+assert(sam.friend && sam.custom && sam.portrait === "F2" && sam.faction == null, "friend identity stored");
+assert(ladderRankOf(sam) === "player" && ladderLabel("player") === "Player", "player rung");
+assert(ladderRoster(lad).player.some((o) => o.id === sam.id), "roster lists the player rung");
+assert(!hireCandidates(lad).some((o) => o.id === sam.id), "friends promote; they are not an RNG hire");
+assert(!act(lad, content, "promote", { officerId: "player" }).ok, "commander is not promoted");
+const hartFree = lad.officers.find((o) => o.id === "hart");
+assert(!act(lad, content, "promote", { officerId: "hart" }).ok && hartFree.faction == null, "listed free officers still use hire");
+regionOf(lad, "bethel").garrison = 90;
+const blockedLead = act(lad, content, "attack", { regionId: "nome", auto: true, commanderId: sam.id });
+assert(!blockedLead.ok && lad.phase === "strategy", `player cannot lead a march: ${blockedLead.message}`);
+assert(regionOf(lad, "bethel").garrison === 90, "rejected lead does not spend the levy");
+sam.region = "nome";
+const away = act(lad, content, "promote", { officerId: sam.id });
+assert(!away.ok && ladderRankOf(sam) === "player" && sam.region === "nome", "commission requires the same city");
+sam.region = "bethel";
+let step = act(lad, content, "promote", { officerId: sam.id });
+assert(step.ok && step.rankChanged && step.from === "player" && step.to === "officer", step.message);
+assert(step.message.includes("Player → Officer"), "officer confirmation");
+assert(ladderRankOf(sam) === "officer" && sam.isGeneral === false, "officer rung is not a general");
+assert(!playerGenerals(lad).some((o) => o.id === sam.id), "explicit officer is not auto-seated");
+assert(promotedInCity(lad).some((o) => o.id === sam.id), "promoted officer can be selected in this city");
+const yardRes = act(lad, content, "challenge", { officerId: "hart", actorId: sam.id });
+assert(yardRes.ok && yardRes.duel && lad.duel.actorId === sam.id, `officer takes the yard: ${yardRes.message}`);
+assert(lad.duel.you.id === sam.id, "yard fighter is the promoted officer");
+const yardEnd = duelCmd(lad, "auto");
+assert(yardEnd.ok && lad.phase === "strategy", "yard still closes");
+step = act(lad, content, "promote", { officerId: sam.id });
+assert(step.ok && step.to === "general" && step.rankChanged, step.message);
+assert(/Officer → General \(1\/5\)/.test(step.message), "general confirmation counts the chair");
+assert(sam.isGeneral && ladderRankOf(sam) === "general", "general rung");
+assert(playerGenerals(lad).some((o) => o.id === sam.id), "general sits the court");
+assert(!act(lad, content, "promote", { officerId: sam.id }).ok, "general does not promote again");
+lad.ap = 8;
+regionOf(lad, "bethel").garrison = 90;
+const march = act(lad, content, "attack", { regionId: "nome", auto: true, commanderId: sam.id });
+assert(march.ok, `general leads the field: ${march.message}`);
+assert(
+  lad.log.some((l) => l.text.includes("Sam Ivers") && l.text.includes("leads the column")),
+  "field log names the promoted lead"
+);
+const kept = deserialize(serialize(lad));
+const savedSam = kept.officers.find((o) => o.id === sam.id);
+assert(savedSam.ladder === "general" && savedSam.friend && savedSam.isGeneral, "ladder survives save");
+
+const bare = createNewGame(content, { seed: 32, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const barePal = createCustomOfficer(bare, {
+  name: "Sam Ivers",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(barePal.ok, "friend can be created before a banner");
+assert(!act(bare, content, "promote", { officerId: barePal.id }).ok, "promote waits for a banner");
+assert(ladderRankOf(bare.officers.find((o) => o.id === barePal.id)) === "player", "still a player");
+
+const capped = createNewGame(content, { seed: 33, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(capped, content, "raise_banner");
+capped.officers
+  .filter((o) => o.id !== "player")
+  .slice(0, 5)
+  .forEach((o) => {
+    o.faction = "northern_front";
+    o.isGeneral = true;
+    o.alive = true;
+    o.retired = false;
+  });
+const sixth = createCustomOfficer(capped, {
+  name: "Sam Ivers",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(act(capped, content, "promote", { officerId: sixth.id }).ok, "player still becomes an officer when chairs are full");
+const sixthOff = capped.officers.find((o) => o.id === sixth.id);
+assert(!act(capped, content, "promote", { officerId: sixth.id }).ok && !sixthOff.isGeneral, "sixth general is refused");
+assert(playerGenerals(capped).length === 5, "cap stays at five");
+
+const cssSrc = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+assert(/get\("demo"\) === "roster"/.test(uiSrc) && /=== "ladder"/.test(uiSrc), "demo=roster and demo=ladder");
+assert(/get\("promote"\)/.test(uiSrc), "demo=roster&promote= hook");
+assert(/id="btn-roster"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "roster dock button");
+assert(/data-promote/.test(uiSrc) && /roster-ladder/.test(uiSrc) && /roster-confirm/.test(uiSrc), "roster promote UI");
+assert(/tag === "INPUT"/.test(uiSrc), "roster typing does not fire the End Week shortcut");
+assert(/--type:\s*10px/.test(cssSrc), "HUD type stays 10px");
+assert(/\.roster-ladder[\s\S]*font-size:\s*16px/.test(cssSrc) && /\.roster-confirm[\s\S]*#101010/.test(cssSrc), "roster type and contrast");
+const officersFn = uiSrc.slice(uiSrc.indexOf("function officersHtml"), uiSrc.indexOf("function missionsHtml"));
+assert(officersFn.includes('id="roster-create"') && officersFn.indexOf("roster-create") < officersFn.indexOf("rosterRungsHtml()"), "create-friend form is above the ladder lists");
+assert(/demo"\) === "officers"/.test(uiSrc), "demo=officers final hook");
+assert(/Nell Crowe/.test(terrainSrc) && /Jed Harrow/.test(terrainSrc) && /faceLabel/.test(terrainSrc), "faces have readable original names");
+assert(/c-face-name/.test(uiSrc) && /f\.name/.test(uiSrc), "face picker shows the name");
+assert(!/alt="\$\{f\.id\}"/.test(uiSrc), "face tiles are not labeled only F0–F15");
+assert(/roster-next/.test(uiSrc) && /rank-badge rank-/.test(uiSrc) && /RANK CONFIRMED/.test(uiSrc), "roster NEXT, rank badges, and confirm banner");
+assert(/\.court-strip \{[^}]*font-size:\s*13px/.test(cssSrc), "court strip type is larger");
+assert(/\.court-next \{[^}]*#f8d800/.test(cssSrc) && /\.court-next \{[^}]*#000000/.test(cssSrc), "court NEXT is high contrast");
+assert(/\.rank-badge\.rank-general[\s\S]*?#f8d800/.test(cssSrc) && /\.rank-badge\.rank-general[\s\S]*?#000000/.test(cssSrc), "general badge is high contrast");
+assert(!/wolverine|tekken|street fighter|red dawn/i.test(terrainSrc), "face names stay original IP");
+assert(/FRIEND ADDED/.test(uiSrc) && /just-ranked/.test(uiSrc) && /rank-stripe/.test(uiSrc), "friend added banner, rank flash, and rank stripe");
+assert(/\.roster-create \.face-tile span \{[^}]*font-size:\s*12px/.test(cssSrc), "create face names are readable");
+console.log("ok roster ladder");
+
 console.log("ALL TESTS PASSED");

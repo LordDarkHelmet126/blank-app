@@ -2,11 +2,11 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Coach siege NEXT is copy only, on Campaign head `daf3dea`. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
+**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues sit on the live Combat siege board for the six locked inland ids. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
 
-## Coach → foreign siege (copy only)
+## Coach → foreign siege
 
-When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six inland desks, a short siege line sits on the existing no-leap approach. Ploys stay **Cut the berm**, **Rake the parapet**, **Rush the gap**. Campaign map labels stay Kamchatka, Siberia, Havana, Managua, Sponsor Lane, and Sheds. The siege line may mirror Combat flavor lightly (Lane, Inland Ridge). Combat owns the siege board; this pass does not edit siege mechanics.
+When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six inland desks, a short siege line sits on the existing no-leap approach. Ploys stay **Cut the berm**, **Rake the parapet**, **Rush the gap**. Campaign map labels stay Kamchatka, Siberia, Havana, Managua, Sponsor Lane, and Sheds. The siege line may mirror Combat flavor lightly (Lane, Inland Ridge). Those demos open the live siege board.
 
 | id | Campaign short | Siege demo |
 |---|---|---|
@@ -17,11 +17,50 @@ When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six in
 | `sponsor_lane` | Sponsor Lane | `/?demo=siege&node=sponsor_lane` |
 | `kr_inland` | Sheds | `/?demo=siege&node=kr_inland` |
 
-Same board: `/?demo=battle&siege=1&node=<id>`. Field mention only: `/?demo=battle&node=<id>`.
+Same board: `/?demo=battle&siege=1&node=<id>`. Field spawn (no siege board): `/?demo=battle&node=<id>`.
 
 Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
 On the look demo the approach chain and the siege desk are separate blocks in the NEXT strip (the line break is kept). On the coach demo the Raise-a-banner copy scrolls in `#coach-text` while the siege desk line stays pinned under it.
+
+## Inland siege hooks
+
+Locked ids open the same siege board (WORKS / berm / parapet / Rush the gap) or the same field spawn. The hook is the id string. If Campaign has already set walls, those walls are WORKS. Opening SUPPRESS is the desk pressure preset.
+
+| Id | Desk | Default WORKS | Opening pressure |
+| --- | --- | --- | --- |
+| kamchatka | Kamchatka Works | 56 | 0 |
+| siberia | Siberia Column | 36 | 4 |
+| havana | Havana Harbor | 48 | 16 |
+| managua | Managua Works | 28 | 22 |
+| sponsor_lane | Sponsor Lane | 32 | 8 |
+| kr_inland | Inland Ridge | 40 | 12 |
+
+Harder berm: `/?demo=siege&node=havana&walls=72`. Domestic siege stays `/?demo=siege` and `/?demo=battle&siege=1`.
+
+## Combat polish
+
+Yard duel stays **99s / 11 exchanges**. An amber **NEXT** line names the green-window press (1 Strike, 2 Guard, 3 Special · the style move) and turns green while the needle is in the band. Each fighter has a style stripe. Damage shows as **−N** on the card and over the yard.
+
+Siege **WORKS** is red, **SUPPRESS** is amber, **LEVY** is white. The recommended ploy says **PRESS**; the others say **WAIT** or **LATER**. Meters, the amber NEXT line, and the ploy buttons stay stuck to the top so later impulses do not bury the controls. The siege log still lists every line.
+
+Create-a-friend stays above the ladder. A new friend shows **FRIEND ADDED**. Promote still shows **RANK CONFIRMED**, and that row flashes. Rank stripes sit on the roster and the court chairs. Face names on the create grid are larger.
+
+**Playtest:** `/?demo=duel` · `/?demo=officers` (`promote=1` / `promote=2`) · `/?demo=siege` (`walls=72`) · `/?demo=battle&siege=1` · `/?demo=look&fx=battle&hull=1`
+
+## Officers final
+
+Dock → **Roster** (same screen as Officers; also the Court strip button). The create-a-friend form is the first block in the modal. Each original face has a readable name (Nell Crowe and the rest — not F0–F15). Friends join as **Player**. Promote to **Officer**, then **General**. A yellow **RANK CONFIRMED** banner and a **NEXT** line name the rung. Rank badges on the roster and the court strip use large amber/white type. Promoted officers in your city can take the yard or lead a march.
+
+**Playtest:** `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Optional `promote=1` opens with Sam Ivers already an officer; `promote=2` opens with Sam already a general.
+
+Campaign adjacency, leap rules, and the theater map are unchanged. Yard duel stays 99s / 11 exchanges.
+
+## Siege board
+
+Fortified bowls (walls ≥ 24, or urban) open a siege instead of treating walls as defender morale. You are the attacker. The garrison is the defender. **WORKS** is wall strength. Three ploys: **Cut the berm** (drops WORKS), **Rake the parapet** (fills SUPPRESS), **Rush the gap** (takes the place only when WORKS are low and the parapet is quiet). The amber NEXT line names the ploy. The siege log is one list on the battle scroller — older lines stay in the list. The siege **lifts** if the levy hits 0 or the watch runs out. Field fights, including the M113 spawn, stay on the isometric grid.
+
+**Demo:** `/?demo=siege` (Anchorage from Bethel). Harder berm: `/?demo=siege&walls=72`. Same board from the battle hook: `/?demo=battle&siege=1`. Field M113 check is still `/?demo=look&fx=battle&hull=1` (Nome, not a siege).
 
 ## How to run
 
@@ -35,7 +74,7 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver selected, Cheyenne–Denver pulse). California frame: `/?demo=look&view=ca`. Cold new game: `/?demo=start`. Globe: `/?demo=look&view=world`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver selected, Cheyenne–Denver pulse). California frame: `/?demo=look&view=ca`. Cold new game: `/?demo=start`. Globe: `/?demo=look&view=world`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`. M113 hulls: `/?demo=look&fx=battle&hull=1`.
 
 ## US silhouette (this pass)
 
