@@ -355,8 +355,8 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 }
 .loy-bar i.on { background: var(--amber); }
 .plate-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.city-stats { flex: 0 0 auto; }
-.city-stats .city-body { padding: 6px 8px; line-height: 1.5; }
+.city-stats { flex: 0 0 auto; overflow: visible; }
+.city-stats .city-body { padding: 8px 8px 10px; line-height: 1.55; overflow: visible; }
 .city-stats .city-body .plus,
 .city-stats .city-body .minus { margin: 2px 0 0; }
 .city-stats h2 {
@@ -1189,10 +1189,10 @@ hr {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 10px;
+  padding: 8px 10px;
   margin: 6px 6px 0;
-  background: #803010;
-  border: var(--chrome);
+  background: #000018;
+  border: 4px solid #f8d800;
   box-shadow: var(--chrome-out);
   flex: 0 0 auto;
 }
@@ -1200,11 +1200,16 @@ hr {
 .objective-copy { min-width: 0; line-height: 1.8; }
 .objective strong {
   display: block;
-  color: var(--amber);
+  color: #f8d800;
   margin-bottom: 4px;
-  font-size: var(--type-lg);
+  font-size: 14px;
 }
-.objective span { color: var(--ice); }
+.objective #btn-coach {
+  font-size: 13px;
+  color: #f8f8f8;
+  background: #000030;
+}
+.objective span { color: #f8f8f8; font-size: 13px; line-height: 1.7; }
 .coach {
   position: fixed;
   right: 16px;
@@ -1214,20 +1219,54 @@ hr {
 }
 .coach[hidden] { display: none !important; }
 .coach-card {
-  background: var(--panel);
-  border: var(--chrome);
+  background: #000018;
+  border: 4px solid #f8f8f8;
   box-shadow: var(--chrome-out);
-  padding: 12px;
+  padding: 14px;
 }
-.coach-card h2 { margin: 0 0 10px; color: var(--amber); font-weight: 400; font-size: var(--type-lg); }
-.coach-card p { line-height: 1.85; color: var(--ice); }
+.coach-card h2 { margin: 0 0 10px; color: #f8d800; font-weight: 400; font-size: 16px; }
+.coach-card .panel-why { color: #f8f8f8; font-size: 12px; }
+.coach-card p { line-height: 1.85; color: #f8f8f8; font-size: 13px; }
+.coach-card button { font-size: 13px; color: #f8f8f8; background: #000030; }
+.coach-card button.primary { color: #f8d800; background: #000018; border-color: #f8d800; }
 .coach-ring {
   outline: 4px solid #f8d800;
   outline-offset: 2px;
-  animation: ring-blink 500ms steps(2) infinite;
+  animation: none;
   z-index: 6;
   position: relative;
 }
+/* east-readability: coach, NEXT, states board, city report, chips */
+.city-stats .chrome-head .panel-title { font-size: 14px; color: #f8d800; }
+.city-stats .chrome-head .panel-why { font-size: 12px; color: #f8f8f8; }
+.city-stats .oversee-meta h2 { font-size: 15px; color: #f8f8f8; }
+.city-stats .oversee-meta,
+.city-stats .city-body,
+.city-stats .muted { color: #f8f8f8; font-size: 13px; }
+.city-stats .pill { font-size: 13px; color: #f8f8f8; background: #000018; }
+.city-stats .pill span { color: #f8f8f8; }
+.city-stats .pill strong { color: #f8d800; }
+.city-stats .spine-note {
+  margin: 6px 0 0;
+  color: #f8f8f8;
+  font-size: 13px;
+  line-height: 1.75;
+}
+.states-board { color: #f8f8f8; font-size: 13px; }
+.states-board h2 { font-size: 16px; color: #f8d800; }
+.states-board .spine-lead,
+.states-board .terr-line,
+.states-board .state-card p { color: #f8f8f8; font-size: 13px; line-height: 1.75; }
+.states-board .state-card { background: #000018; margin: 10px 0; padding: 8px; }
+.states-board .state-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.states-board .pill { font-size: 13px; color: #f8f8f8; background: #000018; }
+.states-board .pill strong { color: #f8d800; }
+.states-board button { font-size: 13px; color: #f8f8f8; }
 @keyframes ring-blink {
   0%, 49% { outline-color: #f8d800; }
   50%, 100% { outline-color: #f8f8f8; }

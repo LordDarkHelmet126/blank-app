@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-22 — With Gulf Sealift selected, NEXT names that node’s roads (St. Louis, Cuba), not the player’s Alaska neighbors. Cuba selected from Bethel still names St. Louis → Gulf Sealift. Look: `/?demo=look&focus=gulf`. No St. Louis–Cuba leap.
+**Last checkpoint:** 2026-09-23 — East spine copy and NEXT, no new cities. Keys stay Omaha (NE), Topeka (KS), St. Louis (MO). NEXT names the existing hop: Omaha → Lincoln → Topeka → Wichita → St. Louis (Cheyenne/Billings/Denver enter at Omaha; Denver→Lincoln names Omaha, not a Topeka skip). Gulf Sealift is still St. Louis → Gulf Sealift → Cuba. Eight west-bloc states still name the national leader; the east keys do not replace them. Coach, NEXT, States, and City report type is larger and high-contrast.
 
 ## How to run
 
@@ -45,6 +45,7 @@ Theater is a painted topo (olive plains, brown mountains, blue water, coast haze
 - High desert **Salt Lake–Jackson** vs Junction orchards
 - Redrock sun road **Moab–Denver** vs Junction
 - Front Range **Denver–Omaha** / **Denver–Topeka** vs the long river-bluff chain
+- East spine **Billings / Cheyenne / Denver → Omaha → Lincoln → Topeka → Wichita → St. Louis**. No new edges. Omaha does not touch Topeka; Topeka does not touch St. Louis.
 - Caribbean **St. Louis → Gulf Sealift → Cuba** (Phase 3). No direct leap. A later southern wire would still use that channel.
 
 ## Geo tags (weekly yields)
