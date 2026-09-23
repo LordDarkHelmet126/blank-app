@@ -3,16 +3,16 @@
     "theater": "west",
     "version": "0.2-states",
     "coordinateSpace": "1000x620 map units (west-east, north-south)",
-    "notes": "Continental US silhouette with an Alaska/Yukon spur. California and Nevada are on the board (Sacramento, Los Angeles, Reno, Las Vegas) by neighbor roads only. Week 0 starts in unowned Cheyenne. No leaping. Shared-border roads only: Spokane\u2013Portland, Spokane\u2013Bend, Boise\u2013Missoula, Boise\u2013Jackson, Cheyenne\u2013Salt Lake, Cheyenne\u2013Lincoln, Denver\u2013Lincoln, Reno\u2013Salt Lake, Lincoln\u2013Wichita, Topeka\u2013St. Louis. Gulf Sealift is St. Louis \u2192 gulf_passage \u2192 Cuba \u2192 Nicaragua. Russia stays Nome \u2192 Bering.",
-    "unlock": "All US/Yukon cities are painted and walkable from week 0. Foreign nodes unlock at campaign phase 3 (after national leader). Korea appears if a sponsor intervenes.",
+    "notes": "Continental US silhouette with an Alaska/Yukon spur. California and Nevada are on the board (Sacramento, Los Angeles, Reno, Las Vegas) by neighbor roads only. Week 0 starts in unowned Cheyenne. No leaping. Shared-border roads only: Spokane\u2013Portland, Spokane\u2013Bend, Boise\u2013Missoula, Boise\u2013Jackson, Cheyenne\u2013Salt Lake, Cheyenne\u2013Lincoln, Denver\u2013Lincoln, Reno\u2013Salt Lake, Lincoln\u2013Wichita, Topeka\u2013St. Louis. Gulf Sealift is St. Louis \u2192 gulf_passage \u2192 Cuba \u2192 Nicaragua. Russia stays Nome \u2192 Bering. Inland desks: far_russia\u2013kamchatka\u2013siberia, far_cuba\u2013havana, far_nicaragua\u2013managua, far_russia\u2013sponsor_lane\u2013far_korea\u2013kr_inland.",
+    "unlock": "All US/Yukon cities are painted and walkable from week 0. Phase 3 opens Nome \u2192 Bering \u2192 far_russia \u2192 kamchatka \u2192 siberia, and St. Louis \u2192 Gulf Sealift \u2192 far_cuba \u2192 havana, with far_cuba \u2192 far_nicaragua \u2192 managua. Phase 4 opens far_russia \u2192 Sponsor Lane \u2192 far_korea \u2192 kr_inland.",
     "counts": {
-      "states": 14,
+      "states": 19,
       "usStates": 13,
       "territories": 1,
-      "cities": 42,
+      "cities": 48,
       "alaskaPlusSpurs": 11,
       "lower48": 26,
-      "foreign": 4
+      "foreign": 10
     }
   },
   "campaign": {
@@ -2761,6 +2761,74 @@
           274
         ]
       ]
+    },
+    {
+      "id": "ru",
+      "name": "Far Shore",
+      "short": "RU",
+      "kind": "foreign",
+      "keyCities": [
+        "far_russia",
+        "siberia"
+      ],
+      "label": [
+        12,
+        66
+      ]
+    },
+    {
+      "id": "cu",
+      "name": "Caribbean",
+      "short": "CU",
+      "kind": "foreign",
+      "keyCities": [
+        "far_cuba",
+        "havana"
+      ],
+      "label": [
+        20,
+        560
+      ]
+    },
+    {
+      "id": "ni",
+      "name": "Isthmus",
+      "short": "NI",
+      "kind": "foreign",
+      "keyCities": [
+        "far_nicaragua",
+        "managua"
+      ],
+      "label": [
+        114,
+        560
+      ]
+    },
+    {
+      "id": "sp",
+      "name": "Sponsor Lane",
+      "short": "SP",
+      "kind": "foreign",
+      "keyCities": [
+        "sponsor_lane"
+      ],
+      "label": [
+        12,
+        150
+      ]
+    },
+    {
+      "id": "kr",
+      "name": "Peninsula",
+      "short": "KR",
+      "kind": "foreign",
+      "keyCities": [
+        "far_korea"
+      ],
+      "label": [
+        12,
+        248
+      ]
     }
   ],
   "regions": [
@@ -4889,7 +4957,8 @@
       ],
       "neighbors": [
         "bering_strait",
-        "far_korea"
+        "kamchatka",
+        "sponsor_lane"
       ],
       "startOwner": null,
       "garrison": 80,
@@ -4946,11 +5015,12 @@
       ],
       "minus": [
         "Sea gated",
-        "No inland"
+        "Pier only"
       ],
       "neighbors": [
+        "gulf_passage",
         "far_nicaragua",
-        "gulf_passage"
+        "havana"
       ],
       "startOwner": null,
       "garrison": 54,
@@ -5010,7 +5080,8 @@
         "Thin stores"
       ],
       "neighbors": [
-        "far_cuba"
+        "far_cuba",
+        "managua"
       ],
       "startOwner": null,
       "garrison": 46,
@@ -5070,7 +5141,8 @@
         "Far lift"
       ],
       "neighbors": [
-        "far_russia"
+        "sponsor_lane",
+        "kr_inland"
       ],
       "startOwner": null,
       "garrison": 60,
@@ -5111,6 +5183,368 @@
         "sun": 0,
         "weather": 1,
         "defense": 2
+      }
+    },
+    {
+      "id": "kamchatka",
+      "name": "Kamchatka Sheds",
+      "short": "Kamchatka",
+      "state": "RU",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": [
+        "Mine sheds",
+        "Ice road"
+      ],
+      "minus": [
+        "Thin stores",
+        "No port"
+      ],
+      "neighbors": [
+        "far_russia",
+        "siberia"
+      ],
+      "startOwner": null,
+      "garrison": 28,
+      "economy": 22,
+      "food": 14,
+      "walls": 10,
+      "order": 40,
+      "population": 4200,
+      "terrainBias": "ice",
+      "plate": "below",
+      "polygon": [
+        [
+          2,
+          70
+        ],
+        [
+          22,
+          70
+        ],
+        [
+          22,
+          86
+        ],
+        [
+          2,
+          86
+        ]
+      ],
+      "label": [
+        12,
+        78
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 2,
+        "fuel": 1,
+        "water": 0,
+        "sun": 0,
+        "weather": 3,
+        "defense": 1
+      }
+    },
+    {
+      "id": "siberia",
+      "name": "Siberia Key",
+      "short": "Siberia",
+      "state": "RU",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": [
+        "Listening post",
+        "Spare tubes"
+      ],
+      "minus": [
+        "No harbor",
+        "Weather lock"
+      ],
+      "neighbors": [
+        "kamchatka"
+      ],
+      "startOwner": null,
+      "garrison": 18,
+      "economy": 16,
+      "food": 10,
+      "walls": 8,
+      "order": 44,
+      "population": 900,
+      "terrainBias": "ice",
+      "plate": "below",
+      "polygon": [
+        [
+          2,
+          110
+        ],
+        [
+          22,
+          110
+        ],
+        [
+          22,
+          126
+        ],
+        [
+          2,
+          126
+        ]
+      ],
+      "label": [
+        12,
+        118
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 0,
+        "fuel": 1,
+        "water": 0,
+        "sun": 0,
+        "weather": 3,
+        "defense": 2
+      }
+    },
+    {
+      "id": "sponsor_lane",
+      "name": "Sponsor Lane",
+      "short": "Sponsor Lane",
+      "state": "SP",
+      "unlockWeek": 0,
+      "unlockPhase": 4,
+      "type": "sea",
+      "plus": [
+        "Night crates",
+        "Short hop"
+      ],
+      "minus": [
+        "Sponsor's clock",
+        "No army"
+      ],
+      "neighbors": [
+        "far_russia",
+        "far_korea"
+      ],
+      "startOwner": null,
+      "garrison": 12,
+      "economy": 18,
+      "food": 8,
+      "walls": 6,
+      "order": 36,
+      "population": 200,
+      "terrainBias": "coast",
+      "plate": "below",
+      "polygon": [
+        [
+          2,
+          160
+        ],
+        [
+          22,
+          160
+        ],
+        [
+          22,
+          176
+        ],
+        [
+          2,
+          176
+        ]
+      ],
+      "label": [
+        12,
+        168
+      ],
+      "geo": {
+        "farm": 0,
+        "mine": 0,
+        "fuel": 2,
+        "water": 2,
+        "sun": 0,
+        "weather": 2,
+        "defense": 0
+      }
+    },
+    {
+      "id": "kr_inland",
+      "name": "Peninsula Sheds",
+      "short": "Sheds",
+      "state": "KR",
+      "unlockWeek": 0,
+      "unlockPhase": 4,
+      "type": "foreign",
+      "plus": [
+        "Hard lots",
+        "Spare rifles"
+      ],
+      "minus": [
+        "Thin road",
+        "No port of its own"
+      ],
+      "neighbors": [
+        "far_korea"
+      ],
+      "startOwner": null,
+      "garrison": 34,
+      "economy": 24,
+      "food": 16,
+      "walls": 14,
+      "order": 38,
+      "population": 12000,
+      "terrainBias": "hills",
+      "plate": "below",
+      "polygon": [
+        [
+          2,
+          262
+        ],
+        [
+          22,
+          262
+        ],
+        [
+          22,
+          278
+        ],
+        [
+          2,
+          278
+        ]
+      ],
+      "label": [
+        12,
+        270
+      ],
+      "geo": {
+        "farm": 1,
+        "mine": 1,
+        "fuel": 0,
+        "water": 1,
+        "sun": 1,
+        "weather": 1,
+        "defense": 2
+      }
+    },
+    {
+      "id": "havana",
+      "name": "Havana Yards",
+      "short": "Havana",
+      "state": "CU",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": [
+        "Cane sheds",
+        "Rail spur"
+      ],
+      "minus": [
+        "No gulf pier",
+        "Long island"
+      ],
+      "neighbors": [
+        "far_cuba"
+      ],
+      "startOwner": null,
+      "garrison": 30,
+      "economy": 28,
+      "food": 22,
+      "walls": 12,
+      "order": 42,
+      "population": 18000,
+      "terrainBias": "coast",
+      "plate": "above",
+      "polygon": [
+        [
+          4,
+          522
+        ],
+        [
+          36,
+          522
+        ],
+        [
+          36,
+          550
+        ],
+        [
+          4,
+          550
+        ]
+      ],
+      "label": [
+        20,
+        536
+      ],
+      "geo": {
+        "farm": 2,
+        "mine": 0,
+        "fuel": 0,
+        "water": 1,
+        "sun": 3,
+        "weather": 0,
+        "defense": 1
+      }
+    },
+    {
+      "id": "managua",
+      "name": "Managua Column",
+      "short": "Managua",
+      "state": "NI",
+      "unlockWeek": 0,
+      "unlockPhase": 3,
+      "type": "foreign",
+      "plus": [
+        "Jungle cover",
+        "River boats"
+      ],
+      "minus": [
+        "No sealift pier",
+        "Thin stores"
+      ],
+      "neighbors": [
+        "far_nicaragua"
+      ],
+      "startOwner": null,
+      "garrison": 22,
+      "economy": 16,
+      "food": 18,
+      "walls": 8,
+      "order": 36,
+      "population": 6000,
+      "terrainBias": "forest",
+      "plate": "above",
+      "polygon": [
+        [
+          96,
+          522
+        ],
+        [
+          132,
+          522
+        ],
+        [
+          132,
+          550
+        ],
+        [
+          96,
+          550
+        ]
+      ],
+      "label": [
+        114,
+        536
+      ],
+      "geo": {
+        "farm": 1,
+        "mine": 0,
+        "fuel": 0,
+        "water": 2,
+        "sun": 2,
+        "weather": 1,
+        "defense": 1
       }
     },
     {

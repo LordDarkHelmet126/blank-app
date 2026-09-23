@@ -109,7 +109,7 @@ assert(
 const officerFacs = new Set(content.officers.officers.map((o) => o.faction).filter(Boolean));
 assert([...officerFacs].every((id) => sandboxIds.includes(id)), "officers may only serve sandbox factions");
 const cities = content.regions.regions;
-assert(cities.length >= 32 && cities.length <= 42, `Need Alaska + west + east-approach + foreign stubs, got ${cities.length}`);
+assert(cities.length >= 32 && cities.length <= 48, `Need Alaska + west + east-approach + foreign stubs, got ${cities.length}`);
 const stateCodes = [...new Set(cities.map((r) => r.state))].sort();
 assert(["AK", "CA", "CO", "ID", "KS", "MO", "MT", "NE", "NV", "OR", "UT", "WA", "WY", "YT"].every((s) => stateCodes.includes(s)), `missing states: ${stateCodes}`);
 assert(cities.filter((r) => r.state === "CO").map((r) => r.id).sort().join() === "colorado_springs,denver,grand_junction", "Colorado city cluster");
@@ -383,6 +383,17 @@ const nbrs = (id) => regionOf(leap, id).neighbors;
 assert(nbrs("st_louis").includes("gulf_passage") && nbrs("gulf_passage").includes("st_louis") && nbrs("gulf_passage").includes("far_cuba") && nbrs("far_cuba").includes("gulf_passage") && nbrs("far_cuba").includes("far_nicaragua"), "Gulf approach is St. Louis → Gulf Sealift → Cuba → Nicaragua");
 assert(!nbrs("st_louis").includes("far_cuba"), "Cuba is not a direct road from St. Louis");
 assert(nbrs("nome").includes("bering_strait") && nbrs("bering_strait").includes("nome") && nbrs("bering_strait").includes("far_russia") && nbrs("far_russia").includes("bering_strait"), "Russia approach stays Nome → Bering");
+["kamchatka", "siberia", "havana", "managua", "sponsor_lane", "kr_inland"].forEach((id) => {
+  assert(regionOf(leap, id), `inland desk ${id} is on the board`);
+});
+assert(nbrs("far_russia").includes("kamchatka") && nbrs("kamchatka").includes("far_russia") && nbrs("kamchatka").includes("siberia") && nbrs("siberia").includes("kamchatka"), "Russia inland is far_russia → kamchatka → siberia");
+assert(!nbrs("far_russia").includes("siberia") && !nbrs("bering_strait").includes("kamchatka"), "Siberia does not leap the Kamchatka road");
+assert(nbrs("far_cuba").includes("havana") && nbrs("havana").includes("far_cuba") && !nbrs("gulf_passage").includes("havana"), "Havana is the Cuba inland road, not a gulf leap");
+assert(nbrs("far_nicaragua").includes("managua") && nbrs("managua").includes("far_nicaragua") && !nbrs("far_cuba").includes("managua"), "Managua is the Nicaragua inland road");
+assert(nbrs("far_russia").includes("sponsor_lane") && nbrs("sponsor_lane").includes("far_russia") && nbrs("sponsor_lane").includes("far_korea") && nbrs("far_korea").includes("sponsor_lane") && nbrs("far_korea").includes("kr_inland") && nbrs("kr_inland").includes("far_korea"), "Korea is far_russia → sponsor_lane → far_korea → kr_inland");
+assert(!nbrs("far_russia").includes("far_korea") && !nbrs("sponsor_lane").includes("kr_inland"), "no direct Russia–Korea or sponsor–sheds leap");
+assert(regionOf(leap, "sponsor_lane").type === "sea" && regionOf(leap, "sponsor_lane").unlockPhase === 4, "Sponsor Lane is the phase-4 sea");
+assert(regionOf(leap, "siberia").unlockPhase === 3 && regionOf(leap, "havana").unlockPhase === 3 && regionOf(leap, "kr_inland").unlockPhase === 4, "inland phases match the locked gates");
 assert(isAdjacent(leap, "bethel", "anchorage"), "Anchorage is an adjacent road");
 playerOf(leap).region = "bethel";
 leap.ap = 2;
@@ -727,6 +738,7 @@ assert(/r\.id === "gulf_passage"/.test(uiSrc) && /function frameGulf/.test(uiSrc
 assert(/=== "ca"/.test(uiSrc) && /=== "world"/.test(uiSrc), "look demo can frame California or the globe");
 assert(/function frameBering/.test(uiSrc) && /function frameCuba/.test(uiSrc) && /=== "bering"/.test(uiSrc) && /=== "cuba"/.test(uiSrc), "look demo can frame the Bering and Cuba foreign theaters");
 assert(/focus = "bering"/.test(uiSrc) && /focus = "cuba"/.test(uiSrc) && /function topoRgb/.test(uiSrc) && /178\.5, 65\.3/.test(uiSrc), "foreign close-ups keep relief, desk captions, and the locked sea paths in frame");
+assert(/function frameKorea/.test(uiSrc) && /=== "korea"/.test(uiSrc) && /INLAND_DESKS/.test(uiSrc) && /kamchatka/.test(uiSrc) && /sponsor_lane/.test(uiSrc), "inland desks paint on the Bering, Cuba, and Korea close-ups");
 assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land");
 assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");
 assert(!/wolverine/i.test(uiSrc) && !/red dawn/i.test(uiSrc), "map copy stays original IP");

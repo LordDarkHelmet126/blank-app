@@ -355,6 +355,7 @@ export async function boot(loaded) {
     else if (view === "gulf") frameGulf();
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
+    else if (view === "korea") frameKorea();
     if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -1846,20 +1847,27 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
 }
 
 /**
- * Strait close-up. Longitude wraps so Nome, Bering, and the Russia desk
- * sit in one frame. Korea stays a desk only — no sponsor stroke.
+ * Strait close-up. Longitude wraps so Nome, Bering, Russia, Kamchatka,
+ * and Siberia share one frame. The sponsor lane stays on the Korea frame.
  */
 function frameBering() {
   mapView.pacific = true;
   mapView.focus = "bering";
-  frameLonLat(150, 71, -156, 49, 0.9);
+  frameLonLat(136, 72, -154, 50, 0.88);
 }
 
-/** Gulf Sealift, Cuba, and Nicaragua, tight enough to read the locked path. */
+/** Gulf Sealift, Cuba, Havana, Nicaragua, and Managua. */
 function frameCuba() {
   mapView.pacific = false;
   mapView.focus = "cuba";
   frameLonLat(-97, 29, -73, 8.2, 0.88);
+}
+
+/** Sponsor lane into Korea and the peninsula sheds. No direct Russia–Korea leap. */
+function frameKorea() {
+  mapView.pacific = false;
+  mapView.focus = "korea";
+  frameLonLat(118, 68, 170, 32, 0.88);
 }
 
 function onMapPointerDown(e) {
@@ -2196,7 +2204,7 @@ function projectLL(lon, lat) {
   return [x, y];
 }
 
-/** Existing nodes only. Pins sit on the globe; neighbor lists stay put. */
+/** Gate pins. Drawn on the world overview. Neighbor lists stay in the region data. */
 const WORLD_DESKS = [
   { id: "bering_strait", lon: -168, lat: 65.6, color: "#7aa0b4" },
   { id: "far_russia", lon: 158, lat: 63, color: "#9a3b3b" },
@@ -2204,6 +2212,16 @@ const WORLD_DESKS = [
   { id: "far_cuba", lon: -79.5, lat: 21.6, color: "#8c4a4a" },
   { id: "far_nicaragua", lon: -85.2, lat: 12.4, color: "#8c4a4a" },
   { id: "far_korea", lon: 127.2, lat: 38.2, color: "#9a3b3b" },
+];
+
+/** Inland desks from the locked Campaign list. Close-ups only, so the world overview stays put. */
+const INLAND_DESKS = [
+  { id: "kamchatka", lon: 159.6, lat: 56, color: "#9a3b3b" },
+  { id: "siberia", lon: 148.5, lat: 61.5, color: "#9a3b3b" },
+  { id: "havana", lon: -82.5, lat: 23.15, color: "#8c4a4a" },
+  { id: "managua", lon: -86.3, lat: 12.1, color: "#8c4a4a" },
+  { id: "sponsor_lane", lon: 128, lat: 46, color: "#7aa0b4" },
+  { id: "kr_inland", lon: 127.5, lat: 36.5, color: "#9a3b3b" },
 ];
 
 /** Small overlays on top of the coast washes. Original shapes, not a copied atlas. */
@@ -2415,21 +2433,26 @@ function drawGlobe(ctx) {
 }
 
 /**
- * Sea marks only — locked chains, no new desks.
- * nome → bering_strait → far_russia.
- * st_louis → gulf_passage → far_cuba → far_nicaragua.
- * far_korea stays a desk until the sponsor unlocks. No painted sponsor edge.
- * The bering close-up draws that same chain the short way across the date line.
+ * Locked chains only.
+ * nome → bering_strait → far_russia → kamchatka → siberia.
+ * st_louis → gulf_passage → far_cuba → havana, and far_cuba → far_nicaragua → managua.
+ * far_russia → sponsor_lane → far_korea → kr_inland. No direct far_russia–far_korea leap.
+ * Inland strokes are close-ups only. The world overview keeps the sea approaches.
  */
 function drawWorldCorridors(ctx) {
   const focus = mapView.focus;
   if (mapView.z > 0.92 && !focus) return;
   const routes = [];
+  const inland = [];
   if (focus === "bering") {
     routes.push({
       color: "#d5e6f2",
       pts: [[-165.4, 64.5], [-168, 65.6], [178.5, 65.3], [170, 64.2], [158, 63]],
     });
+    inland.push({ color: "#e4d7a4", pts: [[158, 63], [159.6, 56], [148.5, 61.5]] });
+  } else if (focus === "korea") {
+    routes.push({ color: "#d5e6f2", pts: [[158, 63], [128, 46], [127.2, 38.2]] });
+    inland.push({ color: "#e4d7a4", pts: [[127.2, 38.2], [127.5, 36.5]] });
   } else {
     routes.push(
       { color: "#7aa0b4", pts: [[-168, 65.6], [-170, 76], [-78, 77]] },
@@ -2438,29 +2461,39 @@ function drawWorldCorridors(ctx) {
       { color: "#8c4a4a", pts: [[-90.5, 23.8], [-85.2, 12.4]] }
     );
     if (mapView.z >= 0.3 || focus === "cuba") routes.push({ color: "#8c4a4a", pts: [[-79.5, 21.6], [-85.2, 12.4]] });
+    if (focus === "cuba") {
+      inland.push(
+        { color: "#e4d7a4", pts: [[-79.5, 21.6], [-82.5, 23.15]] },
+        { color: "#e4d7a4", pts: [[-85.2, 12.4], [-86.3, 12.1]] }
+      );
+    }
   }
-  ctx.save();
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-  ctx.setLineDash([14 / mapView.z, 9 / mapView.z]);
   const casing = focus ? Math.max(16, 12 / mapView.z) : Math.max(8, 7 / mapView.z);
   const core = focus ? Math.max(8, 6 / mapView.z) : Math.max(4, 3.6 / mapView.z);
-  routes.forEach((route) => {
-    const draw = (width, color) => {
-      ctx.beginPath();
-      route.pts.forEach((p, i) => {
-        const [x, y] = projectLL(p[0], p[1]);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.lineWidth = width;
-      ctx.strokeStyle = color;
-      ctx.stroke();
-    };
-    draw(casing, "#1a140c");
-    draw(core, route.color);
-  });
-  ctx.restore();
+  const paint = (list, dashed) => {
+    ctx.save();
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    if (dashed) ctx.setLineDash([14 / mapView.z, 9 / mapView.z]);
+    list.forEach((route) => {
+      const draw = (width, color) => {
+        ctx.beginPath();
+        route.pts.forEach((p, i) => {
+          const [x, y] = projectLL(p[0], p[1]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.lineWidth = width;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      };
+      draw(casing, "#1a140c");
+      draw(core, route.color);
+    });
+    ctx.restore();
+  };
+  paint(routes, true);
+  paint(inland, false);
 }
 
 /** Unlabeled strike marks. Same crater language as the US plate, not a copied legend. */
@@ -2563,9 +2596,10 @@ function drawWorldDesks(ctx) {
       : Math.max(18, Math.round(12 / mapView.z));
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.textBaseline = "middle";
-  const desks = focus === "bering"
-    ? [{ id: "nome", lon: -165.4, lat: 64.5, color: "#7aa0b4" }].concat(WORLD_DESKS)
-    : WORLD_DESKS;
+  const inland = focus === "bering" || focus === "cuba" || focus === "korea" ? INLAND_DESKS : [];
+  const desks = (focus === "bering" ? [{ id: "nome", lon: -165.4, lat: 64.5, color: "#7aa0b4" }] : [])
+    .concat(WORLD_DESKS)
+    .concat(inland);
   desks.forEach((d) => {
     const node = regionOf(state, d.id);
     if (!node) return;
@@ -2594,8 +2628,9 @@ function drawWorldDesks(ctx) {
       drawDeskPlate(ctx, bx, by, boxW, boxH, label);
       return;
     }
-    const placed = (focus === "bering" && (d.id === "nome" || d.id === "bering_strait" || d.id === "far_russia"))
-      || (focus === "cuba" && (d.id === "gulf_passage" || d.id === "far_cuba" || d.id === "far_nicaragua"));
+    const placed = (focus === "bering" && (d.id === "nome" || d.id === "bering_strait" || d.id === "far_russia" || d.id === "kamchatka" || d.id === "siberia"))
+      || (focus === "cuba" && (d.id === "gulf_passage" || d.id === "far_cuba" || d.id === "far_nicaragua" || d.id === "havana" || d.id === "managua"))
+      || (focus === "korea" && (d.id === "far_russia" || d.id === "sponsor_lane" || d.id === "far_korea" || d.id === "kr_inland"));
     if (placed) {
       const prefs = {
         nome: [
@@ -2621,6 +2656,34 @@ function drawWorldDesks(ctx) {
         far_nicaragua: [
           [x - boxW - r - 14 / mapView.z, y - boxH / 2],
           [x - boxW / 2, y + r + 18 / mapView.z],
+        ],
+        kamchatka: [
+          [x + r + 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y + r + 16 / mapView.z],
+        ],
+        siberia: [
+          [x - boxW - r - 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 12 / mapView.z],
+        ],
+        havana: [
+          [x - boxW - r - 12 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 14 / mapView.z],
+        ],
+        managua: [
+          [x - boxW - r - 12 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y + r + 16 / mapView.z],
+        ],
+        sponsor_lane: [
+          [x - boxW / 2, y - boxH - r - 14 / mapView.z],
+          [x + r + 12 / mapView.z, y - boxH / 2],
+        ],
+        far_korea: [
+          [x + r + 14 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 12 / mapView.z],
+        ],
+        kr_inland: [
+          [x - boxW / 2, y + r + 16 / mapView.z],
+          [x + r + 12 / mapView.z, y - boxH / 2],
         ],
       }[d.id] || [
         [x - boxW / 2, y + r + 22 / mapView.z],
@@ -2983,7 +3046,7 @@ function drawMap() {
   ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
   ctx.imageSmoothingEnabled = false;
   drawGlobe(ctx);
-  const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering";
+  const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering" || mapView.focus === "korea";
   ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
   if (mapView.focus) {
     drawWorldCorridors(ctx);
