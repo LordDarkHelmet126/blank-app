@@ -85,7 +85,7 @@ import {
   roadLabel,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
-import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk } from "./inland.js";
+import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -96,6 +96,8 @@ let hoverRegion = null;
 let ladderNotice = "";
 /** Presentation-only court/officers desk. Not saved and not a map node. */
 const courtView = { deskId: null };
+/** Presentation-only mission board desk. Not saved and not a map node. */
+const missionView = { deskId: null };
 let ladderKind = "rank";
 let ladderFlashId = "";
 
@@ -177,6 +179,22 @@ function openDemoSiege() {
   const fight = act(state, content, "attack", { regionId: "anchorage", troops: 80 });
   if (!fight.ok) toast(fight.message || "Siege demo could not march.");
   if (fight.battle && state.battle) openBattle();
+}
+
+function openDemoFight() {
+  const node = demoQuery().get("node");
+  if (!inlandLook(node)) {
+    openDemoBattle(false);
+    return;
+  }
+  const fight = startInlandBattle(state, content, node, { troops: 80, field: true });
+  if (!fight.ok) toast(fight.message || "Fight demo could not open.");
+  if (fight.battle && state.battle) {
+    stampBattleDesk(state.battle, node);
+    state.battle.liberation = true;
+    state.battle.flash = { x: 3, y: 2, side: "atk", hold: true };
+    openBattle();
+  }
 }
 
 function openDemoBattle(withHull) {
@@ -401,13 +419,14 @@ export async function boot(loaded) {
     }
     selectedRegion = "bethel";
     commandCat = "military";
+    stampMissionDesk(missionView, params.get("node"));
     hideModal();
     render();
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
     if (params.get("take") === "1") {
       const local = openMissions(state).find((j) => j.regionId === playerOf(state).region);
-      if (local) run("mission", { jobId: local.id });
+      if (local) run("mission", { jobId: local.id, deskId: params.get("node") || undefined });
     }
     afterFonts();
     return;
@@ -544,6 +563,14 @@ export async function boot(loaded) {
   }
   if (params.get("demo") === "duel") {
     openDemoDuel();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "fight") {
+    startSliceState();
+    hideModal();
+    render();
+    openDemoFight();
     afterFonts();
     return;
   }
@@ -752,6 +779,9 @@ function silentHideEvent() {
   if (!el) return;
   el.hidden = true;
   el.classList.remove("open");
+  clearDeskPaint(el.querySelector(".event-card"));
+  const strip = $("event-desk");
+  if (strip) strip.hidden = true;
   stopSceneFx();
 }
 
@@ -776,13 +806,24 @@ function showModal(html, opts = {}) {
     return;
   }
   parkCoach();
-  const extra = opts.kind === "week" ? " week-card" : opts.kind === "officers" ? " officers-card" : opts.kind === "states" ? " states-card" : "";
+  const extra =
+    opts.kind === "week"
+      ? " week-card"
+      : opts.kind === "officers"
+        ? " officers-card"
+        : opts.kind === "states"
+          ? " states-card"
+          : opts.kind === "missions"
+            ? " missions-card"
+            : "";
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
   if (opts.kind === "officers") {
     paintCourtDesk();
     $("modal-card").scrollTop = 0;
+  } else if (opts.kind === "missions") {
+    paintMissionDesk();
   } else clearDeskPaint($("modal-card"));
   wireTitle();
   wireAfterRender();
@@ -1305,8 +1346,18 @@ function missionsHtml() {
   const loot = stash.length
     ? `<p class="muted">Stash: ${stash.map((s) => esc(s.name)).join(" · ")}</p>`
     : `<p class="muted">Stash empty. Jobs can grant scrip, pads, ranch tokens.</p>`;
-  return `<h2>Side missions (${jobs.length} open)</h2>
-    <p class="muted">1 AP here, or a general's Side mission at End Week.</p>
+  const deskId = syncMissionDesk();
+  const look = inlandLook(deskId);
+  const desk = inlandDesk(deskId);
+  const title = look ? `Missions — ${look.strip}` : `Side missions (${jobs.length} open)`;
+  const strip = look
+    ? `<p class="mission-desk"><strong>${esc(look.strip)}</strong><span>${esc(look.read)}</span></p>`
+    : "";
+  const lead = look
+    ? `<p class="mission-next" role="status">NEXT: ${esc(desk.line)}. ${esc(look.read)}. 1 AP here, or a general's Side mission at End Week.</p>`
+    : `<p class="muted">1 AP here, or a general's Side mission at End Week.</p>`;
+  return `${strip}<h2>${esc(title)}</h2>
+    ${lead}
     ${empty}${rows}${loot}
     <button type="button" data-close>Close</button>`;
 }
@@ -1504,6 +1555,7 @@ function run(id, extra) {
       title: res.success === false ? "Mission slips" : "Side mission",
       text: `${res.flavor ? res.flavor + " " : ""}${res.message || ""}`,
       regionId: res.regionId || extra?.regionId || playerOf(state).region,
+      deskId: res.deskId,
     });
   } else if (SCENE_ACTIONS.has(id) && !res.weekEnd) {
     const a = listActions(state).find((x) => x.id === id);
@@ -1934,6 +1986,7 @@ function showEventScene(ev) {
   $("event-text").textContent = ev.text || "";
   const next = $("event-next");
   if (next) next.textContent = ev.chronicle ? "CONTINUE for the next chronicle beat." : state ? nextHint(state) : "";
+  paintEventDesk(ev.deskId);
   const el = $("event-scene");
   const card = el.querySelector(".event-card");
   if (card) card.classList.toggle("celebrate", !!ev.celebrate);
@@ -3705,7 +3758,7 @@ function paintDeskHost(el, id) {
 function demoCourtNode() {
   const params = demoQuery();
   const demo = params.get("demo");
-  if (demo === "battle" || demo === "duel" || demo === "siege") return null;
+  if (demo === "battle" || demo === "duel" || demo === "siege" || demo === "fight" || demo === "missions") return null;
   const courtish =
     demo === "officers" ||
     demo === "roster" ||
@@ -3781,6 +3834,114 @@ function fieldNextLine(id) {
   const look = inlandLook(id);
   if (!desk || !look) return "";
   return `NEXT: ${desk.line}. ${look.read}. Yellow unit, then an adjacent diamond.`;
+}
+
+function demoFightNode() {
+  const params = demoQuery();
+  if (params.get("demo") !== "fight") return null;
+  const node = params.get("node");
+  return inlandLook(node) ? node : null;
+}
+
+function activeFightDesk(b) {
+  const fromDemo = demoFightNode();
+  if (fromDemo) return fromDemo;
+  if (b?.liberation && inlandLook(b.deskId)) return b.deskId;
+  return null;
+}
+
+function syncFightDesk(b) {
+  const id = activeFightDesk(b);
+  if (b && id) {
+    stampBattleDesk(b, id);
+    b.liberation = true;
+  }
+  return id;
+}
+
+function fightNextLine(id) {
+  const desk = inlandDesk(id);
+  const look = inlandLook(id);
+  if (!desk || !look) return "";
+  return `NEXT: ${desk.line}. ${look.read}. Liberation fight. Yellow unit, then an adjacent diamond.`;
+}
+
+function paintFightDesk(id) {
+  const battleEl = $("battle");
+  if (!battleEl) return;
+  const look = inlandLook(id);
+  const desk = inlandDesk(id);
+  if (!look || !desk) return;
+  paintDeskHost(battleEl, id);
+  $("battle-title").textContent = `Fight — ${look.strip}`;
+  const strip = $("field-desk");
+  if (strip) {
+    strip.hidden = false;
+    const name = $("field-desk-name");
+    const read = $("field-desk-read");
+    if (name) name.textContent = look.strip;
+    if (read) read.textContent = look.read;
+  }
+  const next = $("field-next");
+  if (next) {
+    next.hidden = false;
+    next.textContent = fightNextLine(id);
+  }
+}
+
+function demoMissionNode() {
+  const params = demoQuery();
+  if (params.get("demo") !== "missions") return null;
+  const node = params.get("node");
+  return inlandLook(node) ? node : null;
+}
+
+function activeMissionDesk() {
+  const fromDemo = demoMissionNode();
+  if (fromDemo) return fromDemo;
+  if (inlandLook(missionView.deskId)) return missionView.deskId;
+  return null;
+}
+
+function syncMissionDesk() {
+  const id = activeMissionDesk();
+  if (id) stampMissionDesk(missionView, id);
+  return inlandLook(missionView.deskId) ? missionView.deskId : null;
+}
+
+function paintMissionDesk() {
+  const id = syncMissionDesk();
+  const card = $("modal-card");
+  if (card && card.classList.contains("missions-card")) paintDeskHost(card, id);
+}
+
+function paintEventDesk(id) {
+  const card = $("event-scene")?.querySelector(".event-card");
+  const strip = $("event-desk");
+  const look = inlandLook(id);
+  const desk = inlandDesk(id);
+  if (!card || !look || !desk) {
+    clearDeskPaint(card);
+    if (strip) strip.hidden = true;
+    return;
+  }
+  paintDeskHost(card, id);
+  if (strip) {
+    strip.hidden = false;
+    const name = $("event-desk-name");
+    const read = $("event-desk-read");
+    if (name) name.textContent = look.strip;
+    if (read) read.textContent = look.read;
+  }
+  const title = $("event-title");
+  if (title && !title.textContent.includes(look.strip)) title.textContent = `${title.textContent} — ${look.strip}`;
+  const next = $("event-next");
+  if (next && state) {
+    const prefix = `${desk.line}. ${look.read}. `;
+    let base = (next.textContent || nextHint(state)).replace(/^NEXT:\s*/, "");
+    if (base.startsWith(prefix)) base = base.slice(prefix.length);
+    next.textContent = `NEXT: ${prefix}${base}`;
+  }
 }
 
 function paintFieldDesk(id) {
@@ -3898,11 +4059,15 @@ function drawBattle(now = performance.now()) {
     paintSiegeHud(b, dest);
     return;
   }
-  const deskId = syncFieldDesk(b);
-  if (deskId) paintFieldDesk(deskId);
+  const fightId = syncFightDesk(b);
+  if (fightId) paintFightDesk(fightId);
   else {
-    clearSiegeDesk();
-    $("battle-title").textContent = `Field — ${dest.name}`;
+    const deskId = syncFieldDesk(b);
+    if (deskId) paintFieldDesk(deskId);
+    else {
+      clearSiegeDesk();
+      $("battle-title").textContent = `Field — ${dest.name}`;
+    }
   }
   const lead = b.commanderName ? ` · led by ${b.commanderRank ? ladderLabel(b.commanderRank) + " " : ""}${b.commanderName}` : "";
   $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
@@ -4557,8 +4722,9 @@ function wireMissionButtons() {
   $("modal-card")?.querySelectorAll("[data-job]")?.forEach((btn) => {
     btn.onclick = () => {
       const jobId = btn.dataset.job;
+      const deskId = syncMissionDesk();
       hideModal();
-      run("mission", { jobId });
+      run("mission", { jobId, deskId: deskId || undefined });
     };
   });
 }
