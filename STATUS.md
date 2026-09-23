@@ -2,7 +2,24 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues open live Combat boards. Siege, yard, and field chrome name the six locked inland desks. Court and officers chrome does the same when `node=` is set. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
+**Last checkpoint:** 2026-09-23 — Liberation fight and mission desks. The six locked inland ids tint the mission board and a liberation fight the same way siege, yard, field, and court already do. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
+
+## Liberation fight and mission desk
+
+A mission board or a liberation fight tied to one of the six locked inland ids keeps the weekly jobs, the isometric grid, and the Rally / Ambush / Rumor ploys. `/?demo=missions&node=<id>` stamps that siege desk after the board opens, and the chrome also reads `node=` directly. The title is `Missions — ` plus the siege strip (`HAVANA DESK`), the shell paints that theater, and the amber NEXT line leads with the desk name and read. Taking a porch challenge from that board opens the yard on the same desk. A result scene carries the desk strip. A board with no desk id stays the domestic mission list.
+
+`/?demo=fight&node=<id>` stamps the same desk onto a field fight after the battle is created, and the chrome also reads `node=` directly. The title is `Fight — ` plus the siege strip, and NEXT leads with the desk name, the read, and `Liberation fight`. A fight with no desk id stays the domestic Nome field.
+
+| Id | Strip | Read | Mission demo | Fight demo |
+| --- | --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | `/?demo=missions&node=kamchatka` | `/?demo=fight&node=kamchatka` |
+| siberia | SIBERIA DESK | Timber berm · taiga | `/?demo=missions&node=siberia` | `/?demo=fight&node=siberia` |
+| havana | HAVANA DESK | Harbor wall · seawall | `/?demo=missions&node=havana` | `/?demo=fight&node=havana` |
+| managua | MANAGUA DESK | Block wall · isthmus | `/?demo=missions&node=managua` | `/?demo=fight&node=managua` |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | `/?demo=missions&node=sponsor_lane` | `/?demo=fight&node=sponsor_lane` |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | `/?demo=missions&node=kr_inland` | `/?demo=fight&node=kr_inland` |
+
+Domestic missions, unchanged: `/?demo=missions`. Domestic fight, unchanged: `/?demo=fight` (Nome field, same as `/?demo=battle`). An unknown `node=` stays that domestic board or field and does not borrow another desk. Field chrome is still `/?demo=battle&node=havana`. Yard chrome is still `/?demo=duel&node=havana`.
 
 ## Coach → foreign siege
 

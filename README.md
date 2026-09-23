@@ -91,6 +91,8 @@ Season tint only: `/?demo=season`.
 **Generals (5 slots + ADD empty states):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
+**Mission desk:** `/?demo=missions&node=havana` (also `kamchatka`, `siberia`, `managua`, `sponsor_lane`, `kr_inland`). Domestic board with no `node=` stays the plain list.
+**Liberation fight:** `/?demo=fight&node=havana` (same six ids). Domestic Nome field with no `node=`: `/?demo=fight`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
 **Expanded theater (AK→CO):** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle road pulses).
 **Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (PNW hero: Seattle + Juneau–Seattle pulse). `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`. M113 hulls: `/?demo=look&fx=battle&hull=1`.
