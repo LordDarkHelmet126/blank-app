@@ -3152,6 +3152,16 @@ function drawWorldDesks(ctx) {
   });
 }
 
+/**
+ * The world desk already paints "Gulf Sealift" on the Cuba close-up and the globe.
+ * The city plate must not stack a second copy (or a garrison "?") on that caption.
+ */
+function gulfDeskCaptionOn() {
+  if (mapView.z > 0.92 && !mapView.focus) return false;
+  if (nearLabels() && mapView.focus !== "cuba") return false;
+  return true;
+}
+
 function plateAwayFromSelected(r, px, py, pw, ph) {
   const sel = regionOf(state, selectedRegion);
   if (!sel || sel.id === r.id) return [px, py];
@@ -3206,8 +3216,10 @@ function drawCityPlate(ctx, r, selected) {
   const p = playerOf(state);
   const here = p.region === r.id;
   const known = r.intel > 0 || (p.faction && r.owner === p.faction);
-  const garr = known ? String(r.garrison) : "?";
-  const keepGulf = r.id === "gulf_passage";
+  const seaGate = r.id === "gulf_passage";
+  if (seaGate && gulfDeskCaptionOn()) return;
+  const garr = seaGate ? "" : (known ? String(r.garrison) : "?");
+  const keepGulf = seaGate;
   if (!selected && !here && r.id !== hoverRegion && !keepGulf) return;
   if (here && !selected) {
     drawHereChip(ctx, r, x, y);
@@ -3215,8 +3227,9 @@ function drawCityPlate(ctx, r, selected) {
   }
   ctx.font = PLATE_FONT;
   const nameW = ctx.measureText(r.short).width;
-  const garrW = ctx.measureText(garr).width;
-  const pw = Math.max(120, Math.ceil((nameW + garrW + 40) / 4) * 4);
+  const garrW = garr ? ctx.measureText(garr).width : 0;
+  const pad = seaGate ? 28 : 40;
+  const pw = Math.max(seaGate ? 64 : 120, Math.ceil((nameW + garrW + pad) / 4) * 4);
   const ph = 32;
   let px = Math.round(x - pw / 2);
   let py = r.plate === "above" ? Math.round(y - 44) : Math.round(y + 20);
@@ -3255,8 +3268,10 @@ function drawCityPlate(ctx, r, selected) {
   ctx.fillRect(px + 4, py + 4, 5, ph - 8);
   ctx.fillStyle = "#f8d800";
   ctx.fillText(r.short, px + 14, py + 23);
-  ctx.fillStyle = "#f8f8f8";
-  ctx.fillText(garr, px + pw - 12 - garrW, py + 23);
+  if (garr) {
+    ctx.fillStyle = "#f8f8f8";
+    ctx.fillText(garr, px + pw - 12 - garrW, py + 23);
+  }
 }
 
 function roadEnds(a, b) {
