@@ -85,6 +85,7 @@ import {
   roadLabel,
 } from "./engine.js";
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
+import { inlandDesk, inlandLook } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
 
 const SAVE_KEY = "northern-front-v01";
@@ -3526,12 +3527,54 @@ function pulseSiegeMeter(id, value) {
   el.dataset.v = next;
 }
 
+const DESK_VARS = ["--desk-bg", "--desk-panel", "--desk-edge", "--desk-strip", "--desk-ink", "--desk-read", "--desk-backdrop"];
+
+function clearSiegeDesk() {
+  const battleEl = $("battle");
+  if (!battleEl) return;
+  delete battleEl.dataset.desk;
+  DESK_VARS.forEach((name) => battleEl.style.removeProperty(name));
+  const strip = $("siege-desk");
+  if (strip) strip.hidden = true;
+}
+
+function paintSiegeDesk(id) {
+  const battleEl = $("battle");
+  if (!battleEl) return;
+  const look = inlandLook(id);
+  if (!look) {
+    if (battleEl.dataset.desk) clearSiegeDesk();
+    return;
+  }
+  if (battleEl.dataset.desk === id) return;
+  battleEl.dataset.desk = id;
+  battleEl.style.setProperty("--desk-bg", look.bg);
+  battleEl.style.setProperty("--desk-panel", look.panel);
+  battleEl.style.setProperty("--desk-edge", look.edge);
+  battleEl.style.setProperty("--desk-strip", look.stripBg);
+  battleEl.style.setProperty("--desk-ink", look.ink);
+  battleEl.style.setProperty("--desk-read", look.readInk);
+  battleEl.style.setProperty("--desk-backdrop", look.backdrop);
+  const strip = $("siege-desk");
+  if (!strip) return;
+  strip.hidden = false;
+  const name = $("siege-desk-name");
+  const read = $("siege-desk-read");
+  if (name) name.textContent = look.strip;
+  if (read) read.textContent = look.read;
+}
+
 function paintSiegeHud(b, dest) {
   const s = b.siege;
   const rec = siegeRecommend(s);
-  $("battle-title").textContent = `Siege — ${dest?.name || s.place}`;
+  const look = inlandLook(b.toId);
+  const deskLine = inlandDesk(b.toId)?.line || "";
+  paintSiegeDesk(b.toId);
+  $("battle-title").textContent = look ? `Siege — ${look.strip}` : `Siege — ${dest?.name || s.place}`;
   $("battle-meta").textContent = `YOU attacker · THEY defender · WATCH ${s.impulse}/${s.maxImpulses}`;
-  $("siege-roles").textContent = `YOU are the ATTACKER. THEY are the DEFENDER — ${dest?.short || s.place} garrison ${s.garrison}.`;
+  $("siege-roles").textContent = deskLine
+    ? `YOU are the ATTACKER on the ${deskLine}. THEY are the DEFENDER — garrison ${s.garrison}.`
+    : `YOU are the ATTACKER. THEY are the DEFENDER — ${dest?.short || s.place} garrison ${s.garrison}.`;
   $("siege-works-n").textContent = String(s.works);
   $("siege-suppress-n").textContent = String(s.suppress);
   $("siege-levy-n").textContent = String(s.levy);
@@ -3576,6 +3619,7 @@ function drawBattle(now = performance.now()) {
     paintSiegeHud(b, dest);
     return;
   }
+  clearSiegeDesk();
   $("battle-title").textContent = `Field — ${dest.name}`;
   const lead = b.commanderName ? ` · led by ${b.commanderRank ? ladderLabel(b.commanderRank) + " " : ""}${b.commanderName}` : "";
   $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
@@ -3631,6 +3675,7 @@ function doBattle(cmd, extra) {
   if (state.phase !== "battle") {
     $("battle").hidden = true;
     $("battle").classList.remove("is-siege");
+    clearSiegeDesk();
     stopBattleLoop();
     selectedRegion = playerOf(state).region;
     render();

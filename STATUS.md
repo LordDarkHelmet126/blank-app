@@ -2,7 +2,7 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues sit on the live Combat siege board for the six locked inland ids. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
+**Last checkpoint:** 2026-09-23 — Tip merge. Campaign coach siege cues open the live Combat siege board, and each locked inland id has its own desk read. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
 
 ## Coach → foreign siege
 
@@ -22,6 +22,25 @@ Same board: `/?demo=battle&siege=1&node=<id>`. Field spawn (no siege board): `/?
 Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
 On the look demo the approach chain and the siege desk are separate blocks in the NEXT strip (the line break is kept). On the coach demo the Raise-a-banner copy scrolls in `#coach-text` while the siege desk line stays pinned under it.
+
+## Foreign-desk siege identity
+
+The six locked inland ids still open the shared siege board. Each one now has its own backdrop, panel tint, and desk strip, and the amber NEXT line leads with the desk name. Ploys stay **Cut the berm**, **Rake the parapet**, and **Rush the gap**. **PRESS** / **WAIT** marks are unchanged. Default WORKS and opening pressure were not rebalanced.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+The margin stripes, the panel edge, and the desk strip name the theater before the meters. NEXT starts `Kamchatka desk. Volcanic berm… WORKS 56 still hold. Cut the berm.`
+
+Same tint from the battle hook: `/?demo=battle&siege=1&node=kamchatka` (and `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`).
+
+Domestic siege stays the black board: `/?demo=siege` and `/?demo=battle&siege=1`. A missing id still closes cleanly and does not borrow another desk's colors.
 
 ## Inland siege hooks
 

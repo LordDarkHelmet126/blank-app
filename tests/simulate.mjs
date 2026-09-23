@@ -51,7 +51,7 @@ import {
   startInlandBattle,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
-import { INLAND_IDS, inlandDesk } from "../js/inland.js";
+import { INLAND_IDS, inlandDesk, inlandLook } from "../js/inland.js";
 import {
   regionIsSiege,
   createSiege,
@@ -298,6 +298,7 @@ const bowl = createBattle(siegeGame, content, "bethel", "anchorage", 80, 0);
 assert(bowl.siege && bowl.siege.works === regionOf(siegeGame, "anchorage").walls, "siege WORKS copies wall strength");
 assert(bowl.siege.works > RUSH_WORKS_MAX, "Anchorage works start above the rush line");
 assert(/Cut the berm/.test(siegeCoach(bowl.siege)) && /NEXT:/.test(siegeCoach(bowl.siege)), "coach names the next ploy");
+assert(siegeCoach(bowl.siege).startsWith("NEXT: WORKS"), "domestic NEXT stays on the ploy");
 assert(siegeRecommend(bowl.siege) === "cut", "high works recommend Cut the berm");
 const rushed = createSiege({ name: "Bowl", short: "Bowl", walls: 40, garrison: 90 }, 80);
 const rushLevy = rushed.levy;
@@ -389,6 +390,11 @@ for (const id of INLAND_IDS) {
   assert(fight.siege.suppress === inlandDesk(id).pressure, `${id} opens at the pressure preset`);
   assert(/You are the attacker/.test(fight.siege.log[0]), `${id} siege log keeps the attacker line`);
   assert(/NEXT:/.test(siegeCoach(fight.siege)) && inlandDesk(id).flavor && siegeCoach(fight.siege).includes(inlandDesk(id).flavor), `${id} coach keeps NEXT and the desk line`);
+  assert(siegeCoach(fight.siege).startsWith(`NEXT: ${inlandDesk(id).line}.`), `${id} NEXT leads with the desk`);
+  assert(fight.siege.deskLine === inlandDesk(id).line, `${id} siege stores the desk line`);
+  assert(fight.siege.log[0].includes(inlandDesk(id).line), `${id} opening log names the desk`);
+  const look = inlandLook(id);
+  assert(look && look.strip && look.read && look.edge && look.panel && look.backdrop, `${id} has a desk look`);
   assert(fight.units.some((u) => u.side === "atk") && fight.units.some((u) => u.side === "def"), `${id} keeps the field roster`);
   assert(!regionOf(inlandGame, id), `${id} battle does not insert a map node`);
 }
@@ -427,6 +433,22 @@ assert(laneCut.ok && inlandGame.battle.siege.works < laneWorks, "inland Cut the 
 res = battleCmd(inlandGame, content, "auto");
 assert(res.battleEnd === "atk" || res.battleEnd === "def", `inland siege auto closes: ${res.message}`);
 assert(inlandGame.phase === "strategy" && !regionOf(inlandGame, "sponsor_lane"), "inland siege returns without adding a node");
+const lookStrips = new Set(INLAND_IDS.map((id) => inlandLook(id).strip));
+const lookReads = new Set(INLAND_IDS.map((id) => inlandLook(id).read));
+const lookEdges = new Set(INLAND_IDS.map((id) => inlandLook(id).edge));
+const lookPanels = new Set(INLAND_IDS.map((id) => inlandLook(id).panel));
+const lookBacks = new Set(INLAND_IDS.map((id) => inlandLook(id).backdrop));
+assert(lookStrips.size === INLAND_IDS.length, "desk strip names differ");
+assert(lookReads.size === INLAND_IDS.length, "desk reads differ");
+assert(lookEdges.size === INLAND_IDS.length, "desk edges differ");
+assert(lookPanels.size === INLAND_IDS.length, "desk panels differ");
+assert(lookBacks.size === INLAND_IDS.length, "desk backdrops differ");
+assert(!inlandLook("anchorage"), "domestic siege has no foreign desk tint");
+assert(/id="siege-desk"/.test(pageSrc), "desk strip is on the siege board");
+assert(/data-desk/.test(siegeCss) && /--desk-edge/.test(siegeCss) && /--desk-backdrop/.test(siegeCss), "siege board tints from the desk id");
+assert(/dataset\.desk/.test(siegeUi) && /inlandLook/.test(siegeUi), "ui binds the desk id");
+assert(/Cut the berm/.test(pageSrc) && /Rake the parapet/.test(pageSrc) && /Rush the gap/.test(pageSrc), "siege ploys stay on the board");
+assert(/PRESS/.test(siegeUi) && /WAIT/.test(siegeUi), "PRESS and WAIT marks stay");
 assert(/get\("node"\)/.test(siegeUi) && /startInlandBattle/.test(siegeUi), "demo node= starts an inland battle");
 assert(/field: true/.test(siegeUi), "demo=battle&node= opens a field spawn");
 const statusSrc = readFileSync(new URL("../STATUS.md", import.meta.url), "utf8");
