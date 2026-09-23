@@ -21,6 +21,8 @@ Same board: `/?demo=battle&siege=1&node=<id>`. Field mention only: `/?demo=battl
 
 Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
+On the look demo the approach chain and the siege desk are separate blocks in the NEXT strip (the line break is kept). On the coach demo the Raise-a-banner copy scrolls in `#coach-text` while the siege desk line stays pinned under it.
+
 ## How to run
 
 ```bash

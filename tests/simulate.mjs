@@ -723,6 +723,10 @@ assert(/Focus one of those inland desks and NEXT names its foreign siege board: 
 });
 assert(/function inlandSiegeCue/.test(uiSrc) && /Siege desk:/.test(uiSrc) && /inlandSiegeCue\(sel\.id\)/.test(uiSrc), "NEXT appends the inland siege cue after the approach");
 assert(/id="coach-siege"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "coach card has a siege line");
+assert(/id="obj-siege"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "look NEXT stacks the siege cue in its own block");
+const gameCss = readFileSync(new URL("../css/game.css", import.meta.url), "utf8");
+assert(/body\.look-map \.objective span \{[^}]*white-space:\s*pre-wrap/.test(gameCss), "look NEXT keeps the approach and siege line break");
+assert(/#coach-text \{[^}]*overflow-y:\s*auto/.test(gameCss), "coach text scrolls while the siege line is pinned");
 assert(/checkpoint berm \(Lane\)/.test(uiSrc) && /label: "Sponsor Lane"/.test(uiSrc), "Sponsor Lane stays the Campaign short; siege flavor may say Lane");
 assert(/ridge berm \(Inland Ridge\)/.test(uiSrc) && /label: "Sheds"/.test(uiSrc), "Sheds stays the Campaign short; siege flavor may say Inland Ridge");
 assert(/demo"\) === "coach"[\s\S]{0,400}get\("focus"\)/.test(uiSrc), "coach demo reads focus so an inland desk opens its siege cue");

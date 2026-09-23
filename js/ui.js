@@ -771,7 +771,15 @@ function renderObjective() {
   }
   bar.hidden = false;
   $("obj-kicker").textContent = `WEEK ${state.week} · AP ${state.ap}/${apMax(state)}`;
-  $("obj-text").textContent = nextHint(state);
+  const hint = nextHint(state);
+  const breakAt = hint.indexOf("\n");
+  $("obj-text").textContent = breakAt >= 0 ? hint.slice(0, breakAt) : hint;
+  const objSiege = $("obj-siege");
+  if (objSiege) {
+    const tail = breakAt >= 0 ? hint.slice(breakAt + 1) : "";
+    objSiege.textContent = tail;
+    objSiege.hidden = !tail;
+  }
   const end = $("btn-end");
   if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
 }
@@ -791,11 +799,14 @@ function openCoach() {
   const onRoute = step.id === "city" || step.id === "banner";
   const route = onRoute ? routeSentence(state) : "";
   const siege = onRoute ? inlandSiegeCue(regionOf(state, selectedRegion)?.id) : "";
-  $("coach-text").textContent = route && !siege ? `${step.body} ${route}` : step.body;
+  const approach = siege && route.endsWith(`\n${siege}`) ? route.slice(0, -(siege.length + 1)) : siege && route === siege ? "" : route;
+  const coachParts = [step.body];
+  if (approach) coachParts.push(approach);
+  $("coach-text").textContent = coachParts.join("\n\n");
   const siegeEl = $("coach-siege");
   if (siegeEl) {
     siegeEl.hidden = !siege;
-    siegeEl.textContent = siege ? route || siege : "";
+    siegeEl.textContent = siege || "";
   }
   $("coach-next").textContent = coachStep >= COACH_STEPS.length - 1 ? "Start playing" : "Got it";
   applyCoachRing();
