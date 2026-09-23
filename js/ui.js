@@ -215,20 +215,23 @@ export async function boot(loaded) {
     return;
   }
   if (params.get("demo") === "coach") {
+    const focus = params.get("focus");
     state = createNewGame(content, {
       name: "Alex Rourke",
       background: "scout",
       difficulty: "normal",
       seed: 7,
     });
-    selectedRegion = "cheyenne";
+    const siegeFocus = !!(focus && inlandSiegeCue(focus) && regionOf(state, focus));
+    selectedRegion = siegeFocus ? focus : "cheyenne";
     commandCat = "domestic";
     coachForced = true;
     coachOn = true;
-    coachStep = 0;
+    coachStep = siegeFocus ? 1 : 0;
     hideModal();
     render();
     openCoach();
+    if (siegeFocus) frameForInlandFocus(focus);
     afterFonts();
     return;
   }
@@ -659,33 +662,54 @@ function hideModal(opts = {}) {
 
 const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
 
+/** Campaign shorts. Siege flavor may say Lane / Inland Ridge; map labels stay Sponsor Lane and Sheds. */
+const INLAND_SIEGE_CUES = {
+  kamchatka: { label: "Kamchatka", flavor: "volcanic berm", demo: "/?demo=siege&node=kamchatka" },
+  siberia: { label: "Siberia", flavor: "timber berm", demo: "/?demo=siege&node=siberia" },
+  havana: { label: "Havana", flavor: "harbor wall", demo: "/?demo=siege&node=havana" },
+  managua: { label: "Managua", flavor: "low block walls", demo: "/?demo=siege&node=managua" },
+  sponsor_lane: { label: "Sponsor Lane", flavor: "checkpoint berm (Lane)", demo: "/?demo=siege&node=sponsor_lane" },
+  kr_inland: { label: "Sheds", flavor: "ridge berm (Inland Ridge)", demo: "/?demo=siege&node=kr_inland" },
+};
+
+function inlandSiegeCue(id) {
+  const row = INLAND_SIEGE_CUES[id];
+  if (!row) return "";
+  return `Siege desk: ${row.label} — ${row.flavor}. Cut the berm, Rake the parapet, Rush the gap. ${row.demo}`;
+}
+
 function routeSentence(st) {
   if (!st) return "";
   const here = regionOf(st, playerOf(st).region);
   const sel = regionOf(st, selectedRegion);
-  if (!sel || !here || sel.id === here.id) return "";
+  if (!sel || !here) return "";
+  if (sel.id === here.id) return inlandSiegeCue(sel.id);
   const label = roadLabel(st, here.id, sel.id);
   const named = label ? ` — ${label}` : "";
+  let line;
   if (isAdjacent(st, here, sel)) {
-    return `${sel.short} is adjacent${named}. Military → Travel or March. No leaping past it.`;
-  }
-  if (sharesRoad(st, here, sel)) {
+    line = `${sel.short} is adjacent${named}. Military → Travel or March. No leaping past it.`;
+  } else if (sharesRoad(st, here, sel)) {
     const need = sel.unlockPhase || 0;
     const phase = ensureCampaign(st).phase || 1;
     const why = need > phase ? (need >= 4 ? ", locked until a sponsor" : ", locked until the foreign desks") : "";
-    return `${sel.short} is the next road${named}${why}. Cannot leap past it.`;
+    line = `${sel.short} is the next road${named}${why}. Cannot leap past it.`;
+  } else {
+    const via = approachRoads(st, here, sel);
+    const desk = sel.type === "foreign" || sel.type === "sea" || (sel.unlockPhase || 0) > 0;
+    if (desk) {
+      const trail = approachTrail(st, here, sel)
+        .map((r) => r.short)
+        .join(" → ");
+      const chain = trail || via.join(" → ");
+      line = `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Approach: ${chain || "the gate on the board"}.`;
+    } else {
+      const hops = via.join(", ");
+      line = `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Next road: ${hops || "an adjacent city"}.`;
+    }
   }
-  const via = approachRoads(st, here, sel);
-  const desk = sel.type === "foreign" || sel.type === "sea" || (sel.unlockPhase || 0) > 0;
-  if (desk) {
-    const trail = approachTrail(st, here, sel)
-      .map((r) => r.short)
-      .join(" → ");
-    const chain = trail || via.join(" → ");
-    return `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Approach: ${chain || "the gate on the board"}.`;
-  }
-  const hops = via.join(", ");
-  return `Cannot leap to ${sel.short} (${sel.stateCode || "—"}). Next road: ${hops || "an adjacent city"}.`;
+  const cue = inlandSiegeCue(sel.id);
+  return cue ? `${line}\n${cue}` : line;
 }
 
 function frameForInlandFocus(id) {
@@ -747,7 +771,15 @@ function renderObjective() {
   }
   bar.hidden = false;
   $("obj-kicker").textContent = `WEEK ${state.week} · AP ${state.ap}/${apMax(state)}`;
-  $("obj-text").textContent = nextHint(state);
+  const hint = nextHint(state);
+  const breakAt = hint.indexOf("\n");
+  $("obj-text").textContent = breakAt >= 0 ? hint.slice(0, breakAt) : hint;
+  const objSiege = $("obj-siege");
+  if (objSiege) {
+    const tail = breakAt >= 0 ? hint.slice(breakAt + 1) : "";
+    objSiege.textContent = tail;
+    objSiege.hidden = !tail;
+  }
   const end = $("btn-end");
   if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
 }
@@ -764,8 +796,18 @@ function openCoach() {
   parkedCoach = false;
   $("coach").hidden = false;
   $("coach-title").textContent = step.title;
-  const route = step.id === "city" || step.id === "banner" ? routeSentence(state) : "";
-  $("coach-text").textContent = route ? `${step.body} ${route}` : step.body;
+  const onRoute = step.id === "city" || step.id === "banner";
+  const route = onRoute ? routeSentence(state) : "";
+  const siege = onRoute ? inlandSiegeCue(regionOf(state, selectedRegion)?.id) : "";
+  const approach = siege && route.endsWith(`\n${siege}`) ? route.slice(0, -(siege.length + 1)) : siege && route === siege ? "" : route;
+  const coachParts = [step.body];
+  if (approach) coachParts.push(approach);
+  $("coach-text").textContent = coachParts.join("\n\n");
+  const siegeEl = $("coach-siege");
+  if (siegeEl) {
+    siegeEl.hidden = !siege;
+    siegeEl.textContent = siege || "";
+  }
   $("coach-next").textContent = coachStep >= COACH_STEPS.length - 1 ? "Start playing" : "Got it";
   applyCoachRing();
 }
@@ -997,7 +1039,8 @@ function campaignHtml() {
         const chip = t.here ? "here" : t.adjacent ? "adjacent" : t.key ? "key" : "locked";
         const trail = here ? approachTrail(state, here.id, t.id).map((r) => r.short).join(" → ") : "";
         const hop = t.here ? "here" : t.adjacent ? "adjacent road" : `Cannot leap. Approach: ${trail || "the gate"}`;
-        return `<li><span class="mark-chip ${chip}${t.key ? " key" : ""}">${esc(t.short)}${t.key ? " ★" : ""}</span> <span>${esc(hop)}</span></li>`;
+        const siege = inlandSiegeCue(t.id);
+        return `<li><span class="mark-chip ${chip}${t.key ? " key" : ""}">${esc(t.short)}${t.key ? " ★" : ""}</span> <span>${esc(hop)}${siege ? `. ${esc(siege)}` : ""}</span></li>`;
       }).join("");
       return `<div class="card desk-card"><h2>${esc(s.name)} · ${esc(s.id)}</h2><ul class="desk-roads">${rows}</ul></div>`;
     }).join("")}
@@ -1441,7 +1484,7 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland).",
+    body: "Domestic is town work. Click RAISE BANNER to claim Cheyenne as Northern Front. It costs 1 AP. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
     target: '[data-id="raise_banner"]',
     cat: "domestic",
   },

@@ -252,9 +252,9 @@ body.look-map .meter span,
 body.look-map .meter strong { font-size: 10px; }
 body.look-map .top-actions button { padding: 4px 8px; font-size: 10px; }
 body.look-map .objective { margin: 2px 4px 0; padding: 2px 8px; gap: 8px; }
-body.look-map .objective-copy { line-height: 1.35; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-body.look-map .objective strong { display: inline; margin: 0; font-size: 11px; }
-body.look-map .objective span { font-size: 11px; color: #f8f8f8; white-space: normal; }
+body.look-map .objective-copy { line-height: 1.35; display: flex; flex-direction: column; align-items: stretch; gap: 2px; flex-wrap: nowrap; }
+body.look-map .objective strong { display: block; margin: 0; font-size: 11px; }
+body.look-map .objective span { display: block; font-size: 11px; color: #f8f8f8; white-space: pre-wrap; overflow-wrap: anywhere; }
 body.look-map #btn-coach { padding: 3px 8px; font-size: 10px; }
 body.look-map .workspace { grid-template-columns: minmax(0, 1fr); padding: 2px; gap: 2px; }
 body.look-map .map-wrap { flex: 1; min-height: 0; }
@@ -1260,7 +1260,7 @@ hr {
 }
 .objective {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 6px 10px;
@@ -1271,20 +1271,25 @@ hr {
   flex: 0 0 auto;
 }
 .objective[hidden] { display: none !important; }
-.objective-copy { min-width: 0; line-height: 1.8; }
+.objective-copy { min-width: 0; flex: 1; line-height: 1.8; }
 .objective strong {
   display: block;
   color: var(--amber);
   margin-bottom: 4px;
   font-size: var(--type-lg);
 }
-.objective span { color: var(--ice); }
+.objective span { display: block; color: var(--ice); white-space: pre-wrap; overflow-wrap: anywhere; }
+#obj-siege[hidden] { display: none; }
+.objective #btn-coach { flex: 0 0 auto; }
 .coach {
   position: fixed;
   right: 16px;
   bottom: 16px;
   z-index: 18;
-  width: min(420px, calc(100% - 32px));
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
 }
 .coach[hidden] { display: none !important; }
 .coach-card {
@@ -1292,9 +1297,26 @@ hr {
   border: var(--chrome);
   box-shadow: var(--chrome-out);
   padding: 12px;
+  max-height: calc(100vh - 120px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+.coach-card .panel-why,
+.coach-card h2,
+.coach-card .choices { flex: 0 0 auto; }
 .coach-card h2 { margin: 0 0 10px; color: var(--amber); font-weight: 400; font-size: var(--type-lg); }
 .coach-card p { line-height: 1.85; color: var(--ice); }
+#coach-text {
+  overflow-y: auto;
+  flex: 0 1 auto;
+  min-height: 96px;
+  max-height: calc(100vh - 460px);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#coach-siege { flex: 0 0 auto; overflow-wrap: anywhere; white-space: pre-wrap; }
 .coach-ring {
   outline: 4px solid #f8d800;
   outline-offset: 2px;
