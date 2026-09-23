@@ -2654,8 +2654,9 @@ function drawWorldDesks(ctx) {
           [x - boxW / 2, y - boxH - r - 16 / mapView.z],
         ],
         far_nicaragua: [
-          [x - boxW - r - 14 / mapView.z, y - boxH / 2],
-          [x - boxW / 2, y + r + 18 / mapView.z],
+          [x + r + 18 / mapView.z, y - boxH - r - 8 / mapView.z],
+          [x + r + 22 / mapView.z, y - boxH / 2],
+          [x - boxW / 2, y - boxH - r - 28 / mapView.z],
         ],
         kamchatka: [
           [x + r + 14 / mapView.z, y - boxH / 2],
@@ -2670,8 +2671,9 @@ function drawWorldDesks(ctx) {
           [x - boxW / 2, y - boxH - r - 14 / mapView.z],
         ],
         managua: [
-          [x - boxW - r - 12 / mapView.z, y - boxH / 2],
-          [x - boxW / 2, y + r + 16 / mapView.z],
+          [x - boxW / 2, y + r + boxH + 26 / mapView.z],
+          [x - boxW - r - 20 / mapView.z, y + r + 8 / mapView.z],
+          [x + r + 18 / mapView.z, y + r + boxH],
         ],
         sponsor_lane: [
           [x - boxW / 2, y - boxH - r - 14 / mapView.z],
