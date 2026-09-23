@@ -1310,8 +1310,9 @@ hr {
 .coach-card p { line-height: 1.85; color: var(--ice); }
 #coach-text {
   overflow-y: auto;
-  min-height: 0;
-  flex: 1 1 0;
+  flex: 0 1 auto;
+  min-height: 96px;
+  max-height: calc(100vh - 460px);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
