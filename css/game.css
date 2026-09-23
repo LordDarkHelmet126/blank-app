@@ -1260,7 +1260,7 @@ hr {
 }
 .objective {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 6px 10px;
@@ -1271,20 +1271,24 @@ hr {
   flex: 0 0 auto;
 }
 .objective[hidden] { display: none !important; }
-.objective-copy { min-width: 0; line-height: 1.8; }
+.objective-copy { min-width: 0; flex: 1; line-height: 1.8; }
 .objective strong {
   display: block;
   color: var(--amber);
   margin-bottom: 4px;
   font-size: var(--type-lg);
 }
-.objective span { color: var(--ice); }
+.objective span { color: var(--ice); white-space: normal; overflow-wrap: anywhere; }
+.objective #btn-coach { flex: 0 0 auto; }
 .coach {
   position: fixed;
   right: 16px;
   bottom: 16px;
   z-index: 18;
-  width: min(420px, calc(100% - 32px));
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100vh - 168px);
+  display: flex;
+  flex-direction: column;
 }
 .coach[hidden] { display: none !important; }
 .coach-card {
@@ -1292,9 +1296,19 @@ hr {
   border: var(--chrome);
   box-shadow: var(--chrome-out);
   padding: 12px;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+.coach-card .panel-why,
+.coach-card h2,
+.coach-card .choices { flex: 0 0 auto; }
 .coach-card h2 { margin: 0 0 10px; color: var(--amber); font-weight: 400; font-size: var(--type-lg); }
 .coach-card p { line-height: 1.85; color: var(--ice); }
+#coach-text { overflow: auto; min-height: 0; flex: 1 1 auto; }
+#coach-siege { flex: 0 0 auto; overflow-wrap: anywhere; }
 .coach-ring {
   outline: 4px solid #f8d800;
   outline-offset: 2px;
