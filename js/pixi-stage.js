@@ -325,10 +325,12 @@ function bakeTerrain(state) {
       const i = y * MAP_W + x;
       const o = i * 4;
       if (!land[i]) {
+        // Keep the sea-card alpha. Pixels outside that card are transparent so
+        // the globe and the stage ocean show through, same as the canvas plate.
         d[o] = s[o];
         d[o + 1] = s[o + 1];
         d[o + 2] = s[o + 2];
-        d[o + 3] = s[o + 3] || 255;
+        d[o + 3] = s[o + 3];
         continue;
       }
       const base = BIOME_RGB[biome[i]] || [168, 156, 112];
