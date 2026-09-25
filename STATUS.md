@@ -2,11 +2,28 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Coach siege NEXT is copy only, on Campaign head `daf3dea`. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock.
+**Last checkpoint:** 2026-09-23 — Liberation fight and mission desks. The six locked inland ids tint the mission board and a liberation fight the same way siege, yard, field, and court already do. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
 
-## Coach → foreign siege (copy only)
+## Liberation fight and mission desk
 
-When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six inland desks, a short siege line sits on the existing no-leap approach. Ploys stay **Cut the berm**, **Rake the parapet**, **Rush the gap**. Campaign map labels stay Kamchatka, Siberia, Havana, Managua, Sponsor Lane, and Sheds. The siege line may mirror Combat flavor lightly (Lane, Inland Ridge). Combat owns the siege board; this pass does not edit siege mechanics.
+A mission board or a liberation fight tied to one of the six locked inland ids keeps the weekly jobs, the isometric grid, and the Rally / Ambush / Rumor ploys. `/?demo=missions&node=<id>` stamps that siege desk after the board opens, and the chrome also reads `node=` directly. The title is `Missions — ` plus the siege strip (`HAVANA DESK`), the shell paints that theater, and the amber NEXT line leads with the desk name and read. Taking a porch challenge from that board opens the yard on the same desk. A result scene carries the desk strip. A board with no desk id stays the domestic mission list.
+
+`/?demo=fight&node=<id>` stamps the same desk onto a field fight after the battle is created, and the chrome also reads `node=` directly. The title is `Fight — ` plus the siege strip, and NEXT leads with the desk name, the read, and `Liberation fight`. A fight with no desk id stays the domestic Nome field.
+
+| Id | Strip | Read | Mission demo | Fight demo |
+| --- | --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | `/?demo=missions&node=kamchatka` | `/?demo=fight&node=kamchatka` |
+| siberia | SIBERIA DESK | Timber berm · taiga | `/?demo=missions&node=siberia` | `/?demo=fight&node=siberia` |
+| havana | HAVANA DESK | Harbor wall · seawall | `/?demo=missions&node=havana` | `/?demo=fight&node=havana` |
+| managua | MANAGUA DESK | Block wall · isthmus | `/?demo=missions&node=managua` | `/?demo=fight&node=managua` |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | `/?demo=missions&node=sponsor_lane` | `/?demo=fight&node=sponsor_lane` |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | `/?demo=missions&node=kr_inland` | `/?demo=fight&node=kr_inland` |
+
+Domestic missions, unchanged: `/?demo=missions`. Domestic fight, unchanged: `/?demo=fight` (Nome field, same as `/?demo=battle`). An unknown `node=` stays that domestic board or field and does not borrow another desk. Field chrome is still `/?demo=battle&node=havana`. Yard chrome is still `/?demo=duel&node=havana`.
+
+## Coach → foreign siege
+
+When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six inland desks, a short siege line sits on the existing no-leap approach. Ploys stay **Cut the berm**, **Rake the parapet**, **Rush the gap**. Campaign map labels stay Kamchatka, Siberia, Havana, Managua, Sponsor Lane, and Sheds. The siege line may mirror Combat flavor lightly (Lane, Inland Ridge). Those demos open the live siege board.
 
 | id | Campaign short | Siege demo |
 |---|---|---|
@@ -17,11 +34,130 @@ When the yellow NEXT strip or the Raise-a-banner coach focuses one of the six in
 | `sponsor_lane` | Sponsor Lane | `/?demo=siege&node=sponsor_lane` |
 | `kr_inland` | Sheds | `/?demo=siege&node=kr_inland` |
 
-Same board: `/?demo=battle&siege=1&node=<id>`. Field mention only: `/?demo=battle&node=<id>`.
+Same board: `/?demo=battle&siege=1&node=<id>`. Field spawn and yard, one URL per desk:
+
+- `/?demo=battle&node=kamchatka` · `/?demo=duel&node=kamchatka`
+- `/?demo=battle&node=siberia` · `/?demo=duel&node=siberia`
+- `/?demo=battle&node=havana` · `/?demo=duel&node=havana`
+- `/?demo=battle&node=managua` · `/?demo=duel&node=managua`
+- `/?demo=battle&node=sponsor_lane` · `/?demo=duel&node=sponsor_lane`
+- `/?demo=battle&node=kr_inland` · `/?demo=duel&node=kr_inland`
 
 Coach with the cue: `/?demo=coach&focus=<id>` (Raise a banner). Map focus, NEXT only: `/?demo=look&focus=<id>`.
 
 On the look demo the approach chain and the siege desk are separate blocks in the NEXT strip (the line break is kept). On the coach demo the Raise-a-banner copy scrolls in `#coach-text` while the siege desk line stays pinned under it.
+
+## Foreign-desk court read
+
+Court and the officers ladder tied to one of the six locked inland ids keep the five chairs, create-a-friend, and Player → Officer → General. `/?demo=officers&node=<id>` and `/?demo=court&node=<id>` stamp that siege desk after the view opens, and the chrome also reads `node=` directly. The title is `Court — ` or `Roster — ` plus the siege strip (`HAVANA DESK`), the shell paints that theater, and the amber NEXT line leads with the desk name and read. FRIEND ADDED and RANK CONFIRMED stay on the ladder. A court with no desk id stays the domestic black strip.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+**Playtest (court / officers):**
+
+- `/?demo=officers&node=kamchatka` · `/?demo=court&node=kamchatka`
+- `/?demo=officers&node=siberia` · `/?demo=court&node=siberia`
+- `/?demo=officers&node=havana` · `/?demo=court&node=havana`
+- `/?demo=officers&node=managua` · `/?demo=court&node=managua`
+- `/?demo=officers&node=sponsor_lane` · `/?demo=court&node=sponsor_lane`
+- `/?demo=officers&node=kr_inland` · `/?demo=court&node=kr_inland`
+
+Domestic officers, unchanged: `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Domestic court, unchanged: `/?demo=court`. An unknown `node=` stays that domestic court and does not borrow another desk. Field chrome is still `/?demo=battle&node=havana`. Yard chrome is still `/?demo=duel&node=havana`.
+
+## Foreign-desk field read
+
+A field fight tied to one of the six locked inland ids keeps the isometric grid, the M113 / jeep roster, and the Rally / Ambush / Rumor ploys. `/?demo=battle&node=<id>` stamps that siege desk onto the field after the battle is created, and the chrome also reads `node=` directly. The title is `Field — ` plus the siege strip (`HAVANA DESK`), the shell paints that theater, and the amber NEXT line leads with the desk name and read. A field with no desk id stays the domestic Nome strip.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+Domestic field, unchanged: `/?demo=battle` and `/?demo=look&fx=battle&hull=1`. An unknown `node=` stays that domestic field and does not borrow another desk. Siege chrome is still `/?demo=battle&siege=1&node=havana` (swap the id). Yard chrome is still `/?demo=duel&node=havana`.
+
+## Foreign-desk duel read
+
+A yard duel tied to one of the six locked inland ids keeps the **99s / 11 exchange** clock, the amber NEXT line, hit juice, and the style specials. `/?demo=duel&node=<id>` stamps that siege desk onto the yard after the duel is created, and the chrome also reads `node=` directly. The title is the siege strip (`KAMCHATKA DESK`), the yard paints that theater instead of the snowy roadhouse, and NEXT leads with the desk name and read. A duel with no desk id stays the domestic snowy roadhouse.
+
+| Id | Strip | Read | Yard |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice berm, navy sky |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine and timber |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon and harbor wall |
+| managua | MANAGUA DESK | Block wall · isthmus | clay blocks, ochre ground |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil crates |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk ridge |
+
+Domestic yard, unchanged: `/?demo=duel`. An unknown `node=` does not borrow another desk. `style=` and `arena=` still work beside `node=`.
+
+## Foreign-desk siege identity
+
+The six locked inland ids still open the shared siege board. Each one now has its own backdrop, panel tint, and desk strip, and the amber NEXT line leads with the desk name. Ploys stay **Cut the berm**, **Rake the parapet**, and **Rush the gap**. **PRESS** / **WAIT** marks are unchanged. Default WORKS and opening pressure were not rebalanced.
+
+| Id | Strip | Read | Edge |
+| --- | --- | --- | --- |
+| kamchatka | KAMCHATKA DESK | Ice berm · far shore | ice |
+| siberia | SIBERIA DESK | Timber berm · taiga | pine |
+| havana | HAVANA DESK | Harbor wall · seawall | lagoon |
+| managua | MANAGUA DESK | Block wall · isthmus | clay |
+| sponsor_lane | SPONSOR LANE DESK | Checkpoint · crate berm | stencil |
+| kr_inland | INLAND RIDGE DESK | Ridge berm · peninsula | dusk |
+
+The margin stripes, the panel edge, and the desk strip name the theater before the meters. NEXT starts `Kamchatka desk. Volcanic berm… WORKS 56 still hold. Cut the berm.`
+
+Same tint from the battle hook: `/?demo=battle&siege=1&node=kamchatka` (and `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`).
+
+Domestic siege stays the black board: `/?demo=siege` and `/?demo=battle&siege=1`. A missing id still closes cleanly and does not borrow another desk's colors.
+
+## Inland siege hooks
+
+Locked ids open the same siege board (WORKS / berm / parapet / Rush the gap) or the same field spawn. The hook is the id string. If Campaign has already set walls, those walls are WORKS. Opening SUPPRESS is the desk pressure preset.
+
+| Id | Desk | Default WORKS | Opening pressure |
+| --- | --- | --- | --- |
+| kamchatka | Kamchatka Works | 56 | 0 |
+| siberia | Siberia Column | 36 | 4 |
+| havana | Havana Harbor | 48 | 16 |
+| managua | Managua Works | 28 | 22 |
+| sponsor_lane | Sponsor Lane | 32 | 8 |
+| kr_inland | Inland Ridge | 40 | 12 |
+
+Harder berm: `/?demo=siege&node=havana&walls=72`. Domestic siege stays `/?demo=siege` and `/?demo=battle&siege=1`.
+
+## Combat polish
+
+Yard duel stays **99s / 11 exchanges**. An amber **NEXT** line names the green-window press (1 Strike, 2 Guard, 3 Special · the style move) and turns green while the needle is in the band. Each fighter has a style stripe. Damage shows as **−N** on the card and over the yard.
+
+Siege **WORKS** is red, **SUPPRESS** is amber, **LEVY** is white. The recommended ploy says **PRESS**; the others say **WAIT** or **LATER**. Meters, the amber NEXT line, and the ploy buttons stay stuck to the top so later impulses do not bury the controls. The siege log still lists every line.
+
+Create-a-friend stays above the ladder. A new friend shows **FRIEND ADDED**. Promote still shows **RANK CONFIRMED**, and that row flashes. Rank stripes sit on the roster and the court chairs. Face names on the create grid are larger.
+
+**Playtest:** `/?demo=duel` · `/?demo=officers` (`promote=1` / `promote=2`) · `/?demo=siege` (`walls=72`) · `/?demo=battle&siege=1` · `/?demo=look&fx=battle&hull=1`
+
+## Officers final
+
+Dock → **Roster** (same screen as Officers; also the Court strip button). The create-a-friend form is the first block in the modal. Each original face has a readable name (Nell Crowe and the rest — not F0–F15). Friends join as **Player**. Promote to **Officer**, then **General**. A yellow **RANK CONFIRMED** banner and a **NEXT** line name the rung. Rank badges on the roster and the court strip use large amber/white type. Promoted officers in your city can take the yard or lead a march.
+
+**Playtest:** `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Optional `promote=1` opens with Sam Ivers already an officer; `promote=2` opens with Sam already a general.
+
+Campaign adjacency, leap rules, and the theater map are unchanged. Yard duel stays 99s / 11 exchanges.
+
+## Siege board
+
+Fortified bowls (walls ≥ 24, or urban) open a siege instead of treating walls as defender morale. You are the attacker. The garrison is the defender. **WORKS** is wall strength. Three ploys: **Cut the berm** (drops WORKS), **Rake the parapet** (fills SUPPRESS), **Rush the gap** (takes the place only when WORKS are low and the parapet is quiet). The amber NEXT line names the ploy. The siege log is one list on the battle scroller — older lines stay in the list. The siege **lifts** if the levy hits 0 or the watch runs out. Field fights, including the M113 spawn, stay on the isometric grid.
+
+**Demo:** `/?demo=siege` (Anchorage from Bethel). Harder berm: `/?demo=siege&walls=72`. Same board from the battle hook: `/?demo=battle&siege=1`. Field M113 check is still `/?demo=look&fx=battle&hull=1` (Nome, not a siege).
 
 ## How to run
 
@@ -35,7 +171,7 @@ Open http://127.0.0.1:8765/
 node tests/simulate.mjs
 ```
 
-**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver selected, Cheyenne–Denver pulse). California frame: `/?demo=look&view=ca`. Cold new game: `/?demo=start`. Globe: `/?demo=look&view=world`.
+**Theater look:** `/?demo=look` or `/?demo=terrain` (Denver selected, Cheyenne–Denver pulse). California frame: `/?demo=look&view=ca`. Cold new game: `/?demo=start`. Globe: `/?demo=look&view=world`. Officers: `/?demo=look&panel=officers`. Iso battle: `/?demo=look&fx=battle`. M113 hulls: `/?demo=look&fx=battle&hull=1`.
 
 ## US silhouette (this pass)
 

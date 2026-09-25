@@ -88,6 +88,7 @@
         <div class="chrome-head dock-head">
           <span class="panel-title">Chronicle</span>
           <span class="panel-why">Newest line first.</span>
+          <button type="button" id="btn-roster">Roster</button>
           <button type="button" id="btn-officers">Officers</button>
           <button type="button" id="btn-missions">Missions</button>
           <button type="button" id="btn-states">States</button>
@@ -109,6 +110,10 @@
           <img id="event-portrait" class="event-face" alt="" />
         </div>
         <div class="event-copy">
+          <p id="event-desk" class="mission-desk" hidden>
+            <strong id="event-desk-name"></strong>
+            <span id="event-desk-read"></span>
+          </p>
           <p class="panel-why">Scene — this is the result of your last click.</p>
           <h2 id="event-title">Event</h2>
           <p id="event-text"></p>
@@ -131,12 +136,57 @@
             <button type="button" id="battle-auto">Auto-resolve</button>
           </div>
         </header>
+        <p id="field-desk" class="field-desk" hidden>
+          <strong id="field-desk-name"></strong>
+          <span id="field-desk-read"></span>
+        </p>
+        <p id="field-next" class="field-next" hidden>NEXT: Yellow unit, then an adjacent diamond.</p>
+        <section id="siege-board" class="siege-board" aria-label="Siege">
+          <div class="siege-sticky">
+            <p id="siege-desk" class="siege-desk" hidden>
+              <strong id="siege-desk-name"></strong>
+              <span id="siege-desk-read"></span>
+            </p>
+            <p id="siege-roles" class="siege-roles">YOU are the ATTACKER. THEY are the DEFENDER.</p>
+            <div class="siege-meters">
+              <div class="siege-meter works">
+                <span>WORKS</span>
+                <strong id="siege-works-n">0</strong>
+                <div class="siege-track"><i id="siege-works-bar"></i></div>
+                <small>Wall strength. Cut it down.</small>
+              </div>
+              <div class="siege-meter suppress">
+                <span>SUPPRESS</span>
+                <strong id="siege-suppress-n">0</strong>
+                <div class="siege-track"><i id="siege-suppress-bar"></i></div>
+                <small>Parapet pinned. Fill it.</small>
+              </div>
+              <div class="siege-meter levy">
+                <span>LEVY</span>
+                <strong id="siege-levy-n">0</strong>
+                <div class="siege-track levy"><i id="siege-levy-bar"></i></div>
+                <small>Your column. At 0 the siege lifts.</small>
+              </div>
+            </div>
+            <p id="siege-next" class="siege-next">NEXT: Cut the berm. Do not rush.</p>
+            <div class="siege-ploys">
+              <button type="button" id="siege-cut" data-siege="cut"><b>1</b> Cut the berm<small>Drops WORKS</small><em class="ploy-mark">PRESS</em></button>
+              <button type="button" id="siege-rake" data-siege="rake"><b>2</b> Rake the parapet<small>Fills SUPPRESS</small><em class="ploy-mark">LATER</em></button>
+              <button type="button" id="siege-rush" data-siege="rush"><b>3</b> Rush the gap<small>Takes the settlement</small><em class="ploy-mark">WAIT</em></button>
+            </div>
+            <p id="siege-last" class="siege-last"></p>
+            <div class="siege-foot">
+              <button type="button" id="siege-auto">Auto-resolve siege</button>
+            </div>
+          </div>
+          <ol id="siege-log" class="log siege-log"></ol>
+        </section>
         <div class="battle-stage">
           <canvas id="battle-sky" width="960" height="64" aria-hidden="true"></canvas>
           <canvas id="battle-canvas" width="960" height="520"></canvas>
           <canvas id="battle-charge" width="960" height="96" aria-hidden="true"></canvas>
         </div>
-        <p id="battle-hint" class="hint">FIELD / SIEGE — isometric strip. Yellow unit, then an adjacent diamond. Strength bars over jeeps and militia. Auto-resolve skips the grid.</p>
+        <p id="battle-hint" class="hint">FIELD — isometric strip. Yellow unit, then an adjacent diamond. Strength bars over jeeps, M113s (marked 113), and militia. Auto-resolve skips the grid. Fortified bowls use the siege board.</p>
         <ol id="battle-log" class="log battle-log"></ol>
       </div>
     </div>
@@ -149,9 +199,15 @@
           <span id="duel-clock" class="duel-clock">99</span>
           <span id="duel-underdog" class="duel-underdog" hidden>UNDERDOG</span>
         </header>
-        <p id="duel-cue" class="duel-cue">Green window = bonus. Strike beats Special · Special beats Guard · Guard beats Strike.</p>
+        <p id="duel-desk" class="duel-desk" hidden>
+          <strong id="duel-desk-name"></strong>
+          <span id="duel-desk-read"></span>
+        </p>
+        <p id="duel-cue" class="duel-cue">Strike beats Special · Special beats Guard · Guard beats Strike.</p>
+        <p id="duel-next" class="duel-next">NEXT: Needle in the green, then 1 Strike, 2 Guard, or 3 Special.</p>
         <div class="duel-fighters">
           <article class="duel-card" id="duel-you">
+            <i id="duel-you-stripe" class="style-stripe"></i>
             <div class="medallion"><img id="duel-you-face" alt="" /></div>
             <div>
               <h2 id="duel-you-name">You</h2>
@@ -159,7 +215,8 @@
               <p id="duel-you-meta" class="muted"></p>
               <p id="duel-you-stats"></p>
               <div class="duel-hp"><i id="duel-you-hp"></i></div>
-              <p id="duel-you-hp-n" class="muted"></p>
+              <p id="duel-you-hp-n" class="duel-hp-n"></p>
+              <p id="duel-you-hit" class="duel-hit" hidden></p>
             </div>
           </article>
           <article class="duel-card foe" id="duel-foe">
@@ -169,9 +226,11 @@
               <p id="duel-foe-meta" class="muted"></p>
               <p id="duel-foe-stats"></p>
               <div class="duel-hp"><i id="duel-foe-hp"></i></div>
-              <p id="duel-foe-hp-n" class="muted"></p>
+              <p id="duel-foe-hp-n" class="duel-hp-n"></p>
+              <p id="duel-foe-hit" class="duel-hit" hidden></p>
             </div>
             <div class="medallion"><span id="duel-foe-face" class="mini"></span></div>
+            <i id="duel-foe-stripe" class="style-stripe"></i>
           </article>
         </div>
         <canvas id="duel-canvas" width="640" height="180" aria-label="Yard"></canvas>

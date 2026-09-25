@@ -70,22 +70,22 @@ const PAL = {
 };
 
 const FACE_KITS = [
-  { hat: "#c8a038", coat: "#385028", hair: "#3a2010", skin: "#c8a078" },
-  { hat: "#686860", coat: "#304878", hair: "#201810", skin: "#d0b088" },
-  { hat: "#f8d800", coat: "#507040", hair: "#684028", skin: "#c09070" },
-  { hat: "#a03020", coat: "#2a3820", hair: "#3a2010", skin: "#b88860" },
-  { hat: "#d0d8e0", coat: "#405060", hair: "#f0e8d8", skin: "#e0c8b0" },
-  { hat: "#886038", coat: "#684028", hair: "#201810", skin: "#c8a078" },
-  { hat: "#304878", coat: "#101050", hair: "#3a2010", skin: "#d8b898" },
-  { hat: "#c8a038", coat: "#803010", hair: "#886038", skin: "#d0a878" },
-  { hat: "#507040", coat: "#184828", hair: "#201810", skin: "#b89068" },
-  { hat: "#e0c060", coat: "#687038", hair: "#c8a038", skin: "#e8d0b0" },
-  { hat: "#404040", coat: "#686868", hair: "#201810", skin: "#c8a078" },
-  { hat: "#f8f8f8", coat: "#385028", hair: "#684028", skin: "#d8b890" },
-  { hat: "#c07840", coat: "#5a4830", hair: "#3a2010", skin: "#c09070" },
-  { hat: "#80a0b0", coat: "#487088", hair: "#d0d8e0", skin: "#e8e0d0" },
-  { hat: "#a07840", coat: "#684828", hair: "#201810", skin: "#c8a078" },
-  { hat: "#f8d800", coat: "#304878", hair: "#3a2010", skin: "#d0b088" },
+  { hat: "#c8a038", coat: "#385028", hair: "#3a2010", skin: "#c8a078", name: "Nell Crowe" },
+  { hat: "#686860", coat: "#304878", hair: "#201810", skin: "#d0b088", name: "Pam Quill" },
+  { hat: "#f8d800", coat: "#507040", hair: "#684028", skin: "#c09070", name: "Quinn Dyer" },
+  { hat: "#a03020", coat: "#2a3820", hair: "#3a2010", skin: "#b88860", name: "Ruth Fenn" },
+  { hat: "#d0d8e0", coat: "#405060", hair: "#f0e8d8", skin: "#e0c8b0", name: "Saul Peck" },
+  { hat: "#886038", coat: "#684028", hair: "#201810", skin: "#c8a078", name: "Una Calder" },
+  { hat: "#304878", coat: "#101050", hair: "#3a2010", skin: "#d8b898", name: "Wynn Orth" },
+  { hat: "#c8a038", coat: "#803010", hair: "#886038", skin: "#d0a878", name: "Yara Bex" },
+  { hat: "#507040", coat: "#184828", hair: "#201810", skin: "#b89068", name: "Ames Lott" },
+  { hat: "#e0c060", coat: "#687038", hair: "#c8a038", skin: "#e8d0b0", name: "Bree Kitt" },
+  { hat: "#404040", coat: "#686868", hair: "#201810", skin: "#c8a078", name: "Cass Pym" },
+  { hat: "#f8f8f8", coat: "#385028", hair: "#684028", skin: "#d8b890", name: "Drew Ives" },
+  { hat: "#c07840", coat: "#5a4830", hair: "#3a2010", skin: "#c09070", name: "Enid Shaw" },
+  { hat: "#80a0b0", coat: "#487088", hair: "#d0d8e0", skin: "#e8e0d0", name: "Gale Mire" },
+  { hat: "#a07840", coat: "#684828", hair: "#201810", skin: "#c8a078", name: "Ida Fenwick" },
+  { hat: "#f8d800", coat: "#304878", hair: "#3a2010", skin: "#d0b088", name: "Jed Harrow" },
 ];
 
 let terrainCache = null;
@@ -1108,6 +1108,14 @@ function drawFieldUnit(ctx, u, x, y, selected, now) {
     px(ctx, -6, 1, 3, 3, "#201810");
     px(ctx, 5, 1, 3, 3, "#201810");
     px(ctx, -8, -5, 2, 2, col);
+  } else if (u.type === "ifv") {
+    px(ctx, -12, -5, 24, 7, "#4a5840");
+    px(ctx, -8, -9, 12, 4, "#3a4830");
+    px(ctx, -11, 1, 5, 3, "#201810");
+    px(ctx, -3, 1, 5, 3, "#201810");
+    px(ctx, 5, 1, 5, 3, "#201810");
+    px(ctx, 8, -7, 3, 3, col);
+    px(ctx, -12, -6, 2, 2, col);
   } else if (u.type === "regular") {
     px(ctx, -3, -14, 6, 4, "#686860");
     px(ctx, -4, -10, 8, 10, "#385028");
@@ -1127,6 +1135,10 @@ function drawFieldUnit(ctx, u, x, y, selected, now) {
   ctx.fillStyle = col;
   ctx.font = "8px 'Press Start 2P', monospace";
   ctx.fillText(String(Math.max(0, u.hp)), x - 8, y - 44);
+  if (u.type === "ifv") {
+    ctx.fillStyle = "#f8f4e8";
+    ctx.fillText("113", x - 10, y + 18);
+  }
 }
 
 export function paintBiomeBackdrop(ctx, w, h, now, dest) {
@@ -1175,11 +1187,26 @@ function bakeFace(kit, initials) {
 
 export function originalFaceGrid() {
   if (faceCache) return faceCache;
-  faceCache = FACE_KITS.map((kit, i) => ({
-    id: `F${i}`,
-    src: bakeFace(kit, `F${i.toString(16).toUpperCase()}`),
-  }));
+  faceCache = FACE_KITS.map((kit, i) => {
+    const name = kit.name || `Face ${i + 1}`;
+    const initials = name
+      .split(/\s+/)
+      .map((part) => part[0] || "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    return {
+      id: `F${i}`,
+      name,
+      src: bakeFace(kit, initials),
+    };
+  });
   return faceCache;
+}
+
+export function faceLabel(id) {
+  const hit = originalFaceGrid().find((f) => f.id === id);
+  return hit ? hit.name : "";
 }
 
 export function faceSrc(id) {

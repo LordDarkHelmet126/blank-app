@@ -67,7 +67,7 @@ Add objects; the engine does not assume a fixed officer count.
 
 v0.1 ships **153 original AI officers** with distinct personalities (aggressive, cautious, diplomat, schemer, merchant, loyalist, ambitious, recluse). Three **hidden legends** (`Ilya Karr` on the Slope, `Nils Silo` on the Yukon Road, `Cal Marsh` in Kenai) until intel or Seek Legend. Elites include Irina Brack, Tess Lumen, Jonah Stave, plus Front Range officers Vera Range and Ivy Front. Custom officers still cap at **10**.
 
-**Liberate the States:** hierarchy is **STATE → territories**. A state is free when you hold its **key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail). Geo tags (farm/mine/fuel/water/sun/weather/defense) change weekly yields. **8 US states** (west bloc AK–CO) names you **national leader**. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua. A late **sponsor** event can add Korea.
+**Liberate the States:** hierarchy is **STATE → territories**. A state frees when you hold its **★ key territories**. Travel/attack cannot leap — only adjacent roads (alternate routes exist: ferry vs ALCAN, Rockies pass vs Cheyenne rail). The west chain is adjacent only: AK–YT–WA–OR–ID–MT–WY–UT–CO. Yukon is the road, not a ninth state. **8 US states** (west bloc AK–CO) name you **national leader** — a title, not a leap. **Reunify** is the east walk NE–KS–MO on the roads you already have. Then Phase 3 far-shore desks — Russia, Cuba, Nicaragua — still wait on their roads. A late **sponsor** event can add Korea.
 
 **Map unlock:** every US/Yukon city is painted from week 0 on a continental US coastline (Great Lakes cut in; Alaska/Yukon as a northwest spur). Foreign nodes wait on campaign phase. South corridor: Anchorage → Juneau → Seattle and Fairbanks → Yukon → Missoula. East approach: Denver → Omaha → Topeka → Wichita → St. Louis. Demo: `/?demo=states` or `/?demo=map`. Visual look: `/?demo=look` or `/?demo=terrain` — full-resolution biomes and 1980s American city markers. Original art only.
 
@@ -91,9 +91,13 @@ Season tint only: `/?demo=season`.
 **Generals (5 slots + ADD empty states):** `/?demo=generals`.
 **Side missions board:** `/?demo=missions`.
 **Mission vignette (auto-take a Bethel job):** `/?demo=missions&take=1`.
+**Mission desk:** `/?demo=missions&node=havana` (also `kamchatka`, `siberia`, `managua`, `sponsor_lane`, `kr_inland`). Domestic board with no `node=` stays the plain list.
+**Liberation fight:** `/?demo=fight&node=havana` (same six ids). Domestic Nome field with no `node=`: `/?demo=fight`.
 **Officer layout (ruler / city report / command / court strip):** `/?demo=layout`.
 **Expanded theater (AK→CO):** `/?demo=states` or `/?demo=map` (Denver selected; Juneau–Seattle road pulses).
-**Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (PNW hero: Seattle + Juneau–Seattle pulse). `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`.
+**Look / terrain pivot:** `/?demo=look` or `/?demo=terrain` (PNW hero: Seattle + Juneau–Seattle pulse). `/?demo=look&focus=seattle`. Officers: `/?demo=look&panel=officers`. Iso field: `/?demo=look&fx=battle`. M113 hulls: `/?demo=look&fx=battle&hull=1`.
+**Officers final:** `/?demo=officers` (same screen as `/?demo=roster` and `/?demo=ladder`). Create a friend at the top, pick a named face, then promote. `promote=1` opens Sam Ivers as an officer; `promote=2` opens Sam as a general. Foreign desk: `/?demo=officers&node=havana` and `/?demo=court&node=havana` (also `kamchatka`, `siberia`, `managua`, `sponsor_lane`, `kr_inland`). Domestic court with no `node=` stays the black strip: `/?demo=court`.
+**Siege board:** `/?demo=siege`. Harder berm: `/?demo=siege&walls=72`. Battle hook: `/?demo=battle&siege=1`.
 **Yard duel (~99s):** `/?demo=duel`. Underdog: `/?demo=duel&goliath=1`. Style: `/?demo=duel&style=brawler` (also marksman, grappler, cavalry, guerrilla, drill, trapper, signals, or `cycle`). Arena: `/?demo=duel&arena=foothills` (porch, roadhouse, airstrip, iceford, gaslot, pineridge, radiotower). HUD uses `3 Special · Dust Feint`. Coach / NEXT / ADD chairs share one hire path. End Week teases the next week. Coach parks while a result scene is open.
 
 ## Layout

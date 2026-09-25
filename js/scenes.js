@@ -380,13 +380,35 @@ function paintId(id) {
   return out.toDataURL("image/png");
 }
 
-function loadImg(src) {
-  return new Promise((resolve, reject) => {
+const imageLoads = new Map();
+
+function loadImg(src, timeoutMs = 4000) {
+  const existing = imageLoads.get(src);
+  if (existing) return existing;
+  const promise = new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      img.onload = null;
+      img.onerror = null;
+      fn(value);
+    };
+    const timer = setTimeout(() => {
+      finish(reject, new Error(`image load timed out: ${src}`));
+      img.src = "";
+    }, timeoutMs);
+    img.onload = () => finish(resolve, img);
+    img.onerror = () => finish(reject, new Error(`image load failed: ${src}`));
     img.src = src;
   });
+  imageLoads.set(src, promise);
+  promise.finally(() => {
+    if (imageLoads.get(src) === promise) imageLoads.delete(src);
+  });
+  return promise;
 }
 
 async function tintPhoto(src, color) {
@@ -435,10 +457,12 @@ export async function bakeScenes() {
   Object.keys(PAINT).forEach((id) => {
     cache[id] = paintId(id);
   });
-  for (const [id, [src, color]] of Object.entries(PHOTO_TINTS)) {
-    const tinted = await tintPhoto(src, color);
-    if (tinted) cache[id] = tinted;
-  }
+  await Promise.all(
+    Object.entries(PHOTO_TINTS).map(async ([id, [src, color]]) => {
+      const tinted = await tintPhoto(src, color);
+      if (tinted) cache[id] = tinted;
+    })
+  );
   return cache;
 }
 
