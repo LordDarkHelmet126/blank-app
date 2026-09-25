@@ -19,6 +19,7 @@ import { ensureTheaterTerrain } from "./terrain.js";
 import { WORLD_LAND } from "./world-washes.js";
 import { factionOf, isAdjacent, mapRoads, playerOf, regionOf, theaterVisible } from "./engine.js";
 import { inlandDesk, inlandLook } from "./inland.js";
+import { drawTravelConvoy } from "./sprites.js";
 
 const MAP_W = 1000;
 const MAP_H = 620;
@@ -81,21 +82,6 @@ const CAMPAIGN_ROADS = [
 
 const STALL_IDS = ["cheyenne", "omaha", "lincoln", "topeka", "wichita", "st_louis"];
 
-const BIOME_RGB = {
-  1: [196, 214, 222],
-  2: [126, 146, 108],
-  3: [90, 150, 112],
-  4: [46, 108, 58],
-  5: [62, 118, 72],
-  6: [154, 128, 68],
-  7: [108, 112, 116],
-  8: [214, 146, 64],
-  9: [132, 156, 72],
-  10: [196, 170, 64],
-  11: [122, 122, 108],
-  12: [22, 78, 52],
-};
-
 let ready = false;
 let mapApp = null;
 let duelApp = null;
@@ -113,9 +99,34 @@ export function isReady() {
   return ready;
 }
 
+export function destroyPixi() {
+  ready = false;
+  try { mapApp?.destroy({ removeView: false }, { children: true }); } catch { /* already gone */ }
+  try { duelApp?.destroy({ removeView: false }, { children: true }); } catch { /* already gone */ }
+  mapApp = null;
+  duelApp = null;
+  convoySprite = null;
+  convoyTex = null;
+  convoyCanvas = null;
+}
+
+export function bindContextLoss(onLost) {
+  const hook = (canvas) => {
+    if (!canvas) return;
+    canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      onLost();
+    });
+  };
+  hook(mapCanvas);
+  hook(duelCanvas);
+}
+
 export async function initPixi(mapEl, duelEl) {
   mapCanvas = mapEl;
   duelCanvas = duelEl;
+  let took = false;
+  try {
   mapApp = new Application();
   await mapApp.init({
     canvas: mapEl,
@@ -130,6 +141,7 @@ export async function initPixi(mapEl, duelEl) {
     hello: false,
     autoStart: false,
   });
+  took = true;
   mapApp.ticker.stop();
   fitCanvas(mapEl, "100%", "100%");
   mapEl.dataset.pixi = "1";
@@ -158,6 +170,13 @@ export async function initPixi(mapEl, duelEl) {
     mapLayers.over,
   );
   screen.addChild(mapLayers.plates);
+  convoyCanvas = document.createElement("canvas");
+  convoyCanvas.width = MAP_W;
+  convoyCanvas.height = MAP_H;
+  convoyTex = Texture.from(convoyCanvas);
+  convoySprite = new Sprite(convoyTex);
+  convoySprite.visible = false;
+  world.addChild(convoySprite);
   mapLayers.globeKey = "";
   mapLayers.strokeKey = "";
   mapLayers.terrainKey = "";
@@ -191,8 +210,13 @@ export async function initPixi(mapEl, duelEl) {
   duelEl.dataset.pixi = "1";
   const shake = new Container();
   duelApp.stage.eventMode = "none";
-  duelApp.stage.addChild(shake);
+  const hud = new Container();
+  duelApp.stage.addChild(shake, hud);
   duelLayers.shake = shake;
+  duelLayers.hud = hud;
+  duelLayers.hudGfx = new Graphics();
+  hud.addChild(duelLayers.hudGfx);
+  duelLayers.labels = {};
   duelLayers.arena = new Graphics();
   duelLayers.fx = new Graphics();
   duelLayers.you = new Sprite(Texture.EMPTY);
@@ -203,6 +227,11 @@ export async function initPixi(mapEl, duelEl) {
   duelLayers.arenaKey = "";
 
   ready = true;
+  } catch (err) {
+    err.tookCanvas = took;
+    destroyPixi();
+    throw err;
+  }
 }
 
 function fitCanvas(canvas, width, height) {
@@ -224,7 +253,7 @@ void main(void) {
   if (c.a < 0.04) { finalColor = c; return; }
   float l = dot(texture(uTexture, vTextureCoord + vec2(-t.x, -t.y)).rgb, vec3(0.30, 0.55, 0.15));
   float r = dot(texture(uTexture, vTextureCoord + vec2(t.x, t.y)).rgb, vec3(0.30, 0.55, 0.15));
-  float lit = clamp(0.88 + (l - r) * 1.35, 0.62, 1.22);
+  float lit = clamp(1.0 + (l - r) * 0.35, 0.94, 1.06);
   finalColor = vec4(c.rgb * lit, c.a);
 }
 `;
@@ -300,14 +329,9 @@ function rebuildGlobeStroke(pacific, z) {
   mapLayers.strokeKey = `${pacific ? "p" : "n"}|${Math.round(width)}`;
 }
 
-function hash2(x, y) {
-  const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-  return n - Math.floor(n);
-}
-
 function bakeTerrain(state) {
   const cache = ensureTheaterTerrain(state);
-  const { land, biome, height } = cache.fields;
+  const { land, height } = cache.fields;
   const full = document.createElement("canvas");
   full.width = MAP_W;
   full.height = MAP_H;
@@ -315,101 +339,47 @@ function bakeTerrain(state) {
   lift.width = MAP_W;
   lift.height = MAP_H;
   const fx = full.getContext("2d", { willReadFrequently: true });
+  // Start from the canvas plate (tan land, painted lakes) and only kiss the slopes.
   fx.drawImage(cache.canvas, 0, 0);
-  const src = fx.getImageData(0, 0, MAP_W, MAP_H);
-  const img = fx.createImageData(MAP_W, MAP_H);
+  const img = fx.getImageData(0, 0, MAP_W, MAP_H);
   const d = img.data;
-  const s = src.data;
-  for (let y = 0; y < MAP_H; y++) {
-    for (let x = 0; x < MAP_W; x++) {
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
       const i = y * MAP_W + x;
       const o = i * 4;
-      if (!land[i]) {
-        // Keep the sea-card alpha. Pixels outside that card are transparent so
-        // the globe and the stage ocean show through, same as the canvas plate.
-        d[o] = s[o];
-        d[o + 1] = s[o + 1];
-        d[o + 2] = s[o + 2];
-        d[o + 3] = s[o + 3];
-        continue;
-      }
-      const base = BIOME_RGB[biome[i]] || [168, 156, 112];
-      const grain = ((hash2(x, y) - 0.5) * 10) | 0;
-      let shade = 1;
-      if (x > 0 && x < MAP_W - 1 && y > 0 && y < MAP_H - 1) {
-        const dzdx = (height[i + 1] - height[i - 1]) * 9;
-        const dzdy = (height[i + MAP_W] - height[i - MAP_W]) * 9;
-        const slope = Math.atan(Math.hypot(dzdx, dzdy));
-        const aspect = Math.atan2(dzdy, -dzdx);
-        const alt = 0.72;
-        const az = 5.5;
-        shade = Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - aspect);
-        shade = 0.58 + Math.max(0, Math.min(1, shade)) * 0.62;
-      }
-      if (height[i] > 0.84) shade = Math.min(1.25, shade + 0.18);
-      let shore = 0;
-      if (x === 0 || !land[i - 1]) shore += 1;
-      if (x === MAP_W - 1 || !land[i + 1]) shore += 1;
-      if (y === 0 || !land[i - MAP_W]) shore += 1;
-      if (y === MAP_H - 1 || !land[i + MAP_W]) shore += 1;
-      let r = base[0];
-      let g = base[1];
-      let b = base[2];
-      if (shore) {
-        r = 247;
-        g = 243;
-        b = 230;
-        shade = 1;
-      }
-      d[o] = Math.max(0, Math.min(255, (r + grain) * shade));
-      d[o + 1] = Math.max(0, Math.min(255, (g + grain) * shade));
-      d[o + 2] = Math.max(0, Math.min(255, (b + grain) * shade));
-      d[o + 3] = 255;
+      if (!land[i] || d[o + 3] < 20) continue;
+      const dzdx = (height[i + 1] - height[i - 1]) * 5;
+      const dzdy = (height[i + MAP_W] - height[i - MAP_W]) * 5;
+      const slope = Math.atan(Math.hypot(dzdx, dzdy));
+      const aspect = Math.atan2(dzdy, -dzdx);
+      let shade = Math.sin(0.9) * Math.cos(slope) + Math.cos(0.9) * Math.sin(slope) * Math.cos(5.2 - aspect);
+      shade = 0.97 + Math.max(0, Math.min(1, shade)) * 0.06;
+      d[o] = Math.min(255, d[o] * shade);
+      d[o + 1] = Math.min(255, d[o + 1] * shade);
+      d[o + 2] = Math.min(255, d[o + 2] * shade);
     }
   }
   fx.putImageData(img, 0, 0);
-  scatterTrees(fx, land, biome, height);
   const lx = lift.getContext("2d", { willReadFrequently: true });
   lx.drawImage(full, 0, 0);
   const punched = lx.getImageData(0, 0, MAP_W, MAP_H);
   const p = punched.data;
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
-      const i = y * MAP_W + x;
-      const o = i * 4;
-      if ((x < 268 && y < 136) || !land[i]) p[o + 3] = 0;
+      const o = (y * MAP_W + x) * 4;
+      if (x < 268 && y < 136) {
+        p[o + 3] = 0;
+        continue;
+      }
+      const r = p[o];
+      const g = p[o + 1];
+      const b = p[o + 2];
+      // Same sea punch as the canvas land plate, so lakes open onto the globe.
+      if (b > 110 && r < 80 && g < 175 && b > r + 40) p[o + 3] = 0;
     }
   }
   lx.putImageData(punched, 0, 0);
   return { full, lift, key: cache.key };
-}
-
-function scatterTrees(ctx, land, biome, height) {
-  for (let y = 10; y < MAP_H - 8; y += 16) {
-    for (let x = 10; x < MAP_W - 8; x += 16) {
-      const i = y * MAP_W + x;
-      if (!land[i]) continue;
-      const n = hash2(x * 3, y * 5);
-      const b = biome[i];
-      if ((b === 12 || b === 4 || b === 5) && n > 0.62) {
-        ctx.fillStyle = b === 12 ? "#0e3020" : "#184828";
-        ctx.fillRect(x, y - 7, 1, 8);
-        ctx.fillStyle = b === 12 ? "#1c5834" : "#2a7040";
-        ctx.fillRect(x - 2, y - 8, 5, 3);
-      } else if (b === 7 && height[i] > 0.7 && n > 0.55) {
-        ctx.fillStyle = "#6a645c";
-        ctx.fillRect(x - 3, y - 4, 7, 4);
-        ctx.fillStyle = "#f4f7fb";
-        ctx.fillRect(x - 1, y - 6, 3, 2);
-      } else if (b === 8 && n > 0.7) {
-        ctx.fillStyle = "#a86830";
-        ctx.fillRect(x - 4, y - 3, 8, 3);
-      } else if ((b === 9 || b === 10) && n > 0.78) {
-        ctx.fillStyle = "#6a7030";
-        ctx.fillRect(x, y, 5, 1);
-      }
-    }
-  }
 }
 
 function polyPath(ctx, ring) {
@@ -427,7 +397,7 @@ function bakeWash(state, stateWash) {
   lines.forEach((line) => {
     const wash = stateWash(line.id);
     if (!wash || !line.ring) return;
-    ctx.globalAlpha = wash.kind === "held" || wash.kind === "occupied" ? 0.32 : 0.18;
+    ctx.globalAlpha = wash.kind === "held" || wash.kind === "occupied" ? 0.28 : 0.16;
     ctx.fillStyle = wash.color;
     polyPath(ctx, line.ring);
     ctx.fill();
@@ -461,6 +431,7 @@ function bakeWash(state, stateWash) {
     strokeRing(poly, "#102018", 3);
     strokeRing(poly, "#f4efe2", 2);
   });
+  clearOpenWater(c, ensureTheaterTerrain(state).fields.land);
   return c;
 }
 
@@ -473,7 +444,7 @@ function bakeFog(state, stateWash) {
     if (!line.ring) return;
     const wash = stateWash(line.id);
     if (wash?.kind === "held") return;
-    sctx.fillStyle = wash?.kind === "occupied" ? "rgba(150, 176, 196, 0.55)" : "rgba(186, 206, 220, 0.38)";
+    sctx.fillStyle = wash?.kind === "occupied" ? "rgba(70, 86, 98, 0.22)" : "rgba(214, 206, 186, 0.14)";
     polyPath(sctx, line.ring);
     sctx.fill();
   });
@@ -484,7 +455,18 @@ function bakeFog(state, stateWash) {
   ctx.filter = "blur(7px)";
   ctx.drawImage(sharp, 0, 0);
   ctx.filter = "none";
+  clearOpenWater(c, ensureTheaterTerrain(state).fields.land);
   return c;
+}
+
+function clearOpenWater(canvas, land) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, MAP_W, MAP_H);
+  const d = img.data;
+  for (let i = 0; i < land.length; i++) {
+    if (!land[i]) d[i * 4 + 3] = 0;
+  }
+  ctx.putImageData(img, 0, 0);
 }
 
 function washSignature(state, stateWash) {
@@ -521,6 +503,34 @@ function line(g, x0, y0, x1, y1, width, color) {
   g.moveTo(x0, y0).lineTo(x1, y1).stroke({ width, color, cap: "round", join: "round" });
 }
 
+function strokeDashed(g, pts, width, color, dash, gap) {
+  const cycle = dash + gap;
+  let phase = 0;
+  for (let i = 1; i < pts.length; i++) {
+    let x = pts[i - 1][0];
+    let y = pts[i - 1][1];
+    const x1 = pts[i][0];
+    const y1 = pts[i][1];
+    let remain = Math.hypot(x1 - x, y1 - y);
+    if (remain < 0.05) continue;
+    const ux = (x1 - x) / remain;
+    const uy = (y1 - y) / remain;
+    while (remain > 0.05) {
+      const inDash = phase < dash;
+      const slotLeft = (inDash ? dash : cycle) - phase;
+      const step = Math.min(remain, slotLeft);
+      const nx = x + ux * step;
+      const ny = y + uy * step;
+      if (inDash && step > 0.4) line(g, x, y, nx, ny, width, color);
+      x = nx;
+      y = ny;
+      remain -= step;
+      phase += step;
+      if (phase >= cycle - 0.01) phase = 0;
+    }
+  }
+}
+
 function drawRoutes(g, state, mapView) {
   const focus = mapView.focus;
   if (mapView.z > 0.92 && !focus) return;
@@ -550,21 +560,24 @@ function drawRoutes(g, state, mapView) {
   const z = mapView.z || 1;
   const casing = focus ? Math.max(16, 12 / z) : Math.max(8, 7 / z);
   const core = focus ? Math.max(8, 6 / z) : Math.max(4, 3.6 / z);
-  const paint = (list) => {
+  const paint = (list, dashed) => {
     list.forEach((route) => {
-      const flat = [];
-      route.pts.forEach((p) => {
-        const [x, y] = projectLL(p[0], p[1], mapView.pacific);
-        flat.push([x, y]);
-      });
-      for (let i = 1; i < flat.length; i++) {
-        line(g, flat[i - 1][0], flat[i - 1][1], flat[i][0], flat[i][1], casing, 0x1a140c);
-        line(g, flat[i - 1][0], flat[i - 1][1], flat[i][0], flat[i][1], core, route.color);
+      const flat = route.pts.map((p) => projectLL(p[0], p[1], mapView.pacific));
+      if (dashed) {
+        const dash = 14 / z;
+        const gap = 9 / z;
+        strokeDashed(g, flat, casing, 0x1a140c, dash, gap);
+        strokeDashed(g, flat, core, route.color, dash, gap);
+      } else {
+        for (let i = 1; i < flat.length; i++) {
+          line(g, flat[i - 1][0], flat[i - 1][1], flat[i][0], flat[i][1], casing, 0x1a140c);
+          line(g, flat[i - 1][0], flat[i - 1][1], flat[i][0], flat[i][1], core, route.color);
+        }
       }
     });
   };
-  paint(routes);
-  paint(inland);
+  paint(routes, true);
+  paint(inland, false);
 }
 
 function drawStrikes(g, mapView) {
@@ -680,25 +693,25 @@ function drawStall(g, state, z) {
   });
 }
 
-function drawConvoy(g, mapFx, now) {
-  if (!mapFx || mapFx.kind !== "travel" || !mapFx.a || !mapFx.b) return;
+let convoyCanvas = null;
+let convoySprite = null;
+let convoyTex = null;
+
+function syncConvoy(mapFx, now) {
+  if (!convoySprite) return;
+  const ctx = convoyCanvas.getContext("2d");
+  ctx.clearRect(0, 0, MAP_W, MAP_H);
+  if (!mapFx || mapFx.kind !== "travel" || !mapFx.a || !mapFx.b) {
+    convoySprite.visible = false;
+    convoyTex.source.update();
+    return;
+  }
   const dur = mapFx.duration || 2400;
   let t = (now - mapFx.t0) / dur;
   t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
-  const [x0, y0] = mapFx.a;
-  const [x1, y1] = mapFx.b;
-  const hops = [0, 0.08, 0.16];
-  const colors = [0x8a6840, 0x507040, 0x686860];
-  hops.forEach((lag, i) => {
-    const u = Math.max(0, Math.min(1, t - lag));
-    const x = x0 + (x1 - x0) * u;
-    const y = y0 + (y1 - y0) * u;
-    const bob = Math.floor(now / 140 + i) % 2;
-    g.rect(x - 8, y - 6 - bob, 16, 8).fill({ color: colors[i] });
-    g.rect(x - 6, y - 10 - bob, 8, 4).fill({ color: 0xf8d800 });
-    g.circle(x - 5, y + 3, 2).fill({ color: 0x201810 });
-    g.circle(x + 5, y + 3, 2).fill({ color: 0x201810 });
-  });
+  drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
+  convoySprite.visible = true;
+  convoyTex.source.update();
 }
 
 function screenOf(mapView, x, y) {
@@ -824,63 +837,170 @@ function drawStateLabels(state, mapView, plates) {
   });
 }
 
+let pixiClaims = [];
+
+function mapViewRect(mapView) {
+  const z = mapView.z || 1;
+  return {
+    x0: -mapView.x / z + 14 / z,
+    y0: -mapView.y / z + 16 / z,
+    x1: (1000 - mapView.x) / z - 14 / z,
+    y1: (620 - mapView.y) / z - 14 / z,
+  };
+}
+
+function hitsClaim(x, y, w, h) {
+  const pad = 22;
+  return pixiClaims.some(
+    (c) => x < c.x + c.w + pad && x + w + pad > c.x && y < c.y + c.h + pad && y + h + pad > c.y,
+  );
+}
+
+function placeNearPlate(mapView, pw, ph, candidates) {
+  const v = mapViewRect(mapView);
+  for (const [x0, y0] of candidates) {
+    const x = Math.max(v.x0, Math.min(v.x1 - pw, x0));
+    const y = Math.max(v.y0, Math.min(v.y1 - ph, y0));
+    if (!hitsClaim(x, y, pw, ph)) {
+      pixiClaims.push({ x, y, w: pw, h: ph });
+      return [x, y];
+    }
+  }
+  const x = Math.max(v.x0, Math.min(v.x1 - pw, candidates[0][0]));
+  const y = Math.max(v.y0, Math.min(v.y1 - ph, candidates[0][1]));
+  pixiClaims.push({ x, y, w: pw, h: ph });
+  return [x, y];
+}
+
+function pinInView(mapView, x, y) {
+  const v = mapViewRect(mapView);
+  return x > v.x0 - 8 && x < v.x1 + 8 && y > v.y0 - 8 && y < v.y1 + 8;
+}
+
 function drawPlates(state, mapView, painted, selectedId, hoverId, plates) {
+  const z = mapView.z || 1;
+  if (z < 0.42 && !mapView.focus) return;
   const you = playerOf(state);
-  const size = Math.max(9, Math.round(14 * Math.min(1.4, mapView.z)));
+  const fontPx = 16;
+  const screenFont = Math.max(8, Math.round(fontPx * z));
   painted.forEach((r) => {
     const selected = r.id === selectedId;
     const here = you?.region === r.id;
     const seaGate = r.id === "gulf_passage";
-    if (seaGate && (mapView.z <= 0.92 || mapView.focus)) return;
+    if (seaGate && (z <= 0.92 || mapView.focus)) return;
     if (!selected && !here && r.id !== hoverId && !seaGate) return;
     const [x, y] = cityXY(r);
-    const [sx, sy] = screenOf(mapView, x, y);
     const label = r.short || r.id;
     const known = r.intel > 0 || (you?.faction && r.owner === you.faction);
     const garr = seaGate ? "" : known ? String(r.garrison) : "?";
     const text = here && !selected ? label : garr ? `${label}  ${garr}` : label;
-    const tw = measure(text, size) + 16;
-    const th = size + 10;
-    let px = sx - tw / 2;
-    let py = here && !selected ? sy - th - 10 : sy + 16;
-    plates.rect(px - 3, py - 3, tw + 6, th + 6).fill({ color: selected ? 0xf8d800 : 0x000018 });
-    plates.rect(px, py, tw, th).fill({ color: 0x101050 });
+    const nameW = measure(text, fontPx);
+    const pw = Math.max(here && !selected ? 64 : 120, nameW + (here && !selected ? 24 : 40));
+    const ph = here && !selected ? 28 : 32;
+    let wx = x - pw / 2;
+    let wy = here && !selected ? y - ph - 12 : y + 20;
+    const near = z > 0.4 && z < 0.85;
+    if (near) {
+      const prefs = here && !selected
+        ? [[x - pw - 36, y - ph / 2], [x - pw / 2, y - ph - 56], [x + 36, y - ph / 2]]
+        : selected
+          ? [[x - pw / 2, y + 52], [x + 40, y + 18], [x - pw - 36, y - ph / 2]]
+          : [[x - pw - 36, y - ph / 2], [x - pw / 2, y + 48], [x + 36, y - ph / 2]];
+      [wx, wy] = placeNearPlate(mapView, pw, ph, prefs);
+    }
+    const [sx, sy] = screenOf(mapView, wx, wy);
+    const sw = pw * z;
+    const sh = ph * z;
+    plates.rect(sx - 3 * z, sy - 3 * z, sw + 6 * z, sh + 6 * z).fill({ color: selected ? 0xf8d800 : 0x000018 });
+    plates.rect(sx, sy, sw, sh).fill({ color: 0x101050 });
     const fac = r.owner ? factionOf(state, r.owner) : null;
-    plates.rect(px + 2, py + 2, 4, th - 4).fill({ color: fac?.color || 0x607838 });
-    takeText(text, px + 8, py + 4, size, "#f8d800");
+    plates.rect(sx + 3 * z, sy + 3 * z, 5 * z, sh - 6 * z).fill({ color: fac?.color || 0x607838 });
+    takeText(text, sx + 10 * z, sy + (sh - screenFont) / 2, screenFont, "#f8d800");
   });
+}
+
+function deskPrefs(id, x, y, r, boxW, boxH, z) {
+  const table = {
+    nome: [[x - boxW / 2, y - boxH - r - 16 / z], [x + r + 14 / z, y - boxH / 2]],
+    bering_strait: [[x - boxW / 2, y + r + 18 / z], [x - boxW - r - 14 / z, y - boxH / 2]],
+    far_russia: [[x - boxW - r - 16 / z, y - boxH / 2], [x - boxW / 2, y - boxH - r - 14 / z]],
+    gulf_passage: [[x - boxW - r - 12 / z, y - boxH / 2], [x - boxW / 2, y - boxH - r - 16 / z]],
+    far_cuba: [[x + r + 16 / z, y - boxH / 2], [x - boxW / 2, y - boxH - r - 16 / z]],
+    far_nicaragua: [
+      [x + r + 18 / z, y - boxH - r - 8 / z],
+      [x + r + 22 / z, y - boxH / 2],
+      [x - boxW / 2, y - boxH - r - 28 / z],
+    ],
+    kamchatka: [[x + r + 14 / z, y - boxH / 2], [x - boxW / 2, y + r + 16 / z]],
+    siberia: [[x - boxW - r - 14 / z, y - boxH / 2], [x - boxW / 2, y - boxH - r - 12 / z]],
+    havana: [[x - boxW - r - 12 / z, y - boxH / 2], [x - boxW / 2, y - boxH - r - 14 / z]],
+    managua: [
+      [x - boxW / 2, y + r + boxH + 26 / z],
+      [x - boxW - r - 20 / z, y + r + 8 / z],
+      [x + r + 18 / z, y + r + boxH],
+    ],
+    sponsor_lane: [[x - boxW / 2, y - boxH - r - 14 / z], [x + r + 12 / z, y - boxH / 2]],
+    far_korea: [[x + r + 14 / z, y - boxH / 2], [x - boxW / 2, y - boxH - r - 12 / z]],
+    kr_inland: [[x - boxW / 2, y + r + 16 / z], [x + r + 12 / z, y - boxH / 2]],
+  };
+  return table[id] || [[x - boxW / 2, y + r + 22 / z], [x + r + 16 / z, y - boxH / 2]];
 }
 
 function drawDeskLabelsPass(state, mapView) {
   if (mapView.z > 0.92 && !mapView.focus) return;
+  const z = mapView.z || 1;
   const focus = mapView.focus;
-  const screenPx = focus ? 18 : 12;
+  const near = z > 0.4 && z < 0.85;
+  const fontPx = focus
+    ? Math.max(20, Math.round(22 / z))
+    : near
+      ? Math.max(16, Math.round(13 / z))
+      : Math.max(18, Math.round(12 / z));
+  const screenFont = Math.max(8, Math.round(fontPx * z));
   const inland = focus === "bering" || focus === "cuba" || focus === "korea" ? INLAND_DESKS : [];
   const desks = (focus === "bering" ? [{ id: "nome", lon: -165.4, lat: 64.5, color: "#7aa0b4" }] : [])
     .concat(WORLD_DESKS)
     .concat(inland);
   const g = mapLayers.plates;
-  const spots = [];
+  const placedIds = new Set([
+    "nome", "bering_strait", "far_russia", "kamchatka", "siberia",
+    "gulf_passage", "far_cuba", "far_nicaragua", "havana", "managua",
+    "sponsor_lane", "far_korea", "kr_inland",
+  ]);
   desks.forEach((d) => {
     const node = regionOf(state, d.id);
     if (!node) return;
-    if (mapView.z > 0.4 && mapView.z < 0.85 && d.id === "gulf_passage" && focus !== "cuba") return;
+    if (near && d.id === "gulf_passage" && focus !== "cuba") return;
     const [x, y] = projectLL(d.lon, d.lat, mapView.pacific);
+    const rad = focus ? Math.max(9, 8 / z) : Math.max(8, 5 / z);
     const [sx, sy] = screenOf(mapView, x, y);
+    g.circle(sx, sy, rad * z).fill({ color: d.color || "#9a3b3b" });
+    g.circle(sx, sy, rad * z).stroke({ width: Math.max(2, 1.5), color: 0xf8d800 });
+    if (focus && !pinInView(mapView, x, y)) return;
     const label = node.short;
-    const tw = measure(label, screenPx) + 10;
-    const th = screenPx + 8;
-    spots.push({ sx, sy, label, tw, th, color: d.color || "#9a3b3b" });
-  });
-  spots.forEach((s) => {
-    const rad = focus ? 7 : 5;
-    g.circle(s.sx, s.sy, rad).fill({ color: s.color });
-    g.circle(s.sx, s.sy, rad).stroke({ width: 2, color: 0xf8d800 });
-    g.rect(s.sx + rad + 2, s.sy - s.th / 2, s.tw, s.th).fill({ color: 0x000018 });
-  });
-  spots.forEach((s) => {
-    const rad = focus ? 7 : 5;
-    takeText(s.label, s.sx + rad + 6, s.sy - s.th / 2 + 3, screenPx, "#f8d800");
+    const tw = measure(label, fontPx);
+    const pad = 6 / z;
+    const boxW = tw + pad + 4;
+    const boxH = fontPx * 1.35;
+    let bx;
+    let by;
+    const focused = !!focus && placedIds.has(d.id);
+    if (near && !focus && (d.id === "far_cuba" || d.id === "far_nicaragua")) {
+      [bx, by] = placeNearPlate(mapView, boxW, boxH, [
+        [x - boxW / 2, y + rad + 22 / z],
+        [x + rad + 16 / z, y - boxH / 2],
+        [x - boxW - rad - 16 / z, y + rad],
+      ]);
+    } else if (focused || (focus && placedIds.has(d.id))) {
+      [bx, by] = placeNearPlate(mapView, boxW, boxH, deskPrefs(d.id, x, y, rad, boxW, boxH, z));
+    } else {
+      bx = x + rad + 4 / z;
+      by = y - boxH / 2;
+      pixiClaims.push({ x: bx, y: by, w: boxW, h: boxH });
+    }
+    const [tx, ty] = screenOf(mapView, bx, by);
+    g.rect(tx, ty, boxW * z, boxH * z).fill({ color: 0x000018 });
+    takeText(label, tx + 4 * z, ty + (boxH * z - screenFont) / 2, screenFont, "#f8d800");
   });
 }
 
@@ -937,8 +1057,9 @@ export function renderPixiMap(host) {
   const roads = mapRoads(painted);
   roads.forEach((rd) => {
     const hot = pulseOn && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
+    const pts = [rd.a, rd.b];
     line(mapLayers.over, rd.a[0], rd.a[1], rd.b[0], rd.b[1], 3.2, hot ? 0x5a3c08 : 0x201810);
-    line(mapLayers.over, rd.a[0], rd.a[1], rd.b[0], rd.b[1], 1.3, hot ? 0xf8d800 : 0xf8f4e8);
+    strokeDashed(mapLayers.over, pts, 1.4, hot ? 0xf8d800 : 0xf8f4e8, 4, 2);
   });
   if (z >= 0.45) {
     CAMPAIGN_ROADS.forEach(([aId, bId]) => {
@@ -956,7 +1077,7 @@ export function renderPixiMap(host) {
   drawStall(mapLayers.over, state, z);
   drawAxes(mapLayers.over);
   drawScars(mapLayers.over);
-  drawConvoy(mapLayers.over, mapFx, now);
+  syncConvoy(mapFx, now);
   drawCities(mapLayers.over, painted, state, selectedId, hoverId);
 
   ["far_russia", "far_cuba", "far_nicaragua"].forEach((id, i) => {
@@ -964,14 +1085,17 @@ export function renderPixiMap(host) {
     if (!r || !theaterVisible(state, r)) return;
     const b = [[8, 72], [470, 568], [620, 572]][i];
     const [x, y] = cityXY(r);
-    line(mapLayers.over, x, y, b[0], b[1], 10, i === 0 ? 0x7aa0b4 : 0x8c4a4a);
+    const color = i === 0 ? 0x7aa0b4 : 0x8c4a4a;
+    line(mapLayers.over, x, y, b[0], b[1], 12, 0x1a140c);
+    strokeDashed(mapLayers.over, [[x, y], b], 5, color, 16, 10);
   });
 
   mapLayers.plates.clear();
   endTexts();
+  pixiClaims = [];
   drawStateLabels(state, mapView, mapLayers.plates);
-  drawPlates(state, mapView, painted, selectedId, hoverId, mapLayers.plates);
   drawDeskLabelsPass(state, mapView);
+  drawPlates(state, mapView, painted, selectedId, hoverId, mapLayers.plates);
   if (syncWashKey) syncWashKey();
   mapCanvas.dataset.z = z.toFixed(3);
   mapCanvas.dataset.pixi = "1";
@@ -983,89 +1107,149 @@ function px(g, x, y, w, h, color) {
 }
 
 function paintArena(g, id, now, deskId) {
+  const w = DUEL_W;
+  const h = DUEL_H;
   const look = inlandLook(deskId);
   if (look) {
-    px(g, 0, 0, DUEL_W, DUEL_H, look.bg);
+    px(g, 0, 0, w, h, look.bg);
     if (deskId === "kamchatka") {
-      px(g, 0, 0, DUEL_W, DUEL_H, 0x07141c);
-      px(g, 0, 56, DUEL_W, 16, 0x145068);
-      px(g, 0, 78, DUEL_W, DUEL_H, 0x0a3044);
-      px(g, 0, 78, DUEL_W, 6, 0x8fd4ea);
+      px(g, 0, 0, w, h, 0x07141c);
+      px(g, 0, 56, w, 16, 0x145068);
+      px(g, 0, 78, w, h, 0x0a3044);
+      px(g, 0, 78, w, 6, 0x8fd4ea);
+      for (const x of [36, 140, 280, 420, 540]) px(g, x, 96, 36, 8, 0x8fd4ea);
     } else if (deskId === "siberia") {
-      px(g, 0, 48, DUEL_W, DUEL_H, 0x142010);
-      px(g, 0, 124, DUEL_W, 14, 0x5a3a18);
+      px(g, 0, 48, w, h, 0x142010);
+      for (const x of [24, 80, 500, 560]) {
+        px(g, x, 36, 10, 80, 0x5a3a18);
+        px(g, x - 16, 18, 42, 28, 0x243818);
+        px(g, x - 8, 6, 26, 16, 0x7cb342);
+      }
+      px(g, 0, 124, w, 14, 0x5a3a18);
     } else if (deskId === "havana") {
-      px(g, 0, 0, DUEL_W, 70, 0x06303c);
-      px(g, 0, 28, DUEL_W, 12, 0x26c6b0);
-      px(g, 0, 70, DUEL_W, 16, 0x6a3018);
-      px(g, 0, 86, DUEL_W, DUEL_H, 0xc4a574);
+      px(g, 0, 0, w, 70, 0x06303c);
+      px(g, 0, 28, w, 12, 0x26c6b0);
+      px(g, 0, 48, w, 8, 0x8ee0d4);
+      px(g, 0, 70, w, 16, 0x6a3018);
+      px(g, 0, 86, w, h, 0xc4a574);
+      px(g, 220, 40, 90, 30, 0xd8c0a0);
     } else if (deskId === "managua") {
-      px(g, 0, 36, DUEL_W, DUEL_H, 0xc47830);
-      px(g, 0, 118, DUEL_W, 18, 0x4a3010);
+      px(g, 0, 36, w, h, 0xc47830);
+      px(g, 20, 78, 36, 32, 0xf0b429);
+      px(g, 64, 90, 24, 20, 0x6a4018);
+      px(g, 500, 70, 48, 36, 0xf0b429);
+      px(g, 0, 118, w, 18, 0x4a3010);
     } else if (deskId === "sponsor_lane") {
-      px(g, 0, 40, DUEL_W, DUEL_H, 0x1c220e);
+      px(g, 0, 40, w, h, 0x1c220e);
+      px(g, 48, 48, 48, 34, 0x3a4018);
+      px(g, 56, 56, 32, 10, 0xe6ee55);
+      px(g, 160, 40, 52, 40, 0x2a3010);
+      px(g, 168, 50, 36, 10, 0xf7f7b0);
+      px(g, 480, 36, 60, 46, 0x3a4018);
       px(g, 220, 70, 120, 10, 0xe6ee55);
+      px(g, 0, 108, w, 8, 0xe6ee55);
     } else if (deskId === "kr_inland") {
-      px(g, 0, 0, DUEL_W, 80, 0x1a1428);
-      px(g, 0, 96, DUEL_W, DUEL_H, 0x120e18);
-      px(g, 0, 96, DUEL_W, 6, 0xc9a0e8);
+      px(g, 0, 0, w, 80, 0x1a1428);
+      px(g, 0, 46, 220, 50, 0x3a2858);
+      px(g, 160, 24, 260, 72, 0x2c2040);
+      px(g, 360, 14, 220, 80, 0x3a2858);
+      px(g, 0, 96, w, h, 0x120e18);
+      px(g, 0, 96, w, 6, 0xc9a0e8);
+    } else {
+      px(g, 0, 40, w, h, look.panel);
     }
-    px(g, 0, 0, 10, DUEL_H, look.edge);
-    px(g, DUEL_W - 10, 0, 10, DUEL_H, look.edge);
+    px(g, 0, 0, 10, h, look.edge);
+    px(g, w - 10, 0, 10, h, look.edge);
     return;
   }
   const twinkle = Math.floor(now / 800) % 2;
   if (id === "roadhouse") {
-    px(g, 0, 0, DUEL_W, 56, 0x203040);
-    px(g, 0, 56, DUEL_W, DUEL_H, 0xd0d8e0);
+    px(g, 0, 0, w, 56, 0x203040);
+    px(g, 0, 56, w, h, 0xd0d8e0);
     px(g, 40, 20, 120, 70, 0x684028);
     px(g, 50, 30, 24, 20, 0x88b0c8);
+    px(g, 90, 40, 18, 50, 0x3a2010);
     px(g, 200, 8, 80, 12, 0xf8d800);
+    px(g, 0, 120, w, 8, 0xf8f8f8);
+    px(g, 12, 64, 6, 6, 0xf8f8f8);
+    px(g, 400, 70, 8, 8, 0xf8f8f8);
     return;
   }
   if (id === "foothills") {
-    px(g, 0, 0, DUEL_W, 50, 0x5a88b8);
-    px(g, 0, 70, DUEL_W, DUEL_H, 0x8a7840);
+    px(g, 0, 0, w, 50, 0x5a88b8);
+    px(g, 0, 36, w, 40, 0x4a5868);
     px(g, 80, 20, 200, 50, 0x3a4858);
+    px(g, 0, 70, w, h, 0x8a7840);
+    px(g, 20, 50, 10, 40, 0x184828);
+    px(g, 30, 40, 18, 20, 0x306830);
+    px(g, 540, 48, 10, 40, 0x184828);
+    px(g, 0, 130, w, 50, 0x6a5030);
+    px(g, 0, 130, w, 3, 0xc8a048);
     return;
   }
   if (id === "airstrip") {
-    px(g, 0, 0, DUEL_W, 48, 0x78a0c8);
-    px(g, 0, 48, DUEL_W, DUEL_H, 0x887868);
-    px(g, 40, 90, DUEL_W, 16, 0xc8c8a0);
-    px(g, 40, 96, DUEL_W, 4, 0xf8d800);
+    px(g, 0, 0, w, 48, 0x78a0c8);
+    px(g, 0, 48, w, h, 0x887868);
+    px(g, 40, 90, w, 16, 0xc8c8a0);
+    px(g, 40, 96, w, 4, 0xf8d800);
+    px(g, 480, 40, 80, 28, 0x686860);
+    px(g, 500, 28, 8, 20, 0xf8d800);
+    px(g, 120, 70, 36, 16, 0x2a3820);
     return;
   }
   if (id === "iceford") {
-    px(g, 0, 0, DUEL_W, 52, 0x103048);
-    px(g, 0, 90, DUEL_W, DUEL_H, 0xd0d8e0);
-    px(g, 0, 100, DUEL_W, 12, 0x88b0c8);
+    px(g, 0, 0, w, 52, 0x103048);
+    px(g, 0, 52, w, 40, 0x4a6888);
+    px(g, 0, 90, w, h, 0xd0d8e0);
+    px(g, 0, 100, w, 12, 0x88b0c8);
+    px(g, 200, 108, 80, 6, 0xf8f8f8);
+    px(g, 40, 60, 16, 16, 0xa0b0c0);
     return;
   }
   if (id === "gaslot") {
-    px(g, 0, 0, DUEL_W, 44, 0x3a3028);
-    px(g, 0, 44, DUEL_W, DUEL_H, 0x404038);
+    px(g, 0, 0, w, 44, 0x3a3028);
+    px(g, 0, 44, w, h, 0x404038);
+    px(g, 0, 110, w, 70, 0x2a2820);
     px(g, 60, 20, 90, 50, 0xc8a038);
+    px(g, 70, 28, 20, 16, 0xf8d800);
+    px(g, 400, 30, 70, 40, 0x101050);
+    px(g, 80, 70, 12, 40, 0x686860);
+    px(g, 200, 70, 12, 40, 0x686860);
     if (twinkle) px(g, 78, 24, 8, 8, 0xf8d800);
     return;
   }
   if (id === "pineridge") {
-    px(g, 0, 0, DUEL_W, 50, 0x3a68a0);
-    px(g, 0, 50, DUEL_W, DUEL_H, 0x486030);
+    px(g, 0, 0, w, 50, 0x3a68a0);
+    px(g, 80, 16, 180, 40, 0x4a5868);
+    px(g, 0, 50, w, h, 0x486030);
+    for (const x of [16, 48, 520, 560, 600]) {
+      px(g, x, 40, 6, 50, 0x3a2010);
+      px(g, x - 8, 28, 22, 24, 0x184828);
+      px(g, x - 4, 16, 14, 16, 0x306830);
+    }
+    px(g, 0, 130, w, 50, 0x3a4820);
     return;
   }
   if (id === "radiotower") {
-    px(g, 0, 0, DUEL_W, 70, 0x101028);
-    px(g, 0, 70, DUEL_W, DUEL_H, 0x181830);
+    px(g, 0, 0, w, 70, 0x101028);
+    px(g, 0, 70, w, h, 0x181830);
     px(g, 300, 8, 8, 90, 0x686860);
+    px(g, 280, 20, 48, 6, 0x686860);
     px(g, 304, 6, 4, 8, twinkle ? 0xf03030 : 0xf8d800);
+    px(g, 40, 80, 70, 40, 0x304878);
+    px(g, 48, 88, 16, 12, 0x80c0f8);
+    px(g, 0, 128, w, 52, 0x000018);
+    if (twinkle) px(g, 80, 20, 2, 2, 0xf8f8f8);
+    px(g, 500, 24, 2, 2, 0xf8f8f8);
     return;
   }
-  px(g, 0, 0, DUEL_W, 52, 0x5a88b8);
-  px(g, 0, 52, DUEL_W, DUEL_H, 0x8a7840);
+  px(g, 0, 0, w, 52, 0x5a88b8);
+  px(g, 0, 52, w, h, 0x8a7840);
   px(g, 24, 20, 100, 70, 0x684028);
-  px(g, 0, 120, DUEL_W, 60, 0x503010);
-  px(g, 0, 120, DUEL_W, 3, 0xf8d800);
+  px(g, 34, 30, 22, 18, 0x88b0c8);
+  px(g, 70, 50, 16, 40, 0x3a2010);
+  px(g, 0, 120, w, 60, 0x503010);
+  px(g, 0, 120, w, 3, 0xf8d800);
 }
 
 function fighterCanvas(outfit, pose, frame, hit, firearmOn) {
@@ -1168,16 +1352,23 @@ export function renderPixiDuel(host) {
     }
     hitFx.sparks = [];
     hitFx.muzzle = [];
+    const born = now < hitFx.until ? hitFx.base : now - hitFx.debt;
     const burst = (x, y, color) => {
       for (let i = 0; i < 8; i++) {
         const a = (Math.PI * 2 * i) / 8;
-        hitFx.sparks.push({ x, y, vx: Math.cos(a) * 1.6, vy: Math.sin(a) * 1.2 - 0.4, life: 1, color });
+        hitFx.sparks.push({
+          ox: x, oy: y,
+          vx: Math.cos(a) * 0.18,
+          vy: Math.sin(a) * 0.14 - 0.05,
+          t0: born,
+          color,
+        });
       }
     };
     if (youHit) burst(168, 96, 0xf8d800);
     if (foeHit) burst(448, 96, 0xf03030);
-    if (usesFirearm(duel.you, duel.last.youMove)) hitFx.muzzle.push({ x: 196, y: 100, life: 1 });
-    if (usesFirearm(duel.foe, duel.last.foeMove)) hitFx.muzzle.push({ x: 410, y: 100, life: 1 });
+    if (usesFirearm(duel.you, duel.last.youMove)) hitFx.muzzle.push({ x: 196, y: 100, t0: born });
+    if (usesFirearm(duel.foe, duel.last.foeMove)) hitFx.muzzle.push({ x: 410, y: 100, t0: born });
   }
   if (!flash) hitFx.id = "";
 
@@ -1194,22 +1385,21 @@ export function renderPixiDuel(host) {
   const foeGun = usesFirearm(duel.foe, foePose === "idle" ? null : foePose);
   duelLayers.you.texture = fighterTexture(duel.you.outfit, youPose, youFrame, youHit, youGun);
   duelLayers.foe.texture = fighterTexture(duel.foe.outfit, foePose, foeFrame, foeHit, foeGun);
-  duelLayers.you.scale.x = 1;
-  duelLayers.foe.scale.x = -1;
-  duelLayers.you.position.set(150 + 12, youY);
-  duelLayers.foe.position.set(430 + 12, foeY);
+  const knock = now < hitFx.until + 90 && (youHit || foeHit) ? 6 : 0;
+  duelLayers.you.scale.set(1.22, 1.22);
+  duelLayers.foe.scale.set(-1.22, 1.22);
+  duelLayers.you.position.set(150 + 12 - (youHit ? knock : 0), youY);
+  duelLayers.foe.position.set(430 + 12 + (foeHit ? knock : 0), foeY);
 
-  const dt = 0.35;
   hitFx.sparks.forEach((s) => {
-    if (now < hitFx.until) return;
-    s.x += s.vx * 4 * dt;
-    s.y += s.vy * 4 * dt;
-    s.vy += 0.15;
-    s.life -= 0.04;
+    const age = Math.max(0, visual - s.t0);
+    s.life = 1 - age / 420;
+    s.x = s.ox + s.vx * age;
+    s.y = s.oy + s.vy * age + age * age * 0.00035;
   });
   hitFx.sparks = hitFx.sparks.filter((s) => s.life > 0);
   hitFx.muzzle.forEach((m) => {
-    if (now >= hitFx.until) m.life -= 0.08;
+    m.life = 1 - Math.max(0, visual - m.t0) / 160;
   });
   hitFx.muzzle = hitFx.muzzle.filter((m) => m.life > 0);
 
@@ -1248,13 +1438,67 @@ export function renderPixiDuel(host) {
     duelLayers.shake.position.set(0, 0);
   }
 
-  if (deskId) {
-    const look = inlandLook(deskId);
-    const desk = inlandDesk(deskId);
-    if (look && desk) {
-      px(duelLayers.fx, 0, 0, DUEL_W, 18, look.stripBg);
-    }
-  }
+  paintDuelHud(deskId, flash ? duel.last : null, youY, foeY);
   duelCanvas.dataset.pixi = "1";
   duelApp.render();
+}
+
+function duelText(key, text, x, y, size, fill, weight) {
+  const labels = duelLayers.labels || (duelLayers.labels = {});
+  let t = labels[key];
+  if (!text) {
+    if (t) t.visible = false;
+    return;
+  }
+  const fontWeight = weight || "bold";
+  if (!t) {
+    t = new Text({
+      text,
+      style: { fontFamily: "monospace", fontSize: size, fontWeight, fill },
+    });
+    duelLayers.hud.addChild(t);
+    labels[key] = t;
+  }
+  t.visible = true;
+  if (t.text !== text) t.text = text;
+  if (t.style.fontSize !== size) t.style.fontSize = size;
+  if (t.style.fill !== fill) t.style.fill = fill;
+  if (t.style.fontWeight !== fontWeight) t.style.fontWeight = fontWeight;
+  t.position.set(Math.round(x), Math.round(y));
+}
+
+function paintDuelHud(deskId, last, youY, foeY) {
+  const g = duelLayers.hudGfx;
+  if (!g) return;
+  g.clear();
+  const badge = (key, x, y, dmg, heal) => {
+    const text = dmg ? `-${dmg}` : heal ? `+${heal}` : "";
+    if (!text) {
+      duelText(key, "", 0, 0, 18, "#f03030", "bold");
+      return;
+    }
+    const w = text.length * 12 + 14;
+    const bx = x + 12 - w / 2;
+    const by = y - 28;
+    px(g, bx, by, w, 20, 0x000000);
+    duelText(key, text, bx + 7, by + 1, 18, dmg ? "#f03030" : "#30c030", "bold");
+  };
+  if (last) {
+    badge("youDmg", 150, youY, last.youDmg, last.youHeal);
+    badge("foeDmg", 430, foeY, last.foeDmg, last.foeHeal);
+  } else {
+    duelText("youDmg", "", 0, 0, 18, "#f03030", "bold");
+    duelText("foeDmg", "", 0, 0, 18, "#f03030", "bold");
+  }
+  const look = inlandLook(deskId);
+  const desk = inlandDesk(deskId);
+  if (look && desk) {
+    px(g, 0, 0, DUEL_W, 42, look.stripBg);
+    px(g, 0, 0, DUEL_W, 4, look.edge);
+    duelText("strip", look.strip, 16, 4, 18, look.ink, "bold");
+    duelText("read", look.read, 16, 24, 13, look.readInk, "normal");
+  } else {
+    duelText("strip", "", 0, 0, 18, "#ffffff", "bold");
+    duelText("read", "", 0, 0, 13, "#ffffff", "normal");
+  }
 }
