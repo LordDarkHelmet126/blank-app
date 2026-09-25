@@ -103,6 +103,64 @@ let ladderFlashId = "";
 
 const $ = (id) => document.getElementById(id);
 
+let pixiApi = null;
+let pixiBroken = false;
+
+function gfxPixiRequested() {
+  try {
+    return new URLSearchParams(location.search).get("gfx") === "pixi";
+  } catch {
+    return false;
+  }
+}
+
+function swapDrawnCanvas(id, width, height) {
+  const old = $(id);
+  if (!old) return null;
+  const fresh = document.createElement("canvas");
+  fresh.id = id;
+  fresh.width = width;
+  fresh.height = height;
+  fresh.className = old.className;
+  const label = old.getAttribute("aria-label");
+  if (label) fresh.setAttribute("aria-label", label);
+  old.replaceWith(fresh);
+  return fresh;
+}
+
+/** Pixi took the canvas, then failed. A fresh element can still take a 2D context. */
+function restoreCanvases() {
+  swapDrawnCanvas("map", 1000, 620);
+  swapDrawnCanvas("duel-canvas", 640, 180);
+  bindMapPointer($("map"));
+}
+
+async function initPixiGfx() {
+  const mod = await import("./pixi-stage.js");
+  try {
+    await mod.initPixi($("map"), $("duel-canvas"));
+  } catch (err) {
+    pixiApi = null;
+    pixiBroken = true;
+    try { mod.destroyPixi(); } catch { /* already torn down */ }
+    if (err && err.tookCanvas) restoreCanvases();
+    throw err;
+  }
+  pixiApi = mod;
+  mod.bindContextLoss(() => {
+    if (pixiBroken) return;
+    pixiBroken = true;
+    try { mod.destroyPixi(); } catch { /* context already gone */ }
+    pixiApi = null;
+    restoreCanvases();
+    if (state) drawMap();
+  });
+}
+
+function pixiMapActive() {
+  return !!(pixiApi && pixiApi.isReady() && !pixiBroken);
+}
+
 function parseDemoFx(params) {
   const demo = params.get("demo") || "";
   const fx = params.get("fx") || "";
@@ -243,6 +301,14 @@ export async function boot(loaded) {
   // Reveal the shell before scene photos. A hung image must not leave #boot up.
   $("app").hidden = false;
   $("boot").hidden = true;
+  if (gfxPixiRequested()) {
+    try {
+      await initPixiGfx();
+    } catch (err) {
+      pixiBroken = true;
+      console.error(err);
+    }
+  }
   try {
     await bakeScenes();
   } catch (err) {
@@ -586,6 +652,31 @@ function afterFonts() {
   if (document.fonts?.ready) document.fonts.ready.then(again).catch(() => {});
 }
 
+function bindMapPointer(canvas) {
+  if (!canvas || canvas.dataset.mapBound === "1") return;
+  canvas.dataset.mapBound = "1";
+  canvas.addEventListener("pointermove", onMapPointerMove);
+  canvas.addEventListener("pointerdown", onMapPointerDown);
+  canvas.addEventListener("pointerup", onMapPointerUp);
+  canvas.addEventListener("pointerleave", () => {
+    mapView.drag = null;
+  });
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      if (!state) return;
+      e.preventDefault();
+      const cam = liveCamera();
+      const [sx, sy] = canvasPoint(e, canvas);
+      const next = Math.max(0.16, Math.min(3.2, cam.z * (e.deltaY > 0 ? 0.88 : 1.14)));
+      const x = sx - ((sx - cam.x) / cam.z) * next;
+      const y = sy - ((sy - cam.y) / cam.z) * next;
+      setMapCamera(x, y, next, true);
+    },
+    { passive: false },
+  );
+}
+
 function bindChrome() {
   $("btn-end").onclick = () => run("end_week");
   $("btn-save").onclick = saveGame;
@@ -643,27 +734,7 @@ function bindChrome() {
     btn.onclick = () => pickDuelMove(btn.dataset.duelMove);
   });
   $("duel-continue").onclick = closeDuel;
-  const canvas = $("map");
-  canvas.addEventListener("pointermove", onMapPointerMove);
-  canvas.addEventListener("pointerdown", onMapPointerDown);
-  canvas.addEventListener("pointerup", onMapPointerUp);
-  canvas.addEventListener("pointerleave", () => {
-    mapView.drag = null;
-  });
-  canvas.addEventListener(
-    "wheel",
-    (e) => {
-      if (!state) return;
-      e.preventDefault();
-      const [sx, sy] = canvasPoint(e, canvas);
-      const next = Math.max(0.16, Math.min(3.2, mapView.z * (e.deltaY > 0 ? 0.88 : 1.14)));
-      mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
-      mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
-      mapView.z = next;
-      drawMap();
-    },
-    { passive: false },
-  );
+  bindMapPointer($("map"));
   const bc = $("battle-canvas");
   bc.addEventListener("click", onBattleClick);
   window.addEventListener("keydown", (e) => {
@@ -2274,24 +2345,73 @@ function canvasPoint(e, canvas) {
   ];
 }
 
+let camGoal = null;
+let camFrom = null;
+let camEaseStart = 0;
+let camRaf = 0;
+const CAM_EASE_MS = 250;
+
+function cancelMapEase() {
+  camGoal = null;
+  camFrom = null;
+  if (camRaf) cancelAnimationFrame(camRaf);
+  camRaf = 0;
+}
+
+/** While a Pixi tween is running, the next step compounds from its target. */
+function liveCamera() {
+  return pixiMapActive() && camGoal ? camGoal : mapView;
+}
+
+function setMapCamera(x, y, z, ease) {
+  if (!ease || !pixiMapActive()) {
+    cancelMapEase();
+    mapView.x = x;
+    mapView.y = y;
+    mapView.z = z;
+    drawMap();
+    return;
+  }
+  camFrom = { x: mapView.x, y: mapView.y, z: mapView.z };
+  camGoal = { x, y, z };
+  camEaseStart = performance.now();
+  if (!camRaf) camRaf = requestAnimationFrame(stepMapEase);
+}
+
+function stepMapEase(now) {
+  camRaf = 0;
+  if (!camGoal || !camFrom) return;
+  const t = Math.min(1, (now - camEaseStart) / CAM_EASE_MS);
+  const k = 1 - (1 - t) * (1 - t);
+  mapView.x = camFrom.x + (camGoal.x - camFrom.x) * k;
+  mapView.y = camFrom.y + (camGoal.y - camFrom.y) * k;
+  mapView.z = camFrom.z + (camGoal.z - camFrom.z) * k;
+  if (t >= 1) {
+    mapView.x = camGoal.x;
+    mapView.y = camGoal.y;
+    mapView.z = camGoal.z;
+    camGoal = null;
+    camFrom = null;
+  }
+  drawMap();
+  if (camGoal) camRaf = requestAnimationFrame(stepMapEase);
+}
+
 function zoomBy(factor) {
+  const cam = liveCamera();
   const sx = 500;
   const sy = 310;
-  const next = Math.max(0.16, Math.min(3.2, mapView.z * factor));
-  mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
-  mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
-  mapView.z = next;
-  drawMap();
+  const next = Math.max(0.16, Math.min(3.2, cam.z * factor));
+  const x = sx - ((sx - cam.x) / cam.z) * next;
+  const y = sy - ((sy - cam.y) / cam.z) * next;
+  setMapCamera(x, y, next, true);
 }
 
 function frameBox(x0, y0, x1, y1) {
   const z = Math.min(1000 / (x1 - x0), 620 / (y1 - y0)) * 0.88;
   const cx = (x0 + x1) / 2;
   const cy = (y0 + y1) / 2;
-  mapView.z = z;
-  mapView.x = 500 - cx * z;
-  mapView.y = 310 - cy * z;
-  drawMap();
+  setMapCamera(500 - cx * z, 310 - cy * z, z, false);
 }
 
 function clearForeignFrame() {
@@ -2308,18 +2428,12 @@ function frameWorld() {
   const minY = Math.min(yNorth, ySouth) - 24;
   const maxY = Math.max(yNorth, ySouth) + 24;
   const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.98;
-  mapView.z = z;
-  mapView.x = (1000 - (minX + maxX) * z) / 2;
-  mapView.y = (620 - (minY + maxY) * z) / 2;
-  drawMap();
+  setMapCamera((1000 - (minX + maxX) * z) / 2, (620 - (minY + maxY) * z) / 2, z, false);
 }
 
 function frameNear() {
   clearForeignFrame();
-  mapView.z = 0.56;
-  mapView.x = 48;
-  mapView.y = 72;
-  drawMap();
+  setMapCamera(48, 72, 0.56, false);
 }
 
 function frameCa() {
@@ -2339,11 +2453,8 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   const maxX = Math.max(xA, xB);
   const minY = Math.min(yA, yB);
   const maxY = Math.max(yA, yB);
-  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
-  mapView.z = Math.max(0.16, Math.min(3.2, z));
-  mapView.x = (1000 - (minX + maxX) * z) / 2;
-  mapView.y = (620 - (minY + maxY) * z) / 2;
-  drawMap();
+  const z = Math.max(0.16, Math.min(3.2, Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9)));
+  setMapCamera((1000 - (minX + maxX) * z) / 2, (620 - (minY + maxY) * z) / 2, z, false);
 }
 
 /**
@@ -2371,6 +2482,7 @@ function frameKorea() {
 }
 
 function onMapPointerDown(e) {
+  cancelMapEase();
   const canvas = $("map");
   const [sx, sy] = canvasPoint(e, canvas);
   mapView.drag = { sx, sy, x: mapView.x, y: mapView.y, moved: false };
@@ -3538,6 +3650,18 @@ function theaterLandPlate() {
 }
 
 function drawMap() {
+  if (pixiMapActive()) {
+    pixiApi.renderPixiMap({
+      state,
+      mapView,
+      selectedId: selectedRegion,
+      hoverId: hoverRegion,
+      mapFx,
+      stateWash,
+      syncWashKey,
+    });
+    return;
+  }
   labelClaims = [];
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
@@ -4445,6 +4569,15 @@ function paintDuelHud() {
 function drawDuelYard(now) {
   const canvas = $("duel-canvas");
   if (!canvas || !state?.duel) return;
+  if (pixiMapActive()) {
+    pixiApi.renderPixiDuel({
+      now,
+      duel: state.duel,
+      deskId: syncDuelDesk(state.duel),
+      styleInk,
+    });
+    return;
+  }
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
   const h = canvas.height;
