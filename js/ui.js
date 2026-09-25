@@ -103,6 +103,27 @@ let ladderFlashId = "";
 
 const $ = (id) => document.getElementById(id);
 
+let pixiApi = null;
+let pixiBroken = false;
+
+function gfxPixiRequested() {
+  try {
+    return new URLSearchParams(location.search).get("gfx") === "pixi";
+  } catch {
+    return false;
+  }
+}
+
+async function initPixiGfx() {
+  const mod = await import("./pixi-stage.js");
+  await mod.initPixi($("map"), $("duel-canvas"));
+  pixiApi = mod;
+}
+
+function pixiMapActive() {
+  return !!(pixiApi && pixiApi.isReady() && !pixiBroken);
+}
+
 function parseDemoFx(params) {
   const demo = params.get("demo") || "";
   const fx = params.get("fx") || "";
@@ -243,6 +264,14 @@ export async function boot(loaded) {
   // Reveal the shell before scene photos. A hung image must not leave #boot up.
   $("app").hidden = false;
   $("boot").hidden = true;
+  if (gfxPixiRequested()) {
+    try {
+      await initPixiGfx();
+    } catch (err) {
+      pixiBroken = true;
+      console.error(err);
+    }
+  }
   try {
     await bakeScenes();
   } catch (err) {
@@ -657,10 +686,9 @@ function bindChrome() {
       e.preventDefault();
       const [sx, sy] = canvasPoint(e, canvas);
       const next = Math.max(0.16, Math.min(3.2, mapView.z * (e.deltaY > 0 ? 0.88 : 1.14)));
-      mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
-      mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
-      mapView.z = next;
-      drawMap();
+      const x = sx - ((sx - mapView.x) / mapView.z) * next;
+      const y = sy - ((sy - mapView.y) / mapView.z) * next;
+      setMapCamera(x, y, next, true);
     },
     { passive: false },
   );
@@ -2274,24 +2302,60 @@ function canvasPoint(e, canvas) {
   ];
 }
 
+let camGoal = null;
+let camRaf = 0;
+
+function cancelMapEase() {
+  camGoal = null;
+  if (camRaf) cancelAnimationFrame(camRaf);
+  camRaf = 0;
+}
+
+function setMapCamera(x, y, z, ease) {
+  if (!ease || !pixiMapActive()) {
+    cancelMapEase();
+    mapView.x = x;
+    mapView.y = y;
+    mapView.z = z;
+    drawMap();
+    return;
+  }
+  camGoal = { x, y, z };
+  if (!camRaf) camRaf = requestAnimationFrame(stepMapEase);
+}
+
+function stepMapEase() {
+  camRaf = 0;
+  if (!camGoal) return;
+  const k = 0.22;
+  mapView.x += (camGoal.x - mapView.x) * k;
+  mapView.y += (camGoal.y - mapView.y) * k;
+  mapView.z += (camGoal.z - mapView.z) * k;
+  const dist = Math.hypot(camGoal.x - mapView.x, camGoal.y - mapView.y);
+  if (Math.abs(camGoal.z - mapView.z) < 0.0015 && dist < 0.6) {
+    mapView.x = camGoal.x;
+    mapView.y = camGoal.y;
+    mapView.z = camGoal.z;
+    camGoal = null;
+  }
+  drawMap();
+  if (camGoal) camRaf = requestAnimationFrame(stepMapEase);
+}
+
 function zoomBy(factor) {
   const sx = 500;
   const sy = 310;
   const next = Math.max(0.16, Math.min(3.2, mapView.z * factor));
-  mapView.x = sx - ((sx - mapView.x) / mapView.z) * next;
-  mapView.y = sy - ((sy - mapView.y) / mapView.z) * next;
-  mapView.z = next;
-  drawMap();
+  const x = sx - ((sx - mapView.x) / mapView.z) * next;
+  const y = sy - ((sy - mapView.y) / mapView.z) * next;
+  setMapCamera(x, y, next, true);
 }
 
 function frameBox(x0, y0, x1, y1) {
   const z = Math.min(1000 / (x1 - x0), 620 / (y1 - y0)) * 0.88;
   const cx = (x0 + x1) / 2;
   const cy = (y0 + y1) / 2;
-  mapView.z = z;
-  mapView.x = 500 - cx * z;
-  mapView.y = 310 - cy * z;
-  drawMap();
+  setMapCamera(500 - cx * z, 310 - cy * z, z, true);
 }
 
 function clearForeignFrame() {
@@ -2308,18 +2372,12 @@ function frameWorld() {
   const minY = Math.min(yNorth, ySouth) - 24;
   const maxY = Math.max(yNorth, ySouth) + 24;
   const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.98;
-  mapView.z = z;
-  mapView.x = (1000 - (minX + maxX) * z) / 2;
-  mapView.y = (620 - (minY + maxY) * z) / 2;
-  drawMap();
+  setMapCamera((1000 - (minX + maxX) * z) / 2, (620 - (minY + maxY) * z) / 2, z, true);
 }
 
 function frameNear() {
   clearForeignFrame();
-  mapView.z = 0.56;
-  mapView.x = 48;
-  mapView.y = 72;
-  drawMap();
+  setMapCamera(48, 72, 0.56, true);
 }
 
 function frameCa() {
@@ -2339,11 +2397,8 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   const maxX = Math.max(xA, xB);
   const minY = Math.min(yA, yB);
   const maxY = Math.max(yA, yB);
-  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
-  mapView.z = Math.max(0.16, Math.min(3.2, z));
-  mapView.x = (1000 - (minX + maxX) * z) / 2;
-  mapView.y = (620 - (minY + maxY) * z) / 2;
-  drawMap();
+  const z = Math.max(0.16, Math.min(3.2, Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9)));
+  setMapCamera((1000 - (minX + maxX) * z) / 2, (620 - (minY + maxY) * z) / 2, z, true);
 }
 
 /**
@@ -2371,6 +2426,7 @@ function frameKorea() {
 }
 
 function onMapPointerDown(e) {
+  cancelMapEase();
   const canvas = $("map");
   const [sx, sy] = canvasPoint(e, canvas);
   mapView.drag = { sx, sy, x: mapView.x, y: mapView.y, moved: false };
@@ -3538,6 +3594,18 @@ function theaterLandPlate() {
 }
 
 function drawMap() {
+  if (pixiMapActive()) {
+    pixiApi.renderPixiMap({
+      state,
+      mapView,
+      selectedId: selectedRegion,
+      hoverId: hoverRegion,
+      mapFx,
+      stateWash,
+      syncWashKey,
+    });
+    return;
+  }
   labelClaims = [];
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
@@ -4445,6 +4513,15 @@ function paintDuelHud() {
 function drawDuelYard(now) {
   const canvas = $("duel-canvas");
   if (!canvas || !state?.duel) return;
+  if (pixiMapActive()) {
+    pixiApi.renderPixiDuel({
+      now,
+      duel: state.duel,
+      deskId: syncDuelDesk(state.duel),
+      styleInk,
+    });
+    return;
+  }
   const ctx = canvas.getContext("2d");
   const w = canvas.width;
   const h = canvas.height;
