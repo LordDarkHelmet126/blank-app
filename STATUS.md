@@ -2,13 +2,19 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–3 (United States, Canada, Mexico, Central America, and the Caribbean). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–4 (through South America). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+
+## World atlas (Region 4 — South America)
+
+Colombia (departments, Bogotá Distrito Especial, intendancies, and comisarías), Venezuela (20 states, the Federal District, Amazonas and Delta Amacuro still territories), Guyana, Suriname, French Guiana, Ecuador including the Galápagos by sea, Peru, Bolivia, Brazil (23 states, the territories of Amapá, Roraima, and Fernando de Noronha, and the Distrito Federal; Tocantins is not a state until 1988), Paraguay, Uruguay, Argentina (22 provinces, Tierra del Fuego still a national territory, Capital Federal), Chile (13 regions from 1974), and the Falklands as British-held and sea-only. The Darién stays a gap: Colón–Cartagena is a sea lane. Andes roads cross only at real passes, including Cristo Redentor. The Amazon is a river.
+
+Mexico is now 96 cities and 30 fictional SEDENA/SEMAR officers. Officer posts scale with the country: a one-island dependency keeps two, Belize keeps three, Cuba keeps ten. The old five-officer staff on every Caribbean rock is gone.
+
+`/?demo=look&view=world` shows the Americas. `/?demo=look&view=atlas&state=CL-VS&city=cl.los_andes` frames the Andes at Cristo Redentor. Close campaign zoom still does not draw the atlas.
 
 ## World atlas (Region 3 — Mexico, Central America, the Caribbean)
 
-Mexico is 31 states and the Federal District (52 cities, 8 fictional SEDENA/SEMAR officers). Central America is the 1980s departments and provinces: Guatemala 22, Belize 6, Honduras 18, El Salvador 14, Nicaragua with Zelaya still one department, Costa Rica 7, Panama 9 plus San Blas and the Canal Area under the treaty transition (99 cities, 35 officers). The Caribbean is Cuba’s 1976 provinces plus Isla de la Juventud, Haiti’s 9 departments, the Dominican provinces that existed by 1985, Jamaica’s 14 parishes, major Puerto Rican municipios, the principal Bahamas, and the Lesser Antilles through Grenada and Trinidad and Tobago (132 cities, 100 officers). The Pan-American Highway ends at Yaviza. US–Mexico gates are the real bridges. Florida–Cuba is the existing Gulf Sealift desk, by sea.
-
-`/?demo=look&view=world` shows North America through Panama and the Caribbean. `/?demo=look&view=atlas&state=MX-DIF&city=mx.mexico` frames central Mexico. Close campaign zoom still does not draw the atlas.
+Mexico is 31 states and the Federal District. Central America is the 1980s departments and provinces: Guatemala 22, Belize 6, Honduras 18, El Salvador 14, Nicaragua with Zelaya still one department, Costa Rica 7, Panama 9 plus San Blas and the Canal Area under the treaty transition. The Caribbean is Cuba’s 1976 provinces plus Isla de la Juventud, Haiti’s 9 departments, the Dominican provinces that existed by 1985, Jamaica’s 14 parishes, major Puerto Rican municipios, the principal Bahamas, and the Lesser Antilles through Grenada and Trinidad and Tobago. The Pan-American Highway ends at Yaviza. US–Mexico gates are the real bridges. Florida–Cuba is the existing Gulf Sealift desk, by sea.
 
 ## World atlas (Region 2 — Canada)
 
