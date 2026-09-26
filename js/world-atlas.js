@@ -1,6 +1,9 @@
 import { worldCatalog } from "./world.js";
 
-/** World zoom shows the whole atlas. A framed state shows its cities up close. */
+/** Remote subdivisions stay dotted at world zoom, not only their capitals. */
+const REMOTE = new Set(["AK", "HI", "YT", "NT"]);
+
+/** World zoom shows the whole atlas. A framed state or province shows its cities up close. */
 export function atlasMode(mapView) {
   if (!mapView || mapView.focus) return "off";
   if (mapView.z < 0.55) return "world";
@@ -8,42 +11,46 @@ export function atlasMode(mapView) {
   return "off";
 }
 
-function usRegion() {
-  return worldCatalog().regions.find((r) => r.id === "us") || null;
+function allTerritories() {
+  return worldCatalog().regions.flatMap((region) => region.territories);
 }
 
 export function atlasSubdivision(code) {
-  return usRegion()?.subdivisions.find((s) => s.id === code) || null;
+  for (const region of worldCatalog().regions) {
+    const sub = region.subdivisions.find((s) => s.id === code);
+    if (sub) return sub;
+  }
+  return null;
 }
 
 export function atlasTerritory(id) {
   if (!id) return null;
-  return usRegion()?.territories.find((t) => t.id === id) || null;
+  return allTerritories().find((t) => t.id === id) || null;
 }
 
 function collect(mode, atlasCode) {
-  const region = usRegion();
-  if (!region || mode === "off") return { cities: [], links: [] };
-  const byId = new Map(region.territories.map((t) => [t.id, t]));
-  let cities = region.territories;
+  const all = allTerritories();
+  if (!all.length || mode === "off") return { cities: [], links: [] };
+  const byId = new Map(all.map((t) => [t.id, t]));
+  let cities = all;
   if (mode === "world") {
-    cities = region.territories.filter((t) => t.role === "capital" || t.subdivision === "AK" || t.subdivision === "HI");
+    cities = all.filter((t) => t.role === "capital" || REMOTE.has(t.subdivision));
   }
   if (mode === "state") {
     const states = new Set([atlasCode]);
-    region.territories.forEach((t) => {
+    all.forEach((t) => {
       if (t.subdivision !== atlasCode) return;
       t.neighbors.forEach((n) => {
         const other = byId.get(n.id);
         if (other) states.add(other.subdivision);
       });
     });
-    cities = region.territories.filter((t) => states.has(t.subdivision));
+    cities = all.filter((t) => states.has(t.subdivision));
   }
   const ids = new Set(cities.map((t) => t.id));
   const links = [];
   const seen = new Set();
-  const source = mode === "world" ? region.territories : cities;
+  const source = mode === "world" ? all : cities;
   source.forEach((t) => {
     (t.neighbors || []).forEach((n) => {
       if (mode === "state" && (!ids.has(t.id) || !ids.has(n.id))) return;
@@ -135,8 +142,9 @@ export function drawAtlasLabels(ctx, opts) {
     const selected = city.id === selectedId;
     const hover = city.id === hoverId;
     const focused = mode === "state" && city.subdivision === mapView.atlas;
-    const remote = city.subdivision === "AK" || city.subdivision === "HI";
-    if (!selected && !hover && !focused && !(mode === "world" && remote && city.role === "capital")) return;
+    const remoteCap = REMOTE.has(city.subdivision) && city.role === "capital";
+    const canadaCap = city.country === "CA" && city.role === "capital";
+    if (!selected && !hover && !focused && !(mode === "world" && (remoteCap || canadaCap))) return;
     const [x, y] = project(city.lon, city.lat);
     drawAtlasLabel(ctx, mapView, x, y, city, selected || hover || focused);
   });

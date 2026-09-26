@@ -2,11 +2,17 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-26 — World atlas, Region 1 (United States). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a state is framed. It is occupied and not marchable.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–2 (United States and Canada). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a state or province is framed. It is occupied and not marchable.
+
+## World atlas (Region 2 — Canada)
+
+`data/world/regions/ca.js` is Canada in 1985–89: **10 provinces**, **Yukon**, and the **Northwest Territories** (the eastern Arctic is still NWT; Nunavut is not a separate territory yet). **68** cities, Trans-Canada and CP/CN links, ferries for Vancouver Island, Prince Edward Island, and Newfoundland, and **13** fictional Canadian Forces officers (English and French names). Eleven real border crossings are stitched in `data/world/borders.js` (Peace Arch, Sweetgrass, Pembina, the Sault, Ambassador Bridge, Peace Bridge, Champlain, Houlton, the Alaska Highway, the Klondike Highway, and the Juneau–Prince Rupert ferry).
+
+`/?demo=look&view=world` shows the United States and Canada. `/?demo=look&view=atlas&state=AB&city=ca.calgary` frames Alberta. Close campaign zoom still does not draw the atlas.
 
 ## World atlas (Region 1)
 
-`data/world/resources.js` is the yield list. `data/world/regions/us.js` is the United States: **50 states + DC**, **123** cities at real lat/long, road/rail/sea links, **14** fictional command officers. `node tests/world-validate.mjs` checks subdivision, bounding boxes, symmetric links, one connected graph, and yields. Sources: `docs/world-data-sources.md`.
+`data/world/resources.js` is the yield list. `data/world/regions/us.js` is the United States: **50 states + DC**, **151** cities at real lat/long (the long interstate hops, the Missouri lead belt, and Attu are filled in), road/rail/sea links, and **44** fictional officers (continuity government, occupation prefecture, resistance net, and regional notables). `node tests/world-validate.mjs` checks subdivision, bounding boxes, symmetric links, one connected graph per country, and yields. Sources: `docs/world-data-sources.md`.
 
 World button (or `/?demo=look&view=world`) shows state capitals and the link net on the globe, including Alaska and Hawaii. `/?demo=look&view=atlas&state=FL&city=miami` frames one state with city, road, and yield labels. A second click on a capital frames that state. Close campaign zoom (the default) does not draw the atlas, so Cheyenne stays the week-0 map.
 

@@ -1,8 +1,31 @@
 import { RESOURCE_IDS, RESOURCES } from "../data/world/resources.js";
+import { BORDER_LINKS } from "../data/world/borders.js";
 import { US_REGION } from "../data/world/regions/us.js";
+import { CA_REGION } from "../data/world/regions/ca.js";
+
+function modesFor(kind) {
+  if (kind === "sea") return ["sea"];
+  if (kind === "trail") return ["trail"];
+  if (kind === "rail") return ["rail", "road"];
+  return ["road"];
+}
+
+/** Real border crossings are stored once and written onto both cities. */
+function stitchBorders(regions) {
+  const byId = new Map();
+  regions.forEach((region) => region.territories.forEach((t) => byId.set(t.id, t)));
+  BORDER_LINKS.forEach(([a, b, kind, via]) => {
+    const A = byId.get(a);
+    const B = byId.get(b);
+    if (!A || !B) throw new Error(`border link ${a}–${b} is missing a city`);
+    if (!A.neighbors.some((n) => n.id === b)) A.neighbors.push({ id: b, kind, via, modes: modesFor(kind) });
+    if (!B.neighbors.some((n) => n.id === a)) B.neighbors.push({ id: a, kind, via, modes: modesFor(kind) });
+  });
+  return regions;
+}
 
 /** Regions ship one module at a time. Append the next country here. */
-export const WORLD_REGIONS = [US_REGION];
+export const WORLD_REGIONS = stitchBorders([US_REGION, CA_REGION]);
 
 const COMMAND_SLOTS = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];
 const STATUSES = new Set(["neutral", "occupied", "held"]);
@@ -68,6 +91,7 @@ export function validateRegion(region, opts = {}) {
   const personalities = opts.personalities || null;
   const campaignIds = opts.campaignIds || null;
   const officerNames = opts.officerNames || null;
+  const external = opts.externalTerritories || new Map();
   const fail = (msg) => errors.push(`${region?.id || "?"}: ${msg}`);
 
   if (!region?.id || !region.name || !region.country) fail("region needs id, name, country");
@@ -124,7 +148,7 @@ export function validateRegion(region, opts = {}) {
     const links = t.neighbors || [];
     if (!links.length) fail(`${t.id} is an orphan`);
     links.forEach((link) => {
-      const other = byId.get(link.id);
+      const other = byId.get(link.id) || external.get(link.id);
       if (!other) fail(`${t.id} lists missing neighbor ${link.id}`);
       if (!LINK_KINDS.has(link.kind)) fail(`${t.id}→${link.id} bad link kind ${link.kind}`);
       const back = other?.neighbors?.find((n) => n.id === t.id);
@@ -142,10 +166,9 @@ export function validateRegion(region, opts = {}) {
     while (stack.length) {
       const id = stack.pop();
       byId.get(id).neighbors.forEach((n) => {
-        if (!hit.has(n.id)) {
-          hit.add(n.id);
-          stack.push(n.id);
-        }
+        if (!byId.has(n.id) || hit.has(n.id)) return;
+        hit.add(n.id);
+        stack.push(n.id);
       });
     }
     if (hit.size !== terrs.length) fail(`graph is split (${hit.size}/${terrs.length} reached from ${start})`);
@@ -186,8 +209,17 @@ export function validateWorld(catalog, opts) {
   RESOURCE_IDS.forEach((id) => {
     if (!ids.has(id)) errors.push(`catalog missing resource ${id}`);
   });
+  const all = new Map();
   (catalog.regions || []).forEach((region) => {
-    validateRegion(region, opts).forEach((e) => errors.push(e));
+    (region.territories || []).forEach((t) => {
+      if (all.has(t.id)) errors.push(`duplicate territory ${t.id}`);
+      all.set(t.id, t);
+    });
+  });
+  (catalog.regions || []).forEach((region) => {
+    const external = new Map(all);
+    (region.territories || []).forEach((t) => external.delete(t.id));
+    validateRegion(region, { ...opts, externalTerritories: external }).forEach((e) => errors.push(e));
   });
   return errors;
 }

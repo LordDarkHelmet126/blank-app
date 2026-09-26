@@ -497,7 +497,13 @@ export async function boot(loaded) {
     if (view === "world") frameWorld();
     else if (view === "atlas") {
       const city = params.get("city");
-      if (city) selectedWorld = city.startsWith("us.") ? city : `us.${city}`;
+      if (city) {
+        if (city.includes(".")) selectedWorld = city;
+        else {
+          const hit = content.world.regions.flatMap((r) => r.territories).find((t) => t.id.endsWith(`.${city}`));
+          selectedWorld = hit ? hit.id : `us.${city}`;
+        }
+      }
       frameAtlasState((params.get("state") || "FL").toUpperCase());
     }
     else if (view === "near") frameNear();
@@ -2340,7 +2346,7 @@ function frameAtlasState(code) {
 function frameWorld() {
   clearForeignFrame();
   mapView.atlas = "us";
-  const [xWest, yNorth] = projectLL(-175, 78);
+  const [xWest, yNorth] = projectLL(-192, 78);
   const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
   const maxX = Math.max(xWest, xEast) + 30;
@@ -2536,7 +2542,7 @@ function renderMapCaption() {
   const beat = camp.nationalLeader ? "national leader" : `west ${westN}/8`;
   const mode = atlasMode(mapView);
   const atlasBit = mode === "world"
-    ? " · atlas US occupied"
+    ? " · atlas US–Canada occupied"
     : mode === "state"
       ? ` · atlas ${mapView.atlas}`
       : "";
