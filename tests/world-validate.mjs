@@ -45,10 +45,12 @@ const nome = content.world.regions[0].territories.find((t) => t.id === "us.nome"
 assert(!nome.neighbors.some((n) => n.kind === "road"), "Nome has no invented highway");
 const juneau = content.world.regions[0].territories.find((t) => t.id === "us.juneau");
 assert(juneau.neighbors.some((n) => n.id === "us.seattle" && n.kind === "sea"), "Juneau–Seattle is a sea lane");
-assert(!content.world.regions[0].territories.some((t) => t.neighbors.some((n) => n.id.includes("cuba"))), "Cuba sealift stays on the campaign desk");
+assert(!regions.regions.some((r) => String(r.id).startsWith("cu.") || String(r.id).startsWith("mx.")), "atlas ids stay off the campaign board");
+assert(campaignIds.has("havana") && campaignIds.has("far_cuba") && campaignIds.has("managua"), "sealift desks stay on the campaign board");
 
 const usRegion = content.world.regions.find((r) => r.id === "us");
 const byId = new Map(usRegion.territories.map((t) => [t.id, t]));
+assert(byId.get("us.key_west").neighbors.some((n) => n.id === "cu.havana" && n.kind === "sea"), "Florida Straits use the Gulf Sealift desk");
 const attu = byId.get("us.attu");
 assert(attu && attu.neighbors.every((n) => n.kind === "sea"), "Attu is sea-only");
 assert(byId.get("us.adak").neighbors.every((n) => n.kind === "sea"), "Adak is sea-only");
@@ -98,6 +100,54 @@ assert(byId.get("us.tok").neighbors.some((n) => n.id === "ca.whitehorse" && n.ki
 assert(caRegion.officers.some((o) => o.slot === "head_of_state" && o.region === "ca.ottawa"), "Canadian government in Ottawa");
 const caDormant = toOfficerRecords(caRegion);
 assert(caDormant.every((o) => o.dormant && o.world && o.fictional && o.faction == null), "Canadian officers stay dormant");
+
+const worldBy = new Map(content.world.regions.flatMap((r) => r.territories.map((t) => [t.id, t])));
+const mx = content.world.regions.find((r) => r.id === "mx");
+assert(mx.subdivisions.filter((s) => s.kind === "state").length === 31, "31 Mexican states");
+assert(mx.subdivisions.some((s) => s.id === "MX-DIF" && s.kind === "district"), "Federal District");
+assert(!mx.subdivisions.some((s) => s.id === "NL" || s.id === "BC"), "Mexican codes do not collide with Canada");
+assert(worldBy.get("mx.campeche").yields.includes("oil") && worldBy.get("mx.carmen").yields.includes("oil"), "Campeche oil");
+assert(worldBy.get("mx.villahermosa").yields.includes("oil") && worldBy.get("mx.veracruz").yields.includes("oil"), "Tabasco and Veracruz oil");
+assert(worldBy.get("mx.zacatecas").yields.includes("silver") && worldBy.get("mx.guanajuato").yields.includes("silver"), "Zacatecas and Guanajuato silver");
+assert(worldBy.get("mx.tuxtla").yields.includes("coffee"), "Chiapas coffee");
+assert(worldBy.get("us.san_diego").neighbors.some((n) => n.id === "mx.tijuana" && n.kind === "road"), "San Ysidro");
+assert(worldBy.get("us.nogales").neighbors.some((n) => n.id === "mx.nogales" && n.kind === "road"), "Nogales");
+assert(worldBy.get("us.el_paso").neighbors.some((n) => n.id === "mx.juarez" && n.kind === "road"), "El Paso–Juárez");
+assert(worldBy.get("us.laredo").neighbors.some((n) => n.id === "mx.nuevo_laredo" && n.kind === "road"), "Laredo");
+assert(worldBy.get("us.brownsville").neighbors.some((n) => n.id === "mx.matamoros" && n.kind === "road"), "Brownsville–Matamoros");
+assert(worldBy.get("mx.tijuana").neighbors.some((n) => n.id === "us.san_diego"), "border links are symmetric");
+
+const cu = content.world.regions.find((r) => r.id === "cu");
+assert(cu.subdivisions.filter((s) => s.kind === "province").length === 14, "14 Cuban provinces");
+assert(cu.subdivisions.some((s) => s.id === "CU-IJ"), "Isla de la Juventud");
+assert(!cu.subdivisions.some((s) => /artemisa|mayabeque/i.test(s.name)), "no 2011 Cuban provinces");
+assert(worldBy.get("cu.moa").yields.includes("nickel"), "Moa nickel");
+assert(worldBy.get("cu.pinar").yields.includes("tobacco"), "Pinar tobacco");
+assert(worldBy.get("cu.matanzas").yields.includes("citrus"), "Matanzas citrus");
+assert(worldBy.get("mx.progreso").neighbors.some((n) => n.id === "cu.pinar" && n.kind === "sea"), "Yucatán Channel");
+assert(worldBy.get("cu.havana").campaignId === "havana", "Havana keeps the campaign id");
+assert(worldBy.get("ni.managua").campaignId === "managua", "Managua keeps the campaign id");
+
+assert(content.world.regions.find((r) => r.id === "gt").subdivisions.length === 22, "22 Guatemalan departments");
+assert(content.world.regions.find((r) => r.id === "bz").subdivisions.length === 6, "6 Belize districts");
+assert(content.world.regions.find((r) => r.id === "hn").subdivisions.length === 18, "18 Honduran departments");
+assert(content.world.regions.find((r) => r.id === "sv").subdivisions.length === 14, "14 Salvadoran departments");
+assert(content.world.regions.find((r) => r.id === "ni").subdivisions.some((s) => s.id === "NI-ZE"), "Zelaya is still one department");
+assert(!content.world.regions.find((r) => r.id === "ni").subdivisions.some((s) => /RAAN|RAAS|Caribe/i.test(s.name)), "no split autonomous regions");
+assert(content.world.regions.find((r) => r.id === "cr").subdivisions.length === 7, "7 Costa Rican provinces");
+assert(content.world.regions.find((r) => r.id === "pa").subdivisions.some((s) => s.id === "PA-CZ"), "Canal Area");
+assert(!worldBy.get("pa.yaviza").neighbors.some((n) => n.id.includes("colombia")), "no Darién road");
+assert(worldBy.get("jm.mandeville").yields.includes("bauxite"), "Jamaica bauxite");
+assert(worldBy.get("tt.point_fortin").yields.includes("oil") && worldBy.get("tt.mayaro").yields.includes("natural_gas"), "Trinidad oil and gas");
+assert(worldBy.get("do.bonao").yields.includes("nickel") && worldBy.get("do.cotui").yields.includes("gold"), "Dominican nickel and gold");
+assert(worldBy.get("do.san_pedro").yields.includes("sugarcane"), "Dominican sugar");
+assert(content.world.regions.filter((r) => ["mx", "gt", "bz", "hn", "sv", "ni", "cr", "pa", "cu", "ht", "do", "jm", "pr", "bs", "vi", "vg", "ai", "kn", "ag", "ms", "gp", "dm", "mq", "lc", "vc", "bb", "gd", "tt"].includes(r.id)).every((r) => r.playable === false && r.officers.length >= 5), "Region 3 stays unplayable with a command staff");
+const slots = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];
+content.world.regions.forEach((r) => {
+  if (r.id === "us" || r.id === "ca") return;
+  slots.forEach((slot) => assert(r.officers.some((o) => o.slot === slot), `${r.id} has ${slot}`));
+  assert(toOfficerRecords(r).every((o) => o.dormant && o.world && o.fictional && o.faction == null), `${r.id} officers stay dormant`);
+});
 
 console.log("ok world catalog");
 counts.forEach((c) => {

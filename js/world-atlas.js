@@ -3,6 +3,19 @@ import { worldCatalog } from "./world.js";
 /** Remote subdivisions stay dotted at world zoom, not only their capitals. */
 const REMOTE = new Set(["AK", "HI", "YT", "NT"]);
 
+/** Named capitals at world zoom. The rest stay dots so the northeast can be read. */
+const WORLD_CAPS = new Set([
+  "us.juneau",
+  "us.honolulu",
+  "ca.whitehorse",
+  "ca.yellowknife",
+  "ca.st_johns",
+  "mx.mexico",
+  "gt.guatemala",
+  "cu.havana",
+  "pa.panama",
+]);
+
 /** World zoom shows the whole atlas. A framed state or province shows its cities up close. */
 export function atlasMode(mapView) {
   if (!mapView || mapView.focus) return "off";
@@ -141,12 +154,10 @@ export function drawAtlasLabels(ctx, opts) {
   list.forEach((city) => {
     const selected = city.id === selectedId;
     const hover = city.id === hoverId;
-    const focused = mode === "state" && city.subdivision === mapView.atlas;
-    const remoteCap = REMOTE.has(city.subdivision) && city.role === "capital";
-    const offshoreCap = city.role === "capital" && city.subdivision === "NL";
-    if (!selected && !hover && !focused && !(mode === "world" && (remoteCap || offshoreCap))) return;
+    const inState = mode === "state";
+    if (!selected && !hover && !inState && !(mode === "world" && WORLD_CAPS.has(city.id))) return;
     const [x, y] = project(city.lon, city.lat);
-    drawAtlasLabel(ctx, mapView, x, y, city, selected || hover || focused);
+    drawAtlasLabel(ctx, mapView, x, y, city, selected || hover || inState);
   });
   ctx.restore();
 }

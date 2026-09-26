@@ -61,7 +61,7 @@ Coach QA URL while the server is running: `/?demo=coach` (fresh week 0 with the 
 | `data/officers.json` | AI roster + personalities + player template. `rosterCap` 500, `customOfficerSlots` 10. |
 | `data/factions.json` | ~40 original groups. **17** are on the current board (Alaska six + Yukon/Bering + eight western banners); the rest stay off-map. |
 | `data/regions.json` | Campaign board: **14** states/territories (13 US + Yukon). **37** US/Yukon cities, Gulf Sealift, plus **4** foreign stubs. Week 0 still starts in Cheyenne. |
-| `data/world/` | Atlas added one region at a time. Region 1 is the full United States (50 states + DC). Region 2 is Canada (10 provinces, Yukon, and the Northwest Territories, which still includes the eastern Arctic). Those cities stay occupied and off the march until a later reach. |
+| `data/world/` | Atlas added one region at a time. Region 1 is the full United States (50 states + DC). Region 2 is Canada (10 provinces, Yukon, and the Northwest Territories, which still includes the eastern Arctic). Region 3 is Mexico, Central America, and the Caribbean. Those cities stay occupied and off the march until a later reach. |
 | `data/tech.json` | Slow 1985–89 salvage unlocks (M16A2, Jeeps, M113s, Hueys; calendar + research points). |
 
 Add objects; the engine does not assume a fixed officer count.

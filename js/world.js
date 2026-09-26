@@ -2,6 +2,9 @@ import { RESOURCE_IDS, RESOURCES } from "../data/world/resources.js";
 import { BORDER_LINKS } from "../data/world/borders.js";
 import { US_REGION } from "../data/world/regions/us.js";
 import { CA_REGION } from "../data/world/regions/ca.js";
+import { MEXICO_REGION } from "../data/world/regions/mexico.js";
+import { CENTRAL_AMERICA } from "../data/world/regions/central-america.js";
+import { CARIBBEAN } from "../data/world/regions/caribbean.js";
 
 function modesFor(kind) {
   if (kind === "sea") return ["sea"];
@@ -25,7 +28,13 @@ function stitchBorders(regions) {
 }
 
 /** Regions ship one module at a time. Append the next country here. */
-export const WORLD_REGIONS = stitchBorders([US_REGION, CA_REGION]);
+export const WORLD_REGIONS = stitchBorders([
+  US_REGION,
+  CA_REGION,
+  MEXICO_REGION,
+  ...CENTRAL_AMERICA,
+  ...CARIBBEAN,
+]);
 
 const COMMAND_SLOTS = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];
 const STATUSES = new Set(["neutral", "occupied", "held"]);

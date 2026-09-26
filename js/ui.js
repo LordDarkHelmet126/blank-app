@@ -2339,6 +2339,10 @@ function frameAtlasState(code) {
   if (!sub) return;
   clearForeignFrame();
   mapView.atlas = code;
+  if (code === "MX-DIF") {
+    frameLonLat(-101.6, 20.6, -96.8, 18.2, 0.86);
+    return;
+  }
   const b = sub.bbox;
   frameLonLat(b.minLon, b.maxLat, b.maxLon, b.minLat, 0.78);
 }
@@ -2542,7 +2546,7 @@ function renderMapCaption() {
   const beat = camp.nationalLeader ? "national leader" : `west ${westN}/8`;
   const mode = atlasMode(mapView);
   const atlasBit = mode === "world"
-    ? " · atlas US–Canada occupied"
+    ? " · atlas occupied"
     : mode === "state"
       ? ` · atlas ${mapView.atlas}`
       : "";
