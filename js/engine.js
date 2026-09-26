@@ -60,6 +60,7 @@ import {
   monthLabel,
   normalizeStatus,
   noteDeeds,
+  nextRankGoal,
   orderLead,
   payForGrade,
   proposalChoices,
@@ -85,9 +86,11 @@ export {
   GRADE_PAY,
   monthIndex,
   monthLabel,
+  statusIndex,
   statusLabel,
   statusShort,
   normalizeStatus,
+  nextRankGoal,
   noteDeeds,
   orderLead,
   cadenceLead,
@@ -521,10 +524,12 @@ function superiorContext(state) {
   }
   if (!superior) {
     const local = livingOfficers(state).filter(
-      (o) => o.id !== p.id && o.region === p.region && o.alive !== false && !o.hidden && !o.retired
+      (o) => o.id !== p.id && o.region === p.region && o.alive !== false && !o.hidden && !o.retired && !o.friend
     );
-    const prefer = ["cole", "hart", "nash"];
-    superior = prefer.map((id) => local.find((o) => o.id === id)).find(Boolean) || local[0] || null;
+    const byId = (id) => local.find((o) => o.id === id);
+    if (rank === "leader") superior = byId("hart") || local.find((o) => o.id !== "cole") || local[0] || null;
+    else if (rank === "opschief") superior = byId("nash") || local.find((o) => o.id !== "cole" && o.id !== "hart") || local[0] || null;
+    else superior = byId("cole") || local[0] || null;
   }
   if (!superior) return null;
   const here = regionOf(state, p.region);
@@ -1107,8 +1112,10 @@ export function listActions(state) {
     label: "Hire",
     ap: 1,
     group: "plot",
-    enabled: hasBanner && hireCandidates(state).length > 0,
-    hint: !hasBanner
+    enabled: (hasBanner && hireCandidates(state).length > 0) || cellRecruitPool(state).length > 0,
+    hint: cellRecruitPool(state).length
+      ? "Recruit a free officer into your cell. They stay in this city. Not a general."
+      : !hasBanner
       ? "Raise a banner first."
       : hireCandidates(state).length
         ? gens >= MAX_GENERALS
@@ -1238,8 +1245,10 @@ export function listActions(state) {
     label: jobs.length ? `Side Mission (${jobs.length})` : "Side Mission",
     ap: 1,
     group: "command",
-    enabled: hasBanner && jobs.length > 0,
-    hint: !hasBanner
+    enabled: (hasBanner && jobs.length > 0) || cellMissions(state, jobs).length > 0,
+    hint: cellMissions(state, jobs).length
+      ? "Run a side mission in this city for the cell. No banner required."
+      : !hasBanner
       ? "Raise a banner, then take optional jobs (Military → Side Mission)."
       : jobs.length
         ? "Optional jobs: scout, raid, escort, rescue, porch challenge. 1 AP, or set a general to Side mission."
@@ -1280,7 +1289,11 @@ export function listActions(state) {
     ap: 1,
     group: "command",
     enabled: hasBanner && rank !== "commander" && rank !== "governor" && rank !== "chair",
-    hint: "Leave the banner. You keep your name and fame. Deeds reset. You are a Free Volunteer.",
+    hint: !hasBanner
+      ? "You do not serve a banner, so there is nothing to resign."
+      : rank === "commander" || rank === "governor" || rank === "chair"
+        ? "A Front Commander keeps the banner."
+        : "Leave the banner. You keep your name and fame. Deeds reset. You are a Free Volunteer.",
   });
   actions.push({
     id: "donate",
@@ -1321,6 +1334,36 @@ export function listActions(state) {
     applyStatusGate(action, gate);
   });
   return actions;
+}
+
+function cellRank(state) {
+  const p = playerOf(state);
+  if (!p || p.faction) return false;
+  const idx = statusIndex(rankOf(state, p));
+  return idx >= statusIndex("leader") && idx < statusIndex("commander");
+}
+
+export function cellRecruitPool(state) {
+  const p = playerOf(state);
+  if (!cellRank(state)) return [];
+  ensureCareer(state);
+  const cell = new Set(state.service.cell || []);
+  return visibleOfficers(state).filter(
+    (o) =>
+      o.id !== p.id &&
+      !o.faction &&
+      o.region === p.region &&
+      o.alive !== false &&
+      !o.friend &&
+      o.ladder !== "player" &&
+      !cell.has(o.id)
+  );
+}
+
+function cellMissions(state, jobs) {
+  const p = playerOf(state);
+  if (!cellRank(state)) return [];
+  return (jobs || []).filter((j) => j.regionId === p.region);
 }
 
 export function hireCandidates(state) {
@@ -1969,7 +2012,24 @@ function ownerName(state, region) {
 
 function doHire(state, officerId, stats) {
   const p = playerOf(state);
-  if (!p.faction) return { ok: false, message: "Raise a banner first." };
+  if (!p.faction) {
+    if (!cellRank(state)) return { ok: false, message: "Needs Cell Leader to recruit into the cell." };
+    const t = officerOf(state, officerId);
+    if (!t || t.faction || t.region !== p.region || !isVisibleOfficer(state, t) || t.friend) {
+      return { ok: false, message: "No free officer here to recruit." };
+    }
+    ensureCareer(state);
+    const cell = state.service.cell;
+    if (cell.includes(t.id)) return { ok: false, message: "Already in your cell." };
+    if (state.gold < 8) return { ok: false, message: "Needs 8 scrip." };
+    if (!spend(state, 1)) return { ok: false, message: "No AP." };
+    state.gold -= 8;
+    cell.push(t.id);
+    addBond(state, t.id, 8);
+    const msg = `${t.name} joins your cell in ${currentRegion(state).short}. Not a general.`;
+    pushLog(state, msg, "alert");
+    return { ok: true, message: msg, dings: ["CELL"] };
+  }
   const t = officerOf(state, officerId);
   if (!t || t.faction || t.region !== p.region || !isVisibleOfficer(state, t)) {
     return { ok: false, message: "No free officer here to hire." };
@@ -2062,9 +2122,11 @@ function lockedMissionDesk(id) {
 
 function doMission(state, jobId, officerId, deskId) {
   const p = playerOf(state);
-  if (!p.faction) return { ok: false, message: "Raise a banner first." };
+  const forCell = cellRank(state);
+  if (!p.faction && !forCell) return { ok: false, message: "Raise a banner first." };
   const job = missionById(state, jobId);
   if (!job || job.done) return { ok: false, message: "That job is gone. End Week refreshes the board." };
+  if (forCell && job.regionId !== p.region) return { ok: false, message: "A cell mission stays in this city." };
   if (p.region !== job.regionId) {
     return { ok: false, message: `Travel to ${regionOf(state, job.regionId)?.short || job.regionId} first.` };
   }

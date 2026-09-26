@@ -353,6 +353,34 @@ const PAINT = {
     fig(ctx, 50, 10, PAL.navy, PAL.red);
     px(ctx, 36, 18, 6, 2, PAL.gold);
   },
+  promote_member(ctx) {
+    skyGround(ctx, false, "summer");
+    px(ctx, 48, 8, 14, 22, PAL.wood);
+    px(ctx, 44, 6, 22, 4, PAL.wood2);
+    px(ctx, 8, 28, 28, 6, PAL.wheat);
+    px(ctx, 10, 24, 24, 4, PAL.wheat2);
+    fig(ctx, 18, 12, PAL.olive, PAL.gold);
+    px(ctx, 30, 22, 6, 2, PAL.crate);
+  },
+  promote_leader(ctx) {
+    skyGround(ctx);
+    px(ctx, 22, 22, 36, 6, PAL.wood);
+    px(ctx, 24, 18, 8, 4, PAL.crate);
+    px(ctx, 40, 16, 10, 6, "#c8c8d0");
+    fig(ctx, 8, 10, PAL.olive, PAL.olive2);
+    fig(ctx, 58, 10, PAL.navy, PAL.gold);
+    px(ctx, 34, 14, 8, 2, PAL.gold);
+  },
+  promote_opschief(ctx) {
+    skyGround(ctx);
+    px(ctx, 34, 6, 4, 18, PAL.ink);
+    px(ctx, 28, 6, 16, 3, PAL.red);
+    px(ctx, 10, 24, 22, 10, PAL.wood);
+    px(ctx, 12, 26, 18, 4, "#304878");
+    fig(ctx, 40, 12, PAL.olive, PAL.gold);
+    fig(ctx, 54, 12, PAL.olive2, PAL.navy);
+    px(ctx, 48, 20, 8, 2, PAL.gold);
+  },
   porch_challenge(ctx) {
     skyGround(ctx);
     px(ctx, 8, 10, 22, 16, PAL.wood);

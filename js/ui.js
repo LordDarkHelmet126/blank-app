@@ -36,8 +36,10 @@ import {
   rankLabel,
   statusShort,
   statusLabel,
+  statusIndex,
   apMax,
   orderLead,
+  nextRankGoal,
   cadenceLead,
   respondToOrder,
   commissionLabel,
@@ -634,7 +636,7 @@ export async function boot(loaded) {
     render();
     if (done.promoted) {
       showEventScene({
-        id: "appoint",
+        id: done.promoted.scene || "promote_member",
         title: statusLabel(done.promoted.to),
         text: done.promoted.message || done.message,
         celebrate: true,
@@ -665,6 +667,11 @@ function bindChrome() {
     wireAfterRender();
   };
   $("btn-help").onclick = () => showModal(helpHtml());
+  $("btn-order").onclick = () => reopenPendingOrder();
+  $("objective").addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    reopenPendingOrder();
+  });
   $("btn-coach").onclick = () => {
     coachOn = true;
     coachStep = 0;
@@ -755,6 +762,7 @@ function bindChrome() {
     if (e.key === "Escape") {
       const modal = $("modal");
       if (modal && !modal.hidden) {
+        if ($("modal-card")?.querySelector("#ng-start")) return;
         e.preventDefault();
         hideModal();
         return;
@@ -907,6 +915,7 @@ function showModal(html, opts = {}) {
   } else clearDeskPaint($("modal-card"));
   wireTitle();
   wireAfterRender();
+  $("modal-card").scrollTop = 0;
   const close = $("modal-card").querySelector("[data-close]");
   if (close) close.onclick = hideModal;
   const helpCoach = $("modal-card").querySelector("#help-coach");
@@ -1139,6 +1148,10 @@ function renderObjective() {
   }
   const end = $("btn-end");
   if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
+  const pendingOrder = state.orders?.current?.status === "pending";
+  const orderBtn = $("btn-order");
+  if (orderBtn) orderBtn.hidden = !pendingOrder;
+  bar.classList.toggle("has-order", !!pendingOrder);
 }
 
 function scheduleCoach() {
@@ -1289,8 +1302,15 @@ function orderHtml() {
         <p class="muted">${esc(o.short)} · ${esc(o.taskLabel)} · ${esc(o.stat)}</p>
       </div>
     </div>
-    <div class="order-choices">${answer}</div>
-    <p class="next-line">${esc(nextHint(state))}</p>`;
+    <div class="order-choices">${answer}</div>`;
+}
+
+function reopenPendingOrder() {
+  const o = state?.orders?.current;
+  if (!o || o.status !== "pending") return;
+  openOrderDialog();
+  const card = $("modal-card");
+  if (card) card.scrollTop = 0;
 }
 
 function serviceHtml() {
@@ -1357,7 +1377,7 @@ function answerOrder(choice, taskId) {
   render();
   if (res.promoted) {
     showEventScene({
-      id: "appoint",
+      id: res.promoted.scene || "promote_member",
       title: statusLabel(res.promoted.to),
       text: res.promoted.message || res.message,
       celebrate: true,
@@ -1814,7 +1834,7 @@ function run(id, extra) {
   } else if (res.promoted && !res.weekEnd) {
     if (res.promoted.tab) commandCat = res.promoted.tab;
     showEventScene({
-      id: "appoint",
+      id: res.promoted.scene || "promote_member",
       title: statusLabel(res.promoted.to),
       text: res.promoted.message || res.message || "Rank confirmed.",
       celebrate: true,
@@ -1934,6 +1954,7 @@ function officerHtml() {
         <p class="muted">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""} · ${esc(here?.short || "?")} · AP ${state.ap}/${apMax(state)}</p>
         <p class="service-line" id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
         <p class="service-line">Commission ${esc(commissionLabel(state.service?.commission))} · Fame ${state.fame}</p>
+        <p class="service-line goal-line" id="next-goal">${esc(nextRankGoal(state, rankOf(state, p)))}</p>
         <p class="service-actions"><button type="button" data-open-service>Service record</button>${state.orders?.current ? `<button type="button" data-open-order>Order</button>` : ""}</p>
         ${loyBar(p.loyalty)}
         <div class="stat-row">
@@ -1985,7 +2006,11 @@ function courtHtml() {
       </div>`);
     } else {
       let hint;
-      if (!p.faction) hint = "Finish orders, or raise a banner, then People → Hire.";
+      if (!p.faction) {
+        hint = statusIndex(rankOf(state, p)) >= statusIndex("leader")
+          ? "People → Hire recruits into your cell. A banner fills these chairs."
+          : "Finish orders to Cell Leader, then People → Hire into your cell.";
+      }
       else if (wait[0]) hint = `Command → Appoint ${esc(wait[0].name)}.`;
       else if (ladderRoster(state).officer.some((o) => o.region === p.region) && gens.length < MAX_GENERALS) hint = "Roster → Promote an officer to general.";
       else if (ladderRoster(state).player.some((o) => o.region === p.region)) hint = "Roster → Promote a player to officer.";
@@ -2193,7 +2218,7 @@ function actionButton(a) {
   b.disabled = !live;
   if (!live) b.classList.add("is-locked");
   if (a.ordered) b.classList.add("is-ordered");
-  const lock = !a.enabled ? a.hint || "Locked." : state.ap < a.ap ? `${a.ap} AP` : `${a.ap} AP`;
+  const lock = `${a.ap} AP`;
   b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span><b>${esc(a.label)}</b><small>${esc(lock)}</small></span>`;
   bindTip(b, actionTipHtml(a));
   b.onclick = () => {

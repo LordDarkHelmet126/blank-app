@@ -57,6 +57,7 @@ import {
   payForGrade,
   runPayroll,
   orderLead,
+  nextRankGoal,
   apMax,
   noteDeeds,
   promoteLadder,
@@ -1699,16 +1700,67 @@ assert(rankOf(resigned, playerOf(resigned)) === "free", "resign returns a Free V
 
 const varied = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
 const seenTasks = [varied.orders.current.task];
-for (let month = 0; month < 6; month++) {
+assert(varied.orders.current.issuerId === "cole", "week 0 issuer is Drew Cole");
+for (let month = 0; month < 8; month++) {
   const id = varied.orders.current.id;
   while (varied.orders.current?.id === id) assert(act(varied, content, "end_week").ok, "month turns");
   seenTasks.push(varied.orders.current.task);
 }
 assert(seenTasks[0] === "cultivate", "week 0 order stays the Cheyenne elevator");
-assert(new Set(seenTasks.slice(1)).size >= 3, `later months vary: ${seenTasks.join(",")}`);
-for (let i = 2; i < seenTasks.length; i++) {
+assert(new Set(seenTasks).size === 7, `every order task appears: ${seenTasks.join(",")}`);
+for (let i = 1; i < seenTasks.length; i++) {
   assert(seenTasks[i] !== seenTasks[i - 1], `month ${i} repeated ${seenTasks[i]}`);
 }
+assert(/asks you to work the /i.test(orderLead(createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" }))), "pending NEXT uses a single verb");
+const said = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+respondToOrder(said, "accept");
+assert(/Orders from above\. Work the /.test(orderLead(said)) && !/Do Work/.test(orderLead(said)), "accepted NEXT does not double the verb");
+
+const bosses = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+playerOf(bosses).status = "leader";
+{
+  const id = bosses.orders.current.id;
+  while (bosses.orders.current?.id === id) assert(act(bosses, content, "end_week").ok, "leader month");
+}
+assert(bosses.orders.current.issuerId === "hart", `Cell Leader hears from someone else: ${bosses.orders.current.issuerId}`);
+playerOf(bosses).status = "opschief";
+{
+  const id = bosses.orders.current.id;
+  while (bosses.orders.current?.id === id) assert(act(bosses, content, "end_week").ok, "ops month");
+}
+assert(bosses.orders.current.issuerId === "nash", `Operations Chief hears from a third issuer: ${bosses.orders.current.issuerId}`);
+playerOf(bosses).status = "leader";
+playerOf(bosses).region = "denver";
+{
+  const id = bosses.orders.current.id;
+  while (bosses.orders.current?.id === id) assert(act(bosses, content, "end_week").ok, "denver month");
+}
+const denverBoss = bosses.officers.find((o) => o.id === bosses.orders.current.issuerId);
+assert(denverBoss?.region === "denver", "the issuer follows the city");
+
+const cellLead = createNewGame(content, { seed: 8, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(cellLead).status = "leader";
+const cellHire = listActions(cellLead).find((a) => a.id === "hire");
+assert(cellHire?.enabled && /cell/i.test(cellHire.hint || ""), `Cell Leader can recruit: ${cellHire?.hint}`);
+const joinedCell = act(cellLead, content, "hire", { officerId: "cole" });
+assert(joinedCell.ok && cellLead.service.cell.includes("cole") && !playerOf(cellLead).faction, joinedCell.message);
+const cellMission = listActions(cellLead).find((a) => a.id === "mission");
+assert(!/Raise a banner first/.test(cellMission?.hint || ""), "a cell mission is not locked behind a banner");
+const localJob = openMissions(cellLead).find((j) => j.regionId === playerOf(cellLead).region);
+if (localJob && cellLead.ap > 0) {
+  const ran = act(cellLead, content, "mission", { jobId: localJob.id });
+  assert(!/Raise a banner first/.test(ran.message || ""), ran.message);
+}
+const bareLeader = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(bareLeader).status = "leader";
+const bareResign = listActions(bareLeader).find((a) => a.id === "resign");
+assert(!bareResign.enabled && /do not serve a banner/i.test(bareResign.hint || ""), bareResign.hint);
+const opsChief = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(opsChief).status = "opschief";
+assert(apMax(opsChief) === 6, `Operations Chief AP is 6: ${apMax(opsChief)}`);
+assert(listActions(opsChief).find((a) => a.id === "cultivate")?.enabled, "Operations Chief can work the city");
+assert(/Front Commander/.test(nextRankGoal(opsChief, "opschief")) && /banner/i.test(nextRankGoal(opsChief, "opschief")), "the plate names the next rank");
+assert(act(opsChief, content, "cultivate").ok, "Operations Chief cultivates without a banner");
 
 const rosterGate = createNewGame(content, { seed: 8, difficulty: "easy", name: "Casey Flint", background: "scout" });
 assert(act(rosterGate, content, "enlist").ok, "enlist joins a banner");
@@ -1773,6 +1825,9 @@ oldSave.version = 2;
 const bumped = deserialize(oldSave);
 assert(bumped.version === 3 && JSON.parse(serialize(bumped)).version === 3, "loading a save rewrites it as version 3");
 assert(!/1985–89 kit only/.test(readFileSync(new URL("../js/career.js", import.meta.url), "utf8")), "order lines are not dev notes");
+assert(/function reopenPendingOrder/.test(uiSrc) && /btn-order/.test(uiSrc), "a pending order reopens from the NEXT bar");
+assert(/id="btn-order"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "the Order button is in the page");
+assert(/\$\("modal-card"\)\?\.querySelector\("#ng-start"\)/.test(uiSrc), "Esc leaves the title dialog up");
 console.log("ok promotion path, order variety, roster gate, food");
 
 console.log("ALL TESTS PASSED");

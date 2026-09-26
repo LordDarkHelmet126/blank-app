@@ -303,7 +303,7 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 .map-legend .key-con { background: #c9a06a; border-color: #f8f8f8; }
 .map-legend .key-held { background: #d4a056; border-color: #f8d800; }
 
-.side { display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden; }
+.side { display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: auto; }
 .card {
   background: var(--panel);
   border: var(--chrome);
@@ -340,11 +340,11 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   flex: 0 0 auto;
 }
 .officer-plate {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: auto;
+  min-height: min-content;
+  overflow: visible;
 }
 .plate-body {
   display: flex;
@@ -431,7 +431,7 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 }
 .loy-bar i.on { background: var(--amber); }
 .plate-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.city-stats { flex: 0 1 auto; min-height: 0; max-height: 120px; overflow: auto; }
+.city-stats { flex: 0 0 auto; min-height: min-content; overflow: visible; }
 .city-stats .city-body { padding: 6px 8px; line-height: 1.5; }
 .city-stats .city-body .plus,
 .city-stats .city-body .minus { margin: 2px 0 0; }
@@ -469,13 +469,12 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 .city-grid .pill:nth-child(3n) { border-right: 0; }
 .city-grid .pill:nth-child(n+4) { border-bottom: 0; }
 .cmd-card {
-  flex: 1 1 220px;
-  min-height: 184px;
-  max-height: 340px;
+  flex: 0 0 auto;
+  min-height: min-content;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 .cmd-card .panel-why {
   overflow: hidden;
@@ -525,20 +524,7 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   box-shadow: inset 0 -4px 0 #f8d800;
 }
 .cmd-actions button.is-locked {
-  grid-column: 1 / -1;
-}
-.cmd-actions button.is-locked span {
-  flex-direction: column;
-  align-items: flex-start;
-  white-space: normal;
-}
-.cmd-actions button.is-locked small {
-  display: block;
-  text-transform: none;
-  font-size: 16px;
-  line-height: 1.45;
-  color: var(--ice);
-  white-space: normal;
+  filter: grayscale(0.45);
 }
 .officer-rankline .rank-badge {
   display: inline-block;
@@ -547,6 +533,7 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   margin: 0 0 6px;
 }
 .service-line { margin: 4px 0; }
+.goal-line { color: var(--amber); }
 .service-actions { display: flex; gap: 4px; flex-wrap: wrap; }
 .order-layout {
   display: grid;
@@ -580,11 +567,11 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 }
 .cmd-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 4px;
-  overflow: auto;
+  overflow: visible;
   min-height: 60px;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   align-content: start;
   padding: 4px;
 }
@@ -607,7 +594,7 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   flex-direction: row;
   align-items: stretch;
   gap: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 .cmd-actions button span {
   padding: 4px 6px;
@@ -620,12 +607,14 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   justify-content: space-between;
   gap: 6px;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
 }
 .cmd-actions button b {
   font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  flex: 1 0 auto;
   min-width: 0;
 }
 .cmd-actions button small {
@@ -2096,7 +2085,22 @@ hr {
 }
 .objective span { display: block; color: var(--ice); white-space: pre-wrap; overflow-wrap: anywhere; }
 #obj-siege[hidden] { display: none; }
-.objective #btn-coach { flex: 0 0 auto; }
+.objective #btn-coach,
+.objective #btn-order { flex: 0 0 auto; }
+.objective.has-order { cursor: pointer; }
+.modal-card.order-card {
+  width: min(640px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  padding: 8px;
+}
+.modal-card.order-card h2 { margin: 0 0 4px; font-size: 16px; line-height: 1.35; }
+.modal-card.order-card p { line-height: 1.35; margin: 4px 0; }
+.modal-card.order-card .order-layout { grid-template-columns: 56px minmax(0, 1fr); gap: 8px; }
+.modal-card.order-card .order-face { width: 56px; height: 56px; font-size: 16px; }
+.modal-card.order-card .order-line { line-height: 1.35; }
+.modal-card.order-card .order-choices { gap: 4px; margin-top: 4px; }
+.modal-card.order-card .order-choices button { font-size: 12px; }
+.modal-card.order-card .order-choices small { font-size: 11px; line-height: 1.3; display: block; }
 .coach {
   position: fixed;
   right: 16px;
@@ -2165,9 +2169,6 @@ hr {
 
 @media (max-height: 820px) {
   .dock { flex-basis: 56px; min-height: 52px; }
-  .cmd-card { min-height: 184px; max-height: 280px; overflow: hidden; }
-  .city-stats { max-height: 88px; }
-  .officer-plate { min-height: 0; }
   .side .panel-why,
   .dock .panel-why,
   .court-strip .panel-why {

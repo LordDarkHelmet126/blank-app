@@ -44,7 +44,7 @@ export const STATUS_AP = {
   free: 3,
   member: 4,
   leader: 5,
-  opschief: 5,
+  opschief: 6,
   commander: 6,
   governor: 7,
   chair: 8,
@@ -260,6 +260,7 @@ export function ensureCareer(state) {
       refused: 0,
       failed: 0,
       donatedWeek: -1,
+      cell: [],
     };
   }
   const svc = state.service;
@@ -270,6 +271,7 @@ export function ensureCareer(state) {
   if (svc.refused == null) svc.refused = 0;
   if (svc.failed == null) svc.failed = 0;
   if (svc.donatedWeek == null) svc.donatedWeek = -1;
+  if (!Array.isArray(svc.cell)) svc.cell = [];
   if (!state.orders) {
     state.orders = { seq: 1, current: null, history: [], refusalsInRow: 0, missesInRow: 0, locked: [] };
   }
@@ -342,6 +344,7 @@ export function maybePromote(state, rank) {
       to: "member",
       tab: "domestic",
       unlocked: "Domestic",
+      scene: "promote_member",
       message: `Free Volunteer → Cell Member. The Domestic tab unlocks — one task a month. Commission: ${commissionLabel(state.service.commission)}. Pay grade ${grade}.`,
     };
   }
@@ -354,7 +357,8 @@ export function maybePromote(state, rank) {
       to: "leader",
       tab: "personnel",
       unlocked: "People",
-      message: `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust} with your superior. People unlocks. You do not need a banner of your own.`,
+      scene: "promote_leader",
+      message: `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust}. People → Hire recruits into your cell, and a side mission in this city is open. You do not need a banner.`,
     };
   }
   if (current === "leader" && deeds >= 48 && trust >= 70) {
@@ -362,9 +366,10 @@ export function maybePromote(state, rank) {
     return {
       from: "leader",
       to: "opschief",
-      tab: "personnel",
-      unlocked: "People",
-      message: `Cell Leader → Operations Chief. Deeds ${deeds} and trust ${trust}. You advise the cell. A banner and its chairs still need a Front Commander.`,
+      tab: "domestic",
+      unlocked: "Domestic",
+      scene: "promote_opschief",
+      message: `Cell Leader → Operations Chief. Deeds ${deeds} and trust ${trust}. AP rises. You can work this city's elevator, market, and levy without a banner.`,
     };
   }
   return null;
@@ -400,6 +405,12 @@ function statusAllows(rank, rule) {
 export function applyStatusGate(action, ctx) {
   const rule = ACTION_RULES[action.id] || { tab: action.tab || "personal", min: "free" };
   action.tab = rule.tab;
+  if (action.id === "resign" && !ctx.hasFaction) {
+    action.enabled = false;
+    action.statusLocked = true;
+    action.hint = "You do not serve a banner, so there is nothing to resign.";
+    return action;
+  }
   if (action.id === "enlist") {
     if (ctx.hasFaction) {
       action.enabled = false;
@@ -449,6 +460,12 @@ export function applyStatusGate(action, ctx) {
     action.hint = allow.reason;
     return action;
   }
+  if (normalizeStatus(ctx.rank) === "opschief" && COOP_TASKS.has(action.id)) {
+    action.enabled = true;
+    action.statusLocked = false;
+    action.hint = "Operations Chief: work this city without a banner of your own.";
+    return action;
+  }
   if (rule.memberTask && normalizeStatus(ctx.rank) === "member") {
     if (ctx.monthTask) {
       action.enabled = false;
@@ -468,7 +485,31 @@ export function unownedWorkOk(rank, state, actionId) {
   const order = state.orders?.current;
   if (order && (order.status === "accepted" || order.status === "proposed") && order.task === actionId) return true;
   if (normalizeStatus(rank) === "member" && !state.service?.monthTask && COOP_TASKS.has(actionId)) return true;
+  if (normalizeStatus(rank) === "opschief" && COOP_TASKS.has(actionId)) return true;
   return false;
+}
+
+export function nextRankGoal(state, rankId) {
+  const rank = normalizeStatus(rankId) || normalizeStatus(player(state)?.status) || "free";
+  const deeds = state.service?.deeds || 0;
+  const trust = trustWithSuperior(state);
+  if (rank === "free") return `Next: Cell Member at 8 deeds (you have ${deeds}).`;
+  if (rank === "member") return `Next: Cell Leader at 28 deeds and trust 50 (deeds ${deeds}, trust ${trust}).`;
+  if (rank === "leader") return `Next: Operations Chief at 48 deeds and trust 70 (deeds ${deeds}, trust ${trust}).`;
+  if (rank === "opschief") return "Next: Front Commander. Raise a banner of your own.";
+  if (rank === "commander") return "Next: Provisional Governor. Hold 3 regions.";
+  if (rank === "governor") return "Next: Chair. Eight west-bloc states name you.";
+  return "You hold the chair.";
+}
+
+function taskClause(short) {
+  const s = String(short || "the month's task").trim();
+  return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
+function taskSentence(short) {
+  const s = String(short || "the month's task").trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function orderLead(state) {
@@ -476,10 +517,10 @@ export function orderLead(state) {
   if (!o) return "";
   const tab = COMMAND_TABS.find((t) => t.id === (ACTION_RULES[o.task]?.tab || "domestic"))?.label || "Domestic";
   if (o.status === "pending") {
-    return `Orders from above. ${o.issuerName} asks you to ${o.short}. Accept, refuse, or propose.`;
+    return `Orders from above. ${o.issuerName} asks you to ${taskClause(o.short)}. Accept, refuse, or propose.`;
   }
   if (o.status === "accepted" || o.status === "proposed") {
-    return `Orders from above. Do ${o.short}. It is highlighted on the ${tab} tab.`;
+    return `Orders from above. ${taskSentence(o.short)}. It is highlighted on the ${tab} tab.`;
   }
   return "";
 }
@@ -616,20 +657,25 @@ export function pickOrderTask(state, superior) {
   const region = (state.regions || []).find((r) => r.id === superior?.regionId) || null;
   const skills = new Set((superior?.skills || []).filter((id) => ORDER_TASKS[id]));
   const rank = statusIndex(player(state)?.status || "free");
-  const scored = PROPOSE_TASKS.map((task, i) => {
+  const open = PROPOSE_TASKS.filter((task) => !recent.has(task));
+  const pool = open.length ? open : PROPOSE_TASKS;
+  const slot = monthIndex(week) % PROPOSE_TASKS.length;
+  const spotlight = PROPOSE_TASKS[slot];
+  if (pool.includes(spotlight)) return spotlight;
+  const scored = pool.map((task, i) => {
     let w = 2;
-    if (skills.has(task)) w += 4;
+    if (skills.has(task)) w += 2;
     if (region) {
-      if (task === "cultivate" && (region.food ?? 50) < 55) w += 3;
-      if (task === "commerce" && (region.economy ?? 50) < 50) w += 3;
-      if (task === "safety" && (region.order ?? 50) < 50) w += 3;
-      if (task === "drill" && (region.garrison ?? 40) < 40) w += 3;
-      if (task === "fortify" && (region.walls ?? 0) < 25) w += 3;
+      if (task === "cultivate" && (region.food ?? 50) < 55) w += 2;
+      if (task === "commerce" && (region.economy ?? 50) < 50) w += 2;
+      if (task === "safety" && (region.order ?? 50) < 50) w += 2;
+      if (task === "drill" && (region.garrison ?? 40) < 40) w += 2;
+      if (task === "fortify" && (region.walls ?? 0) < 25) w += 2;
       if (task === "spy" && (region.intel ?? 0) < 25) w += 2;
+      if (task === "research" && (region.intel ?? 0) < 40) w += 2;
     }
     if (task === "research" && rank < statusIndex("leader")) w += 1;
     if (task === "spy" && rank < statusIndex("member")) w += 1;
-    if (recent.has(task)) w -= 8;
     const tie = (monthIndex(week) * 3 + i) % 5;
     return { task, w, tie };
   });
