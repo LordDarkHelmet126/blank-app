@@ -25,6 +25,13 @@ import {
 } from "./terrain.js";
 import { WORLD_LAND } from "./world-washes.js";
 import {
+  atlasMode,
+  atlasSubdivision,
+  atlasTerritory,
+  drawWorldAtlas,
+  pickAtlasCity,
+} from "./world-atlas.js";
+import {
   createNewGame,
   listActions,
   act,
@@ -92,6 +99,8 @@ const SAVE_KEY = "northern-front-v01";
 let content;
 let state;
 let selectedRegion = "bethel";
+let selectedWorld = null;
+let hoverWorld = null;
 let hoverRegion = null;
 let ladderNotice = "";
 /** Presentation-only court/officers desk. Not saved and not a map node. */
@@ -485,13 +494,18 @@ export async function boot(loaded) {
     render();
     const view = params.get("view");
     if (view === "world") frameWorld();
+    else if (view === "atlas") {
+      const city = params.get("city");
+      if (city) selectedWorld = city.startsWith("us.") ? city : `us.${city}`;
+      frameAtlasState((params.get("state") || "FL").toUpperCase());
+    }
     else if (view === "near") frameNear();
     else if (view === "ca") frameCa();
     else if (view === "gulf") frameGulf();
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
-    if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
+    if (!battleFx && view !== "world" && view !== "atlas") pulseTravel("cheyenne", "denver", { loop: true });
     frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -1780,8 +1794,21 @@ function cityHtml() {
         .filter((h) => h.regionId === r.id)
         .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
         .join("")}
+      ${atlasNote()}
     </div>
   `;
+}
+
+function atlasNote() {
+  const t = atlasTerritory(selectedWorld);
+  if (!t) return "";
+  const sub = atlasSubdivision(t.subdivision);
+  const posted = (content?.world?.regions || [])
+    .flatMap((region) => region.officers || [])
+    .filter((o) => o.region === t.id);
+  const who = posted.map((o) => `${o.rank} ${o.name}`).join(", ");
+  return `<p class="minus">Atlas · ${esc(sub?.name || t.subdivision)} · ${esc(t.name)}. Occupied, not on the week-0 roads. ${esc((t.yields || []).join(", "))}.${who ? ` ${esc(who)}.` : ""}</p>
+    <p><button type="button" data-frame-atlas="${esc(t.subdivision)}">Frame ${esc(sub?.name || t.subdivision)}</button></p>`;
 }
 
 function weekReportHtml(report) {
@@ -2297,10 +2324,21 @@ function frameBox(x0, y0, x1, y1) {
 function clearForeignFrame() {
   mapView.pacific = false;
   mapView.focus = null;
+  mapView.atlas = null;
+}
+
+function frameAtlasState(code) {
+  const sub = atlasSubdivision(code);
+  if (!sub) return;
+  clearForeignFrame();
+  mapView.atlas = code;
+  const b = sub.bbox;
+  frameLonLat(b.minLon, b.maxLat, b.maxLon, b.minLat, 0.78);
 }
 
 function frameWorld() {
   clearForeignFrame();
+  mapView.atlas = "us";
   const [xWest, yNorth] = projectLL(-175, 78);
   const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
@@ -2416,10 +2454,36 @@ function hitPoly(poly, x, y) {
   return inside;
 }
 
+function mapSpacePoint(clientX, clientY, canvas) {
+  const [sx, sy] = canvasPoint({ clientX, clientY }, canvas);
+  return [(sx - mapView.x) / mapView.z, (sy - mapView.y) / mapView.z];
+}
+
+function worldAt(clientX, clientY, canvas) {
+  if (atlasMode(mapView) === "off") return null;
+  const [x, y] = mapSpacePoint(clientX, clientY, canvas);
+  return pickAtlasCity(x, y, mapView, projectLL);
+}
+
 function onMapClick(e) {
   if (!state) return;
   const r = regionAt(e.clientX, e.clientY, $("map"));
-  if (!r) return;
+  const world = worldAt(e.clientX, e.clientY, $("map"));
+  if (world && !(r && world.campaignId && r.id === world.campaignId)) {
+    if (selectedWorld === world.id) frameAtlasState(world.subdivision);
+    else selectedWorld = world.id;
+    render();
+    return;
+  }
+  if (selectedWorld) selectedWorld = null;
+  if (!r) {
+    if (hoverWorld) {
+      hoverWorld = null;
+      drawMap();
+    }
+    render();
+    return;
+  }
   selectedRegion = r.id;
   if (coachOn && !$("coach").hidden && COACH_STEPS[coachStep]?.id === "city") {
     coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
@@ -2430,11 +2494,14 @@ function onMapClick(e) {
 
 function onMapMove(e) {
   if (!state) return;
+  const world = worldAt(e.clientX, e.clientY, $("map"));
   const r = regionAt(e.clientX, e.clientY, $("map"));
-  const id = r ? r.id : null;
-  $("map").style.cursor = r ? "pointer" : "crosshair";
-  if (id !== hoverRegion) {
+  const worldId = world && !(r && world.campaignId && r.id === world.campaignId) ? world.id : null;
+  const id = worldId ? null : r ? r.id : null;
+  $("map").style.cursor = worldId || r ? "pointer" : "crosshair";
+  if (id !== hoverRegion || worldId !== hoverWorld) {
     hoverRegion = id;
+    hoverWorld = worldId;
     drawMap();
   }
 }
@@ -2466,7 +2533,15 @@ function renderMapCaption() {
   const hold = row ? `${row.held}/${row.need} ★` : "";
   const { westN } = arcBoard(state);
   const beat = camp.nationalLeader ? "national leader" : `west ${westN}/8`;
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${beat} · ${route} · phase ${camp.phase}`;
+  const mode = atlasMode(mapView);
+  const atlasBit = mode === "world"
+    ? " · atlas US occupied"
+    : mode === "state"
+      ? ` · atlas ${mapView.atlas}`
+      : "";
+  const picked = atlasTerritory(selectedWorld);
+  const pickedBit = picked ? ` · ${picked.short}` : "";
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${beat} · ${route} · phase ${camp.phase}${atlasBit}${pickedBit}`;
 }
 
 function cityXY(r) {
@@ -3571,6 +3646,16 @@ function drawMap() {
     drawWorldCorridors(ctx);
     drawWorldDesks(ctx);
   }
+  drawWorldAtlas(ctx, {
+    mapView,
+    project: projectLL,
+    campaignPoints: painted.map((r) => {
+      const [x, y] = cityXY(r);
+      return { x, y };
+    }),
+    selectedId: selectedWorld,
+    hoverId: hoverWorld,
+  });
   ctx.imageSmoothingEnabled = false;
   mapRoads(painted).forEach((rd) => {
     const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
@@ -4753,6 +4838,9 @@ function refreshCreator() {
 }
 
 function wireAfterRender() {
+  document.querySelectorAll("[data-frame-atlas]").forEach((btn) => {
+    btn.onclick = () => frameAtlasState(btn.getAttribute("data-frame-atlas"));
+  });
   const add = document.getElementById("c-add");
   if (add) {
     refreshCreator();

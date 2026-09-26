@@ -2,7 +2,17 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Liberation fight and mission desks. The six locked inland ids tint the mission board and a liberation fight the same way siege, yard, field, and court already do. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
+**Last checkpoint:** 2026-09-26 — World atlas, Region 1 (United States). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a state is framed. It is occupied and not marchable.
+
+## World atlas (Region 1)
+
+`data/world/resources.js` is the yield list. `data/world/regions/us.js` is the United States: **50 states + DC**, **123** cities at real lat/long, road/rail/sea links, **14** fictional command officers. `node tests/world-validate.mjs` checks subdivision, bounding boxes, symmetric links, one connected graph, and yields. Sources: `docs/world-data-sources.md`.
+
+World button (or `/?demo=look&view=world`) shows state capitals and the link net on the globe, including Alaska and Hawaii. `/?demo=look&view=atlas&state=FL&city=miami` frames one state with city, road, and yield labels. A second click on a capital frames that state. Close campaign zoom (the default) does not draw the atlas, so Cheyenne stays the week-0 map.
+
+Officers use the campaign personality ids and WAR/INT/POL/CHR, and they stay off the week-0 actor list (`dormant`).
+
+**Last prior checkpoint:** 2026-09-23 — Liberation fight and mission desks. The six locked inland ids tint the mission board and a liberation fight the same way siege, yard, field, and court already do. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
 
 ## Liberation fight and mission desk
 
