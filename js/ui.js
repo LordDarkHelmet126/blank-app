@@ -28,6 +28,7 @@ import {
   atlasMode,
   atlasSubdivision,
   atlasTerritory,
+  drawAtlasLabels,
   drawWorldAtlas,
   pickAtlasCity,
 } from "./world-atlas.js";
@@ -3676,6 +3677,12 @@ function drawMap() {
   painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
   drawStateLabels(ctx);
   painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  drawAtlasLabels(ctx, {
+    mapView,
+    project: projectLL,
+    selectedId: selectedWorld,
+    hoverId: hoverWorld,
+  });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 

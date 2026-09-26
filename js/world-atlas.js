@@ -26,7 +26,9 @@ function collect(mode, atlasCode) {
   if (!region || mode === "off") return { cities: [], links: [] };
   const byId = new Map(region.territories.map((t) => [t.id, t]));
   let cities = region.territories;
-  if (mode === "world") cities = region.territories.filter((t) => t.role === "capital");
+  if (mode === "world") {
+    cities = region.territories.filter((t) => t.role === "capital" || t.subdivision === "AK" || t.subdivision === "HI");
+  }
   if (mode === "state") {
     const states = new Set([atlasCode]);
     region.territories.forEach((t) => {
@@ -64,6 +66,10 @@ function nearCampaign(x, y, points) {
  * Geographic atlas. Campaign markers stay on top of a close view;
  * a world city that sits on one of them is not drawn twice.
  */
+function screenPx(mapView, px) {
+  return px / (mapView.z || 1);
+}
+
 export function drawWorldAtlas(ctx, opts) {
   const { mapView, project, campaignPoints, selectedId, hoverId } = opts;
   const mode = atlasMode(mapView);
@@ -77,6 +83,8 @@ export function drawWorldAtlas(ctx, opts) {
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
+  const casing = screenPx(mapView, mode === "state" ? 8 : 3.2);
+  const core = screenPx(mapView, mode === "state" ? 4 : 1.6);
   links.forEach((link) => {
     const [x1, y1] = project(link.from.lon, link.from.lat);
     const [x2, y2] = project(link.to.lon, link.to.lat);
@@ -85,55 +93,78 @@ export function drawWorldAtlas(ctx, opts) {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.setLineDash(sea ? [10 / mapView.z, 7 / mapView.z] : []);
-    ctx.strokeStyle = sea ? "#1a140c" : "#1a0808";
-    ctx.lineWidth = Math.max(2.2, 3.2 / mapView.z);
+    ctx.setLineDash(sea ? [screenPx(mapView, 10), screenPx(mapView, 7)] : []);
+    ctx.strokeStyle = "#1a0808";
+    ctx.lineWidth = casing;
     ctx.stroke();
-    ctx.strokeStyle = sea ? "#d5e6f2" : rail ? "#e2b84a" : "#f4e2b0";
-    ctx.lineWidth = Math.max(1.1, 1.6 / mapView.z);
+    ctx.strokeStyle = sea ? "#d5e6f2" : rail ? "#e2b84a" : "#fff6d0";
+    ctx.lineWidth = core;
     ctx.stroke();
     ctx.setLineDash([]);
   });
-  const drawDot = (city, forced) => {
+  const drawDot = (city) => {
     const [x, y] = project(city.lon, city.lat);
     const selected = city.id === selectedId;
     const hover = city.id === hoverId;
-    if (!forced && mode === "state" && nearCampaign(x, y, campaignPoints) && !selected && !hover) return;
-    const rad = Math.max(2.4, ((selected || hover ? 6 : 3.4) / mapView.z));
-    ctx.fillStyle = "#1a0808";
+    if (mode === "state" && nearCampaign(x, y, campaignPoints) && !selected && !hover) return;
+    const rad = screenPx(mapView, selected || hover ? 9 : mode === "state" ? 7 : 5);
+    ctx.fillStyle = "#f8d800";
     ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
-    ctx.fillStyle = selected ? "#f8d800" : hover ? "#f8f8f8" : "#9a3b3b";
-    const inset = Math.max(0.8, rad * 0.22);
+    ctx.fillStyle = selected ? "#f8d800" : "#9a3b3b";
+    const inset = Math.max(screenPx(mapView, 1.5), rad * 0.28);
     ctx.fillRect(x - rad + inset, y - rad + inset, rad * 2 - inset * 2, rad * 2 - inset * 2);
-    const focused = mode === "state" && city.subdivision === mapView.atlas && mapView.z >= 0.75;
-    if (selected || hover || focused) drawAtlasLabel(ctx, mapView, x, y, city, selected || hover);
   };
-  cities.forEach((city) => drawDot(city, false));
-  extra.forEach((city) => drawDot(city, true));
+  cities.forEach(drawDot);
+  extra.forEach(drawDot);
+  ctx.restore();
+}
+
+/** Names sit above state plates. One line at world zoom, yields on a framed state. */
+export function drawAtlasLabels(ctx, opts) {
+  const { mapView, project, selectedId, hoverId } = opts;
+  const mode = atlasMode(mapView);
+  if (mode === "off") return;
+  const { cities } = collect(mode, mapView.atlas);
+  const list = cities.slice();
+  if (selectedId && !list.some((c) => c.id === selectedId)) {
+    const sel = atlasTerritory(selectedId);
+    if (sel) list.push(sel);
+  }
+  ctx.save();
+  list.forEach((city) => {
+    const selected = city.id === selectedId;
+    const hover = city.id === hoverId;
+    const focused = mode === "state" && city.subdivision === mapView.atlas;
+    const remote = city.subdivision === "AK" || city.subdivision === "HI";
+    if (!selected && !hover && !focused && !(mode === "world" && remote && city.role === "capital")) return;
+    const [x, y] = project(city.lon, city.lat);
+    drawAtlasLabel(ctx, mapView, x, y, city, selected || hover || focused);
+  });
   ctx.restore();
 }
 
 function drawAtlasLabel(ctx, mapView, x, y, city, detail) {
-  const fontPx = mapView.z >= 1 ? 11 : Math.max(11, 12 / mapView.z);
+  const fontPx = screenPx(mapView, detail ? 13 : 11);
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.textBaseline = "top";
   const name = city.short || city.name;
-  const sub = detail ? `${city.subdivision} · occupied` : city.subdivision;
-  const yields = detail ? (city.yields || []).slice(0, 3).join(" · ") : "";
-  const lines = [name, sub].concat(yields ? [yields] : []);
+  const lines = detail
+    ? [name, `${city.subdivision} · occupied`, (city.yields || []).slice(0, 3).join(" · ")]
+    : [name];
   const tw = Math.max(...lines.map((line) => ctx.measureText(line).width));
-  const lh = fontPx + 3;
-  const w = tw + 10;
-  const h = lh * lines.length + 6;
-  let px = x + Math.max(6, 8 / mapView.z);
-  let py = y - h / 2;
+  const lh = fontPx + screenPx(mapView, 3);
+  const w = tw + screenPx(mapView, 10);
+  const h = lh * lines.length + screenPx(mapView, 6);
+  const px = x + screenPx(mapView, 8);
+  const py = y - h / 2;
   ctx.fillStyle = "#000018";
-  ctx.fillRect(px - 2, py - 2, w + 4, h + 4);
-  ctx.fillStyle = detail ? "#f8d800" : "#f8f8f8";
+  ctx.fillRect(px - screenPx(mapView, 2), py - screenPx(mapView, 2), w + screenPx(mapView, 4), h + screenPx(mapView, 4));
+  ctx.fillStyle = "#f8d800";
   ctx.fillRect(px, py, w, h);
   ctx.fillStyle = "#101050";
   lines.forEach((line, i) => {
-    ctx.fillText(line, px + 5, py + 4 + i * lh);
+    if (!line) return;
+    ctx.fillText(line, px + screenPx(mapView, 5), py + screenPx(mapView, 4) + i * lh);
   });
 }
 
