@@ -174,7 +174,7 @@ export const GEORGIA_SSR_REGION = land({
     "pol": 68,
     "chr": 52,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster ge_head.",
     "region": "ge.tbilisi"
   },
   {
@@ -189,7 +189,7 @@ export const GEORGIA_SSR_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster ge_def.",
     "region": "ge.tbilisi"
   },
   {
@@ -204,7 +204,7 @@ export const GEORGIA_SSR_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster ge_field.",
     "region": "ge.tbilisi"
   }
 ])
@@ -299,7 +299,7 @@ export const ARMENIA_REGION = land({
     "pol": 66,
     "chr": 54,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster am_head.",
     "region": "am.yerevan"
   },
   {
@@ -314,7 +314,7 @@ export const ARMENIA_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster am_def.",
     "region": "am.yerevan"
   },
   {
@@ -329,7 +329,7 @@ export const ARMENIA_REGION = land({
     "pol": 38,
     "chr": 36,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster am_field.",
     "region": "am.yerevan"
   }
 ])
@@ -477,7 +477,7 @@ export const AZERBAIJAN_REGION = land({
     "pol": 70,
     "chr": 48,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster az_head.",
     "region": "az.baku"
   },
   {
@@ -492,7 +492,7 @@ export const AZERBAIJAN_REGION = land({
     "pol": 42,
     "chr": 36,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster az_def.",
     "region": "az.baku"
   },
   {
@@ -507,7 +507,7 @@ export const AZERBAIJAN_REGION = land({
     "pol": 48,
     "chr": 34,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster az_field.",
     "region": "az.baku"
   }
 ])

@@ -179,7 +179,7 @@ export const MADAGASCAR_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Head of state of Madagascar, posted at antananarivo (mg_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mg.antananarivo"
   },
   {
@@ -194,7 +194,7 @@ export const MADAGASCAR_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Madagascar, posted at antsiranana (mg_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mg.antsiranana"
   },
   {
@@ -209,7 +209,7 @@ export const MADAGASCAR_REGION = land({
     "pol": 30,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Madagascar, posted at fianarantsoa (mg_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mg.fianarantsoa"
   }
 ])
@@ -318,7 +318,7 @@ export const COMOROS_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Head of state of Comoros, posted at moroni (km_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "km.moroni"
   },
   {
@@ -333,7 +333,7 @@ export const COMOROS_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Comoros, posted at fomboni (km_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "km.fomboni"
   },
   {
@@ -348,7 +348,7 @@ export const COMOROS_REGION = land({
     "pol": 30,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Comoros, posted at mutsamudu (km_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "km.mutsamudu"
   }
 ])
@@ -609,8 +609,8 @@ export const MAURITIUS_REGION = land({
   {
     "id": "mu_0",
     "name": "Anil Ramdin",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -618,7 +618,7 @@ export const MAURITIUS_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Mauritius, posted at port louis (mu_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mu.port_louis"
   },
   {
@@ -633,7 +633,7 @@ export const MAURITIUS_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Mauritius, posted at bambous (mu_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mu.bambous"
   },
   {
@@ -648,7 +648,7 @@ export const MAURITIUS_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Mauritius, posted at curepipe (mu_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mu.curepipe"
   },
   {
@@ -663,7 +663,7 @@ export const MAURITIUS_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Mauritius, posted at flacq (mu_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mu.flacq"
   },
   {
@@ -678,7 +678,7 @@ export const MAURITIUS_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Mauritius, posted at mahebourg (mu_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mu.mahebourg"
   }
 ])
@@ -778,8 +778,8 @@ export const SEYCHELLES_REGION = land({
   {
     "id": "sc_0",
     "name": "Jules Hoareau",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -787,7 +787,7 @@ export const SEYCHELLES_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Seychelles, posted at victoria (sc_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sc.victoria"
   },
   {
@@ -802,7 +802,7 @@ export const SEYCHELLES_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Seychelles, posted at grand anse (sc_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sc.grand_anse"
   },
   {
@@ -817,7 +817,7 @@ export const SEYCHELLES_REGION = land({
     "pol": 30,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Seychelles, posted at la passe (sc_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sc.la_passe"
   }
 ])
@@ -1056,8 +1056,8 @@ export const CAPE_VERDE_REGION = land({
   {
     "id": "cv_0",
     "name": "Lidia Semedo",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -1065,7 +1065,7 @@ export const CAPE_VERDE_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Cape Verde, posted at praia (cv_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cv.praia"
   },
   {
@@ -1080,7 +1080,7 @@ export const CAPE_VERDE_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Cape Verde, posted at espargos (cv_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cv.espargos"
   },
   {
@@ -1095,7 +1095,7 @@ export const CAPE_VERDE_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Cape Verde, posted at mindelo (cv_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cv.mindelo"
   },
   {
@@ -1110,7 +1110,7 @@ export const CAPE_VERDE_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Cape Verde, posted at nova sintra (cv_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cv.nova_sintra"
   },
   {
@@ -1125,7 +1125,7 @@ export const CAPE_VERDE_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Cape Verde, posted at ribeira brava (cv_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cv.ribeira_brava"
   }
 ])
@@ -1250,8 +1250,8 @@ export const REUNION_REGION = land({
   {
     "id": "re_0",
     "name": "Pierre Morel",
-    "title": "Head of state",
-    "rank": "Général",
+    "title": "Prefect",
+    "rank": "Prefect",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -1259,7 +1259,7 @@ export const REUNION_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prefect of Réunion, posted at saint denis (re_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "re.saint_denis"
   },
   {
@@ -1274,7 +1274,7 @@ export const REUNION_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Réunion, posted at saint benoit (re_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "re.saint_benoit"
   },
   {
@@ -1289,7 +1289,7 @@ export const REUNION_REGION = land({
     "pol": 30,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Réunion, posted at saint paul (re_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "re.saint_paul"
   }
 ])
@@ -1360,8 +1360,8 @@ export const MAYOTTE_REGION = land({
   {
     "id": "yt_0",
     "name": "Amina Attoumani",
-    "title": "Head of state",
-    "rank": "Général",
+    "title": "Prefect",
+    "rank": "Prefect",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -1369,7 +1369,7 @@ export const MAYOTTE_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prefect of Mayotte, posted at mamoudzou (yt_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "yt.mamoudzou"
   },
   {
@@ -1384,7 +1384,7 @@ export const MAYOTTE_REGION = land({
     "pol": 29,
     "chr": 32,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Mayotte, posted at dzaoudzi (yt_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "yt.dzaoudzi"
   }
 ])

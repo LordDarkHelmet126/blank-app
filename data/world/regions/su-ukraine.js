@@ -495,7 +495,7 @@ export const UKRAINE_REGION = land({
     ],
     [
       "mariupol",
-      "Mariupol",
+      "Zhdanov",
       "UA-DN",
       47.1,
       37.54,
@@ -720,7 +720,7 @@ export const UKRAINE_REGION = land({
     "pol": 70,
     "chr": 48,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster ua_head.",
     "region": "ua.kiev"
   },
   {
@@ -735,7 +735,7 @@ export const UKRAINE_REGION = land({
     "pol": 44,
     "chr": 38,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster ua_def.",
     "region": "ua.kiev"
   },
   {
@@ -750,7 +750,7 @@ export const UKRAINE_REGION = land({
     "pol": 46,
     "chr": 50,
     "personality": "cautious",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster ua_chief.",
     "region": "ua.kiev"
   },
   {
@@ -765,7 +765,7 @@ export const UKRAINE_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ua_f0.",
     "region": "ua.lvov"
   },
   {
@@ -780,7 +780,7 @@ export const UKRAINE_REGION = land({
     "pol": 52,
     "chr": 54,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster ua_field.",
     "region": "ua.kiev"
   },
   {
@@ -795,7 +795,7 @@ export const UKRAINE_REGION = land({
     "pol": 32,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ua_f1.",
     "region": "ua.odessa"
   },
   {
@@ -810,7 +810,7 @@ export const UKRAINE_REGION = land({
     "pol": 34,
     "chr": 42,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ua_f2.",
     "region": "ua.sevastopol"
   }
 ])

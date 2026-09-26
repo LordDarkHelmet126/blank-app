@@ -1329,7 +1329,7 @@ export const RSFSR_REGION = land({
     ],
     [
       "izhevsk",
-      "Izhevsk",
+      "Ustinov",
       "RU-UD",
       56.85,
       53.2,
@@ -2591,7 +2591,7 @@ export const RSFSR_REGION = land({
     "pol": 74,
     "chr": 46,
     "personality": "loyalist",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster ru_head.",
     "region": "ru.moscow"
   },
   {
@@ -2606,7 +2606,7 @@ export const RSFSR_REGION = land({
     "pol": 48,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster ru_def.",
     "region": "ru.moscow"
   },
   {
@@ -2621,7 +2621,7 @@ export const RSFSR_REGION = land({
     "pol": 55,
     "chr": 36,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster ru_chief.",
     "region": "ru.moscow"
   },
   {
@@ -2636,7 +2636,7 @@ export const RSFSR_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f0.",
     "region": "ru.leningrad"
   },
   {
@@ -2651,7 +2651,7 @@ export const RSFSR_REGION = land({
     "pol": 50,
     "chr": 58,
     "personality": "diplomat",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster ru_field.",
     "region": "ru.moscow"
   },
   {
@@ -2666,7 +2666,7 @@ export const RSFSR_REGION = land({
     "pol": 36,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f1.",
     "region": "ru.khabarovsk"
   },
   {
@@ -2681,7 +2681,7 @@ export const RSFSR_REGION = land({
     "pol": 38,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f2.",
     "region": "ru.novosibirsk"
   },
   {
@@ -2696,7 +2696,7 @@ export const RSFSR_REGION = land({
     "pol": 34,
     "chr": 32,
     "personality": "aggressive",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f3.",
     "region": "ru.rostov"
   },
   {
@@ -2711,7 +2711,7 @@ export const RSFSR_REGION = land({
     "pol": 30,
     "chr": 36,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f4.",
     "region": "ru.chita"
   },
   {
@@ -2726,7 +2726,7 @@ export const RSFSR_REGION = land({
     "pol": 34,
     "chr": 40,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f5.",
     "region": "ru.murmansk"
   },
   {
@@ -2741,7 +2741,7 @@ export const RSFSR_REGION = land({
     "pol": 42,
     "chr": 38,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f6.",
     "region": "ru.kuibyshev"
   },
   {
@@ -2756,7 +2756,7 @@ export const RSFSR_REGION = land({
     "pol": 46,
     "chr": 48,
     "personality": "diplomat",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ru_f7.",
     "region": "ru.sverdlovsk"
   }
 ])

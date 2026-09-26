@@ -2771,7 +2771,7 @@ export const MONACO_REGION = land({
   officers: staff([
   {
     "id": "mc_prince",
-    "name": "Céline Grimaldi-Sartre",
+    "name": "Davin Ashmont",
     "title": "Sovereign",
     "rank": "Sovereign Prince",
     "branch": "Princely House",

@@ -531,7 +531,7 @@ export const DENMARK_REGION = land({
     "chr": 64,
     "personality": "diplomat",
     "region": "dk.copenhagen",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster dk_pm."
   },
   {
     "id": "dk_def",
@@ -546,7 +546,7 @@ export const DENMARK_REGION = land({
     "chr": 50,
     "personality": "cautious",
     "region": "dk.copenhagen",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster dk_def."
   },
   {
     "id": "dk_chief",
@@ -1158,7 +1158,7 @@ export const NORWAY_REGION = land({
     "chr": 66,
     "personality": "diplomat",
     "region": "no.oslo",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster no_pm."
   },
   {
     "id": "no_def",
@@ -1173,7 +1173,7 @@ export const NORWAY_REGION = land({
     "chr": 48,
     "personality": "cautious",
     "region": "no.oslo",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster no_def."
   },
   {
     "id": "no_chief",
@@ -1873,7 +1873,7 @@ export const SWEDEN_REGION = land({
     "chr": 66,
     "personality": "diplomat",
     "region": "se.stockholm",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster se_pm."
   },
   {
     "id": "se_def",
@@ -2304,7 +2304,7 @@ export const FINLAND_REGION = land({
     "chr": 66,
     "personality": "diplomat",
     "region": "fi.helsinki",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster fi_pm."
   },
   {
     "id": "fi_def",
@@ -2319,7 +2319,7 @@ export const FINLAND_REGION = land({
     "chr": 46,
     "personality": "cautious",
     "region": "fi.helsinki",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster fi_def."
   },
   {
     "id": "fi_chief",
@@ -2334,7 +2334,7 @@ export const FINLAND_REGION = land({
     "chr": 42,
     "personality": "loyalist",
     "region": "fi.helsinki",
-    "bio": "Fictional chief of defence."
+    "bio": "Fictional chief of defence. Roster fi_chief."
   },
   {
     "id": "fi_east",
@@ -2584,7 +2584,7 @@ export const ICELAND_REGION = land({
     "chr": 64,
     "personality": "diplomat",
     "region": "is.reykjavik",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster is_pm."
   },
   {
     "id": "is_def",

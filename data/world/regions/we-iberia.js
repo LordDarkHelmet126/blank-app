@@ -814,7 +814,7 @@ export const SPAIN_REGION = land({
     "chr": 48,
     "personality": "cautious",
     "region": "es.madrid",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster es_def."
   },
   {
     "id": "es_jemad",
@@ -1475,7 +1475,7 @@ export const PORTUGAL_REGION = land({
     "chr": 62,
     "personality": "diplomat",
     "region": "pt.lisbon",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster pt_pm."
   },
   {
     "id": "pt_def",
@@ -1490,7 +1490,7 @@ export const PORTUGAL_REGION = land({
     "chr": 50,
     "personality": "cautious",
     "region": "pt.lisbon",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster pt_def."
   },
   {
     "id": "pt_chief",
@@ -1505,7 +1505,7 @@ export const PORTUGAL_REGION = land({
     "chr": 42,
     "personality": "loyalist",
     "region": "pt.lisbon",
-    "bio": "Fictional chief of the general staff."
+    "bio": "Fictional chief of the general staff. Roster pt_chief."
   },
   {
     "id": "pt_navy",

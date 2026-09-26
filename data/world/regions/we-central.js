@@ -737,7 +737,7 @@ export const BELGIUM_REGION = land({
     "chr": 48,
     "personality": "cautious",
     "region": "be.brussels",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster be_def."
   },
   {
     "id": "be_chs",
@@ -1819,7 +1819,7 @@ export const WEST_GERMANY_REGION = land({
     "chr": 54,
     "personality": "cautious",
     "region": "de.bonn",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster de_def."
   },
   {
     "id": "de_gen",

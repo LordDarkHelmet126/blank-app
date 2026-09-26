@@ -1013,7 +1013,7 @@ export const ROMANIA_REGION = land({
     "pol": 78,
     "chr": 30,
     "personality": "schemer",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster ro_head.",
     "region": "ro.bucharest"
   },
   {
@@ -1028,7 +1028,7 @@ export const ROMANIA_REGION = land({
     "pol": 44,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster ro_def.",
     "region": "ro.bucharest"
   },
   {
@@ -1043,7 +1043,7 @@ export const ROMANIA_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "cautious",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster ro_chief.",
     "region": "ro.bucharest"
   },
   {
@@ -1058,7 +1058,7 @@ export const ROMANIA_REGION = land({
     "pol": 34,
     "chr": 32,
     "personality": "aggressive",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ro_f0.",
     "region": "ro.bucharest"
   },
   {
@@ -1073,7 +1073,7 @@ export const ROMANIA_REGION = land({
     "pol": 58,
     "chr": 38,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster ro_field.",
     "region": "ro.bucharest"
   },
   {
@@ -1088,7 +1088,7 @@ export const ROMANIA_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ro_f1.",
     "region": "ro.constanta"
   },
   {
@@ -1103,7 +1103,7 @@ export const ROMANIA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ro_f2.",
     "region": "ro.cluj"
   },
   {
@@ -1118,7 +1118,7 @@ export const ROMANIA_REGION = land({
     "pol": 42,
     "chr": 48,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ro_f3.",
     "region": "ro.galati"
   }
 ])

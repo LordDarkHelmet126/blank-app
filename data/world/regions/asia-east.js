@@ -15,7 +15,7 @@ export const CHINA_REGION = land({
     "minLat": 19.29,
     "maxLat": 50.99
   },
-  "notes": "Atlas only. End-of-window convention: 22 administered provinces including Hainan, five autonomous regions, and the municipalities of Beijing, Tianjin, and Shanghai. Hainan was part of Guangdong until April 1988. Tibet is the Xizang autonomous region. Chongqing is a city in Sichuan, not a municipality. Taiwan is not a PRC province; it is the Republic of China on this sheet. Hong Kong is British and Macau is Portuguese. The Amur crossing at Heihe is a ferry. Nathu La is a closed trail. The main trunks are rail and are not also roads. Occupied and off the week-0 march.",
+  "notes": "Atlas only. Winter 1985 start: 21 administered provinces, five autonomous regions, and the municipalities of Beijing, Tianjin, and Shanghai. Hainan is still part of Guangdong; it was split off as a province in April 1988. Tibet is the Xizang autonomous region. Chongqing is a city in Sichuan, not a municipality. Taiwan is not a PRC province; it is the Republic of China on this sheet. Hong Kong is British and Macau is Portuguese. The Amur crossing at Heihe is a ferry. Nathu La is a closed trail. The main trunks are rail and are not also roads. Occupied and off the week-0 march.",
   "defaultBiome": "temperate",
   "climate": {
     "_default": {
@@ -52,12 +52,6 @@ export const CHINA_REGION = land({
     {
       "id": "CN-GZ",
       "name": "Guizhou",
-      "kind": "province",
-      "group": null
-    },
-    {
-      "id": "CN-HI",
-      "name": "Hainan",
       "kind": "province",
       "group": null
     },
@@ -271,10 +265,10 @@ export const CHINA_REGION = land({
     [
       "haikou",
       "Haikou",
-      "CN-HI",
+      "CN-GD",
       20.04,
       110.32,
-      "capital",
+      "port",
       [
         "port",
         "timber",
@@ -1012,9 +1006,9 @@ export const CHINA_REGION = land({
   "officers": staff([
   {
     "id": "cn_0",
-    "name": "Wei Chen",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Liang Chen",
+    "title": "President",
+    "rank": "President",
     "branch": "People's Liberation Army",
     "slot": "head_of_state",
     "war": 43,
@@ -1022,12 +1016,12 @@ export const CHINA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of China, posted at hefei (cn_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.hefei"
   },
   {
     "id": "cn_1",
-    "name": "Wei Lin",
+    "name": "Hao Lin",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "People's Liberation Army",
@@ -1037,12 +1031,12 @@ export const CHINA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of China, posted at fuzhou (cn_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.fuzhou"
   },
   {
     "id": "cn_2",
-    "name": "Wei Huang",
+    "name": "Jun Huang",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "People's Liberation Army",
@@ -1052,12 +1046,12 @@ export const CHINA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of China, posted at lanzhou (cn_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.lanzhou"
   },
   {
     "id": "cn_3",
-    "name": "Wei Wu",
+    "name": "Feng Wu",
     "title": "Front commander",
     "rank": "Senior Colonel",
     "branch": "People's Liberation Army",
@@ -1067,12 +1061,12 @@ export const CHINA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of China, posted at guangzhou (cn_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.guangzhou"
   },
   {
     "id": "cn_4",
-    "name": "Wei Xu",
+    "name": "Tao Xu",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "People's Liberation Army",
@@ -1082,12 +1076,12 @@ export const CHINA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of China, posted at guiyang (cn_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.guiyang"
   },
   {
     "id": "cn_5",
-    "name": "Wei Sun",
+    "name": "Bo Sun",
     "title": "Front commander",
     "rank": "Senior Colonel",
     "branch": "People's Liberation Army",
@@ -1097,12 +1091,12 @@ export const CHINA_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of China, posted at haikou (cn_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.haikou"
   },
   {
     "id": "cn_6",
-    "name": "Wei Ma",
+    "name": "Cheng Ma",
     "title": "Front commander",
     "rank": "Senior Colonel",
     "branch": "People's Liberation Army",
@@ -1112,12 +1106,12 @@ export const CHINA_REGION = land({
     "pol": 38,
     "chr": 38,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of China, posted at shijiazhuang (cn_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.shijiazhuang"
   },
   {
     "id": "cn_7",
-    "name": "Wei Gao",
+    "name": "Ming Gao",
     "title": "Front commander",
     "rank": "Senior Colonel",
     "branch": "People's Liberation Army",
@@ -1127,7 +1121,7 @@ export const CHINA_REGION = land({
     "pol": 36,
     "chr": 35,
     "personality": "recluse",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of China, posted at harbin (cn_7). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "cn.harbin"
   }
 ])
@@ -1175,7 +1169,7 @@ export const HONG_KONG_REGION = land({
   "cities": [
     [
       "central",
-      "Central",
+      "Hong Kong",
       "HK-IS",
       22.28,
       114.16,
@@ -1226,9 +1220,9 @@ export const HONG_KONG_REGION = land({
   "officers": staff([
   {
     "id": "hk_0",
-    "name": "Chi-ming Chan",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Chan",
+    "title": "Governor",
+    "rank": "Governor",
     "branch": "Royal Hong Kong Regiment",
     "slot": "head_of_state",
     "war": 43,
@@ -1236,14 +1230,14 @@ export const HONG_KONG_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Governor of Hong Kong, posted at central (hk_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "hk.central"
   },
   {
     "id": "hk_1",
-    "name": "Chi-ming Cheung",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Bram Cheung",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "Royal Hong Kong Regiment",
     "slot": "defense_minister",
     "war": 68,
@@ -1251,12 +1245,12 @@ export const HONG_KONG_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of Hong Kong, posted at kowloon (hk_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "hk.kowloon"
   },
   {
     "id": "hk_2",
-    "name": "Chi-ming Lam",
+    "name": "Corin Lam",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Royal Hong Kong Regiment",
@@ -1266,7 +1260,7 @@ export const HONG_KONG_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Hong Kong, posted at shatin (hk_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "hk.shatin"
   }
 ])
@@ -1342,8 +1336,8 @@ export const MACAU_REGION = land({
   {
     "id": "mo_0",
     "name": "Ricardo Ribeiro",
-    "title": "Head of state",
-    "rank": "Coronel",
+    "title": "Governor",
+    "rank": "Governor",
     "branch": "Portuguese Garrison",
     "slot": "head_of_state",
     "war": 43,
@@ -1351,7 +1345,7 @@ export const MACAU_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Governor of Macau, posted at macau (mo_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mo.macau"
   },
   {
@@ -1366,7 +1360,7 @@ export const MACAU_REGION = land({
     "pol": 37,
     "chr": 37,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Macau, posted at taipa (mo_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mo.taipa"
   }
 ])
@@ -1864,9 +1858,9 @@ export const TAIWAN_REGION = land({
   "officers": staff([
   {
     "id": "tw_0",
-    "name": "Cheng-en Chen",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Chen",
+    "title": "President",
+    "rank": "President",
     "branch": "Republic of China Army",
     "slot": "head_of_state",
     "war": 43,
@@ -1874,12 +1868,12 @@ export const TAIWAN_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Taiwan, posted at taipei (tw_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tw.taipei"
   },
   {
     "id": "tw_1",
-    "name": "Cheng-en Lin",
+    "name": "Bram Lin",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Republic of China Army",
@@ -1889,12 +1883,12 @@ export const TAIWAN_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Taiwan, posted at kaohsiung (tw_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tw.kaohsiung"
   },
   {
     "id": "tw_2",
-    "name": "Cheng-en Huang",
+    "name": "Corin Huang",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Republic of China Army",
@@ -1904,12 +1898,12 @@ export const TAIWAN_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Taiwan, posted at changhua (tw_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tw.changhua"
   },
   {
     "id": "tw_3",
-    "name": "Cheng-en Chang",
+    "name": "Davin Chang",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Republic of China Army",
@@ -1919,12 +1913,12 @@ export const TAIWAN_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Taiwan, posted at chiayi (tw_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tw.chiayi"
   },
   {
     "id": "tw_4",
-    "name": "Cheng-en Wu",
+    "name": "Elric Wu",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Republic of China Army",
@@ -1934,12 +1928,12 @@ export const TAIWAN_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Taiwan, posted at hsinchu (tw_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tw.hsinchu"
   },
   {
     "id": "tw_5",
-    "name": "Cheng-en Tsai",
+    "name": "Fenn Tsai",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Republic of China Army",
@@ -1949,7 +1943,7 @@ export const TAIWAN_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Taiwan, posted at hualien (tw_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tw.hualien"
   }
 ])
@@ -1965,7 +1959,7 @@ export const MONGOLIA_REGION = land({
     "minLat": 42.82,
     "maxLat": 50.98
   },
-  "notes": "Atlas only. The Mongolian People's Republic, Soviet-aligned. Eighteen aimags plus Ulaanbaatar. Govisumber and Orkhon are 1994 and are not split; Erdenet stays in Bulgan and Darkhan stays in Selenge. The Trans-Mongolian is rail from Sukhbaatar through Ulaanbaatar and Sainshand to Zamyn-Uud, and that rail is not also a road. Wool, cattle, coal, and copper. Occupied and off the week-0 march.",
+  "notes": "Atlas only. The Mongolian People's Republic, Soviet-aligned. Eighteen aimags plus Ulan Bator. Govisumber and Orkhon are 1994 and are not split; Erdenet stays in Bulgan and Darkhan stays in Selenge. The Trans-Mongolian is rail from Sukhbaatar through Ulan Bator and Sainshand to Zamyn-Uud, and that rail is not also a road. Wool, cattle, coal, and copper. Occupied and off the week-0 march.",
   "defaultBiome": "steppe",
   "climate": {
     "_default": {
@@ -1977,7 +1971,7 @@ export const MONGOLIA_REGION = land({
   "subs": [
     {
       "id": "MN-UB",
-      "name": "Ulaanbaatar",
+      "name": "Ulan Bator",
       "kind": "municipality",
       "group": null
     },
@@ -2093,7 +2087,7 @@ export const MONGOLIA_REGION = land({
   "cities": [
     [
       "ulaanbaatar",
-      "Ulaanbaatar",
+      "Ulan Bator",
       "MN-UB",
       47.92,
       106.92,
@@ -2477,9 +2471,9 @@ export const MONGOLIA_REGION = land({
   "officers": staff([
   {
     "id": "mn_0",
-    "name": "Batbayar Ganbaatar",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Ganbaatar",
+    "title": "President",
+    "rank": "President",
     "branch": "Mongolian People's Army",
     "slot": "head_of_state",
     "war": 43,
@@ -2487,12 +2481,12 @@ export const MONGOLIA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Mongolia, posted at ulaanbaatar (mn_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mn.ulaanbaatar"
   },
   {
     "id": "mn_1",
-    "name": "Batbayar Sukhbaatar",
+    "name": "Bram Sukhbaatar",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Mongolian People's Army",
@@ -2502,12 +2496,12 @@ export const MONGOLIA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Mongolia, posted at tsetserleg (mn_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mn.tsetserleg"
   },
   {
     "id": "mn_2",
-    "name": "Batbayar Dorj",
+    "name": "Corin Dorj",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Mongolian People's Army",
@@ -2517,12 +2511,12 @@ export const MONGOLIA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Mongolia, posted at olgii (mn_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mn.olgii"
   },
   {
     "id": "mn_3",
-    "name": "Batbayar Batmunkh",
+    "name": "Gareth Belford",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Mongolian People's Army",
@@ -2532,12 +2526,12 @@ export const MONGOLIA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Mongolia, posted at bayankhongor (mn_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mn.bayankhongor"
   },
   {
     "id": "mn_4",
-    "name": "Batbayar Altangerel",
+    "name": "Elric Altangerel",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Mongolian People's Army",
@@ -2547,12 +2541,12 @@ export const MONGOLIA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Mongolia, posted at bulgan (mn_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mn.bulgan"
   },
   {
     "id": "mn_5",
-    "name": "Batbayar Chimed",
+    "name": "Fenn Chimed",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Mongolian People's Army",
@@ -2562,7 +2556,7 @@ export const MONGOLIA_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Mongolia, posted at choibalsan (mn_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mn.choibalsan"
   }
 ])
@@ -2846,9 +2840,9 @@ export const NORTH_KOREA_REGION = land({
   "officers": staff([
   {
     "id": "kp_0",
-    "name": "Hyok Pak",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Chol Pak",
+    "title": "President",
+    "rank": "President",
     "branch": "Korean People's Army",
     "slot": "head_of_state",
     "war": 43,
@@ -2856,12 +2850,12 @@ export const NORTH_KOREA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of North Korea, posted at pyongyang (kp_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kp.pyongyang"
   },
   {
     "id": "kp_1",
-    "name": "Hyok Ri",
+    "name": "Myong Ri",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Korean People's Army",
@@ -2871,12 +2865,12 @@ export const NORTH_KOREA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of North Korea, posted at pyongsong (kp_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kp.pyongsong"
   },
   {
     "id": "kp_2",
-    "name": "Hyok Choe",
+    "name": "Guk Choe",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Korean People's Army",
@@ -2886,12 +2880,12 @@ export const NORTH_KOREA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of North Korea, posted at sinuiju (kp_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kp.sinuiju"
   },
   {
     "id": "kp_3",
-    "name": "Hyok Kang",
+    "name": "Il Kang",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Korean People's Army",
@@ -2901,12 +2895,12 @@ export const NORTH_KOREA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of North Korea, posted at kanggye (kp_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kp.kanggye"
   },
   {
     "id": "kp_4",
-    "name": "Hyok Hwang",
+    "name": "Song Hwang",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Korean People's Army",
@@ -2916,7 +2910,7 @@ export const NORTH_KOREA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of North Korea, posted at haeju (kp_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kp.haeju"
   }
 ])
@@ -2932,7 +2926,7 @@ export const SOUTH_KOREA_REGION = land({
     "minLat": 32.75,
     "maxLat": 38.63
   },
-  "notes": "Atlas only. Provinces of the 1980s plus the special cities Seoul, Busan, Daegu, Incheon, and Gwangju. Daejeon stays inside South Chungcheong; it became a direct city on 1 January 1989. Jeju is reached by sea. US forces are a note, not a separate territory. The Korea Strait to Fukuoka is a sea lane. This is not the campaign desk kr_inland. Occupied and off the week-0 march.",
+  "notes": "Atlas only. Provinces of the 1980s plus the special cities Seoul, Pusan, Taegu, Inchon, and Kwangju. Taejon stays inside South Chungcheong; it became a direct city on 1 January 1989. Jeju is reached by sea. US forces are a note, not a separate territory. The Korea Strait to Fukuoka is a sea lane. This is not the campaign desk kr_inland. Occupied and off the week-0 march.",
   "defaultBiome": "temperate",
   "climate": {
     "_default": {
@@ -2950,25 +2944,25 @@ export const SOUTH_KOREA_REGION = land({
     },
     {
       "id": "KR-PU",
-      "name": "Busan",
+      "name": "Pusan",
       "kind": "city",
       "group": null
     },
     {
       "id": "KR-TG",
-      "name": "Daegu",
+      "name": "Taegu",
       "kind": "city",
       "group": null
     },
     {
       "id": "KR-IC",
-      "name": "Incheon",
+      "name": "Inchon",
       "kind": "city",
       "group": null
     },
     {
       "id": "KR-KJ",
-      "name": "Gwangju",
+      "name": "Kwangju",
       "kind": "city",
       "group": null
     },
@@ -3042,7 +3036,7 @@ export const SOUTH_KOREA_REGION = land({
     ],
     [
       "busan",
-      "Busan",
+      "Pusan",
       "KR-PU",
       35.18,
       129.08,
@@ -3054,7 +3048,7 @@ export const SOUTH_KOREA_REGION = land({
     ],
     [
       "daegu",
-      "Daegu",
+      "Taegu",
       "KR-TG",
       35.87,
       128.6,
@@ -3066,7 +3060,7 @@ export const SOUTH_KOREA_REGION = land({
     ],
     [
       "incheon",
-      "Incheon",
+      "Inchon",
       "KR-IC",
       37.46,
       126.71,
@@ -3078,7 +3072,7 @@ export const SOUTH_KOREA_REGION = land({
     ],
     [
       "gwangju",
-      "Gwangju",
+      "Kwangju",
       "KR-KJ",
       35.16,
       126.85,
@@ -3125,7 +3119,7 @@ export const SOUTH_KOREA_REGION = land({
     ],
     [
       "daejeon",
-      "Daejeon",
+      "Taejon",
       "KR-SC",
       36.35,
       127.38,
@@ -3278,9 +3272,9 @@ export const SOUTH_KOREA_REGION = land({
   "officers": staff([
   {
     "id": "kr_0",
-    "name": "Jae-won Choi",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Minjae Choi",
+    "title": "President",
+    "rank": "President",
     "branch": "Republic of Korea Army",
     "slot": "head_of_state",
     "war": 43,
@@ -3288,12 +3282,12 @@ export const SOUTH_KOREA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of South Korea, posted at seoul (kr_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kr.seoul"
   },
   {
     "id": "kr_1",
-    "name": "Jae-won Jung",
+    "name": "Jisoo Jung",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Republic of Korea Army",
@@ -3303,12 +3297,12 @@ export const SOUTH_KOREA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of South Korea, posted at busan (kr_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kr.busan"
   },
   {
     "id": "kr_2",
-    "name": "Jae-won Han",
+    "name": "Hyun Han",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Republic of Korea Army",
@@ -3318,12 +3312,12 @@ export const SOUTH_KOREA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of South Korea, posted at daegu (kr_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kr.daegu"
   },
   {
     "id": "kr_3",
-    "name": "Jae-won Yoon",
+    "name": "Taeyang Yoon",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Republic of Korea Army",
@@ -3333,12 +3327,12 @@ export const SOUTH_KOREA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of South Korea, posted at incheon (kr_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kr.incheon"
   },
   {
     "id": "kr_4",
-    "name": "Jae-won Jang",
+    "name": "Seojun Jang",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Republic of Korea Army",
@@ -3348,7 +3342,7 @@ export const SOUTH_KOREA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of South Korea, posted at gwangju (kr_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "kr.gwangju"
   }
 ])
@@ -4481,9 +4475,9 @@ export const JAPAN_REGION = land({
   "officers": staff([
   {
     "id": "jp_0",
-    "name": "Kenichi Sato",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Haruto Sato",
+    "title": "Emperor",
+    "rank": "Emperor",
     "branch": "Ground Self-Defense Force",
     "slot": "head_of_state",
     "war": 43,
@@ -4491,12 +4485,12 @@ export const JAPAN_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Emperor of Japan, posted at sapporo (jp_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.sapporo"
   },
   {
     "id": "jp_1",
-    "name": "Kenichi Suzuki",
+    "name": "Daichi Suzuki",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Ground Self-Defense Force",
@@ -4506,12 +4500,12 @@ export const JAPAN_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Japan, posted at aomori (jp_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.aomori"
   },
   {
     "id": "jp_2",
-    "name": "Kenichi Takahashi",
+    "name": "Sota Takahashi",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Ground Self-Defense Force",
@@ -4521,12 +4515,12 @@ export const JAPAN_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Japan, posted at morioka (jp_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.morioka"
   },
   {
     "id": "jp_3",
-    "name": "Kenichi Tanaka",
+    "name": "Riku Tanaka",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Ground Self-Defense Force",
@@ -4536,12 +4530,12 @@ export const JAPAN_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Japan, posted at sendai (jp_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.sendai"
   },
   {
     "id": "jp_4",
-    "name": "Kenichi Watanabe",
+    "name": "Yuto Watanabe",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Ground Self-Defense Force",
@@ -4551,12 +4545,12 @@ export const JAPAN_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Japan, posted at akita (jp_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.akita"
   },
   {
     "id": "jp_5",
-    "name": "Kenichi Ito",
+    "name": "Naoki Ito",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Ground Self-Defense Force",
@@ -4566,12 +4560,12 @@ export const JAPAN_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Japan, posted at yamagata (jp_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.yamagata"
   },
   {
     "id": "jp_6",
-    "name": "Kenichi Yamamoto",
+    "name": "Shun Yamamoto",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Ground Self-Defense Force",
@@ -4581,12 +4575,12 @@ export const JAPAN_REGION = land({
     "pol": 38,
     "chr": 38,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Japan, posted at fukushima (jp_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.fukushima"
   },
   {
     "id": "jp_7",
-    "name": "Kenichi Nakamura",
+    "name": "Kaito Nakamura",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Ground Self-Defense Force",
@@ -4596,7 +4590,7 @@ export const JAPAN_REGION = land({
     "pol": 36,
     "chr": 35,
     "personality": "recluse",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Japan, posted at mito (jp_7). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jp.mito"
   }
 ])

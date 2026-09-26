@@ -192,7 +192,7 @@ export const BELORUSSIA_REGION = land({
     "pol": 68,
     "chr": 46,
     "personality": "loyalist",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster by_head.",
     "region": "by.minsk"
   },
   {
@@ -207,7 +207,7 @@ export const BELORUSSIA_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster by_def.",
     "region": "by.minsk"
   },
   {
@@ -222,7 +222,7 @@ export const BELORUSSIA_REGION = land({
     "pol": 42,
     "chr": 48,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster by_field.",
     "region": "by.minsk"
   }
 ])
@@ -554,7 +554,7 @@ export const MOLDAVIA_REGION = land({
     "pol": 66,
     "chr": 48,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster md_head.",
     "region": "md.kishinev"
   },
   {
@@ -569,7 +569,7 @@ export const MOLDAVIA_REGION = land({
     "pol": 40,
     "chr": 44,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster md_def.",
     "region": "md.kishinev"
   },
   {
@@ -584,7 +584,7 @@ export const MOLDAVIA_REGION = land({
     "pol": 42,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster md_chief.",
     "region": "md.kishinev"
   },
   {
@@ -599,7 +599,7 @@ export const MOLDAVIA_REGION = land({
     "pol": 34,
     "chr": 36,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster md_f0.",
     "region": "md.tiraspol"
   },
   {
@@ -614,7 +614,7 @@ export const MOLDAVIA_REGION = land({
     "pol": 50,
     "chr": 46,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster md_field.",
     "region": "md.kishinev"
   }
 ])
@@ -1026,7 +1026,7 @@ export const ESTONIA_REGION = land({
     "pol": 64,
     "chr": 52,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster ee_head.",
     "region": "ee.tallinn"
   },
   {
@@ -1041,7 +1041,7 @@ export const ESTONIA_REGION = land({
     "pol": 40,
     "chr": 50,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster ee_def.",
     "region": "ee.tallinn"
   },
   {
@@ -1056,7 +1056,7 @@ export const ESTONIA_REGION = land({
     "pol": 42,
     "chr": 44,
     "personality": "loyalist",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster ee_chief.",
     "region": "ee.tallinn"
   },
   {
@@ -1071,7 +1071,7 @@ export const ESTONIA_REGION = land({
     "pol": 30,
     "chr": 36,
     "personality": "recluse",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ee_f0.",
     "region": "ee.tallinn"
   },
   {
@@ -1086,7 +1086,7 @@ export const ESTONIA_REGION = land({
     "pol": 38,
     "chr": 56,
     "personality": "merchant",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster ee_field.",
     "region": "ee.tallinn"
   },
   {
@@ -1101,7 +1101,7 @@ export const ESTONIA_REGION = land({
     "pol": 36,
     "chr": 48,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster ee_f1.",
     "region": "ee.tartu"
   }
 ])
@@ -1756,7 +1756,7 @@ export const LATVIA_REGION = land({
     "pol": 66,
     "chr": 50,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster lv_head.",
     "region": "lv.riga"
   },
   {
@@ -1771,7 +1771,7 @@ export const LATVIA_REGION = land({
     "pol": 42,
     "chr": 44,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster lv_def.",
     "region": "lv.riga"
   },
   {
@@ -1786,7 +1786,7 @@ export const LATVIA_REGION = land({
     "pol": 48,
     "chr": 36,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster lv_chief.",
     "region": "lv.riga"
   },
   {
@@ -1801,7 +1801,7 @@ export const LATVIA_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lv_f0.",
     "region": "lv.riga"
   },
   {
@@ -1816,7 +1816,7 @@ export const LATVIA_REGION = land({
     "pol": 40,
     "chr": 52,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster lv_field.",
     "region": "lv.riga"
   },
   {
@@ -1831,7 +1831,7 @@ export const LATVIA_REGION = land({
     "pol": 34,
     "chr": 46,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lv_f1.",
     "region": "lv.liepaja"
   },
   {
@@ -1846,7 +1846,7 @@ export const LATVIA_REGION = land({
     "pol": 32,
     "chr": 38,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lv_f2.",
     "region": "lv.daugavpils"
   }
 ])
@@ -2914,7 +2914,7 @@ export const LITHUANIA_REGION = land({
     "pol": 68,
     "chr": 50,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster lt_head.",
     "region": "lt.vilnius"
   },
   {
@@ -2929,7 +2929,7 @@ export const LITHUANIA_REGION = land({
     "pol": 42,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster lt_def.",
     "region": "lt.vilnius"
   },
   {
@@ -2944,7 +2944,7 @@ export const LITHUANIA_REGION = land({
     "pol": 50,
     "chr": 34,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster lt_chief.",
     "region": "lt.vilnius"
   },
   {
@@ -2959,7 +2959,7 @@ export const LITHUANIA_REGION = land({
     "pol": 38,
     "chr": 44,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lt_f0.",
     "region": "lt.kaunas"
   },
   {
@@ -2974,7 +2974,7 @@ export const LITHUANIA_REGION = land({
     "pol": 44,
     "chr": 56,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster lt_field.",
     "region": "lt.vilnius"
   },
   {
@@ -2989,7 +2989,7 @@ export const LITHUANIA_REGION = land({
     "pol": 34,
     "chr": 40,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lt_f1.",
     "region": "lt.klaipeda"
   },
   {
@@ -3004,7 +3004,7 @@ export const LITHUANIA_REGION = land({
     "pol": 30,
     "chr": 36,
     "personality": "recluse",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lt_f2.",
     "region": "lt.ignalina"
   },
   {
@@ -3019,7 +3019,7 @@ export const LITHUANIA_REGION = land({
     "pol": 32,
     "chr": 38,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster lt_f3.",
     "region": "lt.lazdijai"
   }
 ])

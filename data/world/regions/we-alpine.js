@@ -1980,7 +1980,7 @@ export const ITALY_REGION = land({
     "chr": 50,
     "personality": "cautious",
     "region": "it.rome",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster it_def."
   },
   {
     "id": "it_chief",

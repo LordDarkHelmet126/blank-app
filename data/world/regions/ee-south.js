@@ -376,7 +376,7 @@ export const BULGARIA_REGION = land({
     "pol": 72,
     "chr": 36,
     "personality": "loyalist",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster bg_head.",
     "region": "bg.sofia"
   },
   {
@@ -391,7 +391,7 @@ export const BULGARIA_REGION = land({
     "pol": 48,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster bg_def.",
     "region": "bg.sofia"
   },
   {
@@ -406,7 +406,7 @@ export const BULGARIA_REGION = land({
     "pol": 55,
     "chr": 32,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster bg_chief.",
     "region": "bg.sofia"
   },
   {
@@ -421,7 +421,7 @@ export const BULGARIA_REGION = land({
     "pol": 34,
     "chr": 32,
     "personality": "aggressive",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster bg_f0.",
     "region": "bg.sofia"
   },
   {
@@ -436,7 +436,7 @@ export const BULGARIA_REGION = land({
     "pol": 44,
     "chr": 46,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster bg_field.",
     "region": "bg.sofia"
   },
   {
@@ -451,7 +451,7 @@ export const BULGARIA_REGION = land({
     "pol": 40,
     "chr": 48,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster bg_f1.",
     "region": "bg.varna"
   }
 ])
@@ -1554,7 +1554,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 70,
     "chr": 50,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster yu_head.",
     "region": "yu.belgrade"
   },
   {
@@ -1569,7 +1569,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 46,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster yu_def.",
     "region": "yu.belgrade"
   },
   {
@@ -1584,7 +1584,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 42,
     "chr": 48,
     "personality": "cautious",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster yu_chief.",
     "region": "yu.belgrade"
   },
   {
@@ -1599,7 +1599,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster yu_f0.",
     "region": "yu.belgrade"
   },
   {
@@ -1614,7 +1614,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 50,
     "chr": 44,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster yu_field.",
     "region": "yu.belgrade"
   },
   {
@@ -1629,7 +1629,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 38,
     "chr": 44,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster yu_f1.",
     "region": "yu.split"
   },
   {
@@ -1644,7 +1644,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 48,
     "chr": 46,
     "personality": "diplomat",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster yu_f2.",
     "region": "yu.zagreb"
   },
   {
@@ -1659,7 +1659,7 @@ export const YUGOSLAVIA_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster yu_f3.",
     "region": "yu.skopje"
   }
 ])
@@ -2326,7 +2326,7 @@ export const ALBANIA_REGION = land({
     "pol": 68,
     "chr": 28,
     "personality": "recluse",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster al_head.",
     "region": "al.tirana"
   },
   {
@@ -2341,7 +2341,7 @@ export const ALBANIA_REGION = land({
     "pol": 40,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster al_def.",
     "region": "al.tirana"
   },
   {
@@ -2356,7 +2356,7 @@ export const ALBANIA_REGION = land({
     "pol": 36,
     "chr": 32,
     "personality": "cautious",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster al_chief.",
     "region": "al.tirana"
   },
   {
@@ -2371,7 +2371,7 @@ export const ALBANIA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster al_f0.",
     "region": "al.durres"
   },
   {
@@ -2386,7 +2386,7 @@ export const ALBANIA_REGION = land({
     "pol": 34,
     "chr": 28,
     "personality": "aggressive",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster al_field.",
     "region": "al.tirana"
   },
   {
@@ -2401,7 +2401,7 @@ export const ALBANIA_REGION = land({
     "pol": 28,
     "chr": 30,
     "personality": "recluse",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster al_f1.",
     "region": "al.shkoder"
   },
   {
@@ -2416,7 +2416,7 @@ export const ALBANIA_REGION = land({
     "pol": 32,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster al_f2.",
     "region": "al.korce"
   }
 ])

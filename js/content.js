@@ -1,5 +1,3 @@
-import { worldCatalog } from "./world.js";
-
 async function readJson(name) {
   if (typeof window === "undefined") {
     const { readFile } = await import("node:fs/promises");
@@ -20,5 +18,5 @@ export async function loadContent() {
     readJson("regions.json"),
     readJson("tech.json"),
   ]);
-  return { officers, factions, regions, tech, world: worldCatalog() };
+  return { officers, factions, regions, tech };
 }

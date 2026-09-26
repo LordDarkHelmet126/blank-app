@@ -73,7 +73,7 @@ export const MALTA_REGION = land({
     "chr": 64,
     "personality": "diplomat",
     "region": "mt.valletta",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster mt_pm."
   },
   {
     "id": "mt_guard",
@@ -1588,7 +1588,7 @@ export const GREECE_REGION = land({
     "chr": 62,
     "personality": "diplomat",
     "region": "gr.athens",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster gr_pm."
   },
   {
     "id": "gr_def",
@@ -1603,7 +1603,7 @@ export const GREECE_REGION = land({
     "chr": 48,
     "personality": "cautious",
     "region": "gr.athens",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster gr_def."
   },
   {
     "id": "gr_chief",
@@ -1618,7 +1618,7 @@ export const GREECE_REGION = land({
     "chr": 42,
     "personality": "loyalist",
     "region": "gr.athens",
-    "bio": "Fictional chief of defence."
+    "bio": "Fictional chief of defence. Roster gr_chief."
   },
   {
     "id": "gr_north",
@@ -3225,7 +3225,7 @@ export const TURKEY_REGION = land({
     "chr": 56,
     "personality": "diplomat",
     "region": "tr.ankara",
-    "bio": "Fictional prime minister. Not a real officeholder."
+    "bio": "Fictional prime minister. Not a real officeholder. Roster tr_pm."
   },
   {
     "id": "tr_def",
@@ -3240,7 +3240,7 @@ export const TURKEY_REGION = land({
     "chr": 46,
     "personality": "cautious",
     "region": "tr.ankara",
-    "bio": "Fictional defence minister."
+    "bio": "Fictional defence minister. Roster tr_def."
   },
   {
     "id": "tr_chief",
@@ -3255,7 +3255,7 @@ export const TURKEY_REGION = land({
     "chr": 40,
     "personality": "loyalist",
     "region": "tr.ankara",
-    "bio": "Fictional chief of the general staff."
+    "bio": "Fictional chief of the general staff. Roster tr_chief."
   },
   {
     "id": "tr_thrace",

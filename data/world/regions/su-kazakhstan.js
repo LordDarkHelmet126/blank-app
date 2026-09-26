@@ -490,7 +490,7 @@ export const KAZAKHSTAN_REGION = land({
     "pol": 70,
     "chr": 48,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster kz_head.",
     "region": "kz.alma_ata"
   },
   {
@@ -505,7 +505,7 @@ export const KAZAKHSTAN_REGION = land({
     "pol": 44,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster kz_def.",
     "region": "kz.alma_ata"
   },
   {
@@ -520,7 +520,7 @@ export const KAZAKHSTAN_REGION = land({
     "pol": 50,
     "chr": 36,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster kz_chief.",
     "region": "kz.alma_ata"
   },
   {
@@ -535,7 +535,7 @@ export const KAZAKHSTAN_REGION = land({
     "pol": 40,
     "chr": 44,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster kz_f0.",
     "region": "kz.tselinograd"
   },
   {
@@ -550,7 +550,7 @@ export const KAZAKHSTAN_REGION = land({
     "pol": 42,
     "chr": 50,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster kz_field.",
     "region": "kz.alma_ata"
   },
   {
@@ -565,7 +565,7 @@ export const KAZAKHSTAN_REGION = land({
     "pol": 36,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster kz_f1.",
     "region": "kz.karaganda"
   }
 ])

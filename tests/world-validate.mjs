@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { loadContent } from "../js/content.js";
-import { validateWorld, worldCatalog, worldCounts, toOfficerRecords, requiredCommandSlots } from "../js/world.js";
+import { validateWorld, worldCatalog, worldCounts, worldPoliticalCounts, toOfficerRecords, requiredCommandSlots, officerRosterIssues, SOVEREIGN_OF } from "../js/world.js";
 import { atlasMode } from "../js/world-atlas.js";
 
 function assert(cond, msg) {
@@ -32,7 +32,8 @@ assert(us.officers >= 10, `command roster, got ${us.officers}`);
 assert(us.playable === 0, "atlas cities stay unplayable until a later reach");
 
 const content = await loadContent();
-assert(content.world.regions.find((r) => r.id === "us"), "loadContent attaches the world catalog");
+assert(content.world == null, "loadContent leaves the atlas unloaded");
+content.world = catalog;
 assert(content.officers.officers.length === officers.officers.length, "world officers stay off the week-0 roster");
 const dormant = toOfficerRecords(content.world.regions[0]);
 assert(dormant.every((o) => o.dormant && o.world && o.fictional && o.faction == null), "dormant officer shape");
@@ -364,6 +365,8 @@ assert(worldBy.get("tr.kars").neighbors.some((n) => n.id === "am.leninakan" && n
 assert(worldBy.get("ru.petropavlovsk").neighbors.some((n) => n.id === "ru.magadan" && n.kind === "sea"), "Sea of Okhotsk");
 assert(atlasMode({ atlas: "su", z: 2, focus: null }) === "world", "the USSR close-up labels capitals, not every city");
 assert(atlasMode({ atlas: "eu", z: 2, focus: null }) === "world", "the Europe close-up stays in world mode");
+assert(atlasMode({ atlas: null, z: 0.2, focus: null }) === "off", "zooming out does not turn the atlas on");
+assert(atlasMode({ atlasDebug: true, z: 0.2, focus: null }) === "world", "the debug flag can show the atlas");
 assert(worldBy.get("tm.kushka").neighbors.some((n) => n.id === "tm.mary" && n.kind === "road"), "Kushka is the Turkmen border spur");
 
 const meIds = ["ma", "dz", "tn", "ly", "eg", "sdn", "dj", "il", "lb", "sy", "jo", "iq", "kw", "bh", "qa", "ae", "om", "sa", "ye", "yd", "ir", "af"];
@@ -521,8 +524,9 @@ assert(worldBy.get("pk.gilgit").neighbors.some((n) => n.id === "cn.kashgar" && n
 assert(worldBy.get("in.srinagar").neighbors.every((n) => n.id !== "pk.muzaffarabad"), "the Line of Control is not a road from Srinagar");
 
 const china = content.world.regions.find((r) => r.id === "cn");
-assert(china.subdivisions.some((s) => s.name === "Hainan" && s.kind === "province"), "Hainan is a province");
-assert(/1988/.test(china.notes), "Hainan notes April 1988");
+assert(!china.subdivisions.some((s) => s.name === "Hainan"), "Hainan is still part of Guangdong at the 1985 start");
+assert(china.territories.find((t) => t.id === "cn.haikou").subdivision === "CN-GD", "Haikou is a Guangdong city");
+assert(/1988/.test(china.notes) && /Guangdong/.test(china.notes), "Hainan notes the April 1988 split from Guangdong");
 assert(china.subdivisions.some((s) => s.name === "Xizang" && s.kind === "autonomous region"), "Tibet is the Xizang autonomous region");
 assert(!china.subdivisions.some((s) => s.name === "Chongqing" || s.name === "Taiwan"), "Chongqing is not a municipality and Taiwan is not a PRC province");
 assert(china.territories.some((t) => t.id === "cn.chongqing"), "Chongqing stays a Sichuan city");
@@ -532,7 +536,8 @@ assert(worldBy.get("cn.xiamen").neighbors.some((n) => n.id === "tw.taipei" && n.
 assert(!worldBy.get("cn.xiamen").neighbors.some((n) => n.id === "tw.taipei" && n.kind === "road"), "the Taiwan Strait is not a road");
 assert(/British/.test(content.world.regions.find((r) => r.id === "hk").notes), "Hong Kong is British");
 assert(/Portuguese/.test(content.world.regions.find((r) => r.id === "mo").notes), "Macau is Portuguese");
-assert(content.world.regions.find((r) => r.id === "mn").subdivisions.length === 19 && /Soviet/.test(content.world.regions.find((r) => r.id === "mn").notes), "Mongolia is the MPR, eighteen aimags plus Ulaanbaatar");
+assert(content.world.regions.find((r) => r.id === "mn").subdivisions.length === 19 && /Soviet/.test(content.world.regions.find((r) => r.id === "mn").notes), "Mongolia is the MPR, eighteen aimags plus Ulan Bator");
+assert(content.world.regions.find((r) => r.id === "mn").territories.find((t) => t.id === "mn.ulaanbaatar").name === "Ulan Bator", "the capital is Ulan Bator");
 assert(!content.world.regions.some((r) => r.id === "far_korea" || r.id === "kr_inland"), "atlas Korea does not copy the campaign desks");
 assert(campaignIds.has("far_korea") && campaignIds.has("kr_inland"), "campaign Korea desks stay");
 assert(worldBy.get("kp.kaesong").neighbors.some((n) => n.id === "kr.seoul" && n.kind === "trail" && /Panmunjom/.test(n.via)), "Panmunjom is a trail");
@@ -544,6 +549,7 @@ assert(worldBy.get("jp.aomori").neighbors.some((n) => n.id === "jp.sapporo" && n
 assert(!worldBy.get("jp.aomori").neighbors.some((n) => n.id === "jp.sapporo" && n.kind === "road"), "Seikan is not also a road");
 assert(content.world.regions.find((r) => r.id === "lk").subdivisions.filter((s) => s.group === "Sri Lankan civil war / IPKF").length === 2, "Sri Lanka marks the IPKF front");
 assert(/PRK|People's Republic of Kampuchea/.test(content.world.regions.find((r) => r.id === "kh").notes), "Cambodia is the PRK");
+assert(content.world.regions.find((r) => r.id === "kh").name === "Kampuchea (PRK)", "the country name is Kampuchea");
 assert(content.world.regions.find((r) => r.id === "mm").name === "Burma" && !content.world.regions.some((r) => r.name === "Myanmar"), "the name is Burma");
 assert(!content.world.regions.some((r) => r.id === "tl" || r.name === "East Timor"), "East Timor is not a country");
 assert(content.world.regions.find((r) => r.id === "id").subdivisions.some((s) => s.name === "Timor Timur" && s.group === "Occupied East Timor"), "East Timor is an occupied Indonesian province");
@@ -563,6 +569,27 @@ assert(content.world.regions.find((r) => r.id === "ncl").country === "NCL", "New
 assert(worldBy.get("gu.hagatna").neighbors.some((n) => n.id === "us.adak" && n.kind === "sea" && /Aleutians/.test(n.via)), "Aleutian route");
 assert(worldBy.get("jp.yokohama").neighbors.some((n) => n.id === "us.honolulu" && n.kind === "sea" && /Pacific/.test(n.via)), "Pacific route");
 assert(atlasMode({ atlas: "asia", z: 2, focus: null }) === "world", "the Asia close-up stays in world mode");
+assert(content.world.regions.find((r) => r.id === "hk").territories.find((t) => t.id === "hk.central").name === "Hong Kong", "the Hong Kong capital is labeled Hong Kong");
+assert(["Pusan", "Taegu", "Inchon", "Kwangju", "Taejon"].every((name) => content.world.regions.find((r) => r.id === "kr").territories.some((t) => t.name === name)), "South Korea keeps the 1980s city names");
+assert(content.world.regions.find((r) => r.id === "ua").territories.some((t) => t.name === "Zhdanov"), "Mariupol is still Zhdanov");
+assert(content.world.regions.find((r) => r.id === "ru").territories.some((t) => t.name === "Ustinov"), "Izhevsk is still Ustinov");
+assert(content.world.regions.find((r) => r.id === "dd").territories.some((t) => t.name === "East Berlin"), "East Berlin is labeled");
+["ru", "ua", "by", "md", "ee", "lv", "lt", "ge", "am", "az", "kz", "uz", "kg", "tj", "tm"].forEach((id) => {
+  assert(content.world.regions.find((r) => r.id === id).sovereign === "su", `${id} is a union republic`);
+});
+assert(content.world.regions.find((r) => r.id === "hk").sovereign === "gb", "Hong Kong is a British dependency");
+assert(content.world.regions.find((r) => r.id === "mo").sovereign === "pt", "Macau is a Portuguese dependency");
+assert(content.world.regions.find((r) => r.id === "re").sovereign === "fr", "Reunion is a French dependency");
+assert(content.world.regions.find((r) => r.id === "pw").sovereign === "tt", "Palau is still a trust territory");
+Object.keys(SOVEREIGN_OF).forEach((id) => {
+  assert(content.world.regions.find((r) => r.id === id), `${id} is on the sheet`);
+});
+const rosterIssues = officerRosterIssues(catalog);
+if (rosterIssues.length) {
+  console.error(rosterIssues.slice(0, 40).join("\n"));
+  throw new Error(`officer roster failed ${rosterIssues.length} checks`);
+}
+assert(!catalog.regions.some((r) => r.officers.some((o) => o.bio === "Fictional officer. Not a real officeholder of 1985-89.")), "the boilerplate bio is gone");
 
 const atlasTerritories = new Map();
 content.world.regions.forEach((region) => region.territories.forEach((t) => atlasTerritories.set(t.id, t)));
@@ -595,7 +622,8 @@ const atlasByKind = {};
 atlasEdges.forEach((kind) => { atlasByKind[kind] = (atlasByKind[kind] || 0) + 1; });
 const atlasOfficers = content.world.regions.reduce((sum, r) => sum + r.officers.length, 0);
 const atlasSubs = content.world.regions.reduce((sum, r) => sum + r.subdivisions.length, 0);
-console.log(`atlas countries ${content.world.regions.length} subdivisions ${atlasSubs} territories ${atlasTerritories.size} officers ${atlasOfficers}`);
+const political = worldPoliticalCounts(catalog);
+console.log(`atlas countries ${political.units} sovereign ${political.sovereign} dependencies ${political.dependencies} subdivisions ${atlasSubs} territories ${atlasTerritories.size} officers ${atlasOfficers}`);
 console.log(`atlas edges ${atlasEdges.size} road ${atlasByKind.road || 0} rail ${atlasByKind.rail || 0} sea ${atlasByKind.sea || 0} trail ${atlasByKind.trail || 0} air ${atlasByKind.air || 0} cross ${atlasCross}`);
 
 console.log("ok world catalog");

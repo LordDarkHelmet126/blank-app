@@ -984,7 +984,7 @@ export const MOROCCO_REGION = land({
     "pol": 74,
     "chr": 62,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prime Minister of Morocco, posted at rabat (ma_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.rabat"
   },
   {
@@ -999,7 +999,7 @@ export const MOROCCO_REGION = land({
     "pol": 42,
     "chr": 38,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Morocco, posted at agadir (ma_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.agadir"
   },
   {
@@ -1014,7 +1014,7 @@ export const MOROCCO_REGION = land({
     "pol": 44,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Morocco, posted at hoceima (ma_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.hoceima"
   },
   {
@@ -1029,7 +1029,7 @@ export const MOROCCO_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Morocco, posted at azilal (ma_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.azilal"
   },
   {
@@ -1044,7 +1044,7 @@ export const MOROCCO_REGION = land({
     "pol": 32,
     "chr": 36,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Southern command of Morocco, posted at beni mellal (ma_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.beni_mellal"
   },
   {
@@ -1059,7 +1059,7 @@ export const MOROCCO_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Morocco, posted at ben slimane (ma_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.ben_slimane"
   },
   {
@@ -1074,7 +1074,7 @@ export const MOROCCO_REGION = land({
     "pol": 28,
     "chr": 32,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Morocco, posted at boulemane (ma_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.boulemane"
   },
   {
@@ -1089,7 +1089,7 @@ export const MOROCCO_REGION = land({
     "pol": 44,
     "chr": 46,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Morocco, posted at casablanca (ma_7). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ma.casablanca"
   }
 ])
@@ -2238,7 +2238,7 @@ export const ALGERIA_REGION = land({
     "pol": 70,
     "chr": 48,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Algeria, posted at algiers (dz_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.algiers"
   },
   {
@@ -2253,7 +2253,7 @@ export const ALGERIA_REGION = land({
     "pol": 40,
     "chr": 36,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Algeria, posted at adrar (dz_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.adrar"
   },
   {
@@ -2268,7 +2268,7 @@ export const ALGERIA_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Algeria, posted at chlef (dz_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.chlef"
   },
   {
@@ -2283,7 +2283,7 @@ export const ALGERIA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Algeria, posted at laghouat (dz_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.laghouat"
   },
   {
@@ -2298,7 +2298,7 @@ export const ALGERIA_REGION = land({
     "pol": 30,
     "chr": 28,
     "personality": "recluse",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Sahara sector of Algeria, posted at oum el bouaghi (dz_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.oum_el_bouaghi"
   },
   {
@@ -2313,7 +2313,7 @@ export const ALGERIA_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Algeria, posted at batna (dz_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.batna"
   },
   {
@@ -2328,7 +2328,7 @@ export const ALGERIA_REGION = land({
     "pol": 28,
     "chr": 32,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Algeria, posted at bejaia (dz_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.bejaia"
   },
   {
@@ -2343,7 +2343,7 @@ export const ALGERIA_REGION = land({
     "pol": 44,
     "chr": 46,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Algeria, posted at biskra (dz_7). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "dz.biskra"
   }
 ])
@@ -2916,7 +2916,7 @@ export const TUNISIA_REGION = land({
     "pol": 68,
     "chr": 55,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Tunisia, posted at tunis (tn_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tn.tunis"
   },
   {
@@ -2931,7 +2931,7 @@ export const TUNISIA_REGION = land({
     "pol": 42,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Tunisia, posted at ariana (tn_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tn.ariana"
   },
   {
@@ -2946,7 +2946,7 @@ export const TUNISIA_REGION = land({
     "pol": 46,
     "chr": 48,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Tunisia, posted at ben arous (tn_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tn.ben_arous"
   },
   {
@@ -2961,7 +2961,7 @@ export const TUNISIA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Tunisia, posted at nabeul (tn_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tn.nabeul"
   },
   {
@@ -2976,7 +2976,7 @@ export const TUNISIA_REGION = land({
     "pol": 40,
     "chr": 44,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Southern command of Tunisia, posted at zaghouan (tn_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tn.zaghouan"
   },
   {
@@ -2991,7 +2991,7 @@ export const TUNISIA_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Tunisia, posted at bizerte (tn_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tn.bizerte"
   }
 ])

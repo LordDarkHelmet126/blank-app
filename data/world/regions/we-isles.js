@@ -2005,7 +2005,7 @@ export const UK_REGION = land({
   },
   {
     "id": "gb_cgs",
-    "name": "Marcus Bell",
+    "name": "Edmund Harrow",
     "title": "Chief of the General Staff",
     "rank": "General",
     "branch": "British Army",

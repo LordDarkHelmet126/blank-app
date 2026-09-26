@@ -366,7 +366,7 @@ export const CZECHOSLOVAKIA_REGION = land({
     "pol": 72,
     "chr": 46,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster cs_head.",
     "region": "cs.prague"
   },
   {
@@ -381,7 +381,7 @@ export const CZECHOSLOVAKIA_REGION = land({
     "pol": 42,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster cs_def.",
     "region": "cs.prague"
   },
   {
@@ -396,7 +396,7 @@ export const CZECHOSLOVAKIA_REGION = land({
     "pol": 55,
     "chr": 36,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster cs_chief.",
     "region": "cs.prague"
   },
   {
@@ -411,7 +411,7 @@ export const CZECHOSLOVAKIA_REGION = land({
     "pol": 44,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster cs_f0.",
     "region": "cs.kosice"
   },
   {
@@ -426,7 +426,7 @@ export const CZECHOSLOVAKIA_REGION = land({
     "pol": 48,
     "chr": 50,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster cs_field.",
     "region": "cs.prague"
   }
 ])
@@ -974,7 +974,7 @@ export const HUNGARY_REGION = land({
     "pol": 70,
     "chr": 52,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster hu_head.",
     "region": "hu.budapest"
   },
   {
@@ -989,7 +989,7 @@ export const HUNGARY_REGION = land({
     "pol": 48,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster hu_def.",
     "region": "hu.budapest"
   },
   {
@@ -1004,7 +1004,7 @@ export const HUNGARY_REGION = land({
     "pol": 42,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster hu_chief.",
     "region": "hu.budapest"
   },
   {
@@ -1019,7 +1019,7 @@ export const HUNGARY_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster hu_f0.",
     "region": "hu.szekesfehervar"
   },
   {
@@ -1034,7 +1034,7 @@ export const HUNGARY_REGION = land({
     "pol": 55,
     "chr": 36,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster hu_field.",
     "region": "hu.budapest"
   },
   {
@@ -1049,7 +1049,7 @@ export const HUNGARY_REGION = land({
     "pol": 44,
     "chr": 50,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster hu_f1.",
     "region": "hu.budapest"
   }
 ])

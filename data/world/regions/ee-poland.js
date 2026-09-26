@@ -1369,7 +1369,7 @@ export const POLAND_REGION = land({
     "pol": 36,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster pl_f1.",
     "region": "pl.katowice"
   },
   {
@@ -1384,7 +1384,7 @@ export const POLAND_REGION = land({
     "pol": 50,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster pl_f2.",
     "region": "pl.warsaw"
   },
   {
@@ -1399,7 +1399,7 @@ export const POLAND_REGION = land({
     "pol": 38,
     "chr": 46,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster pl_f3.",
     "region": "pl.gdynia"
   }
 ])

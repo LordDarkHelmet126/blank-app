@@ -234,9 +234,9 @@ export const PAKISTAN_REGION = land({
   "officers": staff([
   {
     "id": "pk_0",
-    "name": "Kamran Qureshi",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Farooq Qureshi",
+    "title": "President",
+    "rank": "President",
     "branch": "Pakistan Army",
     "slot": "head_of_state",
     "war": 43,
@@ -244,12 +244,12 @@ export const PAKISTAN_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Pakistan, posted at lahore (pk_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pk.lahore"
   },
   {
     "id": "pk_1",
-    "name": "Kamran Abbasi",
+    "name": "Imtiaz Abbasi",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Pakistan Army",
@@ -259,12 +259,12 @@ export const PAKISTAN_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Pakistan, posted at karachi (pk_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pk.karachi"
   },
   {
     "id": "pk_2",
-    "name": "Kamran Chaudhry",
+    "name": "Nadeem Chaudhry",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Pakistan Army",
@@ -274,12 +274,12 @@ export const PAKISTAN_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Pakistan, posted at peshawar (pk_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pk.peshawar"
   },
   {
     "id": "pk_3",
-    "name": "Kamran Malik",
+    "name": "Shahid Malik",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Pakistan Army",
@@ -289,12 +289,12 @@ export const PAKISTAN_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Pakistan, posted at quetta (pk_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pk.quetta"
   },
   {
     "id": "pk_4",
-    "name": "Kamran Hashmi",
+    "name": "Tariq Hashmi",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Pakistan Army",
@@ -304,7 +304,7 @@ export const PAKISTAN_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Pakistan, posted at sui (pk_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pk.sui"
   }
 ])
@@ -1130,9 +1130,9 @@ export const INDIA_REGION = land({
   "officers": staff([
   {
     "id": "in_0",
-    "name": "Arvind Iyer",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Vikram Iyer",
+    "title": "Prime Minister",
+    "rank": "Prime Minister",
     "branch": "Indian Army",
     "slot": "head_of_state",
     "war": 43,
@@ -1140,12 +1140,12 @@ export const INDIA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prime Minister of India, posted at hyderabad (in_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.hyderabad"
   },
   {
     "id": "in_1",
-    "name": "Arvind Nair",
+    "name": "Rohit Nair",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Indian Army",
@@ -1155,12 +1155,12 @@ export const INDIA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of India, posted at itanagar (in_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.itanagar"
   },
   {
     "id": "in_2",
-    "name": "Arvind Menon",
+    "name": "Sanjay Menon",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Indian Army",
@@ -1170,12 +1170,12 @@ export const INDIA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of India, posted at guwahati (in_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.guwahati"
   },
   {
     "id": "in_3",
-    "name": "Arvind Reddy",
+    "name": "Anil Reddy",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Indian Army",
@@ -1185,12 +1185,12 @@ export const INDIA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of India, posted at patna (in_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.patna"
   },
   {
     "id": "in_4",
-    "name": "Arvind Patel",
+    "name": "Deepak Patel",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Indian Army",
@@ -1200,12 +1200,12 @@ export const INDIA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of India, posted at panaji (in_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.panaji"
   },
   {
     "id": "in_5",
-    "name": "Arvind Joshi",
+    "name": "Kiran Joshi",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Indian Army",
@@ -1215,12 +1215,12 @@ export const INDIA_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of India, posted at gandhinagar (in_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.gandhinagar"
   },
   {
     "id": "in_6",
-    "name": "Arvind Deshmukh",
+    "name": "Nikhil Deshmukh",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Indian Army",
@@ -1230,7 +1230,7 @@ export const INDIA_REGION = land({
     "pol": 38,
     "chr": 38,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of India, posted at karnal (in_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "in.karnal"
   }
 ])
@@ -1472,9 +1472,9 @@ export const SRI_LANKA_REGION = land({
   "officers": staff([
   {
     "id": "lk_0",
-    "name": "Nimal Perera",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Perera",
+    "title": "President",
+    "rank": "President",
     "branch": "Sri Lanka Army",
     "slot": "head_of_state",
     "war": 43,
@@ -1482,12 +1482,12 @@ export const SRI_LANKA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Sri Lanka, posted at colombo (lk_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lk.colombo"
   },
   {
     "id": "lk_1",
-    "name": "Nimal Fernando",
+    "name": "Bram Fernando",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Sri Lanka Army",
@@ -1497,12 +1497,12 @@ export const SRI_LANKA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Sri Lanka, posted at kandy (lk_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lk.kandy"
   },
   {
     "id": "lk_2",
-    "name": "Nimal Silva",
+    "name": "Corin Silva",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Sri Lanka Army",
@@ -1512,12 +1512,12 @@ export const SRI_LANKA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Sri Lanka, posted at galle (lk_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lk.galle"
   },
   {
     "id": "lk_3",
-    "name": "Nimal Gunasekara",
+    "name": "Davin Gunasekara",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Sri Lanka Army",
@@ -1527,12 +1527,12 @@ export const SRI_LANKA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Sri Lanka, posted at jaffna (lk_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lk.jaffna"
   },
   {
     "id": "lk_4",
-    "name": "Nimal Wijesinghe",
+    "name": "Elric Wijesinghe",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Sri Lanka Army",
@@ -1542,7 +1542,7 @@ export const SRI_LANKA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Sri Lanka, posted at trincomalee (lk_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lk.trincomalee"
   }
 ])
@@ -1668,9 +1668,9 @@ export const BANGLADESH_REGION = land({
   "officers": staff([
   {
     "id": "bd_0",
-    "name": "Mahmud Chowdhury",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Chowdhury",
+    "title": "President",
+    "rank": "President",
     "branch": "Bangladesh Army",
     "slot": "head_of_state",
     "war": 43,
@@ -1678,12 +1678,12 @@ export const BANGLADESH_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Bangladesh, posted at dhaka (bd_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bd.dhaka"
   },
   {
     "id": "bd_1",
-    "name": "Mahmud Ahmed",
+    "name": "Bram Ahmed",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Bangladesh Army",
@@ -1693,12 +1693,12 @@ export const BANGLADESH_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Bangladesh, posted at chittagong (bd_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bd.chittagong"
   },
   {
     "id": "bd_2",
-    "name": "Mahmud Hossain",
+    "name": "Corin Hossain",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Bangladesh Army",
@@ -1708,7 +1708,7 @@ export const BANGLADESH_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Bangladesh, posted at rajshahi (bd_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bd.rajshahi"
   }
 ])
@@ -2072,9 +2072,9 @@ export const NEPAL_REGION = land({
   "officers": staff([
   {
     "id": "np_0",
-    "name": "Bikram Thapa",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Thapa",
+    "title": "King",
+    "rank": "King",
     "branch": "Royal Nepalese Army",
     "slot": "head_of_state",
     "war": 43,
@@ -2082,12 +2082,12 @@ export const NEPAL_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional King of Nepal, posted at ilam (np_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "np.ilam"
   },
   {
     "id": "np_1",
-    "name": "Bikram Basnet",
+    "name": "Bram Basnet",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Royal Nepalese Army",
@@ -2097,12 +2097,12 @@ export const NEPAL_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Nepal, posted at biratnagar (np_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "np.biratnagar"
   },
   {
     "id": "np_2",
-    "name": "Bikram Adhikari",
+    "name": "Corin Adhikari",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Royal Nepalese Army",
@@ -2112,12 +2112,12 @@ export const NEPAL_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Nepal, posted at rajbiraj (np_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "np.rajbiraj"
   },
   {
     "id": "np_3",
-    "name": "Bikram Gurung",
+    "name": "Davin Gurung",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Royal Nepalese Army",
@@ -2127,12 +2127,12 @@ export const NEPAL_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Nepal, posted at janakpur (np_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "np.janakpur"
   },
   {
     "id": "np_4",
-    "name": "Bikram Magar",
+    "name": "Elric Magar",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Royal Nepalese Army",
@@ -2142,7 +2142,7 @@ export const NEPAL_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Nepal, posted at kathmandu (np_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "np.kathmandu"
   }
 ])
@@ -2619,9 +2619,9 @@ export const BHUTAN_REGION = land({
   "officers": staff([
   {
     "id": "bt_0",
-    "name": "Kinley Lhendup",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Lhendup",
+    "title": "King",
+    "rank": "King",
     "branch": "Royal Bhutan Army",
     "slot": "head_of_state",
     "war": 43,
@@ -2629,12 +2629,12 @@ export const BHUTAN_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional King of Bhutan, posted at jakar (bt_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bt.jakar"
   },
   {
     "id": "bt_1",
-    "name": "Kinley Kezang",
+    "name": "Bram Kezang",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Royal Bhutan Army",
@@ -2644,12 +2644,12 @@ export const BHUTAN_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Bhutan, posted at phuentsholing (bt_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bt.phuentsholing"
   },
   {
     "id": "bt_2",
-    "name": "Kinley Norbu",
+    "name": "Corin Norbu",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Royal Bhutan Army",
@@ -2659,12 +2659,12 @@ export const BHUTAN_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Bhutan, posted at dagana (bt_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bt.dagana"
   },
   {
     "id": "bt_3",
-    "name": "Kinley Gyeltshen",
+    "name": "Davin Gyeltshen",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Royal Bhutan Army",
@@ -2674,12 +2674,12 @@ export const BHUTAN_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Bhutan, posted at punakha (bt_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bt.punakha"
   },
   {
     "id": "bt_4",
-    "name": "Kinley Chophel",
+    "name": "Elric Chophel",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Royal Bhutan Army",
@@ -2689,12 +2689,12 @@ export const BHUTAN_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Bhutan, posted at thimphu (bt_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bt.thimphu"
   },
   {
     "id": "bt_5",
-    "name": "Kinley Dendup",
+    "name": "Fenn Dendup",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Royal Bhutan Army",
@@ -2704,7 +2704,7 @@ export const BHUTAN_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Bhutan, posted at trashigang (bt_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bt.trashigang"
   }
 ])
@@ -3194,7 +3194,7 @@ export const MALDIVES_REGION = land({
   "officers": staff([
   {
     "id": "mv_0",
-    "name": "Ibrahim Waheed",
+    "name": "Alden Waheed",
     "title": "Head of state",
     "rank": "Colonel",
     "branch": "National Security Service",
@@ -3204,12 +3204,12 @@ export const MALDIVES_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Head of state of Maldives, posted at dhidhdhoo (mv_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mv.dhidhdhoo"
   },
   {
     "id": "mv_1",
-    "name": "Ibrahim Nasir",
+    "name": "Bram Nasir",
     "title": "Defense minister",
     "rank": "Lieutenant Colonel",
     "branch": "National Security Service",
@@ -3219,12 +3219,12 @@ export const MALDIVES_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Maldives, posted at kulhudhuffushi (mv_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mv.kulhudhuffushi"
   },
   {
     "id": "mv_2",
-    "name": "Ibrahim Rasheed",
+    "name": "Corin Rasheed",
     "title": "Chief of staff",
     "rank": "Major",
     "branch": "National Security Service",
@@ -3234,12 +3234,12 @@ export const MALDIVES_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Maldives, posted at funadhoo (mv_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mv.funadhoo"
   },
   {
     "id": "mv_3",
-    "name": "Ibrahim Hameed",
+    "name": "Davin Hameed",
     "title": "Front commander",
     "rank": "Major",
     "branch": "National Security Service",
@@ -3249,12 +3249,12 @@ export const MALDIVES_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Maldives, posted at manadhoo (mv_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mv.manadhoo"
   },
   {
     "id": "mv_4",
-    "name": "Ibrahim Shihab",
+    "name": "Elric Shihab",
     "title": "Field officer",
     "rank": "Captain",
     "branch": "National Security Service",
@@ -3264,12 +3264,12 @@ export const MALDIVES_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Maldives, posted at ungoofaaru (mv_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mv.ungoofaaru"
   },
   {
     "id": "mv_5",
-    "name": "Ibrahim Jameel",
+    "name": "Fenn Jameel",
     "title": "Front commander",
     "rank": "Major",
     "branch": "National Security Service",
@@ -3279,7 +3279,7 @@ export const MALDIVES_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Maldives, posted at naifaru (mv_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mv.naifaru"
   }
 ])

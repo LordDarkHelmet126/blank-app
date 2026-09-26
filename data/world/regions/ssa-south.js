@@ -498,8 +498,8 @@ export const ANGOLA_REGION = land({
   {
     "id": "ao_0",
     "name": "Maria Fernandes",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -507,7 +507,7 @@ export const ANGOLA_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Angola, posted at luanda (ao_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ao.luanda"
   },
   {
@@ -522,7 +522,7 @@ export const ANGOLA_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Angola, posted at benguela (ao_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ao.benguela"
   },
   {
@@ -537,7 +537,7 @@ export const ANGOLA_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Angola, posted at cabinda (ao_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ao.cabinda"
   },
   {
@@ -552,7 +552,7 @@ export const ANGOLA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Angola, posted at caxito (ao_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ao.caxito"
   },
   {
@@ -567,7 +567,7 @@ export const ANGOLA_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Angola, posted at dilolo (ao_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ao.dilolo"
   },
   {
@@ -582,7 +582,7 @@ export const ANGOLA_REGION = land({
     "pol": 32,
     "chr": 34,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Angola, posted at dundo (ao_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ao.dundo"
   }
 ])
@@ -852,8 +852,8 @@ export const ZAMBIA_REGION = land({
   {
     "id": "zm_0",
     "name": "Mutale Phiri",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -861,7 +861,7 @@ export const ZAMBIA_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Zambia, posted at lusaka (zm_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zm.lusaka"
   },
   {
@@ -876,7 +876,7 @@ export const ZAMBIA_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Zambia, posted at chipata (zm_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zm.chipata"
   },
   {
@@ -891,7 +891,7 @@ export const ZAMBIA_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Zambia, posted at kabwe (zm_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zm.kabwe"
   },
   {
@@ -906,7 +906,7 @@ export const ZAMBIA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Zambia, posted at kapiri (zm_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zm.kapiri"
   },
   {
@@ -921,7 +921,7 @@ export const ZAMBIA_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Zambia, posted at kasama (zm_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zm.kasama"
   }
 ])
@@ -1037,8 +1037,8 @@ export const MALAWI_REGION = land({
   {
     "id": "mw_0",
     "name": "Temwa Phiri",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -1046,7 +1046,7 @@ export const MALAWI_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Malawi, posted at lilongwe (mw_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mw.lilongwe"
   },
   {
@@ -1061,7 +1061,7 @@ export const MALAWI_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Malawi, posted at blantyre (mw_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mw.blantyre"
   },
   {
@@ -1076,7 +1076,7 @@ export const MALAWI_REGION = land({
     "pol": 30,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Malawi, posted at mzuzu (mw_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mw.mzuzu"
   }
 ])
@@ -1379,8 +1379,8 @@ export const MOZAMBIQUE_REGION = land({
   {
     "id": "mz_0",
     "name": "Maria Macuacua",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -1388,7 +1388,7 @@ export const MOZAMBIQUE_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Mozambique, posted at maputo (mz_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mz.maputo"
   },
   {
@@ -1403,7 +1403,7 @@ export const MOZAMBIQUE_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Mozambique, posted at beira (mz_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mz.beira"
   },
   {
@@ -1418,7 +1418,7 @@ export const MOZAMBIQUE_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Mozambique, posted at chimoio (mz_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mz.chimoio"
   },
   {
@@ -1433,7 +1433,7 @@ export const MOZAMBIQUE_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Mozambique, posted at inhambane (mz_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mz.inhambane"
   },
   {
@@ -1448,7 +1448,7 @@ export const MOZAMBIQUE_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Mozambique, posted at lichinga (mz_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mz.lichinga"
   }
 ])
@@ -1749,8 +1749,8 @@ export const ZIMBABWE_REGION = land({
   {
     "id": "zw_0",
     "name": "Tendai Moyo",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -1758,7 +1758,7 @@ export const ZIMBABWE_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Zimbabwe, posted at harare (zw_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zw.harare"
   },
   {
@@ -1773,7 +1773,7 @@ export const ZIMBABWE_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Zimbabwe, posted at bindura (zw_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zw.bindura"
   },
   {
@@ -1788,7 +1788,7 @@ export const ZIMBABWE_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Zimbabwe, posted at bulawayo (zw_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zw.bulawayo"
   },
   {
@@ -1803,7 +1803,7 @@ export const ZIMBABWE_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Zimbabwe, posted at chinhoyi (zw_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zw.chinhoyi"
   },
   {
@@ -1818,7 +1818,7 @@ export const ZIMBABWE_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Zimbabwe, posted at gwanda (zw_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "zw.gwanda"
   }
 ])
@@ -2078,8 +2078,8 @@ export const BOTSWANA_REGION = land({
   {
     "id": "bw_0",
     "name": "Kabelo Mogotsi",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -2087,7 +2087,7 @@ export const BOTSWANA_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Botswana, posted at gaborone (bw_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bw.gaborone"
   },
   {
@@ -2102,7 +2102,7 @@ export const BOTSWANA_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Botswana, posted at francistown (bw_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bw.francistown"
   },
   {
@@ -2117,7 +2117,7 @@ export const BOTSWANA_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Botswana, posted at ghanzi (bw_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bw.ghanzi"
   },
   {
@@ -2132,7 +2132,7 @@ export const BOTSWANA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Botswana, posted at kanye (bw_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bw.kanye"
   },
   {
@@ -2147,7 +2147,7 @@ export const BOTSWANA_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Botswana, posted at kasane (bw_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "bw.kasane"
   }
 ])
@@ -2984,8 +2984,8 @@ export const SOUTH_AFRICA_REGION = land({
   {
     "id": "za_0",
     "name": "Pieter Venter",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "State administration",
     "slot": "head_of_state",
     "war": 34,
@@ -2993,7 +2993,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of South Africa, posted at pretoria (za_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.pretoria"
   },
   {
@@ -3008,7 +3008,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of South Africa, posted at bisho (za_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.bisho"
   },
   {
@@ -3023,7 +3023,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of South Africa, posted at bloemfontein (za_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.bloemfontein"
   },
   {
@@ -3038,7 +3038,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of South Africa, posted at cape town (za_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.cape_town"
   },
   {
@@ -3053,7 +3053,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of South Africa, posted at durban (za_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.durban"
   },
   {
@@ -3068,7 +3068,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 32,
     "chr": 34,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of South Africa, posted at east london (za_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.east_london"
   },
   {
@@ -3083,7 +3083,7 @@ export const SOUTH_AFRICA_REGION = land({
     "pol": 30,
     "chr": 32,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of South Africa, posted at giyani (za_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "za.giyani"
   }
 ])
@@ -3342,8 +3342,8 @@ export const LESOTHO_REGION = land({
   {
     "id": "ls_0",
     "name": "Palesa Mohapi",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -3351,7 +3351,7 @@ export const LESOTHO_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Lesotho, posted at maseru (ls_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ls.maseru"
   },
   {
@@ -3366,7 +3366,7 @@ export const LESOTHO_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Lesotho, posted at butha buthe (ls_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ls.butha_buthe"
   },
   {
@@ -3381,7 +3381,7 @@ export const LESOTHO_REGION = land({
     "pol": 38,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Lesotho, posted at hlotse (ls_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ls.hlotse"
   },
   {
@@ -3396,7 +3396,7 @@ export const LESOTHO_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Lesotho, posted at mafeteng (ls_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ls.mafeteng"
   },
   {
@@ -3411,7 +3411,7 @@ export const LESOTHO_REGION = land({
     "pol": 29,
     "chr": 30,
     "personality": "ambitious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Lesotho, posted at mohales hoek (ls_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ls.mohales_hoek"
   }
 ])
@@ -3532,8 +3532,8 @@ export const SWAZILAND_REGION = land({
   {
     "id": "sz_0",
     "name": "Themba Ginindza",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "President",
+    "rank": "President",
     "branch": "Council of Ministers",
     "slot": "head_of_state",
     "war": 34,
@@ -3541,7 +3541,7 @@ export const SWAZILAND_REGION = land({
     "pol": 68,
     "chr": 56,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Swaziland, posted at mbabane (sz_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sz.mbabane"
   },
   {
@@ -3556,7 +3556,7 @@ export const SWAZILAND_REGION = land({
     "pol": 41,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Swaziland, posted at manzini (sz_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sz.manzini"
   },
   {
@@ -3571,7 +3571,7 @@ export const SWAZILAND_REGION = land({
     "pol": 30,
     "chr": 30,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Swaziland, posted at nhlangano (sz_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sz.nhlangano"
   }
 ])

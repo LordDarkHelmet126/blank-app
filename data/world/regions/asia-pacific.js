@@ -435,9 +435,9 @@ export const AUSTRALIA_REGION = land({
   "officers": staff([
   {
     "id": "au_0",
-    "name": "Malcolm Barrett",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Callum Barrett",
+    "title": "Prime Minister",
+    "rank": "Prime Minister",
     "branch": "Australian Army",
     "slot": "head_of_state",
     "war": 43,
@@ -445,12 +445,12 @@ export const AUSTRALIA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prime Minister of Australia, posted at sydney (au_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "au.sydney"
   },
   {
     "id": "au_1",
-    "name": "Malcolm Cooper",
+    "name": "Fraser Cooper",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Australian Army",
@@ -460,12 +460,12 @@ export const AUSTRALIA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Australia, posted at melbourne (au_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "au.melbourne"
   },
   {
     "id": "au_2",
-    "name": "Malcolm Walsh",
+    "name": "Owen Walsh",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Australian Army",
@@ -475,12 +475,12 @@ export const AUSTRALIA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Australia, posted at brisbane (au_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "au.brisbane"
   },
   {
     "id": "au_3",
-    "name": "Malcolm Murray",
+    "name": "Ned Murray",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Australian Army",
@@ -490,12 +490,12 @@ export const AUSTRALIA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Australia, posted at adelaide (au_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "au.adelaide"
   },
   {
     "id": "au_4",
-    "name": "Malcolm Bennett",
+    "name": "Hugh Bennett",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Australian Army",
@@ -505,12 +505,12 @@ export const AUSTRALIA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Australia, posted at perth (au_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "au.perth"
   },
   {
     "id": "au_5",
-    "name": "Malcolm Doyle",
+    "name": "Blake Doyle",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Australian Army",
@@ -520,7 +520,7 @@ export const AUSTRALIA_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Australia, posted at hobart (au_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "au.hobart"
   }
 ])
@@ -908,9 +908,9 @@ export const NEW_ZEALAND_REGION = land({
   "officers": staff([
   {
     "id": "nz_0",
-    "name": "Graeme Bennett",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Bennett",
+    "title": "Prime Minister",
+    "rank": "Prime Minister",
     "branch": "New Zealand Army",
     "slot": "head_of_state",
     "war": 43,
@@ -918,12 +918,12 @@ export const NEW_ZEALAND_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prime Minister of New Zealand, posted at whangarei (nz_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nz.whangarei"
   },
   {
     "id": "nz_1",
-    "name": "Graeme MacLeod",
+    "name": "Bram MacLeod",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "New Zealand Army",
@@ -933,12 +933,12 @@ export const NEW_ZEALAND_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of New Zealand, posted at auckland (nz_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nz.auckland"
   },
   {
     "id": "nz_2",
-    "name": "Graeme Reid",
+    "name": "Corin Reid",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "New Zealand Army",
@@ -948,12 +948,12 @@ export const NEW_ZEALAND_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of New Zealand, posted at hamilton (nz_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nz.hamilton"
   },
   {
     "id": "nz_3",
-    "name": "Graeme Sutherland",
+    "name": "Davin Sutherland",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "New Zealand Army",
@@ -963,12 +963,12 @@ export const NEW_ZEALAND_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of New Zealand, posted at tauranga (nz_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nz.tauranga"
   },
   {
     "id": "nz_4",
-    "name": "Graeme Cameron",
+    "name": "Elric Cameron",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "New Zealand Army",
@@ -978,12 +978,12 @@ export const NEW_ZEALAND_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of New Zealand, posted at gisborne (nz_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nz.gisborne"
   },
   {
     "id": "nz_5",
-    "name": "Graeme Blake",
+    "name": "Fenn Blake",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "New Zealand Army",
@@ -993,7 +993,7 @@ export const NEW_ZEALAND_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of New Zealand, posted at napier (nz_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nz.napier"
   }
 ])
@@ -1139,9 +1139,9 @@ export const FIJI_REGION = land({
   "officers": staff([
   {
     "id": "fj_0",
-    "name": "Jone Rokotuivuna",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Rokotuivuna",
+    "title": "President",
+    "rank": "President",
     "branch": "Royal Fiji Military Forces",
     "slot": "head_of_state",
     "war": 43,
@@ -1149,12 +1149,12 @@ export const FIJI_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Fiji, posted at suva (fj_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "fj.suva"
   },
   {
     "id": "fj_1",
-    "name": "Jone Naisara",
+    "name": "Bram Naisara",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Royal Fiji Military Forces",
@@ -1164,12 +1164,12 @@ export const FIJI_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Fiji, posted at lautoka (fj_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "fj.lautoka"
   },
   {
     "id": "fj_2",
-    "name": "Jone Vueti",
+    "name": "Corin Vueti",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Royal Fiji Military Forces",
@@ -1179,7 +1179,7 @@ export const FIJI_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Fiji, posted at labasa (fj_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "fj.labasa"
   }
 ])
@@ -1392,9 +1392,9 @@ export const SOLOMON_ISLANDS_REGION = land({
   "officers": staff([
   {
     "id": "sb_0",
-    "name": "Francis Maelaua",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Maelaua",
+    "title": "President",
+    "rank": "President",
     "branch": "Royal Solomon Islands Police Force",
     "slot": "head_of_state",
     "war": 43,
@@ -1402,12 +1402,12 @@ export const SOLOMON_ISLANDS_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Solomon Islands, posted at honiara (sb_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sb.honiara"
   },
   {
     "id": "sb_1",
-    "name": "Francis Kuper",
+    "name": "Bram Kuper",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Royal Solomon Islands Police Force",
@@ -1417,12 +1417,12 @@ export const SOLOMON_ISLANDS_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Solomon Islands, posted at aola (sb_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sb.aola"
   },
   {
     "id": "sb_2",
-    "name": "Francis Tosika",
+    "name": "Corin Tosika",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Royal Solomon Islands Police Force",
@@ -1432,12 +1432,12 @@ export const SOLOMON_ISLANDS_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Solomon Islands, posted at gizo (sb_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sb.gizo"
   },
   {
     "id": "sb_3",
-    "name": "Francis Lilo",
+    "name": "Davin Lilo",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Royal Solomon Islands Police Force",
@@ -1447,12 +1447,12 @@ export const SOLOMON_ISLANDS_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Solomon Islands, posted at buala (sb_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sb.buala"
   },
   {
     "id": "sb_4",
-    "name": "Francis Hou",
+    "name": "Elric Hou",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Royal Solomon Islands Police Force",
@@ -1462,7 +1462,7 @@ export const SOLOMON_ISLANDS_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Solomon Islands, posted at tulagi (sb_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sb.tulagi"
   }
 ])
@@ -1630,9 +1630,9 @@ export const VANUATU_REGION = land({
   "officers": staff([
   {
     "id": "vu_0",
-    "name": "Kalpoi Matai",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Matai",
+    "title": "President",
+    "rank": "President",
     "branch": "Vanuatu Mobile Force",
     "slot": "head_of_state",
     "war": 43,
@@ -1640,12 +1640,12 @@ export const VANUATU_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Vanuatu, posted at port vila (vu_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "vu.port_vila"
   },
   {
     "id": "vu_1",
-    "name": "Kalpoi Kalsakau",
+    "name": "Bram Kalsakau",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Vanuatu Mobile Force",
@@ -1655,12 +1655,12 @@ export const VANUATU_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Vanuatu, posted at luganville (vu_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "vu.luganville"
   },
   {
     "id": "vu_2",
-    "name": "Kalpoi Bule",
+    "name": "Corin Bule",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Vanuatu Mobile Force",
@@ -1670,7 +1670,7 @@ export const VANUATU_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Vanuatu, posted at isangel (vu_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "vu.isangel"
   }
 ])
@@ -1814,9 +1814,9 @@ export const TONGA_REGION = land({
   "officers": staff([
   {
     "id": "to_0",
-    "name": "Sione Tupou",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Fenn Ashcaster",
+    "title": "King",
+    "rank": "King",
     "branch": "Tonga Defence Services",
     "slot": "head_of_state",
     "war": 43,
@@ -1824,12 +1824,12 @@ export const TONGA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional King of Tonga, posted at nukualofa (to_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "to.nukualofa"
   },
   {
     "id": "to_1",
-    "name": "Sione Fakatava",
+    "name": "Bram Fakatava",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Tonga Defence Services",
@@ -1839,12 +1839,12 @@ export const TONGA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Tonga, posted at neiafu (to_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "to.neiafu"
   },
   {
     "id": "to_2",
-    "name": "Sione Manu",
+    "name": "Corin Manu",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Tonga Defence Services",
@@ -1854,7 +1854,7 @@ export const TONGA_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Tonga, posted at pangai (to_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "to.pangai"
   }
 ])
@@ -2136,9 +2136,9 @@ export const WESTERN_SAMOA_REGION = land({
   "officers": staff([
   {
     "id": "wsm_0",
-    "name": "Tupuola Efi",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Elric Ashbrook",
+    "title": "President",
+    "rank": "President",
     "branch": "Western Samoa Police",
     "slot": "head_of_state",
     "war": 43,
@@ -2146,12 +2146,12 @@ export const WESTERN_SAMOA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Western Samoa, posted at apia (wsm_0). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "wsm.apia"
   },
   {
     "id": "wsm_1",
-    "name": "Tupuola Toleafoa",
+    "name": "Gareth Ashworth",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Western Samoa Police",
@@ -2161,12 +2161,12 @@ export const WESTERN_SAMOA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Western Samoa, posted at leulumoega (wsm_1). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "wsm.leulumoega"
   },
   {
     "id": "wsm_2",
-    "name": "Tupuola Sailele",
+    "name": "Holt Belham",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Western Samoa Police",
@@ -2176,12 +2176,12 @@ export const WESTERN_SAMOA_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Western Samoa, posted at mulifanua (wsm_2). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "wsm.mulifanua"
   },
   {
     "id": "wsm_3",
-    "name": "Tupuola Mataafa",
+    "name": "Holt Belcott",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Western Samoa Police",
@@ -2191,12 +2191,12 @@ export const WESTERN_SAMOA_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Western Samoa, posted at lufilufi (wsm_3). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "wsm.lufilufi"
   },
   {
     "id": "wsm_4",
-    "name": "Tupuola Alesana",
+    "name": "Joss Belwell",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Western Samoa Police",
@@ -2206,7 +2206,7 @@ export const WESTERN_SAMOA_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Western Samoa, posted at samamea (wsm_4). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "wsm.samamea"
   }
 ])
@@ -2304,9 +2304,9 @@ export const KIRIBATI_REGION = land({
   "officers": staff([
   {
     "id": "ki_0",
-    "name": "Ieremia Tito",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Gareth Ashbrook",
+    "title": "President",
+    "rank": "President",
     "branch": "Kiribati Police",
     "slot": "head_of_state",
     "war": 43,
@@ -2314,12 +2314,12 @@ export const KIRIBATI_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Kiribati, posted at tarawa (ki_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ki.tarawa"
   },
   {
     "id": "ki_1",
-    "name": "Ieremia Tong",
+    "name": "Bram Tong",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Kiribati Police",
@@ -2329,12 +2329,12 @@ export const KIRIBATI_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Kiribati, posted at kanton (ki_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ki.kanton"
   },
   {
     "id": "ki_2",
-    "name": "Ieremia Bakaiea",
+    "name": "Corin Bakaiea",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Kiribati Police",
@@ -2344,7 +2344,7 @@ export const KIRIBATI_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Kiribati, posted at kiritimati (ki_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ki.kiritimati"
   }
 ])
@@ -2557,9 +2557,9 @@ export const TUVALU_REGION = land({
   "officers": staff([
   {
     "id": "tv_0",
-    "name": "Toaripi Lauti",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Holt Ashshaw",
+    "title": "President",
+    "rank": "President",
     "branch": "Tuvalu Police",
     "slot": "head_of_state",
     "war": 43,
@@ -2567,12 +2567,12 @@ export const TUVALU_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Tuvalu, posted at funafuti (tv_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tv.funafuti"
   },
   {
     "id": "tv_1",
-    "name": "Toaripi Paeniu",
+    "name": "Fenn Ashshaw",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Tuvalu Police",
@@ -2582,12 +2582,12 @@ export const TUVALU_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Tuvalu, posted at nanumea (tv_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tv.nanumea"
   },
   {
     "id": "tv_2",
-    "name": "Toaripi Sopoaga",
+    "name": "Holt Belwick",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Tuvalu Police",
@@ -2597,12 +2597,12 @@ export const TUVALU_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Tuvalu, posted at nanumanga (tv_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tv.nanumanga"
   },
   {
     "id": "tv_3",
-    "name": "Toaripi Talake",
+    "name": "Ivo Bellow",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Tuvalu Police",
@@ -2612,12 +2612,12 @@ export const TUVALU_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Tuvalu, posted at niutao (tv_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tv.niutao"
   },
   {
     "id": "tv_4",
-    "name": "Toaripi Ielemia",
+    "name": "Ivo Belbridge",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Tuvalu Police",
@@ -2627,7 +2627,7 @@ export const TUVALU_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Tuvalu, posted at nui (tv_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tv.nui"
   }
 ])
@@ -2678,9 +2678,9 @@ export const NAURU_REGION = land({
   "officers": staff([
   {
     "id": "nr_0",
-    "name": "Hammer Clodumar",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Ivo Ashley",
+    "title": "President",
+    "rank": "President",
     "branch": "Nauru Police",
     "slot": "head_of_state",
     "war": 43,
@@ -2688,7 +2688,7 @@ export const NAURU_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Nauru, posted at yaren (nr_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nr.yaren"
   },
   {
@@ -2703,7 +2703,7 @@ export const NAURU_REGION = land({
     "pol": 37,
     "chr": 37,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Nauru, posted at yaren (nr_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nr.yaren"
   }
 ])
@@ -2755,8 +2755,8 @@ export const GUAM_REGION = land({
   {
     "id": "gu_0",
     "name": "Antonio Cruz",
-    "title": "Head of state",
-    "rank": "General",
+    "title": "Governor",
+    "rank": "Governor",
     "branch": "Guam National Guard",
     "slot": "head_of_state",
     "war": 43,
@@ -2764,7 +2764,7 @@ export const GUAM_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Governor of Guam, posted at hagatna (gu_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "gu.hagatna"
   },
   {
@@ -2779,7 +2779,7 @@ export const GUAM_REGION = land({
     "pol": 37,
     "chr": 37,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Guam, posted at hagatna (gu_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "gu.hagatna"
   }
 ])
@@ -2877,9 +2877,9 @@ export const NORTHERN_MARIANAS_REGION = land({
   "officers": staff([
   {
     "id": "mp_0",
-    "name": "Pedro Tenorio",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Joss Ashton",
+    "title": "Governor",
+    "rank": "Governor",
     "branch": "Commonwealth government",
     "slot": "head_of_state",
     "war": 43,
@@ -2887,14 +2887,14 @@ export const NORTHERN_MARIANAS_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Governor of Northern Mariana Islands, posted at saipan (mp_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mp.saipan"
   },
   {
     "id": "mp_1",
-    "name": "Pedro Cabrera",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Bram Cabrera",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "Commonwealth government",
     "slot": "defense_minister",
     "war": 68,
@@ -2902,12 +2902,12 @@ export const NORTHERN_MARIANAS_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of Northern Mariana Islands, posted at tinian (mp_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mp.tinian"
   },
   {
     "id": "mp_2",
-    "name": "Pedro Sablan",
+    "name": "Corin Sablan",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Commonwealth government",
@@ -2917,7 +2917,7 @@ export const NORTHERN_MARIANAS_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Northern Mariana Islands, posted at rota (mp_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mp.rota"
   }
 ])
@@ -3038,9 +3038,9 @@ export const MICRONESIA_REGION = land({
   "officers": staff([
   {
     "id": "fm_0",
-    "name": "John Haglelgam",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Kael Ashworth",
+    "title": "President",
+    "rank": "President",
     "branch": "National Police",
     "slot": "head_of_state",
     "war": 43,
@@ -3048,12 +3048,12 @@ export const MICRONESIA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Federated States of Micronesia, posted at yap (fm_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "fm.yap"
   },
   {
     "id": "fm_1",
-    "name": "John Falcam",
+    "name": "Gareth Ashley",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "National Police",
@@ -3063,12 +3063,12 @@ export const MICRONESIA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Federated States of Micronesia, posted at chuuk (fm_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "fm.chuuk"
   },
   {
     "id": "fm_2",
-    "name": "John Olter",
+    "name": "Ivo Belford",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "National Police",
@@ -3078,7 +3078,7 @@ export const MICRONESIA_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Federated States of Micronesia, posted at pohnpei (fm_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "fm.pohnpei"
   }
 ])
@@ -3199,9 +3199,9 @@ export const MARSHALL_ISLANDS_REGION = land({
   "officers": staff([
   {
     "id": "mh_0",
-    "name": "Amata Lemari",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Lenn Belwick",
+    "title": "President",
+    "rank": "President",
     "branch": "Sea Patrol",
     "slot": "head_of_state",
     "war": 43,
@@ -3209,12 +3209,12 @@ export const MARSHALL_ISLANDS_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Marshall Islands, posted at majuro (mh_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mh.majuro"
   },
   {
     "id": "mh_1",
-    "name": "Amata DeBrum",
+    "name": "Holt Ashton",
     "title": "Defense minister",
     "rank": "Lieutenant General",
     "branch": "Sea Patrol",
@@ -3224,12 +3224,12 @@ export const MARSHALL_ISLANDS_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Defense minister of Marshall Islands, posted at kwajalein (mh_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mh.kwajalein"
   },
   {
     "id": "mh_2",
-    "name": "Amata Tomeing",
+    "name": "Joss Belham",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Sea Patrol",
@@ -3239,7 +3239,7 @@ export const MARSHALL_ISLANDS_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Marshall Islands, posted at jaluit (mh_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "mh.jaluit"
   }
 ])
@@ -3636,9 +3636,9 @@ export const PALAU_REGION = land({
   "officers": staff([
   {
     "id": "pw_0",
-    "name": "Kuniwo Nakamura",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Merrick Belford",
+    "title": "High Commissioner",
+    "rank": "High Commissioner",
     "branch": "Trust Territory administration",
     "slot": "head_of_state",
     "war": 43,
@@ -3646,14 +3646,14 @@ export const PALAU_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional High Commissioner of Palau, posted at aimeliik (pw_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pw.aimeliik"
   },
   {
     "id": "pw_1",
-    "name": "Kuniwo Remeliik",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Ivo Ashworth",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "Trust Territory administration",
     "slot": "defense_minister",
     "war": 68,
@@ -3661,12 +3661,12 @@ export const PALAU_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of Palau, posted at airai (pw_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pw.airai"
   },
   {
     "id": "pw_2",
-    "name": "Kuniwo Etpison",
+    "name": "Kael Bellow",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Trust Territory administration",
@@ -3676,12 +3676,12 @@ export const PALAU_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Palau, posted at kayangel (pw_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pw.kayangel"
   },
   {
     "id": "pw_3",
-    "name": "Kuniwo Oiterong",
+    "name": "Joss Belcott",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Trust Territory administration",
@@ -3691,12 +3691,12 @@ export const PALAU_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Palau, posted at melekeok (pw_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pw.melekeok"
   },
   {
     "id": "pw_4",
-    "name": "Kuniwo Salii",
+    "name": "Joss Belfield",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Trust Territory administration",
@@ -3706,12 +3706,12 @@ export const PALAU_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Palau, posted at ngaraard (pw_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pw.ngaraard"
   },
   {
     "id": "pw_5",
-    "name": "Kuniwo Toribiong",
+    "name": "Kael Belcaster",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Trust Territory administration",
@@ -3721,7 +3721,7 @@ export const PALAU_REGION = land({
     "pol": 40,
     "chr": 41,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Palau, posted at ngarchelong (pw_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pw.ngarchelong"
   }
 ])
@@ -3842,9 +3842,9 @@ export const AMERICAN_SAMOA_REGION = land({
   "officers": staff([
   {
     "id": "as_0",
-    "name": "Peter Coleman",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Nils Belham",
+    "title": "Governor",
+    "rank": "Governor",
     "branch": "American Samoa government",
     "slot": "head_of_state",
     "war": 43,
@@ -3852,14 +3852,14 @@ export const AMERICAN_SAMOA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Governor of American Samoa, posted at pago pago (as_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "as.pago_pago"
   },
   {
     "id": "as_1",
-    "name": "Peter Sunia",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Bram Sunia",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "American Samoa government",
     "slot": "defense_minister",
     "war": 68,
@@ -3867,12 +3867,12 @@ export const AMERICAN_SAMOA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of American Samoa, posted at leone (as_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "as.leone"
   },
   {
     "id": "as_2",
-    "name": "Peter Tulafono",
+    "name": "Corin Tulafono",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "American Samoa government",
@@ -3882,7 +3882,7 @@ export const AMERICAN_SAMOA_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of American Samoa, posted at tau (as_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "as.tau"
   }
 ])
@@ -4026,9 +4026,9 @@ export const FRENCH_POLYNESIA_REGION = land({
   "officers": staff([
   {
     "id": "pf_0",
-    "name": "Gaston Leontieff",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Orin Bellow",
+    "title": "High Commissioner",
+    "rank": "High Commissioner",
     "branch": "French administration",
     "slot": "head_of_state",
     "war": 43,
@@ -4036,14 +4036,14 @@ export const FRENCH_POLYNESIA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional High Commissioner of French Polynesia, posted at papeete (pf_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pf.papeete"
   },
   {
     "id": "pf_1",
-    "name": "Gaston Temaru",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Joss Belwick",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "French administration",
     "slot": "defense_minister",
     "war": 68,
@@ -4051,12 +4051,12 @@ export const FRENCH_POLYNESIA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of French Polynesia, posted at uturoa (pf_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pf.uturoa"
   },
   {
     "id": "pf_2",
-    "name": "Gaston Fritch",
+    "name": "Lenn Belcott",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "French administration",
@@ -4066,7 +4066,7 @@ export const FRENCH_POLYNESIA_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of French Polynesia, posted at rangiroa (pf_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pf.rangiroa"
   }
 ])
@@ -4165,9 +4165,9 @@ export const NEW_CALEDONIA_REGION = land({
   "officers": staff([
   {
     "id": "ncl_0",
-    "name": "Jacques Lemoine",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Lemoine",
+    "title": "High Commissioner",
+    "rank": "High Commissioner",
     "branch": "French administration",
     "slot": "head_of_state",
     "war": 43,
@@ -4175,14 +4175,14 @@ export const NEW_CALEDONIA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional High Commissioner of New Caledonia, posted at noumea (ncl_0). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "ncl.noumea"
   },
   {
     "id": "ncl_1",
-    "name": "Jacques Frogier",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Merrick Belbridge",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "French administration",
     "slot": "defense_minister",
     "war": 68,
@@ -4190,12 +4190,12 @@ export const NEW_CALEDONIA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of New Caledonia, posted at kone (ncl_1). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "ncl.kone"
   },
   {
     "id": "ncl_2",
-    "name": "Jacques Martin",
+    "name": "Corin Martin",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "French administration",
@@ -4205,7 +4205,7 @@ export const NEW_CALEDONIA_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of New Caledonia, posted at lifou (ncl_2). Drills the reserve companies. Not a real officeholder of 1985-89.",
     "region": "ncl.lifou"
   }
 ])
@@ -4487,9 +4487,9 @@ export const COOK_ISLANDS_REGION = land({
   "officers": staff([
   {
     "id": "ck_0",
-    "name": "Tom Davis",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Perrin Belcott",
+    "title": "Premier",
+    "rank": "Premier",
     "branch": "Cook Islands Police",
     "slot": "head_of_state",
     "war": 43,
@@ -4497,14 +4497,14 @@ export const COOK_ISLANDS_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Premier of Cook Islands, posted at rarotonga (ck_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ck.rarotonga"
   },
   {
     "id": "ck_1",
-    "name": "Tom Henry",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Kael Belford",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "Cook Islands Police",
     "slot": "defense_minister",
     "war": 68,
@@ -4512,12 +4512,12 @@ export const COOK_ISLANDS_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of Cook Islands, posted at aitutaki (ck_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ck.aitutaki"
   },
   {
     "id": "ck_2",
-    "name": "Tom Robati",
+    "name": "Nils Belfield",
     "title": "Chief of staff",
     "rank": "Major General",
     "branch": "Cook Islands Police",
@@ -4527,12 +4527,12 @@ export const COOK_ISLANDS_REGION = land({
     "pol": 45,
     "chr": 40,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of staff of Cook Islands, posted at atiu (ck_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ck.atiu"
   },
   {
     "id": "ck_3",
-    "name": "Tom Akaruru",
+    "name": "Kael Belbridge",
     "title": "Front commander",
     "rank": "Brigadier",
     "branch": "Cook Islands Police",
@@ -4542,12 +4542,12 @@ export const COOK_ISLANDS_REGION = land({
     "pol": 35,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Cook Islands, posted at mangaia (ck_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ck.mangaia"
   },
   {
     "id": "ck_4",
-    "name": "Tom Woonton",
+    "name": "Kael Belmont",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Cook Islands Police",
@@ -4557,7 +4557,7 @@ export const COOK_ISLANDS_REGION = land({
     "pol": 31,
     "chr": 35,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Cook Islands, posted at mauke (ck_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ck.mauke"
   }
 ])
@@ -4608,9 +4608,9 @@ export const NIUE_REGION = land({
   "officers": staff([
   {
     "id": "nu_0",
-    "name": "Young Vivian",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Quill Belbridge",
+    "title": "Premier",
+    "rank": "Premier",
     "branch": "Niue Police",
     "slot": "head_of_state",
     "war": 43,
@@ -4618,7 +4618,7 @@ export const NIUE_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Premier of Niue, posted at alofi (nu_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nu.alofi"
   },
   {
@@ -4633,7 +4633,7 @@ export const NIUE_REGION = land({
     "pol": 37,
     "chr": 37,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Niue, posted at alofi (nu_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "nu.alofi"
   }
 ])
@@ -4731,9 +4731,9 @@ export const TOKELAU_REGION = land({
   "officers": staff([
   {
     "id": "tk_0",
-    "name": "Kuresa Nasau",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Rowan Belfield",
+    "title": "Administrator",
+    "rank": "Administrator",
     "branch": "Tokelau administration",
     "slot": "head_of_state",
     "war": 43,
@@ -4741,14 +4741,14 @@ export const TOKELAU_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Administrator of Tokelau, posted at atafu (tk_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tk.atafu"
   },
   {
     "id": "tk_1",
-    "name": "Kuresa Teao",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Bram Teao",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "Tokelau administration",
     "slot": "defense_minister",
     "war": 68,
@@ -4756,12 +4756,12 @@ export const TOKELAU_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of Tokelau, posted at nukunonu (tk_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tk.nukunonu"
   },
   {
     "id": "tk_2",
-    "name": "Kuresa Lui",
+    "name": "Corin Lui",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "Tokelau administration",
@@ -4771,7 +4771,7 @@ export const TOKELAU_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Tokelau, posted at fakaofo (tk_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "tk.fakaofo"
   }
 ])
@@ -4869,9 +4869,9 @@ export const WALLIS_AND_FUTUNA_REGION = land({
   "officers": staff([
   {
     "id": "wf_0",
-    "name": "Setefano Hanisi",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Alden Hanisi",
+    "title": "Administrator",
+    "rank": "Administrator",
     "branch": "French administration",
     "slot": "head_of_state",
     "war": 43,
@@ -4879,14 +4879,14 @@ export const WALLIS_AND_FUTUNA_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Administrator of Wallis and Futuna, posted at mata utu (wf_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "wf.mata_utu"
   },
   {
     "id": "wf_1",
-    "name": "Setefano Malia",
-    "title": "Defense minister",
-    "rank": "Lieutenant General",
+    "name": "Bram Malia",
+    "title": "Chief secretary",
+    "rank": "Commissioner",
     "branch": "French administration",
     "slot": "defense_minister",
     "war": 68,
@@ -4894,12 +4894,12 @@ export const WALLIS_AND_FUTUNA_REGION = land({
     "pol": 49,
     "chr": 41,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief secretary of Wallis and Futuna, posted at alo (wf_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "wf.alo"
   },
   {
     "id": "wf_2",
-    "name": "Setefano Tialetagi",
+    "name": "Corin Tialetagi",
     "title": "Field officer",
     "rank": "Colonel",
     "branch": "French administration",
@@ -4909,7 +4909,7 @@ export const WALLIS_AND_FUTUNA_REGION = land({
     "pol": 35,
     "chr": 34,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Wallis and Futuna, posted at sigave (wf_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "wf.sigave"
   }
 ])
@@ -4960,9 +4960,9 @@ export const PITCAIRN_REGION = land({
   "officers": staff([
   {
     "id": "pn_0",
-    "name": "Brian Young",
-    "title": "Head of state",
-    "rank": "General",
+    "name": "Soren Belmont",
+    "title": "Magistrate",
+    "rank": "Magistrate",
     "branch": "Island Council",
     "slot": "head_of_state",
     "war": 43,
@@ -4970,7 +4970,7 @@ export const PITCAIRN_REGION = land({
     "pol": 68,
     "chr": 63,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Magistrate of Pitcairn Islands, posted at adamstown (pn_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pn.adamstown"
   },
   {
@@ -4985,7 +4985,7 @@ export const PITCAIRN_REGION = land({
     "pol": 37,
     "chr": 37,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Field officer of Pitcairn Islands, posted at adamstown (pn_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "pn.adamstown"
   }
 ])

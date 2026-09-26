@@ -727,7 +727,7 @@ export const IRAN_REGION = land({
     "pol": 70,
     "chr": 44,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Iran, posted at tehran (ir_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.tehran"
   },
   {
@@ -742,7 +742,7 @@ export const IRAN_REGION = land({
     "pol": 48,
     "chr": 42,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Iran, posted at bakhtaran (ir_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.bakhtaran"
   },
   {
@@ -757,7 +757,7 @@ export const IRAN_REGION = land({
     "pol": 40,
     "chr": 36,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Iran, posted at yasuj (ir_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.yasuj"
   },
   {
@@ -772,7 +772,7 @@ export const IRAN_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Iran, posted at bushehr (ir_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.bushehr"
   },
   {
@@ -787,7 +787,7 @@ export const IRAN_REGION = land({
     "pol": 32,
     "chr": 38,
     "personality": "recluse",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Khuzestan front of Iran, posted at kharg (ir_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.kharg"
   },
   {
@@ -802,7 +802,7 @@ export const IRAN_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Iran, posted at shahr e kord (ir_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.shahr_e_kord"
   },
   {
@@ -817,7 +817,7 @@ export const IRAN_REGION = land({
     "pol": 28,
     "chr": 32,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Iran, posted at tabriz (ir_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "ir.tabriz"
   }
 ])
@@ -1596,7 +1596,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 66,
     "chr": 42,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of the Revolutionary Council of Afghanistan, posted at kabul (af_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.kabul"
   },
   {
@@ -1611,7 +1611,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 40,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Afghanistan, posted at charikar (af_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.charikar"
   },
   {
@@ -1626,7 +1626,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 44,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Afghanistan, posted at mahmud raqi (af_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.mahmud_raqi"
   },
   {
@@ -1641,7 +1641,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Afghanistan, posted at maidan (af_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.maidan"
   },
   {
@@ -1656,7 +1656,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 28,
     "chr": 30,
     "personality": "recluse",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Salang sector of Afghanistan, posted at pul i alam (af_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.pul_i_alam"
   },
   {
@@ -1671,7 +1671,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Afghanistan, posted at ghazni (af_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.ghazni"
   },
   {
@@ -1686,7 +1686,7 @@ export const AFGHANISTAN_REGION = land({
     "pol": 28,
     "chr": 32,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Afghanistan, posted at gardiz (af_6). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "af.gardiz"
   }
 ])

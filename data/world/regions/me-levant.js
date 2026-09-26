@@ -295,7 +295,7 @@ export const ISRAEL_REGION = land({
     "pol": 70,
     "chr": 60,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prime Minister of Israel, posted at jerusalem (il_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "il.jerusalem"
   },
   {
@@ -310,7 +310,7 @@ export const ISRAEL_REGION = land({
     "pol": 42,
     "chr": 38,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Israel, posted at nazareth (il_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "il.nazareth"
   },
   {
@@ -325,7 +325,7 @@ export const ISRAEL_REGION = land({
     "pol": 40,
     "chr": 44,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Israel, posted at metula (il_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "il.metula"
   },
   {
@@ -340,7 +340,7 @@ export const ISRAEL_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Israel, posted at haifa (il_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "il.haifa"
   },
   {
@@ -355,7 +355,7 @@ export const ISRAEL_REGION = land({
     "pol": 30,
     "chr": 32,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Southern command of Israel, posted at ramla (il_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "il.ramla"
   }
 ])
@@ -571,7 +571,7 @@ export const LEBANON_REGION = land({
     "pol": 64,
     "chr": 48,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Lebanon, posted at beirut (lb_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lb.beirut"
   },
   {
@@ -586,7 +586,7 @@ export const LEBANON_REGION = land({
     "pol": 46,
     "chr": 50,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Lebanon, posted at baabda (lb_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lb.baabda"
   },
   {
@@ -601,7 +601,7 @@ export const LEBANON_REGION = land({
     "pol": 36,
     "chr": 34,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Lebanon, posted at tripoli (lb_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lb.tripoli"
   },
   {
@@ -616,7 +616,7 @@ export const LEBANON_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Lebanon, posted at sidon (lb_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lb.sidon"
   },
   {
@@ -631,7 +631,7 @@ export const LEBANON_REGION = land({
     "pol": 40,
     "chr": 44,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional South command of Lebanon, posted at zahle (lb_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "lb.zahle"
   }
 ])
@@ -1027,7 +1027,7 @@ export const SYRIA_REGION = land({
     "pol": 72,
     "chr": 40,
     "personality": "schemer",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional President of Syria, posted at damascus (sy_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sy.damascus"
   },
   {
@@ -1042,7 +1042,7 @@ export const SYRIA_REGION = land({
     "pol": 44,
     "chr": 36,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Syria, posted at douma (sy_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sy.douma"
   },
   {
@@ -1057,7 +1057,7 @@ export const SYRIA_REGION = land({
     "pol": 46,
     "chr": 42,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Syria, posted at aleppo (sy_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sy.aleppo"
   },
   {
@@ -1072,7 +1072,7 @@ export const SYRIA_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Syria, posted at homs (sy_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sy.homs"
   },
   {
@@ -1087,7 +1087,7 @@ export const SYRIA_REGION = land({
     "pol": 28,
     "chr": 30,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Eastern command of Syria, posted at hama (sy_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sy.hama"
   },
   {
@@ -1102,7 +1102,7 @@ export const SYRIA_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Syria, posted at latakia (sy_5). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "sy.latakia"
   }
 ])
@@ -1341,7 +1341,7 @@ export const JORDAN_REGION = land({
     "pol": 70,
     "chr": 64,
     "personality": "diplomat",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Prime Minister of Jordan, posted at amman (jo_0). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jo.amman"
   },
   {
@@ -1356,7 +1356,7 @@ export const JORDAN_REGION = land({
     "pol": 46,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Minister of Defense of Jordan, posted at salt (jo_1). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jo.salt"
   },
   {
@@ -1371,7 +1371,7 @@ export const JORDAN_REGION = land({
     "pol": 40,
     "chr": 38,
     "personality": "cautious",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Chief of Staff of Jordan, posted at irbid (jo_2). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jo.irbid"
   },
   {
@@ -1386,7 +1386,7 @@ export const JORDAN_REGION = land({
     "pol": 30,
     "chr": 34,
     "personality": "aggressive",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Front commander of Jordan, posted at zarqa (jo_3). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jo.zarqa"
   },
   {
@@ -1401,7 +1401,7 @@ export const JORDAN_REGION = land({
     "pol": 42,
     "chr": 50,
     "personality": "merchant",
-    "bio": "Fictional officer. Not a real officeholder of 1985-89.",
+    "bio": "Fictional Aqaba command of Jordan, posted at mafraq (jo_4). Files the border reports. Not a real officeholder of 1985-89.",
     "region": "jo.mafraq"
   }
 ])

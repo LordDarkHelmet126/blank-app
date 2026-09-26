@@ -349,7 +349,7 @@ export const UZBEKISTAN_REGION = land({
     "pol": 72,
     "chr": 44,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster uz_head.",
     "region": "uz.tashkent"
   },
   {
@@ -364,7 +364,7 @@ export const UZBEKISTAN_REGION = land({
     "pol": 42,
     "chr": 46,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster uz_def.",
     "region": "uz.tashkent"
   },
   {
@@ -379,7 +379,7 @@ export const UZBEKISTAN_REGION = land({
     "pol": 54,
     "chr": 34,
     "personality": "schemer",
-    "bio": "Fictional chief of staff.",
+    "bio": "Fictional chief of staff. Roster uz_chief.",
     "region": "uz.tashkent"
   },
   {
@@ -394,7 +394,7 @@ export const UZBEKISTAN_REGION = land({
     "pol": 38,
     "chr": 40,
     "personality": "merchant",
-    "bio": "Fictional front commander.",
+    "bio": "Fictional front commander. Roster uz_f0.",
     "region": "uz.fergana"
   },
   {
@@ -409,7 +409,7 @@ export const UZBEKISTAN_REGION = land({
     "pol": 44,
     "chr": 48,
     "personality": "loyalist",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster uz_field.",
     "region": "uz.tashkent"
   }
 ])
@@ -568,7 +568,7 @@ export const KIRGHIZIA_REGION = land({
     "pol": 64,
     "chr": 52,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster kg_head.",
     "region": "kg.frunze"
   },
   {
@@ -583,7 +583,7 @@ export const KIRGHIZIA_REGION = land({
     "pol": 40,
     "chr": 42,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster kg_def.",
     "region": "kg.frunze"
   },
   {
@@ -598,7 +598,7 @@ export const KIRGHIZIA_REGION = land({
     "pol": 36,
     "chr": 34,
     "personality": "ambitious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster kg_field.",
     "region": "kg.frunze"
   }
 ])
@@ -757,7 +757,7 @@ export const TAJIKISTAN_REGION = land({
     "pol": 68,
     "chr": 50,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster tj_head.",
     "region": "tj.dushanbe"
   },
   {
@@ -772,7 +772,7 @@ export const TAJIKISTAN_REGION = land({
     "pol": 38,
     "chr": 40,
     "personality": "cautious",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster tj_def.",
     "region": "tj.dushanbe"
   },
   {
@@ -787,7 +787,7 @@ export const TAJIKISTAN_REGION = land({
     "pol": 28,
     "chr": 32,
     "personality": "recluse",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster tj_field.",
     "region": "tj.dushanbe"
   }
 ])
@@ -959,7 +959,7 @@ export const TURKMENISTAN_REGION = land({
     "pol": 66,
     "chr": 48,
     "personality": "diplomat",
-    "bio": "Fictional head of this posting. Not a real officeholder.",
+    "bio": "Fictional head of this posting. Not a real officeholder. Roster tm_head.",
     "region": "tm.ashkhabad"
   },
   {
@@ -974,7 +974,7 @@ export const TURKMENISTAN_REGION = land({
     "pol": 36,
     "chr": 40,
     "personality": "loyalist",
-    "bio": "Fictional defense minister.",
+    "bio": "Fictional defense minister. Roster tm_def.",
     "region": "tm.ashkhabad"
   },
   {
@@ -989,7 +989,7 @@ export const TURKMENISTAN_REGION = land({
     "pol": 34,
     "chr": 38,
     "personality": "cautious",
-    "bio": "Fictional field officer.",
+    "bio": "Fictional field officer. Roster tm_field.",
     "region": "tm.ashkhabad"
   }
 ])

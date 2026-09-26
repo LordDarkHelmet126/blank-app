@@ -24,14 +24,57 @@ import {
   terrainSize,
 } from "./terrain.js";
 import { WORLD_LAND } from "./world-washes.js";
-import {
-  atlasMode,
-  atlasSubdivision,
-  atlasTerritory,
-  drawAtlasLabels,
-  drawWorldAtlas,
-  pickAtlasCity,
-} from "./world-atlas.js";
+
+let atlasApi = null;
+let atlasLoading = null;
+let hoverWorldSuppressed = false;
+let deskClaims = [];
+
+function atlasMode(mapView) {
+  if (!atlasApi) return "off";
+  return atlasApi.atlasMode(mapView);
+}
+function atlasSubdivision(code) {
+  return atlasApi ? atlasApi.atlasSubdivision(code) : null;
+}
+function atlasTerritory(id) {
+  return atlasApi ? atlasApi.atlasTerritory(id) : null;
+}
+function drawAtlasLabels(ctx, opts) {
+  if (!atlasApi) return;
+  atlasApi.drawAtlasLabels(ctx, opts);
+}
+function drawWorldAtlas(ctx, opts) {
+  if (!atlasApi) return;
+  atlasApi.drawWorldAtlas(ctx, opts);
+}
+function pickAtlasCity(x, y, mapView, project) {
+  if (!atlasApi) return null;
+  return atlasApi.pickAtlasCity(x, y, mapView, project);
+}
+function drawAtlasHover(ctx, opts) {
+  if (!atlasApi) return;
+  atlasApi.drawAtlasHover(ctx, opts);
+}
+function loadedWorld() {
+  return atlasApi ? atlasApi.loadedCatalog() : null;
+}
+function atlasHoverId() {
+  return hoverWorldSuppressed ? null : hoverWorld;
+}
+
+/** First atlas view loads the sheets. The live game never calls this. */
+function ensureAtlas() {
+  if (atlasApi) return Promise.resolve(atlasApi);
+  if (!atlasLoading) {
+    atlasLoading = import("./world-atlas.js").then(async (mod) => {
+      await mod.ensureWorldCatalog();
+      atlasApi = mod;
+      return mod;
+    });
+  }
+  return atlasLoading;
+}
 import {
   createNewGame,
   listActions,
@@ -494,7 +537,10 @@ export async function boot(loaded) {
     if (!battleFx) playerOf(state).region = "cheyenne";
     render();
     const view = params.get("view");
-    if (view === "world") frameWorld();
+    const atlasView = view === "world" || view === "europe" || view === "ussr" || view === "mideast" || view === "africa" || view === "asia" || view === "atlas";
+    if (atlasView || params.get("atlas") === "1") await ensureAtlas();
+    if (params.get("atlas") === "1") mapView.atlasDebug = true;
+    if (view === "world") frameAtlasWorld();
     else if (view === "europe") frameEurope();
     else if (view === "ussr") frameUssr();
     else if (view === "mideast") frameMideast();
@@ -505,7 +551,7 @@ export async function boot(loaded) {
       if (city) {
         if (city.includes(".")) selectedWorld = city;
         else {
-          const hit = content.world.regions.flatMap((r) => r.territories).find((t) => t.id.endsWith(`.${city}`));
+          const hit = (loadedWorld()?.regions || []).flatMap((r) => r.territories).find((t) => t.id.endsWith(`.${city}`));
           selectedWorld = hit ? hit.id : `us.${city}`;
         }
       }
@@ -599,6 +645,10 @@ export async function boot(loaded) {
     openDemoFight();
     afterFonts();
     return;
+  }
+  if (params.get("atlas") === "1") {
+    await ensureAtlas();
+    mapView.atlasDebug = true;
   }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
@@ -2362,11 +2412,11 @@ function frameEurope() {
   frameLonLat(-11.5, 66.2, 40.5, 35.2, 0.9);
 }
 
-/** Kaliningrad through Chukotka. The Bering link draws on the short arc. */
+/** The fifteen union republics, from the Baltic to Alma-Ata. The Far East stays on the world view. */
 function frameUssr() {
   clearForeignFrame();
   mapView.atlas = "su";
-  frameLonLat(19, 78, 192, 35, 0.9);
+  frameLonLat(19, 70, 90, 35.5, 0.92);
 }
 
 /** Morocco through Afghanistan, including undivided Sudan and the two Yemens. */
@@ -2392,7 +2442,23 @@ function frameAsia() {
 
 function frameWorld() {
   clearForeignFrame();
-  mapView.atlas = "us";
+  const [xWest, yNorth] = projectLL(-175, 78);
+  const [xEast, ySouth] = projectLL(185, -56);
+  const minX = Math.min(xWest, xEast) - 30;
+  const maxX = Math.max(xWest, xEast) + 30;
+  const minY = Math.min(yNorth, ySouth) - 24;
+  const maxY = Math.max(yNorth, ySouth) + 24;
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.98;
+  mapView.z = z;
+  mapView.x = (1000 - (minX + maxX) * z) / 2;
+  mapView.y = (620 - (minY + maxY) * z) / 2;
+  drawMap();
+}
+
+/** Demo world sheet. The WORLD button stays on frameWorld so the live map matches the base game. */
+function frameAtlasWorld() {
+  clearForeignFrame();
+  mapView.atlas = "world";
   const [xWest, yNorth] = projectLL(-192, 84);
   const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
@@ -2432,7 +2498,7 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   const minY = Math.min(yA, yB);
   const maxY = Math.max(yA, yB);
   const fit = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
-  mapView.z = Math.max(0.16, Math.min(12, fit));
+  mapView.z = Math.max(0.16, Math.min(3.2, fit));
   mapView.x = (1000 - (minX + maxX) * mapView.z) / 2;
   mapView.y = (620 - (minY + maxY) * mapView.z) / 2;
   drawMap();
@@ -2554,8 +2620,22 @@ function onMapMove(e) {
   const id = worldId ? null : r ? r.id : null;
   $("map").style.cursor = worldId || r ? "pointer" : "crosshair";
   if (id !== hoverRegion || worldId !== hoverWorld) {
+    const hoverOnly =
+      atlasApi &&
+      atlasMode(mapView) !== "off" &&
+      id === hoverRegion &&
+      drawMap.snap &&
+      drawMap.still === atlasStillKey();
     hoverRegion = id;
     hoverWorld = worldId;
+    if (hoverOnly) {
+      const canvas = $("map");
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(drawMap.snap, 0, 0);
+      if (hoverWorld) paintAtlasHover(ctx);
+      return;
+    }
     drawMap();
   }
 }
@@ -3219,7 +3299,15 @@ function drawDeskPlate(ctx, x, y, boxW, boxH, label) {
   ctx.fillText(label, x + 4, y + boxH / 2);
 }
 
+const CAMPAIGN_DESK_IDS = new Set(["gulf_passage", "far_cuba", "far_nicaragua", "far_korea"]);
+
+function claimCampaignDesk(id, x, y, w, h) {
+  if (!CAMPAIGN_DESK_IDS.has(id)) return;
+  deskClaims.push({ x: x - 4, y: y - 4, w: w + 8, h: h + 8 });
+}
+
 function drawWorldDesks(ctx) {
+  deskClaims = [];
   if (mapView.z > 0.92 && !mapView.focus) return;
   const near = nearLabels();
   const focus = mapView.focus;
@@ -3259,6 +3347,7 @@ function drawWorldDesks(ctx) {
         [x + r + 16 / mapView.z, y - boxH / 2],
         [x - boxW - r - 16 / mapView.z, y + r],
       ]);
+      claimCampaignDesk(d.id, bx, by, boxW, boxH);
       drawDeskPlate(ctx, bx, by, boxW, boxH, label);
       return;
     }
@@ -3326,13 +3415,19 @@ function drawWorldDesks(ctx) {
         [x + r + 16 / mapView.z, y - boxH / 2],
       ];
       const [bx, by] = placeNearPlate(boxW, boxH, prefs);
+      claimCampaignDesk(d.id, bx, by, boxW, boxH);
       drawDeskPlate(ctx, bx, by, boxW, boxH, label);
       return;
     }
     const lx = x + r + 4 / mapView.z;
     const ly = y;
+    const boxX = lx - 2;
+    const boxY = ly - fontPx * 0.65;
+    const boxW2 = tw + pad;
+    const boxH2 = fontPx * 1.3;
+    claimCampaignDesk(d.id, boxX, boxY, boxW2, boxH2);
     ctx.fillStyle = "#000018";
-    ctx.fillRect(lx - 2, ly - fontPx * 0.65, tw + pad, fontPx * 1.3);
+    ctx.fillRect(boxX, boxY, boxW2, boxH2);
     ctx.fillStyle = "#f8d800";
     ctx.fillText(label, lx, ly);
   });
@@ -3669,8 +3764,39 @@ function theaterLandPlate() {
   return c;
 }
 
+function atlasStillKey() {
+  return [
+    mapView.x,
+    mapView.y,
+    mapView.z,
+    mapView.atlas || "",
+    mapView.focus || "",
+    mapView.pacific ? 1 : 0,
+    selectedRegion || "",
+    selectedWorld || "",
+    hoverRegion || "",
+    state?.week ?? "",
+    mapFx ? mapFx.kind : "",
+  ].join("|");
+}
+
+function paintAtlasHover(ctx) {
+  ctx.save();
+  ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
+  drawAtlasHover(ctx, {
+    mapView,
+    project: projectLL,
+    hoverId: hoverWorld,
+    view: mapViewRect(),
+  });
+  ctx.restore();
+}
+
 function drawMap() {
   labelClaims = [];
+  deskClaims = [];
+  const snapAtlas = !!(atlasApi && atlasMode(mapView) !== "off");
+  hoverWorldSuppressed = snapAtlas && !!hoverWorld;
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -3700,7 +3826,8 @@ function drawMap() {
   const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering" || mapView.focus === "korea";
   // Geographic close-ups. The schematic campaign plate (Cheyenne and the west
   // bloc) would otherwise sit on the Atlantic edge of the Middle East or Africa.
-  const atlasCloseup = (mapView.atlas === "me" || mapView.atlas === "ssa" || mapView.atlas === "asia") && !mapView.focus;
+  const atlasNow = atlasMode(mapView);
+  const atlasCloseup = (atlasNow === "state" || (atlasNow === "world" && mapView.atlas !== "world")) && !mapView.focus;
   if (!atlasCloseup) ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
   if (mapView.focus) {
     drawWorldCorridors(ctx);
@@ -3714,7 +3841,7 @@ function drawMap() {
       return { x, y };
     }),
     selectedId: selectedWorld,
-    hoverId: hoverWorld,
+    hoverId: atlasHoverId(),
   });
   ctx.imageSmoothingEnabled = false;
   if (!atlasCloseup) {
@@ -3742,9 +3869,26 @@ function drawMap() {
     mapView,
     project: projectLL,
     selectedId: selectedWorld,
-    hoverId: hoverWorld,
+    hoverId: atlasHoverId(),
+    view: mapViewRect(),
+    blocked: deskClaims,
   });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (snapAtlas) {
+    if (!drawMap.snap || drawMap.snap.width !== canvas.width || drawMap.snap.height !== canvas.height) {
+      drawMap.snap = document.createElement("canvas");
+      drawMap.snap.width = canvas.width;
+      drawMap.snap.height = canvas.height;
+    }
+    drawMap.snap.getContext("2d").drawImage(canvas, 0, 0);
+    drawMap.still = atlasStillKey();
+    hoverWorldSuppressed = false;
+    if (hoverWorld) paintAtlasHover(ctx);
+  } else {
+    hoverWorldSuppressed = false;
+    drawMap.snap = null;
+    drawMap.still = "";
+  }
 }
 
 function drawCityMarkHi(ctx, r, selected) {

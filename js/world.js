@@ -60,8 +60,41 @@ export function requiredCommandSlots(territoryCount) {
 const STATUSES = new Set(["neutral", "occupied", "held"]);
 const LINK_KINDS = new Set(["road", "rail", "sea", "air", "trail"]);
 
+/** Union republics and dependencies. The USSR itself is not a region. */
+export const SOVEREIGN_OF = {
+  ru: "su", ua: "su", by: "su", md: "su", ee: "su", lv: "su", lt: "su",
+  ge: "su", am: "su", az: "su", kz: "su", uz: "su", kg: "su", tj: "su", tm: "su",
+  hk: "gb", gi: "gb", fk: "gb", ai: "gb", vg: "gb", ms: "gb", pn: "gb",
+  pr: "us", vi: "us", gu: "us", as: "us", mp: "us",
+  re: "fr", yt: "fr", gf: "fr", gp: "fr", mq: "fr", pf: "fr", ncl: "fr", wf: "fr",
+  mo: "pt",
+  ck: "nz", nu: "nz", tk: "nz",
+  pw: "tt",
+};
+
+let catalogCache = null;
+
 export function worldCatalog() {
-  return { resources: RESOURCES, regions: WORLD_REGIONS };
+  if (!catalogCache) {
+    catalogCache = {
+      resources: RESOURCES,
+      regions: WORLD_REGIONS.map((region) => ({
+        ...region,
+        sovereign: SOVEREIGN_OF[region.id] || null,
+      })),
+    };
+  }
+  return catalogCache;
+}
+
+export function worldPoliticalCounts(catalog = worldCatalog()) {
+  const regions = catalog.regions || [];
+  const dependencies = regions.filter((region) => region.sovereign);
+  return {
+    units: regions.length,
+    sovereign: regions.length - dependencies.length,
+    dependencies: dependencies.length,
+  };
 }
 
 export function worldRegion(id) {
@@ -249,6 +282,131 @@ export function validateWorld(catalog, opts) {
     const external = new Map(all);
     (region.territories || []).forEach((t) => external.delete(t.id));
     validateRegion(region, { ...opts, externalTerritories: external }).forEach((e) => errors.push(e));
+  });
+  return errors;
+}
+
+const RANK_PREFIX = /^(general|colonel|coronel|admiral|almirante|major|captain|capitán|capitan|lieutenant|teniente|brigadier|marshal|mariscal|commodore|sergeant|sargento)\b/i;
+
+/** Full names of 1980s heads of state, heads of government, and service chiefs. */
+const BLOCKED_FULL = [
+  "ronald reagan", "george bush", "george h w bush", "caspar weinberger", "john vessey", "william crowe", "colin powell", "norman schwarzkopf",
+  "mikhail gorbachev", "konstantin chernenko", "yuri andropov", "andrei gromyko", "dmitry ustinov", "dmitri ustinov", "sergei sokolov", "dmitry yazov", "dmitri yazov", "sergey akhromeyev", "sergei akhromeyev", "nikolai ogarkov", "viktor kulikov",
+  "margaret thatcher", "michael heseltine", "george younger", "john nott", "edwin bramall",
+  "francois mitterrand", "jacques chirac", "laurent fabius", "michel rocard", "charles hernu",
+  "helmut kohl", "helmut schmidt", "hans-dietrich genscher", "manfred worner",
+  "erich honecker", "egon krenz", "willi stoph", "heinz kessler",
+  "wojciech jaruzelski", "gustav husak", "milos jakes", "lubomir strougal",
+  "janos kadar", "karoly grosz", "nicolae ceausescu", "elena ceausescu", "todor zhivkov",
+  "ramiz alia", "enver hoxha",
+  "deng xiaoping", "zhao ziyang", "hu yaobang", "li xiannian", "yang shangkun",
+  "yasuhiro nakasone", "noboru takeshita", "emperor hirohito",
+  "rajiv gandhi", "indira gandhi", "zia-ul-haq", "muhammad zia-ul-haq", "benazir bhutto",
+  "fidel castro", "daniel ortega", "manuel noriega", "augusto pinochet", "ferdinand marcos",
+  "muammar qaddafi", "muammar gaddafi", "ruhollah khomeini", "saddam hussein", "hafez assad", "hafiz assad",
+  "kim il-sung", "kim il sung", "mobutu sese seko", "pieter botha", "p w botha", "nelson mandela",
+  "pedro tenorio", "john haglelgam", "tom davis", "toaripi lauti", "tupuola efi", "kuniwo nakamura",
+  "peter coleman", "young vivian", "kuresa nasau", "brian young",
+  "haruo remeliik", "lazarus salii", "ngiratkel etpison", "alfonso oiterong", "johnson toribiong",
+  "bikenibeu paeniu", "saufatu sopoaga", "faimalaga luka", "kamuta latasi", "ionatana ionatana",
+  "iulai ieremio", "apisa ielemia", "maatia toafa", "bikenibeu paeniu",
+  "fiame mataafa", "tofilau etilesa", "tupuola efi", "vaai kolone",
+  "bailey olter", "john haglelgam", "tosiwo nakayama",
+  "amata kabua", "imata kabua", "litokwa tomeing",
+  "tom davis", "pupuke robati", "robert woonton", "geoffrey henry",
+  "gaston flosse", "gaston leontieff", "oscar temaru", "edouard fritch", "alexandre leontieff",
+  "jacques lafleur", "pierre frogier", "jean leques",
+  "hammer deroburt", "kennan adeang", "bernard dowiyogo", "lagumot harris", "hammer clodumar",
+  "ieremia tabai", "ieremia tito", "teatao teannaki",
+  "sione tupou", "taufa'ahau tupou", "fatafehi tupou",
+  "batbayar batmunkh", "jambyn batmunkh", "celine grimaldi-sartre", "rainier grimaldi",
+  "alvaro lins", "lisandro otero", "mateo bulnes", "harith al-busaidi", "paulo rondon",
+  "sailele malielegaoi", "tuilaepa sailele", "tupuola tufuga",
+];
+
+/** Distinctive surnames. Common tokens (Kim, Hassan, Santos, Young, Davis) stay off this list. */
+const BLOCKED_SURNAMES = new Set([
+  "tenorio", "haglelgam", "lauti", "remeliik", "etpison", "salii", "batmunkh", "grimaldi", "tupou",
+  "debrum", "clodumar", "paeniu", "ielemia", "mataafa", "alesana", "falcam", "frogier",
+  "temaru", "fritch", "woonton", "robati", "nasau", "oiterong", "toribiong", "sopoaga", "talake",
+  "olter", "lemari", "tomeing", "leontieff", "sailele", "busaidi", "lins", "bulnes", "rondon",
+  "gorbachev", "honecker", "ceausescu", "jaruzelski", "pinochet", "noriega", "khomeini", "qaddafi",
+  "gaddafi", "mobutu", "akhromeyev", "ogarkov", "yazov", "weinberger", "schwarzkopf", "zhivkov",
+  "kadar", "nakasone", "mitterrand", "hoxha", "strougal",
+]);
+
+function foldName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function surnameTokens(name) {
+  const folded = foldName(name);
+  const parts = folded.split(" ").filter(Boolean);
+  const last = parts[parts.length - 1] || "";
+  return last.split("-").filter(Boolean);
+}
+
+export function classifyOfficerName(name) {
+  const folded = foldName(name);
+  const blockedFull = new Set(BLOCKED_FULL.map(foldName));
+  return {
+    folded,
+    full: blockedFull.has(folded),
+    surnames: surnameTokens(name).filter((token) => BLOCKED_SURNAMES.has(token)),
+    rank: RANK_PREFIX.test(String(name || "").trim()),
+  };
+}
+
+export function officerRosterIssues(catalog = worldCatalog()) {
+  const errors = [];
+  const byName = new Map();
+  const blockedFull = new Set(BLOCKED_FULL.map(foldName));
+  (catalog.regions || []).forEach((region) => {
+    const given = new Map();
+    (region.officers || []).forEach((officer) => {
+      const folded = foldName(officer.name);
+      if (!folded) return;
+      if (blockedFull.has(folded)) errors.push(`${officer.id} uses a real name ${officer.name}`);
+      surnameTokens(officer.name).forEach((token) => {
+        if (BLOCKED_SURNAMES.has(token)) errors.push(`${officer.id} uses a blocked surname ${token}`);
+      });
+      if (RANK_PREFIX.test(String(officer.name || "").trim())) {
+        errors.push(`${officer.id} starts with a rank: ${officer.name}`);
+      }
+      const key = folded;
+      if (!byName.has(key)) byName.set(key, new Set());
+      byName.get(key).add(region.id);
+      const first = folded.split(" ")[0];
+      given.set(first, (given.get(first) || 0) + 1);
+    });
+    const roster = region.officers || [];
+    if (roster.length >= 3) {
+      const only = [...given.values()];
+      if (only.length === 1) errors.push(`${region.id} reuses one given name for every officer`);
+    }
+  });
+  byName.forEach((regions, name) => {
+    if (regions.size > 1) errors.push(`name ${name} is used in ${[...regions].sort().join(", ")}`);
+  });
+  const bios = new Map();
+  (catalog.regions || []).forEach((region) => {
+    (region.officers || []).forEach((officer) => {
+      const bio = officer.bio || "";
+      if (bio === "Fictional officer. Not a real officeholder of 1985-89.") {
+        errors.push(`${officer.id} still uses the boilerplate bio`);
+      }
+      bios.set(bio, (bios.get(bio) || 0) + 1);
+    });
+  });
+  bios.forEach((count, bio) => {
+    if (count > 1) errors.push(`bio shared by ${count} officers: ${bio.slice(0, 80)}`);
   });
   return errors;
 }
