@@ -799,10 +799,10 @@ export const TURKMENISTAN_REGION = land({
   "bbox": {
     "minLon": 51.47,
     "maxLon": 65.08,
-    "minLat": 36.09,
+    "minLat": 33.70,
     "maxLat": 43.33
   },
-  "notes": "Atlas only. Five oblasts. Ashkhabad and Krasnovodsk keep those names. Krasnovodsk is the Caspian ferry to Baku. Mary is gas. Occupied and off the week-0 march.",
+  "notes": "Atlas only. Five oblasts. Ashkhabad and Krasnovodsk keep those names. Krasnovodsk is the Caspian ferry to Baku. Mary is gas. Kushka is the Afghan border town. Occupied and off the week-0 march.",
   "defaultBiome": "desert",
   "climate": {
     "_default": {
@@ -880,6 +880,17 @@ export const TURKMENISTAN_REGION = land({
       ]
     ],
     [
+      "kushka",
+      "Kushka",
+      "TM-MA",
+      35.28,
+      62.35,
+      "city",
+      [
+        "administration"
+      ]
+    ],
+    [
       "chardzhou",
       "Chardzhou",
       "TM-CH",
@@ -914,6 +925,12 @@ export const TURKMENISTAN_REGION = land({
       "mary",
       "road",
       "M37"
+    ],
+    [
+      "mary",
+      "kushka",
+      "road",
+      "Kushka spur"
     ],
     [
       "chardzhou",

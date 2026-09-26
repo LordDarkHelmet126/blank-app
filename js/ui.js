@@ -497,6 +497,7 @@ export async function boot(loaded) {
     if (view === "world") frameWorld();
     else if (view === "europe") frameEurope();
     else if (view === "ussr") frameUssr();
+    else if (view === "mideast") frameMideast();
     else if (view === "atlas") {
       const city = params.get("city");
       if (city) {
@@ -514,7 +515,7 @@ export async function boot(loaded) {
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
-    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe" && view !== "ussr") pulseTravel("cheyenne", "denver", { loop: true });
+    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe" && view !== "ussr" && view !== "mideast") pulseTravel("cheyenne", "denver", { loop: true });
     frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -2366,6 +2367,13 @@ function frameUssr() {
   frameLonLat(19, 78, 192, 35, 0.9);
 }
 
+/** Morocco through Afghanistan, including undivided Sudan and the two Yemens. */
+function frameMideast() {
+  clearForeignFrame();
+  mapView.atlas = "me";
+  frameLonLat(-18, 43.5, 75, 2.5, 0.9);
+}
+
 function frameWorld() {
   clearForeignFrame();
   mapView.atlas = "us";
@@ -3033,9 +3041,9 @@ function drawGlobe(ctx) {
   });
   // The USSR frame is an atlas close-up. The schematic Arctic approach and the
   // locked far-shore desks stay on the world overview, where Europe's tighter zoom already hides them.
-  const ussrAtlas = mapView.atlas === "su" && !mapView.focus;
-  if (!ussrAtlas) drawWorldStrikes(ctx);
-  if (!mapView.focus && !ussrAtlas) {
+  const framedAtlas = (mapView.atlas === "su" || mapView.atlas === "me") && !mapView.focus;
+  if (!framedAtlas) drawWorldStrikes(ctx);
+  if (!mapView.focus && !framedAtlas) {
     drawWorldCorridors(ctx);
     drawWorldDesks(ctx);
   }

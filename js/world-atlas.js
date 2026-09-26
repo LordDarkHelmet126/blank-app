@@ -37,12 +37,21 @@ const WORLD_CAPS = new Set([
   "ru.moscow",
   "ua.kiev",
   "ru.vladivostok",
+  "ma.rabat",
+  "dz.algiers",
+  "eg.cairo",
+  "sdn.khartoum",
+  "il.jerusalem",
+  "sa.riyadh",
+  "ir.tehran",
+  "iq.baghdad",
+  "af.kabul",
 ]);
 
 /** World zoom shows the whole atlas. A framed state or province shows its cities up close. */
 export function atlasMode(mapView) {
   if (!mapView || mapView.focus) return "off";
-  if (mapView.atlas === "eu" || mapView.atlas === "su") return "world";
+  if (mapView.atlas === "eu" || mapView.atlas === "su" || mapView.atlas === "me") return "world";
   if (mapView.z < 0.55) return "world";
   if (mapView.atlas && mapView.atlas !== "us") return "state";
   return "off";

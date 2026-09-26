@@ -254,7 +254,7 @@ const eastIds = ["pl", "cs", "hu", "ro", "bg", "yu", "al", "ru", "ua", "by", "md
 const eastExpect = {
   pl: [53, 8], cs: [13, 5], hu: [21, 6], ro: [41, 8], bg: [15, 6], yu: [42, 8], al: [26, 7],
   ru: [110, 12], ua: [29, 7], by: [6, 3], md: [12, 5], ee: [16, 6], lv: [26, 7], lt: [44, 8],
-  ge: [6, 3], am: [3, 3], az: [5, 3], kz: [19, 6], uz: [13, 5], kg: [5, 3], tj: [5, 3], tm: [5, 3],
+  ge: [6, 3], am: [3, 3], az: [5, 3], kz: [19, 6], uz: [13, 5], kg: [5, 3], tj: [5, 3], tm: [6, 3],
 };
 const earlySubs = new Set(["us", "ca"].flatMap((id) => content.world.regions.find((r) => r.id === id).subdivisions.map((s) => s.id)));
 eastIds.forEach((id) => {
@@ -270,7 +270,7 @@ eastIds.forEach((id) => {
   assert(region.officers.every((o) => /fiction/i.test(o.bio)), `${id} bios stay fictional`);
 });
 assert(!content.world.regions.some((r) => r.id === "cz" || r.id === "sk"), "Czechoslovakia is still one country");
-assert(!["cn", "jp", "ir", "af", "mn"].some((id) => content.world.regions.some((r) => r.id === id)), "China, Japan, Iran, Afghanistan, and Mongolia stay off this sheet");
+assert(!["cn", "jp", "mn", "pk", "et"].some((id) => content.world.regions.some((r) => r.id === id)), "China, Japan, Mongolia, Pakistan, and Ethiopia stay off this sheet");
 
 const pl = content.world.regions.find((r) => r.id === "pl");
 assert(pl.subdivisions.length === 49 && pl.subdivisions.every((s) => s.kind === "voivodeship"), "49 Polish voivodeships");
@@ -364,6 +364,68 @@ assert(worldBy.get("tr.kars").neighbors.some((n) => n.id === "am.leninakan" && n
 assert(worldBy.get("ru.petropavlovsk").neighbors.some((n) => n.id === "ru.magadan" && n.kind === "sea"), "Sea of Okhotsk");
 assert(atlasMode({ atlas: "su", z: 2, focus: null }) === "world", "the USSR close-up labels capitals, not every city");
 assert(atlasMode({ atlas: "eu", z: 2, focus: null }) === "world", "the Europe close-up stays in world mode");
+assert(worldBy.get("tm.kushka").neighbors.some((n) => n.id === "tm.mary" && n.kind === "road"), "Kushka is the Turkmen border spur");
+
+const meIds = ["ma", "dz", "tn", "ly", "eg", "sdn", "dj", "il", "lb", "sy", "jo", "iq", "kw", "bh", "qa", "ae", "om", "sa", "ye", "yd", "ir", "af"];
+meIds.forEach((id) => {
+  const region = content.world.regions.find((r) => r.id === id);
+  const count = counts.find((c) => c.id === id);
+  assert(region && region.playable === false && region.status === "occupied" && region.reach === "later", `${id} stays dormant`);
+  assert(count.officers === rosterSize(count.territories) && count.playable === 0, `${id} roster stays normalized`);
+  assert(region.subdivisions.every((s) => !earlySubs.has(s.id) && s.id.startsWith(`${region.country}-`)), `${id} subdivision ids stay prefixed`);
+  const records = toOfficerRecords(region);
+  assert(records.length === count.officers && records.every((o) => o.dormant && o.world && o.fictional && o.faction == null), `${id} officers stay off the week-0 list`);
+  assert(region.officers.every((o) => /fiction/i.test(o.bio)), `${id} bios stay fictional`);
+});
+assert(!content.world.regions.some((r) => r.id === "eh" || r.id === "ym" || r.id === "ws"), "Western Sahara and united Yemen are not countries");
+assert(content.world.regions.find((r) => r.id === "ye") && content.world.regions.find((r) => r.id === "yd"), "North and South Yemen are separate");
+assert(content.world.regions.find((r) => r.id === "ye").subdivisions.length === 11, "eleven North Yemen governorates");
+assert(content.world.regions.find((r) => r.id === "yd").subdivisions.length === 6, "six South Yemen governorates");
+const ma = content.world.regions.find((r) => r.id === "ma");
+assert(ma.subdivisions.filter((s) => s.group === "Western Sahara (Moroccan administration)").length === 4, "Western Sahara is four Moroccan provinces");
+assert(content.world.regions.find((r) => r.id === "dz").subdivisions.length === 48, "48 Algerian wilayas");
+assert(content.world.regions.find((r) => r.id === "ly").subdivisions.length === 46, "46 Libyan baladiyat");
+assert(content.world.regions.find((r) => r.id === "tn").subdivisions.length === 23, "23 Tunisian governorates");
+const eg = content.world.regions.find((r) => r.id === "eg");
+assert(eg.subdivisions.length === 26, "26 Egyptian governorates");
+assert(eg.subdivisions.filter((s) => s.group === "Sinai (returned 1982)").length === 2, "Sinai is Egyptian");
+assert(!content.world.regions.find((r) => r.id === "il").subdivisions.some((s) => /sinai/i.test(s.name)), "Sinai is not an Israeli district");
+const il = content.world.regions.find((r) => r.id === "il");
+assert(il.subdivisions.filter((s) => s.kind === "zone" && s.group === "Israeli occupation").length === 3, "West Bank, Gaza, and the Golan are zones");
+assert(!content.world.regions.some((r) => r.id === "gz" || r.name === "West Bank"), "the occupied territories are not countries");
+const lb = content.world.regions.find((r) => r.id === "lb");
+assert(lb.subdivisions.filter((s) => s.kind === "zone" && s.name === "Israeli security zone").length === 1, "the security zone is inside Lebanon");
+assert(!content.world.regions.some((r) => /security zone/i.test(r.name)), "the security zone is not a country");
+assert(content.world.regions.find((r) => r.id === "sdn").subdivisions.length === 9, "undivided Sudan has nine regions");
+assert(!content.world.regions.some((r) => r.id === "ss"), "South Sudan is not a state");
+assert(content.world.regions.find((r) => r.id === "ir").subdivisions.filter((s) => s.group === "Iran-Iraq front").length === 4, "four Iranian front provinces");
+assert(content.world.regions.find((r) => r.id === "iq").subdivisions.filter((s) => s.group === "Iran-Iraq front").length === 5, "five Iraqi front provinces");
+assert(content.world.regions.find((r) => r.id === "ir").playable === false && content.world.regions.find((r) => r.id === "iq").playable === false, "the war stays dormant");
+assert(content.world.regions.find((r) => r.id === "af").subdivisions.length === 29, "29 Afghan provinces");
+assert(content.world.regions.find((r) => r.id === "sa").subdivisions.length === 14, "fourteen Saudi emirates");
+assert(worldBy.get("af.charikar").neighbors.some((n) => n.id === "af.puli_khumri" && n.kind === "road" && n.via === "Salang tunnel"), "Salang tunnel");
+assert(worldBy.get("af.hairatan").neighbors.some((n) => n.id === "uz.termez" && n.kind === "road" && /Friendship Bridge/.test(n.via)), "Termez bridge");
+assert(worldBy.get("af.sher_khan").neighbors.some((n) => n.id === "tj.kurgan_tyube" && n.kind === "road"), "Sher Khan Bandar");
+assert(worldBy.get("af.torghundi").neighbors.some((n) => n.id === "tm.kushka" && n.kind === "road"), "Kushka-Torghundi");
+assert(worldBy.get("eg.port_said").neighbors.some((n) => n.id === "eg.suez" && n.kind === "sea" && n.via === "Suez Canal"), "Suez Canal");
+assert(!worldBy.get("eg.port_said").neighbors.some((n) => n.id === "eg.suez" && n.kind === "road"), "the canal is not also a road");
+assert(worldBy.get("yd.aden").neighbors.some((n) => n.id === "dj.djibouti" && n.kind === "sea" && /Bab-el-Mandeb/.test(n.via)), "Bab-el-Mandeb");
+assert(worldBy.get("om.khasab").neighbors.some((n) => n.id === "ir.bandar_abbas" && n.kind === "sea" && /Hormuz/.test(n.via)), "Strait of Hormuz");
+assert(worldBy.get("gi.gibraltar").neighbors.some((n) => n.id === "ma.tangier" && n.kind === "sea"), "Gibraltar tie-in");
+assert(!worldBy.get("ma.tangier").neighbors.some((n) => n.id === "es.algeciras" && n.kind === "road"), "no road across the Strait");
+assert(worldBy.get("es.ceuta").neighbors.some((n) => n.id === "ma.tetouan" && n.kind === "road"), "Ceuta land frontier");
+assert(worldBy.get("es.melilla").neighbors.some((n) => n.id === "ma.nador" && n.kind === "road"), "Melilla land frontier");
+assert(worldBy.get("tr.antakya").neighbors.some((n) => n.id === "sy.aleppo" && n.kind === "road"), "Bab al-Hawa");
+assert(worldBy.get("tr.siirt").neighbors.some((n) => n.id === "iq.zakho" && n.kind === "road"), "Habur");
+assert(worldBy.get("tr.agri").neighbors.some((n) => n.id === "ir.maku" && n.kind === "road"), "Gurbulak-Bazargan");
+assert(worldBy.get("ir.astara").neighbors.some((n) => n.id === "az.baku" && n.kind === "road"), "Astara");
+assert(worldBy.get("ir.jolfa").neighbors.some((n) => n.id === "az.nakhichevan" && n.kind === "road"), "Jolfa");
+assert(!worldBy.get("az.baku").neighbors.some((n) => n.id === "az.nakhichevan" && n.kind === "road"), "Jolfa does not invent a road across Armenia");
+assert(worldBy.get("iq.basra").neighbors.some((n) => n.id === "ir.ahvaz" && n.kind === "trail"), "the front is not an open road");
+assert(!worldBy.get("iq.basra").neighbors.some((n) => n.id === "ir.ahvaz" && n.kind === "road"), "no highway across the front");
+assert(worldBy.get("sa.dammam").yields.includes("oil") && worldBy.get("ir.ahvaz").yields.includes("oil") && worldBy.get("ly.surt").yields.includes("oil"), "oil is the major yield");
+assert(worldBy.get("sa.dammam").neighbors.some((n) => n.id === "bh.manama" && n.kind === "road" && /Causeway/.test(n.via)), "King Fahd Causeway");
+assert(atlasMode({ atlas: "me", z: 2, focus: null }) === "world", "the Middle East close-up stays in world mode");
 
 console.log("ok world catalog");
 counts.forEach((c) => {
