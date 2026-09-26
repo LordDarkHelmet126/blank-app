@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, chordIsMisleading, closeRoadWidth, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, chordIsMisleading, closeRoadWidth, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1345,10 +1345,33 @@ assert(mapLayerVisibility(2.4, false, "bering").extras && !mapLayerVisibility(2.
 const detailGame = createNewGame(content, { seed: 9, difficulty: "easy", name: "Casey Flint", background: "scout" });
 assert(stampMapDetail(detailGame, true) === "1" && detailGame.mapDetail === true, "detail toggle stamps the save");
 const detailBack = deserialize(serialize(detailGame));
-assert(detailBack.mapDetail === true && mapDetailFromSave(detailBack, false) === true, "save remembers the map detail toggle");
-assert(mapDetailFromSave({}, false) === false, "older saves stay on the clean default");
+assert(detailBack.mapDetail === true && mapDetailFromSave(detailBack, false) === false && mapDetailFromSave(detailBack, true) === true, "the live detail preference wins over the save");
+assert(mapDetailFromSave({}, false) === false && mapDetailFromSave({}, true) === true, "older saves stay on the current preference");
 assert(/e\.key === "d"/.test(uiSrc) && /btn-map-detail/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")) && /MAP_DETAIL_KEY/.test(uiSrc), "D and the Detail button toggle close-up extras");
-assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is written into the save and read back");
+assert(/e\.ctrlKey \|\| e\.altKey \|\| e\.metaKey/.test(uiSrc) && /if \(overlayBusy\(\)\) return;/.test(uiSrc), "D ignores Ctrl Alt Meta and an open dialog");
+assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is stamped on the save and the preference is what Continue keeps");
+assert(/markerClaims/.test(uiSrc) && /claimHits\(labelClaims/.test(uiSrc) && !/if \(soft\) return soft/.test(uiSrc), "city labels treat markers and state tags as hard blocks");
+assert(/\[1, 0\.82, 0\.64, 0\.5, 0\.4\]/.test(uiSrc), "city labels shrink before they drop");
+assert(/function drawCleanStallFront/.test(uiSrc) && /function drawCleanInvasionAxes/.test(uiSrc) && /function drawTroopBadge/.test(uiSrc), "clean close-up keeps a thin front, invasion arrows, and a troop badge");
+assert(/if \(layer\.clearRoads\) clampCloseMarkers/.test(uiSrc), "close-up camera keeps markers on screen");
+assert(/letterboxCanvasPoint/.test(uiSrc), "map clicks use the same letterbox as the drawn canvas");
+{
+  const rect = { left: 6, top: 171.2, width: 1428, height: 722.8 };
+  const scale = Math.min(rect.width / 1000, rect.height / 620);
+  const ox = rect.left + (rect.width - 1000 * scale) / 2;
+  const oy = rect.top + (rect.height - 620 * scale) / 2;
+  const clientX = ox + 352 * scale;
+  const clientY = oy + 313 * scale;
+  const [lx, ly] = letterboxCanvasPoint(clientX, clientY, rect, 1000, 620);
+  const stretchX = ((clientX - rect.left) / rect.width) * 1000;
+  const z = 3.2;
+  const cheyenneX = 364 * z + (352 - 352 * z);
+  assert(Math.abs(lx - 352) < 0.05 && Math.abs(ly - 313) < 0.05, "a click on drawn Denver stays on Denver");
+  assert(Math.abs(stretchX - lx) > 20 && Math.abs(stretchX - cheyenneX) < Math.abs(stretchX - 352), "stretch mapping would drift that click toward Cheyenne");
+  const fit = { left: 10, top: 20, width: 500, height: 310 };
+  const [ax, ay] = letterboxCanvasPoint(110, 80, fit, 1000, 620);
+  assert(Math.abs(ax - ((110 - 10) / 500) * 1000) < 0.05 && Math.abs(ay - ((80 - 20) / 310) * 620) < 0.05, "an unletterboxed canvas keeps the old click mapping");
+}
 assert(/territoryTipHtml/.test(uiSrc) && /Yield \+/.test(uiSrc) && /Works:/.test(uiSrc), "city report and hover keep levy yield and works");
 const closeRoad = closeRoadWidth(3.2);
 assert(Math.abs(closeRoad.casing * 3.2 - 7.2) < 0.05 && closeRoad.core < closeRoad.casing, "close roads shrink to about a third of the old cream bar");

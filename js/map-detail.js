@@ -34,10 +34,26 @@ export function stampMapDetail(state, on) {
   return value ? "1" : "0";
 }
 
-/** A save that recorded the toggle wins. Older saves keep the settings default. */
-export function mapDetailFromSave(saved, fallback) {
-  if (saved && typeof saved.mapDetail === "boolean") return saved.mapDetail;
+/**
+ * The live preference wins. A save may still carry mapDetail from an older build,
+ * but Continue must not put that value back over the setting the player just chose.
+ */
+export function mapDetailFromSave(_saved, fallback) {
   return !!fallback;
+}
+
+/**
+ * Pointer position in canvas pixels for an `object-fit: contain` canvas.
+ * The drawn map is letterboxed inside the element; stretching the element box
+ * drifts hits toward the edges.
+ */
+export function letterboxCanvasPoint(clientX, clientY, rect, canvasW, canvasH) {
+  const rw = Math.max(1, rect.width);
+  const rh = Math.max(1, rect.height);
+  const scale = Math.min(rw / canvasW, rh / canvasH);
+  const ox = rect.left + (rw - canvasW * scale) / 2;
+  const oy = rect.top + (rh - canvasH * scale) / 2;
+  return [(clientX - ox) / scale, (clientY - oy) / scale];
 }
 
 /**

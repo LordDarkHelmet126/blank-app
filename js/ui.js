@@ -88,7 +88,7 @@ import {
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
-import { LABEL_ANCHOR, MAP_DETAIL_KEY, chordIsMisleading, closeRoadWidth, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
+import { LABEL_ANCHOR, MAP_DETAIL_KEY, chordIsMisleading, closeRoadWidth, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -690,6 +690,9 @@ function bindChrome() {
       toggleLegend();
     }
     if ((e.key === "d" || e.key === "D") && !e.repeat && state?.phase === "strategy") {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (overlayBusy()) return;
+      e.preventDefault();
       toggleMapDetail();
     }
   });
@@ -2299,10 +2302,8 @@ function syncMapDetailButton() {
 }
 
 function syncMapDetailFromState() {
-  if (state) {
-    mapDetail = mapDetailFromSave(state, mapDetail);
-    stampMapDetail(state, mapDetail);
-  }
+  mapDetail = mapDetailFromSave(state, mapDetail);
+  if (state) stampMapDetail(state, mapDetail);
   try {
     localStorage.setItem(MAP_DETAIL_KEY, mapDetail ? "1" : "0");
   } catch {
@@ -2325,10 +2326,7 @@ function toggleMapDetail() {
 
 function canvasPoint(e, canvas) {
   const rect = canvas.getBoundingClientRect();
-  return [
-    ((e.clientX - rect.left) / rect.width) * canvas.width,
-    ((e.clientY - rect.top) / rect.height) * canvas.height,
-  ];
+  return letterboxCanvasPoint(e.clientX, e.clientY, rect, canvas.width, canvas.height);
 }
 
 function zoomBy(factor) {
@@ -2821,7 +2819,7 @@ function drawStateLabels(ctx) {
     ctx.fillRect(px, py, a.w, a.h);
     ctx.fillStyle = "#000010";
     ctx.fillText(a.id, px + Math.max(2, Math.round(5 * fit)), py + Math.max(8, Math.round(16 * fit)));
-    if (fit < 1) labelClaims.push({ x: px - 2, y: py - 2, w: a.w + 4, h: a.h + 4 });
+    if (mapLayers().clearRoads) labelClaims.push({ x: px - 2, y: py - 2, w: a.w + 4, h: a.h + 4 });
   });
   ctx.font = PX_FONT;
 }
@@ -3707,14 +3705,14 @@ function drawClearRoad(ctx, a, b, hot, faint) {
   ctx.save();
   ctx.lineCap = "butt";
   ctx.lineJoin = "miter";
-  ctx.globalAlpha = faint ? (hot ? 0.55 : 0.32) : 1;
+  ctx.globalAlpha = faint ? (hot ? 0.72 : 0.55) : 1;
   ctx.beginPath();
   ctx.moveTo(a[0] + ux * trim, a[1] + uy * trim);
   ctx.lineTo(b[0] - ux * trim, b[1] - uy * trim);
-  ctx.strokeStyle = hot && !faint ? "#4a4034" : "#3a3228";
+  ctx.strokeStyle = hot && !faint ? "#3a2e18" : "#241c12";
   ctx.lineWidth = width.casing * (faint ? 0.8 : 1);
   ctx.stroke();
-  ctx.strokeStyle = hot && !faint ? "#c4b078" : "#9a8c74";
+  ctx.strokeStyle = hot && !faint ? "#f6e7b4" : "#f0e0b0";
   ctx.lineWidth = width.core * (faint ? 0.75 : 1);
   ctx.stroke();
   ctx.restore();
@@ -3769,6 +3767,144 @@ function drawCityMarkClean(ctx, r, selected) {
     ctx.fillStyle = "#d080f8";
     ctx.fillRect(dot, y0, 3, 3);
   });
+  drawTroopBadge(ctx, r, x, y, s);
+}
+
+function drawTroopBadge(ctx, r, x, y, s) {
+  if (!(r.garrison > 0)) return;
+  const player = playerOf(state);
+  const known = r.intel > 0 || r.id === player?.region || (player?.faction && r.owner === player.faction);
+  const z = Math.max(0.2, mapView.z || 1);
+  const label = known ? String(r.garrison) : "?";
+  const fontPx = Math.max(3, Math.min(cityNamePx() - 1, 8 / z));
+  ctx.save();
+  ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
+  const bw = Math.max(8 / z, ctx.measureText(label).width + 2);
+  const bh = Math.max(4, fontPx + 2);
+  const bx = Math.round(x + s * 0.15);
+  const by = Math.round(y - s * 0.5 - bh - 1);
+  ctx.fillStyle = "#140e08";
+  ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+  ctx.fillStyle = known ? "#f8d800" : "#d8c48a";
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = "#140e08";
+  ctx.textBaseline = "top";
+  ctx.fillText(label, bx + 1, by + 1);
+  ctx.restore();
+}
+
+function drawCleanStallFront(ctx) {
+  const ids = ["cheyenne", "omaha", "lincoln", "topeka", "wichita", "st_louis"];
+  const z = Math.max(0.2, mapView.z || 1);
+  let prev = null;
+  ids.forEach((id) => {
+    const r = regionOf(state, id);
+    if (!r) {
+      prev = null;
+      return;
+    }
+    if (prev && isAdjacent(state, prev, r)) {
+      const a = cityXY(prev);
+      const b = cityXY(r);
+      ctx.save();
+      ctx.lineCap = "butt";
+      ctx.strokeStyle = "#1a120c";
+      ctx.lineWidth = 2.4 / z;
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+      ctx.strokeStyle = "#f4f4f4";
+      ctx.lineWidth = 1.1 / z;
+      ctx.setLineDash([6 / z, 4 / z]);
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.lineTo(b[0], b[1]);
+      ctx.stroke();
+      ctx.restore();
+    }
+    prev = r;
+  });
+  const end = regionOf(state, "st_louis");
+  if (!end) return;
+  const [x, y] = cityXY(end);
+  const s = 8 / z;
+  ctx.fillStyle = "#f4f4f4";
+  ctx.beginPath();
+  ctx.moveTo(x + s, y + s * 0.4);
+  ctx.lineTo(x + s * 3.2, y + s * 2.2);
+  ctx.lineTo(x + s * 1.2, y + s * 2.4);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawCleanAxis(ctx, a, b, color) {
+  const z = Math.max(0.2, mapView.z || 1);
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const px = -uy;
+  const py = ux;
+  const head = 10 / z;
+  ctx.save();
+  ctx.lineCap = "butt";
+  ctx.strokeStyle = "#1a120c";
+  ctx.lineWidth = 2.2 / z;
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.lineTo(b[0], b[1]);
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.1 / z;
+  ctx.stroke();
+  const baseX = b[0] - ux * head;
+  const baseY = b[1] - uy * head;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(b[0], b[1]);
+  ctx.lineTo(baseX + px * head * 0.45, baseY + py * head * 0.45);
+  ctx.lineTo(baseX - px * head * 0.45, baseY - py * head * 0.45);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCleanInvasionAxes(ctx) {
+  drawCleanAxis(ctx, [6, 34], [86, 86], "#7aa0b4");
+  drawCleanAxis(ctx, [334, 467], [482, 579], "#8c4a4a");
+}
+
+/** Keep close-up city markers fully inside the canvas. Detail mode does not move the camera. */
+function clampCloseMarkers(painted) {
+  const z = mapView.z || 1;
+  const pad = closeMarkerSize() / 2 + 2;
+  const x0 = -mapView.x / z;
+  const y0 = -mapView.y / z;
+  const x1 = (1000 - mapView.x) / z;
+  const y1 = (620 - mapView.y) / z;
+  let nx0 = x0;
+  let ny0 = y0;
+  let nx1 = x1;
+  let ny1 = y1;
+  painted.forEach((r) => {
+    const [x, y] = cityXY(r);
+    if (x < x0 || x > x1 || y < y0 || y > y1) return;
+    if (x - pad < x0 - 0.5) nx0 = Math.min(nx0, x - pad);
+    if (x + pad > x1 + 0.5) nx1 = Math.max(nx1, x + pad);
+    if (y - pad < y0 - 0.5) ny0 = Math.min(ny0, y - pad);
+    if (y + pad > y1 + 0.5) ny1 = Math.max(ny1, y + pad);
+  });
+  if (nx0 === x0 && ny0 === y0 && nx1 === x1 && ny1 === y1) return;
+  const bw = Math.max(1, nx1 - nx0);
+  const bh = Math.max(1, ny1 - ny0);
+  const z2 = Math.min(z, 1000 / bw, 620 / bh);
+  const cx = (nx0 + nx1) / 2;
+  const cy = (ny0 + ny1) / 2;
+  mapView.z = z2;
+  mapView.x = 500 - cx * z2;
+  mapView.y = 310 - cy * z2;
 }
 
 function claimHits(list, x, y, w, h, pad) {
@@ -3831,17 +3967,15 @@ function cityLabelSlots(x, y, w, h, marker) {
   return slots;
 }
 
-function pickCityLabel(x, y, w, h, marker, force) {
+function pickCityLabel(x, y, w, h, marker, blocks) {
   const slots = cityLabelSlots(x, y, w, h, marker);
-  let soft = null;
   for (let i = 0; i < slots.length; i++) {
     const [lx, ly] = slots[i];
     if (claimHits(cityClaims, lx, ly, w, h, 2)) continue;
-    if (!claimHits(labelClaims, lx, ly, w, h, 1)) return [lx, ly];
-    if (!soft) soft = [lx, ly];
+    if (claimHits(labelClaims, lx, ly, w, h, 1)) continue;
+    if (claimHits(blocks, lx, ly, w, h, 1)) continue;
+    return [lx, ly];
   }
-  if (soft) return soft;
-  if (force && slots.length) return slots[0];
   return null;
 }
 
@@ -3860,6 +3994,12 @@ function drawCleanCityLabels(ctx, painted) {
     return x >= canvas.x0 && x <= canvas.x1 && y >= canvas.y0 && y <= canvas.y1;
   });
   const hereId = playerOf(state).region;
+  const markerClaims = shown.map((r) => {
+    const [x, y] = cityXY(r);
+    const s = closeMarkerSize() * (r.id === hereId ? 1.28 : 1);
+    const badge = r.garrison > 0 ? Math.max(8, 12 / z) + 2 : 0;
+    return { id: r.id, x: x - s / 2 - 2, y: y - s / 2 - badge - 2, w: s + 4, h: s + badge + 4 };
+  });
   const ranked = shown
     .map((r, i) => ({ r, i }))
     .sort((a, b) => {
@@ -3867,29 +4007,39 @@ function drawCleanCityLabels(ctx, painted) {
       return rank(b.r) - rank(a.r) || a.i - b.i;
     });
   ctx.save();
-  ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.textBaseline = "top";
-  ranked.forEach(({ r }) => {
-    const name = r.short;
-    const w = Math.ceil(ctx.measureText(name).width) + 4;
-    const h = Math.ceil(fontPx + 3);
-    const [x, y] = cityXY(r);
-    const here = r.id === hereId;
-    const selected = r.id === selectedRegion;
-    const marker = closeMarkerSize() * (here ? 1.28 : 1);
-    const placed = pickCityLabel(x, y, w, h, marker, here || selected);
-    if (!placed) return;
-    const [px, py] = placed;
-    cityClaims.push({ x: px, y: py, w, h });
-    ctx.fillStyle = selected ? "#f8d800" : "#0c0c16";
-    ctx.fillRect(px, py, w, h);
-    if (here && !selected) {
-      ctx.strokeStyle = "#f8d800";
-      ctx.lineWidth = Math.max(0.5, 1.2 / z);
-      ctx.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
-    }
-    ctx.fillStyle = selected ? "#000018" : here ? "#f8d800" : "#f4efe4";
-    ctx.fillText(name, px + 2, py + 1);
+  let pending = ranked;
+  [1, 0.82, 0.64, 0.5, 0.4].forEach((scale) => {
+    const sized = Math.max(4, fontPx * scale);
+    ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
+    const next = [];
+    pending.forEach(({ r, i }) => {
+      const name = r.short;
+      const w = Math.ceil(ctx.measureText(name).width) + 4;
+      const h = Math.ceil(sized + 3);
+      const [x, y] = cityXY(r);
+      const here = r.id === hereId;
+      const selected = r.id === selectedRegion;
+      const marker = closeMarkerSize() * (here ? 1.28 : 1);
+      const blocks = markerClaims.filter((c) => c.id !== r.id);
+      const placed = pickCityLabel(x, y, w, h, marker, blocks);
+      if (!placed) {
+        next.push({ r, i });
+        return;
+      }
+      const [px, py] = placed;
+      cityClaims.push({ x: px, y: py, w, h });
+      ctx.fillStyle = selected ? "#f8d800" : "#0c0c16";
+      ctx.fillRect(px, py, w, h);
+      if (here && !selected) {
+        ctx.strokeStyle = "#f8d800";
+        ctx.lineWidth = Math.max(0.5, 1.2 / z);
+        ctx.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
+      }
+      ctx.fillStyle = selected ? "#000018" : here ? "#f8d800" : "#f4efe4";
+      ctx.fillText(name, px + 2, py + 1);
+    });
+    pending = next;
   });
   ctx.restore();
 }
@@ -3908,6 +4058,8 @@ function drawMap() {
   const o = drawMap.off.getContext("2d");
   o.imageSmoothingEnabled = false;
   const painted = state.regions.filter((r) => theaterVisible(state, r) || r.id === "gulf_passage");
+  const layer = mapLayers();
+  if (layer.clearRoads) clampCloseMarkers(painted);
   paintTheaterTerrain(o, state, {
     painted,
     selectedId: selectedRegion,
@@ -3930,9 +4082,10 @@ function drawMap() {
     drawWorldDesks(ctx);
   }
   ctx.imageSmoothingEnabled = false;
-  const layer = mapLayers();
   if (layer.clearRoads) {
     drawClearRoads(ctx, painted);
+    drawCleanStallFront(ctx);
+    drawCleanInvasionAxes(ctx);
   } else {
     mapRoads(painted).forEach((rd) => {
       const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
