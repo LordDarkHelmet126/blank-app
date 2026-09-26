@@ -237,6 +237,11 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 .wash-key .key-neu { background: #f7f7f7; border-color: #1a140c; }
 .zoom-btns { display: flex; flex: 0 0 auto; gap: 4px; }
 .zoom-btns button { padding: 4px 8px; }
+.zoom-btns button.on {
+  background: #f8d800;
+  color: #000018;
+  border-color: #f8f8f8;
+}
 /* Look demo: the theater fills the pane. Side, court, and chronicle stay in the DOM. */
 body.look-map .side,
 body.look-map .court-strip,

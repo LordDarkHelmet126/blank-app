@@ -50,6 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
+import { CLOSE_ZOOM, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1329,6 +1330,26 @@ assert(!/drawMapPlate\(/.test(uiSrc), "phase banners are not stamped on the land
 assert(/class="wash-key"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "wash key sits in the header off the land");
 assert(!/wolverine/i.test(uiSrc) && !/red dawn/i.test(uiSrc), "map copy stays original IP");
 assert(/function drawHereChip/.test(uiSrc) && /plateAwayFromSelected/.test(uiSrc), "here chip stays off selected city");
+assert(CLOSE_ZOOM > 1 && CLOSE_ZOOM < 1.4, "close zoom starts after the full-theater frame");
+const cleanMid = mapLayerVisibility(1.7, false, null);
+assert(cleanMid.close && cleanMid.clearRoads && cleanMid.cities && cleanMid.roads && !cleanMid.props && !cleanMid.plates && !cleanMid.yieldMarks && !cleanMid.chips, "mid close-up hides yield marks, plates, and chips");
+const cleanClose = mapLayerVisibility(3.2, false, null);
+assert(cleanClose.clearRoads && !cleanClose.badges && cleanClose.ownership && cleanClose.stateLabels, "closest zoom keeps ownership and state labels, drops badges");
+const overview = mapLayerVisibility(1, false, null);
+assert(!overview.close && overview.props && overview.plates && !overview.clearRoads, "full theater keeps the overview detail layer");
+const world = mapLayerVisibility(0.22, false, null);
+assert(!world.close && world.extras, "world zoom stays readable");
+const detailOn = mapLayerVisibility(3.2, true, null);
+assert(detailOn.close && detailOn.extras && detailOn.props && detailOn.plates && !detailOn.clearRoads, "detail toggle restores the close-up extras");
+assert(mapLayerVisibility(2.4, false, "bering").extras && !mapLayerVisibility(2.4, false, "cuba").clearRoads, "foreign close-ups keep desk captions");
+const detailGame = createNewGame(content, { seed: 9, difficulty: "easy", name: "Casey Flint", background: "scout" });
+assert(stampMapDetail(detailGame, true) === "1" && detailGame.mapDetail === true, "detail toggle stamps the save");
+const detailBack = deserialize(serialize(detailGame));
+assert(detailBack.mapDetail === true && mapDetailFromSave(detailBack, false) === true, "save remembers the map detail toggle");
+assert(mapDetailFromSave({}, false) === false, "older saves stay on the clean default");
+assert(/e\.key === "d"/.test(uiSrc) && /btn-map-detail/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")) && /MAP_DETAIL_KEY/.test(uiSrc), "D and the Detail button toggle close-up extras");
+assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is written into the save and read back");
+assert(/territoryTipHtml/.test(uiSrc) && /Yield \+/.test(uiSrc) && /Works:/.test(uiSrc), "city report and hover keep levy yield and works");
 assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
 assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");
 assert(/originalFaceGrid/.test(terrainSrc) && /face-grid/.test(uiSrc), "original officer face grid");

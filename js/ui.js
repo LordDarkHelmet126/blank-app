@@ -79,6 +79,7 @@ import {
   theaterVisible,
   isAdjacent,
   geoTags,
+  geoYield,
   approachRoads,
   approachTrail,
   sharesRoad,
@@ -87,6 +88,7 @@ import {
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
+import { MAP_DETAIL_KEY, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -619,6 +621,7 @@ function bindChrome() {
   $("btn-zoom-in").onclick = () => zoomBy(1.2);
   $("btn-zoom-out").onclick = () => zoomBy(1 / 1.2);
   $("btn-zoom-world").onclick = () => frameWorld();
+  $("btn-map-detail").onclick = () => toggleMapDetail();
   $("btn-missions").onclick = () => {
     showModal(missionsHtml(), { kind: "missions" });
     wireAfterRender();
@@ -649,6 +652,7 @@ function bindChrome() {
   canvas.addEventListener("pointerup", onMapPointerUp);
   canvas.addEventListener("pointerleave", () => {
     mapView.drag = null;
+    hideMapTip();
   });
   canvas.addEventListener(
     "wheel",
@@ -685,7 +689,11 @@ function bindChrome() {
     if ((e.key === "l" || e.key === "L") && state?.phase === "strategy" && e.target?.tagName !== "INPUT" && e.target?.tagName !== "TEXTAREA") {
       toggleLegend();
     }
+    if ((e.key === "d" || e.key === "D") && !e.repeat && state?.phase === "strategy") {
+      toggleMapDetail();
+    }
   });
+  syncMapDetailButton();
 }
 
 function titleScreenHtml(hasSave) {
@@ -1140,6 +1148,7 @@ function helpHtml() {
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
       <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Reunify is the east walk NE–KS–MO.</li>
+      <li><strong>Close zoom:</strong> Cities and roads stay. Yield marks, flags, and nameplates move to the city report and the hover line. Detail (D) draws that layer again.</li>
       <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
@@ -1593,6 +1602,7 @@ function esc(s) {
 
 export function render() {
   if (!state) return;
+  syncMapDetailFromState();
   const p = playerOf(state);
   $("week").textContent = String(state.week);
   $("season").textContent = `${state._season?.name || ""} ${calendarYear(state.week)}`;
@@ -1735,6 +1745,7 @@ function cityHtml() {
   const plus = (r.plus || []).join(" · ");
   const minus = (r.minus || []).join(" · ");
   const kind = markerKind(r);
+  const yld = geoYield(r, state._season);
   return `
     <div class="chrome-head">
       <span class="panel-title">City report</span>
@@ -1763,6 +1774,8 @@ function cityHtml() {
       ${plus ? `<p class="plus">+ ${esc(plus)}</p>` : ""}
       ${minus ? `<p class="minus">− ${esc(minus)}</p>` : ""}
       <p class="plus">Geo: ${geoTags(r).map((t) => `${t.label} ${t.n}`).join(" · ") || "none"}</p>
+      <p class="plus">Yield +${yld.food} food, +${yld.gold} gold</p>
+      <p class="muted">Works: ${esc(worksLabel(kind))}</p>
       ${(() => {
         const row = stateControl(state).find((s) => s.id === r.stateCode);
         const here = regionOf(state, playerOf(state).region);
@@ -2266,6 +2279,50 @@ function renderLegend() {
 
 const mapView = { z: 1, x: 0, y: 0, drag: null, pacific: false, focus: null };
 
+let mapDetail = false;
+try {
+  mapDetail = localStorage.getItem(MAP_DETAIL_KEY) === "1";
+} catch {
+  mapDetail = false;
+}
+
+function mapLayers() {
+  return mapLayerVisibility(mapView.z, mapDetail, mapView.focus);
+}
+
+function syncMapDetailButton() {
+  const btn = $("btn-map-detail");
+  if (!btn) return;
+  btn.classList.toggle("on", mapDetail);
+  btn.setAttribute("aria-pressed", mapDetail ? "true" : "false");
+  btn.title = mapDetail ? "Hide map extras (D)" : "Show yield marks and plates (D)";
+}
+
+function syncMapDetailFromState() {
+  if (state) {
+    mapDetail = mapDetailFromSave(state, mapDetail);
+    stampMapDetail(state, mapDetail);
+  }
+  try {
+    localStorage.setItem(MAP_DETAIL_KEY, mapDetail ? "1" : "0");
+  } catch {
+    /* private window */
+  }
+  syncMapDetailButton();
+}
+
+function toggleMapDetail() {
+  mapDetail = !mapDetail;
+  if (state) stampMapDetail(state, mapDetail);
+  try {
+    localStorage.setItem(MAP_DETAIL_KEY, mapDetail ? "1" : "0");
+  } catch {
+    /* private window */
+  }
+  syncMapDetailButton();
+  if (state) drawMap();
+}
+
 function canvasPoint(e, canvas) {
   const rect = canvas.getBoundingClientRect();
   return [
@@ -2428,11 +2485,59 @@ function onMapClick(e) {
   render();
 }
 
+function worksLabel(kind) {
+  return {
+    elevator: "Grain elevator",
+    pump: "Oil pump",
+    tower: "Radio tower",
+    bunker: "Bunker",
+    headframe: "Mine headframe",
+    street: "Main street",
+    mill: "Timber mill",
+    ranch: "Ranch house",
+  }[kind] || "Yard";
+}
+
+function territoryTipHtml(r) {
+  const p = playerOf(state);
+  const f = r.owner ? factionOf(state, r.owner) : null;
+  const known = r.intel > 0 || (p.faction && r.owner === p.faction);
+  const yld = geoYield(r, state._season);
+  const here = regionOf(state, p.region);
+  const at = here?.id === r.id;
+  const adj = here && isAdjacent(state, here, r);
+  const route = at ? "You are here" : adj ? "Adjacent road" : "Route locked";
+  const target = r.id === selectedRegion && !at ? " · selected" : "";
+  const geo = geoTags(r).map((t) => `${t.label} ${t.n}`).join(" · ") || "none";
+  return `<strong>${esc(r.short)} · ${esc(r.stateCode || "—")}</strong><p>${esc(f ? f.short : "Open")}${target} · ${esc(route)}</p><p>Levy ${known ? r.garrison : "???"} · Walls ${known ? r.walls : "?"} · Order ${known ? r.order : "?"}</p><p>Yield +${yld.food} food, +${yld.gold} gold</p><p>${esc(worksLabel(markerKind(r)))} · ${esc(geo)}</p>`;
+}
+
+function placeMapTip(e, html) {
+  const tip = $("tip");
+  if (!tip) return;
+  tip.dataset.kind = "map";
+  tip.innerHTML = html;
+  tip.hidden = false;
+  const x = Math.max(8, Math.min(window.innerWidth - 300, e.clientX + 14));
+  const y = Math.min(window.innerHeight - 8, e.clientY + 16);
+  tip.style.left = `${x}px`;
+  tip.style.top = `${y}px`;
+}
+
+function hideMapTip() {
+  const tip = $("tip");
+  if (!tip || tip.dataset.kind !== "map") return;
+  tip.hidden = true;
+  delete tip.dataset.kind;
+}
+
 function onMapMove(e) {
   if (!state) return;
   const r = regionAt(e.clientX, e.clientY, $("map"));
   const id = r ? r.id : null;
   $("map").style.cursor = r ? "pointer" : "crosshair";
+  if (r) placeMapTip(e, territoryTipHtml(r));
+  else hideMapTip();
   if (id !== hoverRegion) {
     hoverRegion = id;
     drawMap();
@@ -2625,7 +2730,9 @@ function ringCentroid(ring) {
 /** Every lower-48 postal, plus Alaska. Small states nudge apart; none are dropped. */
 function drawStateLabels(ctx) {
   const lines = state.stateLines || [];
-  ctx.font = "16px 'Press Start 2P', 'Courier New', monospace";
+  const fit = mapLayers().clearRoads ? Math.max(0.45, Math.min(1, 1.1 / mapView.z)) : 1;
+  const fontPx = Math.max(8, Math.round(16 * fit));
+  ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   const items = [];
   lines.forEach((line) => {
     const id = String(line.id || "");
@@ -2641,7 +2748,7 @@ function drawStateLabels(ctx) {
       minY = Math.min(minY, py);
       maxY = Math.max(maxY, py);
     });
-    const w = Math.ceil(ctx.measureText(id).width) + 10;
+    const w = Math.ceil(ctx.measureText(id).width) + Math.max(6, Math.round(10 * fit));
     const pinned = id === "CA" || id === "NV";
     items.push({
       id,
@@ -2650,7 +2757,7 @@ function drawStateLabels(ctx) {
       ox: cx,
       oy: cy,
       w,
-      h: 22,
+      h: Math.max(12, Math.round(22 * fit)),
       area: pinned ? 1e9 : Math.max(400, (maxX - minX) * (maxY - minY)),
       pinned,
     });
@@ -2694,7 +2801,8 @@ function drawStateLabels(ctx) {
     ctx.fillStyle = "#f8f8f8";
     ctx.fillRect(px, py, a.w, a.h);
     ctx.fillStyle = "#000010";
-    ctx.fillText(a.id, px + 5, py + 16);
+    ctx.fillText(a.id, px + Math.max(2, Math.round(5 * fit)), py + Math.max(8, Math.round(16 * fit)));
+    if (fit < 1) labelClaims.push({ x: px - 2, y: py - 2, w: a.w + 4, h: a.h + 4 });
   });
   ctx.font = PX_FONT;
 }
@@ -3537,6 +3645,158 @@ function theaterLandPlate() {
   return c;
 }
 
+function drawClearRoad(ctx, a, b, hot) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const trim = Math.min(11, len * 0.22);
+  const ux = dx / len;
+  const uy = dy / len;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(a[0] + ux * trim, a[1] + uy * trim);
+  ctx.lineTo(b[0] - ux * trim, b[1] - uy * trim);
+  ctx.strokeStyle = "#1a1208";
+  ctx.lineWidth = hot ? 9 : 7.5;
+  ctx.stroke();
+  ctx.strokeStyle = hot ? "#f8d800" : "#f6e7b0";
+  ctx.lineWidth = hot ? 3.6 : 3;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawClearRoads(ctx, painted) {
+  const here = playerOf(state).region;
+  const hotKey = here && selectedRegion && here !== selectedRegion ? [here, selectedRegion].sort().join("|") : "";
+  mapRoads(painted).forEach((rd) => {
+    const key = [rd.from, rd.to].sort().join("|");
+    const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
+    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
+    drawClearRoad(ctx, rd.a, rd.b, on || key === hotKey);
+  });
+}
+
+function drawCityMarkClean(ctx, r, selected) {
+  const [x, y] = cityXY(r);
+  const fac = r.owner ? factionOf(state, r.owner) : null;
+  const fill = fac ? fac.color : "#9aa7b0";
+  const here = playerOf(state).region === r.id;
+  drawCityNode(ctx, x, y, selected);
+  ctx.fillStyle = fill;
+  ctx.fillRect(x - 1, y - 1, 3, 3);
+  if (here) {
+    ctx.fillStyle = "#f8d800";
+    ctx.fillRect(x - 2, y - 16, 3, 11);
+    ctx.fillRect(x - 2, y - 16, 8, 3);
+  }
+  if (selected && !here) {
+    ctx.strokeStyle = "#f8d800";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - 9, y - 9, 18, 18);
+  }
+  if (r.id === "arctic_slope" && legendStatus(state).mapMark) {
+    ctx.fillStyle = "#d080f8";
+    ctx.fillRect(x + 10, y - 4, 3, 3);
+  }
+  legendBoard(state).forEach((h) => {
+    if (h.regionId !== r.id || !h.mapMark) return;
+    ctx.fillStyle = "#d080f8";
+    ctx.fillRect(x + 10, y - 4, 3, 3);
+  });
+}
+
+function boxHits(x, y, w, h, pad) {
+  return labelClaims.some(
+    (c) => x < c.x + c.w + pad && x + w + pad > c.x && y < c.y + c.h + pad && y + h + pad > c.y,
+  );
+}
+
+function junctionHits(x, y, w, h, junctions, pad) {
+  return junctions.some(([jx, jy]) => x < jx + pad && x + w > jx - pad && y < jy + pad && y + h > jy - pad);
+}
+
+function segmentHitsRect(a, b, x, y, w, h) {
+  const steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3));
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const px = a[0] + (b[0] - a[0]) * t;
+    const py = a[1] + (b[1] - a[1]) * t;
+    if (px >= x && px <= x + w && py >= y && py <= y + h) return true;
+  }
+  return false;
+}
+
+function placeCityLabel(x, y, w, h, junctions, roads) {
+  const dirs = [
+    [1, 0],
+    [-1, 0],
+    [0, -1],
+    [0, 1],
+    [1, -1],
+    [-1, -1],
+    [1, 1],
+    [-1, 1],
+  ];
+  for (let ring = 1; ring <= 7; ring++) {
+    const gap = 16 * ring;
+    for (const [dx, dy] of dirs) {
+      let x0 = x - w / 2;
+      let y0 = y - h / 2;
+      if (dx > 0) x0 = x + gap;
+      else if (dx < 0) x0 = x - w - gap;
+      if (dy > 0) y0 = y + gap;
+      else if (dy < 0) y0 = y - h - gap;
+      if (boxHits(x0, y0, w, h, 6)) continue;
+      if (junctionHits(x0, y0, w, h, junctions, 14)) continue;
+      const roadPad = 5;
+      const onRoad = (roads || []).some((rd) => segmentHitsRect(rd[0], rd[1], x0 - roadPad, y0 - roadPad, w + roadPad * 2, h + roadPad * 2));
+      if (onRoad) continue;
+      return [Math.round(x0), Math.round(y0)];
+    }
+  }
+  return [Math.round(x + 16), Math.round(y - h / 2)];
+}
+
+function drawCleanCityLabels(ctx, painted) {
+  const fontPx = Math.max(8, Math.round(14 / mapView.z));
+  const view = mapViewRect();
+  const shown = painted.filter((r) => {
+    const [x, y] = cityXY(r);
+    return x > view.x0 - 48 && x < view.x1 + 48 && y > view.y0 - 36 && y < view.y1 + 36;
+  });
+  const junctions = shown.map((r) => cityXY(r));
+  const roads = mapRoads(shown).map((rd) => [rd.a, rd.b]);
+  const hereId = playerOf(state).region;
+  const ranked = shown.slice().sort((a, b) => {
+    const rank = (r) => (r.id === selectedRegion ? 2 : r.id === hereId ? 1 : 0);
+    return rank(b) - rank(a);
+  });
+  ctx.save();
+  ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
+  ctx.textBaseline = "top";
+  ranked.forEach((r) => {
+    const name = r.short || "";
+    const w = Math.ceil(ctx.measureText(name).width) + 8;
+    const h = fontPx + 6;
+    const [x, y] = cityXY(r);
+    const [px, py] = placeCityLabel(x, y, w, h, junctions, roads);
+    labelClaims.push({ x: px, y: py, w, h });
+    const selected = r.id === selectedRegion;
+    const here = r.id === hereId;
+    ctx.fillStyle = selected ? "#f8d800" : "#000018";
+    ctx.fillRect(px, py, w, h);
+    if (here && !selected) {
+      ctx.fillStyle = "#f8d800";
+      ctx.fillRect(px, py, w, 2);
+    }
+    ctx.fillStyle = selected ? "#000018" : "#f8f8f8";
+    ctx.fillText(name, px + 4, py + 3);
+  });
+  ctx.restore();
+}
+
 function drawMap() {
   labelClaims = [];
   const canvas = $("map");
@@ -3572,15 +3832,22 @@ function drawMap() {
     drawWorldDesks(ctx);
   }
   ctx.imageSmoothingEnabled = false;
-  mapRoads(painted).forEach((rd) => {
-    const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
-    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
-    drawPixelRoadFull(ctx, rd.a, rd.b, on);
-  });
-  drawCampaignRoads(ctx);
-  drawStallFront(ctx);
-  drawInvasionAxes(ctx);
-  drawNukeScars(ctx);
+  const layer = mapLayers();
+  if (layer.clearRoads) {
+    drawClearRoads(ctx, painted);
+  } else {
+    mapRoads(painted).forEach((rd) => {
+      const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
+      const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
+      drawPixelRoadFull(ctx, rd.a, rd.b, on);
+    });
+    drawCampaignRoads(ctx);
+    drawStallFront(ctx);
+  }
+  if (layer.extras) {
+    drawInvasionAxes(ctx);
+    drawNukeScars(ctx);
+  }
   if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
     const now = performance.now();
     const dur = mapFx.duration || 2400;
@@ -3588,9 +3855,15 @@ function drawMap() {
     t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
     drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
   }
-  painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
-  drawStateLabels(ctx);
-  painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  if (layer.props) {
+    painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
+    drawStateLabels(ctx);
+    painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  } else {
+    drawStateLabels(ctx);
+    painted.forEach((r) => drawCityMarkClean(ctx, r, r.id === selectedRegion));
+    drawCleanCityLabels(ctx, painted);
+  }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
