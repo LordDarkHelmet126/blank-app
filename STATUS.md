@@ -2,7 +2,13 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–7 (through the Middle East and North Africa). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–8 (through sub-Saharan Africa). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+
+## World atlas (Region 8 — sub-Saharan Africa)
+
+Forty-six countries, all occupied. Ethiopia is fourteen Derg provinces, and Eritrea is a province, not a country. Somalia is eighteen regions, still undivided. Zaire keeps that name, with Kivu unsplit and Shaba still Shaba. Namibia is not a country: twelve South West Africa districts stay under South African administration, and Walvis Bay is a Cape Province city. South Africa is four provinces, and the ten homelands are zones. Zimbabwe is not Rhodesia. Burkina Faso is the thirty provinces of 1984, not Upper Volta. Angola and Mozambique mark their civil-war front provinces and stay dormant. Madagascar and the island states are on the sheet, and Réunion and Mayotte are French. The Cape route, the Mozambique Channel, the Gulf of Guinea, and the Horn and Red Sea tie-in are sea lanes. TAZARA and the Benguela railway are rail. North Africa and Sudan meet the sheet on real crossings, including the Trans-Sahara road and the Aouzou trail. Rosters stay scaled and fictional. Nothing new is playable.
+
+`/?demo=look&view=world` shows the atlas through the Cape and Madagascar. `/?demo=look&view=africa` frames the Sahara crossings through the Cape. `/?demo=look&view=mideast`, `/?demo=look&view=ussr`, and `/?demo=look&view=europe` are unchanged. Close campaign zoom still does not draw the atlas. Week 0 is still Cheyenne.
 
 ## World atlas (Region 7 — Middle East and North Africa)
 
