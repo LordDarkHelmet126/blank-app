@@ -2,7 +2,13 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–6 (through Eastern Europe and the USSR). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–7 (through the Middle East and North Africa). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+
+## World atlas (Region 7 — Middle East and North Africa)
+
+Twenty-two countries, all occupied. North Yemen and South Yemen are separate. Iran and Iraq mark their front provinces and stay dormant; the front itself is a trail, not a highway. Lebanon keeps the Israeli security zone as a zone. Israel holds the West Bank, Gaza, and the Golan as occupation zones. Sinai is Egyptian. Western Sahara is four Moroccan provinces. Sudan is nine regions, still undivided. Afghanistan is a Soviet-occupied republic, tied to Termez by the 1982 Friendship Bridge, with the Salang tunnel inside the country. The Suez Canal, Bab-el-Mandeb, Hormuz, the Red Sea, the Persian Gulf, and the Strait of Gibraltar are sea lanes. Turkey and the southern SSRs meet the region on real crossings. Kushka is the Turkmen spur. Rosters stay scaled and fictional. Nothing new is playable.
+
+`/?demo=look&view=world` shows the atlas through Afghanistan and the two Yemens. `/?demo=look&view=mideast` frames Morocco through Afghanistan. `/?demo=look&view=ussr` and `/?demo=look&view=europe` are unchanged. Close campaign zoom still does not draw the atlas. Week 0 is still Cheyenne.
 
 ## World atlas (Region 6 — Eastern Europe and the USSR)
 
