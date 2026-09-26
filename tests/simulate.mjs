@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, chordIsMisleading, closeRoadWidth, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1350,6 +1350,17 @@ assert(mapDetailFromSave({}, false) === false, "older saves stay on the clean de
 assert(/e\.key === "d"/.test(uiSrc) && /btn-map-detail/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")) && /MAP_DETAIL_KEY/.test(uiSrc), "D and the Detail button toggle close-up extras");
 assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is written into the save and read back");
 assert(/territoryTipHtml/.test(uiSrc) && /Yield \+/.test(uiSrc) && /Works:/.test(uiSrc), "city report and hover keep levy yield and works");
+const closeRoad = closeRoadWidth(3.2);
+assert(Math.abs(closeRoad.casing * 3.2 - 7.2) < 0.05 && closeRoad.core < closeRoad.casing, "close roads shrink to about a third of the old cream bar");
+assert(Math.abs(closeRoadWidth(1.7).casing * 1.7 - 7.2) < 0.05, "close road width scales with zoom");
+assert(LABEL_ANCHOR === 1.5 && /LABEL_ANCHOR/.test(uiSrc) && /cityNamePx/.test(uiSrc), "city names stay within one and a half marker widths");
+assert(/closeRoadWidth/.test(uiSrc) && /chordIsMisleading/.test(uiSrc), "close-up roads use the thin casing and the chord check");
+assert(
+  chordIsMisleading(230, ["MT", "MT", "WY", "WY", "SD", "SD", "SD", "SD", "", "NE", "NE", "IA"], "MT", "NE"),
+  "a long chord across other states draws faint"
+);
+assert(!chordIsMisleading(154, ["WY", "WY", "NE", "NE", "NE", "", "IA"], "WY", "NE"), "a road that stays in its endpoint states stays solid");
+assert(!chordIsMisleading(80, ["WA", "ID", "ID", "MT"], "WA", "MT"), "a short crossing stays solid");
 assert(/BIOME\.forest/.test(terrainSrc) && /BIOME\.rockies/.test(terrainSrc) && /BIOME\.desert/.test(terrainSrc), "WA forest / Rockies / desert biomes");
 assert(/paintIsoField/.test(terrainSrc) && /paintSiegeWall/.test(terrainSrc), "isometric field + siege wall");
 assert(/originalFaceGrid/.test(terrainSrc) && /face-grid/.test(uiSrc), "original officer face grid");

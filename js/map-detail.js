@@ -39,3 +39,31 @@ export function mapDetailFromSave(saved, fallback) {
   if (saved && typeof saved.mapDetail === "boolean") return saved.mapDetail;
   return !!fallback;
 }
+
+/**
+ * Close-zoom road width in world units.
+ * The on-screen bar stays near 7px (about a third of the old close-zoom casing)
+ * and the core stays narrower than the city marker.
+ */
+export function closeRoadWidth(z) {
+  const zSafe = Math.max(0.2, Number(z) || 1);
+  const screen = 7.2;
+  return { casing: screen / zSafe, core: 3.2 / zSafe, screen };
+}
+
+/**
+ * A long neighbor chord that spends its run in states that are neither end.
+ * Empty samples (sea) are not foreign, so a water hop is not treated as a crossed state.
+ */
+export function chordIsMisleading(length, samples, stateA, stateB) {
+  if (!(length >= 110) || !samples || !samples.length) return false;
+  let foreign = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const sample = samples[i];
+    if (sample && sample !== stateA && sample !== stateB) foreign += 1;
+  }
+  return foreign / samples.length >= 0.34;
+}
+
+/** A city name's near edge stays within this many marker widths of its marker. */
+export const LABEL_ANCHOR = 1.5;
