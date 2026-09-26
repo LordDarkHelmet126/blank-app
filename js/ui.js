@@ -88,13 +88,13 @@ import {
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
-import { LABEL_ANCHOR, LABEL_MIN_SCREEN, MAP_DETAIL_KEY, applyMapDrag, canvasDisplayScale, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
+import { LABEL_ANCHOR, LABEL_MIN_SCREEN, MAP_DETAIL_KEY, applyMapDrag, calloutCap, canvasDisplayScale, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
-let state;
-let selectedRegion = "bethel";
-let hoverRegion = null;
+export let state;
+export let selectedRegion = "bethel";
+export let hoverRegion = null;
 let ladderNotice = "";
 /** Presentation-only court/officers desk. Not saved and not a map node. */
 const courtView = { deskId: null };
@@ -647,13 +647,7 @@ function bindChrome() {
   });
   $("duel-continue").onclick = closeDuel;
   const canvas = $("map");
-  canvas.addEventListener("pointermove", onMapPointerMove);
-  canvas.addEventListener("pointerdown", onMapPointerDown);
-  canvas.addEventListener("pointerup", onMapPointerUp);
-  canvas.addEventListener("pointerleave", () => {
-    mapView.drag = null;
-    hideMapTip();
-  });
+  bindMapPointer(canvas);
   canvas.addEventListener(
     "wheel",
     (e) => {
@@ -2425,6 +2419,28 @@ function frameKorea() {
   frameLonLat(118, 68, 170, 32, 0.88);
 }
 
+export function adoptMapState(next, selection) {
+  state = next;
+  if (selection) selectedRegion = selection;
+  hoverRegion = null;
+}
+
+export function readMapPointer() {
+  return { hover: hoverRegion, selected: selectedRegion };
+}
+
+export function bindMapPointer(canvas = $("map")) {
+  if (!canvas || canvas.__mapBound) return;
+  canvas.__mapBound = true;
+  canvas.addEventListener("pointermove", onMapPointerMove);
+  canvas.addEventListener("pointerdown", onMapPointerDown);
+  canvas.addEventListener("pointerup", onMapPointerUp);
+  canvas.addEventListener("pointerleave", () => {
+    mapView.drag = null;
+    hideMapTip();
+  });
+}
+
 function onMapPointerDown(e) {
   const canvas = $("map");
   const [sx, sy] = canvasPoint(e, canvas);
@@ -3194,6 +3210,7 @@ function nearLabels() {
 
 let labelClaims = [];
 let cityClaims = [];
+let leaderRoutes = [];
 
 function mapViewRect() {
   const z = mapView.z || 1;
@@ -4013,14 +4030,24 @@ function labelAngles(x, y, neighbors) {
   return dirs;
 }
 
-function cityLabelSlots(x, y, w, h, marker, neighbors, far) {
-  const view = mapViewRect();
+function cityLabelView() {
+  const z = mapView.z || 1;
+  const pad = 2 / z;
+  return {
+    x0: -mapView.x / z + pad,
+    y0: -mapView.y / z + pad,
+    x1: (1000 - mapView.x) / z - pad,
+    y1: (620 - mapView.y) / z - pad,
+  };
+}
+
+function cityLabelSlots(x, y, w, h, marker, neighbors, maxEdge) {
+  const view = cityLabelView();
   const dirs = labelAngles(x, y, neighbors);
   const gaps = [];
-  const gapEnd = far ? 9.2 : 4.05;
-  for (let mult = 0.28; mult <= gapEnd + 0.01; mult += far ? 0.55 : 0.28) gaps.push(mult);
-  const nudges = [0, 0.45, -0.45, 0.95, -0.95, 1.5, -1.5, 2.2, -2.2];
-  const maxEdge = marker * (far ? 9.4 : 4.2);
+  const gapEnd = maxEdge / Math.max(1, marker);
+  for (let mult = 0.12; mult <= gapEnd + 0.01; mult += 0.22) gaps.push(mult);
+  const nudges = [0, 0.4, -0.4, 0.9, -0.9, 1.45, -1.45];
   const slots = [];
   const seen = new Set();
   gaps.forEach((mult) => {
@@ -4046,183 +4073,153 @@ function cityLabelSlots(x, y, w, h, marker, neighbors, far) {
   return slots;
 }
 
-function firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, pads) {
+function segmentsCross(ax, ay, bx, by, cx, cy, dx, dy) {
+  const den = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+  if (Math.abs(den) < 1e-8) return false;
+  const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / den;
+  const u = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+function segmentHitsRect(x1, y1, x2, y2, rect) {
+  const inside = (x, y) => x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+  if (inside(x1, y1) || inside(x2, y2)) return true;
+  const r = rect.x;
+  const b = rect.y;
+  const rr = rect.x + rect.w;
+  const bb = rect.y + rect.h;
+  return segmentsCross(x1, y1, x2, y2, r, b, rr, b)
+    || segmentsCross(x1, y1, x2, y2, rr, b, rr, bb)
+    || segmentsCross(x1, y1, x2, y2, rr, bb, r, bb)
+    || segmentsCross(x1, y1, x2, y2, r, bb, r, b);
+}
+
+function leaderLegs(route) {
+  if (!route) return [];
+  if (route.bend) {
+    return [
+      [route.x1, route.y1, route.bend[0], route.bend[1]],
+      [route.bend[0], route.bend[1], route.x2, route.y2],
+    ];
+  }
+  return [[route.x1, route.y1, route.x2, route.y2]];
+}
+
+function leaderCrosses(route, markers) {
+  const legs = leaderLegs(route);
+  return legs.some(([x1, y1, x2, y2]) => labelClaims.some((c) => segmentHitsRect(x1, y1, x2, y2, c))
+    || cityClaims.some((c) => segmentHitsRect(x1, y1, x2, y2, c))
+    || markers.some((c) => segmentHitsRect(x1, y1, x2, y2, c))
+    || leaderRoutes.some((old) => leaderLegs(old).some(([ax, ay, bx, by]) => segmentsCross(x1, y1, x2, y2, ax, ay, bx, by))));
+}
+
+function boxHitsLeader(x, y, w, h) {
+  return leaderRoutes.some((route) => leaderLegs(route).some(([x1, y1, x2, y2]) => segmentHitsRect(x1, y1, x2, y2, { x, y, w, h })));
+}
+
+function routeLeader(x, y, marker, lx, ly, w, h, markers) {
+  const ang = Math.atan2(ly + h / 2 - y, lx + w / 2 - x);
+  const x1 = x + Math.cos(ang) * (marker / 2 + 1.5);
+  const y1 = y + Math.sin(ang) * (marker / 2 + 1.5);
+  const end = leaderEndOnLabel(x1, y1, lx, ly, w, h);
+  const straight = { x1, y1, x2: end[0], y2: end[1], bend: null };
+  if (!leaderCrosses(straight, markers)) return straight;
+  const mx = (x1 + end[0]) / 2;
+  const my = (y1 + end[1]) / 2;
+  const line = Math.atan2(end[1] - y1, end[0] - x1);
+  const offs = [8, 16, 28, 44];
+  for (let i = 0; i < offs.length; i++) {
+    for (let dir = 1; dir >= -1; dir -= 2) {
+      const bend = [
+        mx + Math.cos(line + dir * Math.PI / 2) * offs[i],
+        my + Math.sin(line + dir * Math.PI / 2) * offs[i],
+      ];
+      const bent = { x1, y1, x2: end[0], y2: end[1], bend };
+      if (!leaderCrosses(bent, markers)) return bent;
+    }
+  }
+  return null;
+}
+
+function firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, markers, pads, mode) {
   const own = { x, y, marker };
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
-    if (!closerToOwn(slot.lx, slot.ly, w, h, own, neighbors)) continue;
+    const beside = labelGap(x, y, marker, slot.lx, slot.ly, w, h) <= marker * LABEL_ANCHOR + 0.5;
+    const ownOk = closerToOwn(slot.lx, slot.ly, w, h, own, neighbors);
+    if (mode === "own" && !ownOk) continue;
+    if (mode === "tight" && !ownOk && !beside) continue;
     if (claimHits(cityClaims, slot.lx, slot.ly, w, h, pads.city)) continue;
     if (claimHits(labelClaims, slot.lx, slot.ly, w, h, pads.state)) continue;
     if (claimHits(blocks, slot.lx, slot.ly, w, h, pads.block)) continue;
+    if (boxHitsLeader(slot.lx, slot.ly, w, h)) continue;
+    const needsLine = mode === "led" || slot.leader || !ownOk;
+    if (needsLine) {
+      const route = routeLeader(x, y, marker, slot.lx, slot.ly, w, h, markers);
+      if (!route) continue;
+      slot.leader = true;
+      slot.route = route;
+    }
     return slot;
   }
   return null;
 }
 
-/** Longer leader, or a sideways callout. Still refuses tags, labels, markers, and chips. */
-function forceCityLabel(x, y, w, h, marker, blocks, neighbors) {
-  const slots = cityLabelSlots(x, y, w, h, marker, neighbors, true);
-  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, { city: 0, state: 0, block: 0 });
+function labelCap(marker, allowBeside) {
+  const screen = calloutCap(marker, mapView.z, mapCssScale());
+  return allowBeside ? Math.min(marker * LABEL_ANCHOR, screen) : screen;
 }
 
-/** Any clear slot in the view that is still nearer its own marker. */
-function viewCalloutLabel(x, y, w, h, marker, blocks, neighbors) {
-  const view = mapViewRect();
-  const own = { x, y, marker };
-  const step = Math.max(8, Math.round(Math.min(w, h) * 0.5));
-  let best = null;
-  let bestD = Infinity;
-  for (let ly = view.y0; ly <= view.y1 - h; ly += step) {
-    for (let lx = view.x0; lx <= view.x1 - w; lx += step) {
+function gridLabelSlots(x, y, w, h, marker, maxEdge) {
+  const view = cityLabelView();
+  const reach = marker / 2 + maxEdge + 2;
+  const step = Math.max(2, Math.round(Math.min(w, h) * 0.34));
+  const slots = [];
+  const yStart = Math.max(view.y0, y - reach - h);
+  const yEnd = Math.min(view.y1 - h, y + reach);
+  const xStart = Math.max(view.x0, x - reach - w);
+  const xEnd = Math.min(view.x1 - w, x + reach);
+  for (let ly = yStart; ly <= yEnd; ly += step) {
+    for (let lx = xStart; lx <= xEnd; lx += step) {
       const px = Math.round(lx);
       const py = Math.round(ly);
       if (markerOverlap(x, y, marker, px, py, w, h)) continue;
-      if (!closerToOwn(px, py, w, h, own, neighbors)) continue;
-      const d = Math.hypot(px + w / 2 - x, py + h / 2 - y);
-      if (d >= bestD) continue;
-      if (claimHits(cityClaims, px, py, w, h, 0)) continue;
-      if (claimHits(labelClaims, px, py, w, h, 0)) continue;
-      if (claimHits(blocks, px, py, w, h, 0)) continue;
       const edge = labelGap(x, y, marker, px, py, w, h);
-      best = { lx: px, ly: py, leader: edge > marker * LABEL_ANCHOR + 0.5 };
-      bestD = d;
+      if (edge > maxEdge) continue;
+      slots.push({ lx: px, ly: py, leader: edge > marker * LABEL_ANCHOR + 0.5, edge });
     }
   }
-  return best;
+  slots.sort((a, b) => a.edge - b.edge);
+  return slots;
 }
 
-/** A name in open space along the frame, with a leader. Hard blocks still apply. */
-function edgeCalloutLabel(x, y, w, h, marker, blocks, neighbors) {
-  const view = mapViewRect();
-  const slots = [];
-  const stepX = Math.max(6, Math.round(w * 0.4));
-  const stepY = Math.max(4, Math.round(h * 0.75));
-  const rows = [0, h + 2, (h + 2) * 2];
-  const push = (lx, ly) => {
-    lx = Math.round(lx);
-    ly = Math.round(ly);
-    if (lx < view.x0 || ly < view.y0 || lx + w > view.x1 || ly + h > view.y1) return;
-    if (markerOverlap(x, y, marker, lx, ly, w, h)) return;
-    const key = `${lx}|${ly}`;
-    if (slots.some((s) => s.key === key)) return;
-    slots.push({
-      lx,
-      ly,
-      leader: true,
-      key,
-      d: Math.hypot(lx + w / 2 - x, ly + h / 2 - y),
-    });
-  };
-  rows.forEach((inset) => {
-    const x0 = view.x0 + inset;
-    const y0 = view.y0 + inset;
-    const x1 = view.x1 - inset;
-    const y1 = view.y1 - inset;
-    if (x1 - x0 < w || y1 - y0 < h) return;
-    for (let lx = x0; lx <= x1 - w; lx += stepX) {
-      push(lx, y0);
-      push(lx, y1 - h);
-    }
-    for (let ly = y0; ly <= y1 - h; ly += stepY) {
-      push(x0, ly);
-      push(x1 - w, ly);
-    }
-  });
-  slots.sort((a, b) => a.d - b.d);
-  const own = { x, y, marker };
-  const clear = (slot) => !claimHits(cityClaims, slot.lx, slot.ly, w, h, 0)
-    && !claimHits(labelClaims, slot.lx, slot.ly, w, h, 0)
-    && !claimHits(blocks, slot.lx, slot.ly, w, h, 0);
-  for (let i = 0; i < slots.length; i++) {
-    if (!closerToOwn(slots[i].lx, slots[i].ly, w, h, own, neighbors)) continue;
-    if (clear(slots[i])) return slots[i];
-  }
-  for (let i = 0; i < slots.length; i++) {
-    if (clear(slots[i])) return slots[i];
-  }
-  return null;
+function pickCityLabel(x, y, w, h, marker, blocks, neighbors, markers, mode, grid) {
+  const cap = mode === "tight" ? labelCap(marker, true) : labelCap(marker, false);
+  const slots = grid
+    ? gridLabelSlots(x, y, w, h, marker, cap)
+    : cityLabelSlots(x, y, w, h, marker, neighbors, cap);
+  const pads = { city: 0, state: 0, block: 0 };
+  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, markers, pads, mode);
 }
 
-function pickCityLabel(x, y, w, h, marker, blocks, neighbors) {
-  const slots = cityLabelSlots(x, y, w, h, marker, neighbors, false);
-  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, { city: 2, state: 1, block: 1 });
-}
-
-function segmentHitsClaim(x1, y1, x2, y2, rect) {
-  const steps = 14;
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const x = x1 + (x2 - x1) * t;
-    const y = y1 + (y2 - y1) * t;
-    if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) return true;
-  }
-  return false;
-}
-
-function segmentHitsStateTags(x1, y1, x2, y2) {
-  return labelClaims.some((c) => segmentHitsClaim(x1, y1, x2, y2, c));
-}
-
-function drawLabelLeader(ctx, x, y, marker, lx, ly, w, h) {
+function drawLabelLeader(ctx, x, y, marker, lx, ly, w, h, route) {
   const z = Math.max(0.2, mapView.z || 1);
-  const cx = lx + w / 2;
-  const cy = ly + h / 2;
-  const ang = Math.atan2(cy - y, cx - x);
-  const x1 = x + Math.cos(ang) * (marker / 2 + 1);
-  const y1 = y + Math.sin(ang) * (marker / 2 + 1);
-  let x2 = cx;
-  let y2 = cy;
-  const dx = cx - x1;
-  const dy = cy - y1;
-  if (dx !== 0) {
-    const tx = dx > 0 ? (lx - x1) / dx : (lx + w - x1) / dx;
-    if (tx > 0 && tx < 1) {
-      x2 = x1 + dx * tx;
-      y2 = y1 + dy * tx;
-    }
-  }
-  if (dy !== 0) {
-    const ty = dy > 0 ? (ly - y1) / dy : (ly + h - y1) / dy;
-    if (ty > 0 && ty < 1) {
-      const yy = y1 + dy * ty;
-      const xx = x1 + dx * ty;
-      if (Math.hypot(xx - x1, yy - y1) < Math.hypot(x2 - x1, y2 - y1)) {
-        x2 = xx;
-        y2 = yy;
-      }
-    }
-  }
-  let bend = null;
-  if (segmentHitsStateTags(x1, y1, x2, y2)) {
-    const mx = (x1 + x2) / 2;
-    const my = (y1 + y2) / 2;
-    const line = Math.atan2(y2 - y1, x2 - x1);
-    const offs = [24, 46, 72];
-    for (let i = 0; i < offs.length && !bend; i++) {
-      for (let dir = 1; dir >= -1; dir -= 2) {
-        const wx = mx + Math.cos(line + dir * Math.PI / 2) * offs[i];
-        const wy = my + Math.sin(line + dir * Math.PI / 2) * offs[i];
-        if (!segmentHitsStateTags(x1, y1, wx, wy) && !segmentHitsStateTags(wx, wy, x2, y2)) {
-          bend = [wx, wy];
-          break;
-        }
-      }
-    }
-  }
+  const path = route || routeLeader(x, y, marker, lx, ly, w, h, []);
+  if (!path) return;
   ctx.save();
   ctx.strokeStyle = "#f4efe4";
   ctx.lineWidth = Math.max(0.6, 1.5 / z);
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  if (bend) ctx.lineTo(bend[0], bend[1]);
-  ctx.lineTo(x2, y2);
+  ctx.moveTo(path.x1, path.y1);
+  if (path.bend) ctx.lineTo(path.bend[0], path.bend[1]);
+  ctx.lineTo(path.x2, path.y2);
   ctx.stroke();
   ctx.restore();
 }
 
-function paintCityName(ctx, r, px, py, w, h, here, selected, leader, x, y, marker) {
+function paintCityName(ctx, r, px, py, w, h, here, selected, placed, x, y, marker, sized) {
   const z = Math.max(0.2, mapView.z || 1);
-  if (leader) drawLabelLeader(ctx, x, y, marker, px, py, w, h);
+  if (placed.leader) drawLabelLeader(ctx, x, y, marker, px, py, w, h, placed.route);
   ctx.fillStyle = selected ? "#f8d800" : "#0c0c16";
   ctx.fillRect(px, py, w, h);
   if (here && !selected) {
@@ -4231,19 +4228,28 @@ function paintCityName(ctx, r, px, py, w, h, here, selected, leader, x, y, marke
     ctx.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
   }
   ctx.fillStyle = selected ? "#000018" : here ? "#f8d800" : "#f4efe4";
-  ctx.fillText(r.short, px + 2, py + 1);
+  const lines = placed.lines;
+  if (lines) {
+    lines.forEach((line, i) => ctx.fillText(line, px + 2, py + 1 + i * (sized + 1)));
+  } else {
+    ctx.fillText(placed.text || r.short, px + 2, py + 1);
+  }
+}
+
+function nameLines(short) {
+  if (!short || short.length < 6) return null;
+  const mid = Math.ceil(short.length / 2);
+  return [short.slice(0, mid), short.slice(mid)];
 }
 
 function drawCleanCityLabels(ctx, painted) {
   const fontPx = cityNamePx();
   const z = mapView.z || 1;
-  const canvas = viewWorldRect();
   const hereId = playerOf(state).region;
+  leaderRoutes = [];
   const spots = [];
   painted.forEach((r) => {
     if (!r.short) return;
-    const [x, y] = cityXY(r);
-    if (x < canvas.x0 || x > canvas.x1 || y < canvas.y0 || y > canvas.y1) return;
     const spot = cleanCitySpot(r, hereId);
     if (spot) spots.push(spot);
   });
@@ -4261,6 +4267,7 @@ function drawCleanCityLabels(ctx, painted) {
     if (box) chipClaims.push(box);
   });
   const blocksFor = (id) => markerClaims.filter((c) => c.id !== id).concat(chipClaims);
+  const markersFor = (id) => markerClaims.filter((c) => c.id !== id);
   const nearest = (s) => {
     let best = Infinity;
     spots.forEach((o) => {
@@ -4275,26 +4282,103 @@ function drawCleanCityLabels(ctx, painted) {
       const rank = (r) => (r.id === hereId ? 3 : r.id === selectedRegion ? 2 : r.id === hoverRegion ? 1 : 0);
       return rank(b.s.r) - rank(a.s.r) || nearest(a.s) - nearest(b.s) || a.i - b.i;
     });
-  const placeList = (list, sized, far) => {
+  const measureName = (item, sized, stack) => {
     ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
+    const lines = stack ? nameLines(item.s.r.short) : null;
+    if (!lines) {
+      return {
+        lines: null,
+        w: Math.ceil(ctx.measureText(item.s.r.short).width) + 4,
+        h: Math.ceil(sized + 3),
+      };
+    }
+    const w = Math.max(...lines.map((line) => Math.ceil(ctx.measureText(line).width))) + 4;
+    return { lines, w, h: Math.ceil(lines.length * (sized + 1) + 3) };
+  };
+  const placeList = (list, sized, mode, stack) => {
     const found = [];
     const next = [];
     list.forEach((item) => {
-      const w = Math.ceil(ctx.measureText(item.s.r.short).width) + 4;
-      const h = Math.ceil(sized + 3);
+      const box = measureName(item, sized, stack);
       const blocks = blocksFor(item.s.r.id);
+      const markers = markersFor(item.s.r.id);
       const neighbors = neighborsOf(item.s.r.id);
-      const placed = far
-        ? forceCityLabel(item.s.x, item.s.y, w, h, item.s.marker, blocks, neighbors)
-        : pickCityLabel(item.s.x, item.s.y, w, h, item.s.marker, blocks, neighbors);
+      let placed = pickCityLabel(item.s.x, item.s.y, box.w, box.h, item.s.marker, blocks, neighbors, markers, mode, false);
+      if (!placed) placed = pickCityLabel(item.s.x, item.s.y, box.w, box.h, item.s.marker, blocks, neighbors, markers, mode, true);
       if (!placed) {
         next.push(item);
         return;
       }
-      cityClaims.push({ x: placed.lx, y: placed.ly, w, h, id: item.s.r.id });
-      found.push({ ...item, w, h, sized, placed });
+      placed.lines = box.lines;
+      cityClaims.push({ x: placed.lx, y: placed.ly, w: box.w, h: box.h, id: item.s.r.id });
+      if (placed.route) leaderRoutes.push(placed.route);
+      found.push({ ...item, w: box.w, h: box.h, sized, placed });
     });
     return { found, next };
+  };
+  let legendFrame = null;
+  const placeLegend = (list, sized) => {
+    if (!list.length) return [];
+    ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
+    const rowH = Math.ceil(sized + 3);
+    const rows = list.map((item, index) => {
+      const text = `${index + 1} ${item.s.r.short}`;
+      return { item, text, w: Math.ceil(ctx.measureText(text).width) + 4, h: rowH, n: String(index + 1) };
+    });
+    const panelW = Math.max(...rows.map((row) => row.w));
+    const gap = 2;
+    const panelH = rows.reduce((sum, row) => sum + row.h + gap, 2);
+    const view = cityLabelView();
+    const corners = [
+      [view.x1 - panelW, view.y0],
+      [view.x0, view.y0],
+      [view.x1 - panelW, view.y1 - panelH],
+      [view.x0, view.y1 - panelH],
+    ];
+    const cornerClear = (x, y) => {
+      let ly = y;
+      return rows.every((row) => {
+        const ok = ly + row.h <= view.y1 + 0.5
+          && !claimHits(cityClaims, x, ly, panelW, row.h, 1)
+          && !claimHits(labelClaims, x, ly, panelW, row.h, 1)
+          && !claimHits(markerClaims, x, ly, panelW, row.h, 1)
+          && !claimHits(chipClaims, x, ly, panelW, row.h, 1)
+          && !boxHitsLeader(x, ly, panelW, row.h);
+        ly += row.h + gap;
+        return ok;
+      });
+    };
+    const open = corners
+      .filter(([x, y]) => x >= view.x0 && y >= view.y0 && cornerClear(x, y))
+      .map(([x, y]) => {
+        let near = Infinity;
+        markerClaims.forEach((mark) => {
+          near = Math.min(near, Math.hypot(x + panelW / 2 - (mark.x + mark.w / 2), y + panelH / 2 - (mark.y + mark.h / 2)));
+        });
+        return { x, y, near };
+      })
+      .sort((a, b) => b.near - a.near);
+    const origin = open[0] ? [open[0].x, open[0].y] : null;
+    if (!origin) return [];
+    const found = [];
+    let ly = origin[1];
+    rows.forEach((row) => {
+      const keyW = Math.ceil(ctx.measureText(row.n).width) + 4;
+      const keyH = row.h;
+      const key = pickCityLabel(row.item.s.x, row.item.s.y, keyW, keyH, row.item.s.marker, blocksFor(row.item.s.r.id), neighborsOf(row.item.s.r.id), markersFor(row.item.s.r.id), "tight", true);
+      if (key) {
+        key.text = row.n;
+        cityClaims.push({ x: key.lx, y: key.ly, w: keyW, h: keyH, id: `${row.item.s.r.id}-key` });
+        if (key.route) leaderRoutes.push(key.route);
+        found.push({ ...row.item, w: keyW, h: keyH, sized, placed: key });
+      }
+      const placed = { lx: origin[0], ly, leader: false, text: row.text, lines: null };
+      cityClaims.push({ x: placed.lx, y: placed.ly, w: row.w, h: row.h, id: `${row.item.s.r.id}-legend` });
+      found.push({ ...row.item, w: row.w, h: row.h, sized, placed });
+      ly += row.h + gap;
+    });
+    legendFrame = { x: origin[0] - 3, y: origin[1] - 3, w: panelW + 6, h: ly - origin[1] + 3 };
+    return found;
   };
   ctx.save();
   ctx.textBaseline = "top";
@@ -4303,41 +4387,39 @@ function drawCleanCityLabels(ctx, painted) {
   let found = [];
   sizes.forEach((sized) => {
     if (!pending.length) return;
-    const pass = placeList(pending, sized, false);
+    const pass = placeList(pending, sized, "tight", false);
     found = found.concat(pass.found);
     pending = pass.next;
   });
   if (pending.length) {
     const sized = sizes[sizes.length - 1];
-    const pass = placeList(pending, sized, true);
-    found = found.concat(pass.found);
-    pending = pass.next;
+    const stacked = placeList(pending, sized, "tight", true);
+    found = found.concat(stacked.found);
+    pending = stacked.next;
+    const spread = placeList(pending, sized, "own", false);
+    found = found.concat(spread.found);
+    pending = spread.next;
+    const led = placeList(pending, sized, "led", false);
+    found = found.concat(led.found);
+    pending = led.next;
+    const spreadStack = placeList(pending, sized, "own", true);
+    found = found.concat(spreadStack.found);
+    pending = spreadStack.next;
+    const ledStack = placeList(pending, sized, "led", true);
+    found = found.concat(ledStack.found);
+    pending = ledStack.next;
   }
-  if (pending.length) {
-    cityClaims.length = 0;
-    const sized = sizes[sizes.length - 1];
-    const pass = placeList(ranked, sized, true);
-    found = pass.found;
-    pending = pass.next;
-  }
-  if (pending.length) {
-    const sized = sizes[sizes.length - 1];
-    ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
-    pending.forEach((item) => {
-      const w = Math.ceil(ctx.measureText(item.s.r.short).width) + 4;
-      const h = Math.ceil(sized + 3);
-      const neighbors = neighborsOf(item.s.r.id);
-      const blocks = blocksFor(item.s.r.id);
-      const placed = viewCalloutLabel(item.s.x, item.s.y, w, h, item.s.marker, blocks, neighbors)
-        || edgeCalloutLabel(item.s.x, item.s.y, w, h, item.s.marker, blocks, neighbors);
-      if (!placed) return;
-      cityClaims.push({ x: placed.lx, y: placed.ly, w, h, id: item.s.r.id });
-      found.push({ ...item, w, h, sized, placed });
-    });
+  if (pending.length) found = found.concat(placeLegend(pending, sizes[sizes.length - 1]));
+  if (legendFrame) {
+    ctx.fillStyle = "#14100c";
+    ctx.fillRect(legendFrame.x, legendFrame.y, legendFrame.w, legendFrame.h);
+    ctx.strokeStyle = "#f4efe4";
+    ctx.lineWidth = Math.max(0.6, 1.2 / z);
+    ctx.strokeRect(legendFrame.x, legendFrame.y, legendFrame.w, legendFrame.h);
   }
   found.forEach(({ s, w, h, sized, placed }) => {
     ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
-    paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, s.r.id === hereId, s.r.id === selectedRegion, placed.leader, s.x, s.y, s.marker);
+    paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, s.r.id === hereId, s.r.id === selectedRegion, placed, s.x, s.y, s.marker, sized);
   });
   ctx.restore();
 }
@@ -4346,6 +4428,7 @@ function drawMap() {
   if (!state) return;
   labelClaims = [];
   cityClaims = [];
+  leaderRoutes = [];
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -5660,3 +5743,4 @@ function wireDynamicModals() {
     b.onclick = hideModal;
   });
 }
+

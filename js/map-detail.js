@@ -54,8 +54,8 @@ export function applyMapDrag(view, dx, dy) {
 
 /**
  * Slide a marker that would be cut by the view fully inside.
- * A marker whose centre is already outside is left off the canvas (null) so the camera is not pulled.
- * Zoom is not part of the result.
+ * A centre just outside still counts when its marker meets the frame, and that marker is slid in.
+ * A centre farther out than the marker body stays off the canvas (null). Zoom is not part of the result.
  */
 export function insetMarkerCenter(x, y, half, view) {
   const centerIn = x >= view.x0 && x <= view.x1 && y >= view.y0 && y <= view.y1;
@@ -66,8 +66,68 @@ export function insetMarkerCenter(x, y, half, view) {
   if (!(maxX > minX && maxY > minY)) return centerIn ? [x, y] : null;
   const nx = Math.min(maxX, Math.max(minX, x));
   const ny = Math.min(maxY, Math.max(minY, y));
-  if (!centerIn && Math.hypot(nx - x, ny - y) > half + 0.01) return null;
+  if (!centerIn) {
+    const markerRadius = Math.max(0, half - 2);
+    if (Math.hypot(nx - x, ny - y) > half + markerRadius + 0.01) return null;
+  }
   return [nx, ny];
+}
+
+/**
+ * World-unit cap for a callout. About four marker widths, and never more than 60 screen px.
+ */
+export function calloutCap(marker, z, cssScale = 1) {
+  const zSafe = Math.max(0.2, Number(z) || 1);
+  const scale = Math.max(0.05, Number(cssScale) || 1);
+  const width = Math.max(1, Number(marker) || 1);
+  return Math.min(width * 4, 60 / (zSafe * scale));
+}
+
+/**
+ * Where a leader from (x1, y1) meets the label box.
+ * The box entry is the farther slab crossing. If that point misses the perimeter,
+ * use the nearest point on the perimeter instead.
+ */
+export function leaderEndOnLabel(x1, y1, lx, ly, w, h) {
+  const cx = lx + w / 2;
+  const cy = ly + h / 2;
+  const dx = cx - x1;
+  const dy = cy - y1;
+  const ts = [];
+  if (Math.abs(dx) > 1e-6) {
+    const tx = dx > 0 ? (lx - x1) / dx : (lx + w - x1) / dx;
+    if (tx > 0 && tx < 1) ts.push(tx);
+  }
+  if (Math.abs(dy) > 1e-6) {
+    const ty = dy > 0 ? (ly - y1) / dy : (ly + h - y1) / dy;
+    if (ty > 0 && ty < 1) ts.push(ty);
+  }
+  const onPerim = (x, y) => {
+    const onX = x >= lx - 0.08 && x <= lx + w + 0.08;
+    const onY = y >= ly - 0.08 && y <= ly + h + 0.08;
+    const edge = Math.abs(x - lx) <= 0.08 || Math.abs(x - (lx + w)) <= 0.08
+      || Math.abs(y - ly) <= 0.08 || Math.abs(y - (ly + h)) <= 0.08;
+    return onX && onY && edge;
+  };
+  if (ts.length) {
+    const t = Math.max(...ts);
+    const x = x1 + dx * t;
+    const y = y1 + dy * t;
+    if (onPerim(x, y)) return [x, y];
+  }
+  const clampedX = Math.min(lx + w, Math.max(lx, x1));
+  const clampedY = Math.min(ly + h, Math.max(ly, y1));
+  const outside = x1 <= lx || x1 >= lx + w || y1 <= ly || y1 >= ly + h;
+  if (outside) return [clampedX, clampedY];
+  const dLeft = Math.abs(x1 - lx);
+  const dRight = Math.abs(x1 - (lx + w));
+  const dTop = Math.abs(y1 - ly);
+  const dBot = Math.abs(y1 - (ly + h));
+  const m = Math.min(dLeft, dRight, dTop, dBot);
+  if (m === dLeft) return [lx, y1];
+  if (m === dRight) return [lx + w, y1];
+  if (m === dTop) return [x1, ly];
+  return [x1, ly + h];
 }
 
 /**

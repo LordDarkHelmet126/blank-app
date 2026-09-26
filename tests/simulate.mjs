@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, calloutCap, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1393,6 +1393,14 @@ assert(!/clampCloseMarkers/.test(uiSrc) && !/mapView\.z = z2/.test(uiSrc) && /ap
   const corner = insetMarkerCenter(1, 1, 8, view);
   assert(corner && corner[0] >= 8 && corner[1] >= 8, "a corner marker whose centre is in view slides inside");
   assert(insetMarkerCenter(-30, 90, 8, view) === null, "a marker whose centre is off-canvas is not used to move the camera");
+  const barely = insetMarkerCenter(-0.25, 90, 8, view);
+  assert(barely && barely[0] >= 8 && barely[1] === 90, "a marker that still meets the frame slides inside");
+  const cap = calloutCap(15, 1.3, 1);
+  assert(cap <= 15 * 4 + 0.01 && cap <= 60 / 1.3 + 0.01, "a callout stays within four marker widths or 60 screen px");
+  const end = leaderEndOnLabel(0, 0, 10, 4, 6, 10);
+  const nearer = [13 * (4 / 9), 4];
+  assert(Math.abs(end[0] - 10) < 0.05 && end[1] > 4 && end[1] < 14, "a diagonal leader meets the farther edge of the label");
+  assert(Math.hypot(end[0] - nearer[0], end[1] - nearer[1]) > 2, "the leader does not stop at the nearer slab crossing");
 }
 assert(/letterboxCanvasPoint/.test(uiSrc) && /letterboxContains/.test(uiSrc), "map clicks use the drawn letterbox and ignore the empty bars");
 {
@@ -1415,6 +1423,76 @@ assert(/letterboxCanvasPoint/.test(uiSrc) && /letterboxContains/.test(uiSrc), "m
   assert(!letterboxContains(rect.left + 4, oy + 200, rect, 1000, 620), "the empty bar left of the map is not a hit");
   assert(!letterboxContains(ox + 1000 * scale + 30, oy + 200, rect, 1000, 620), "the empty bar right of the map is not a hit");
   assert(/letterboxContains\(mx, my/.test(uiSrc), "hover and click ignore the letterbox bars");
+  assert(/leaderEndOnLabel/.test(uiSrc) && /leaderCrosses/.test(uiSrc) && /calloutCap/.test(uiSrc), "leaders reach the label and stay off markers, labels, and state tags");
+  class PointerEvent extends Event {
+    constructor(type, init = {}) {
+      super(type);
+      this.clientX = init.clientX || 0;
+      this.clientY = init.clientY || 0;
+      this.pointerId = 1;
+    }
+  }
+  const fakeCtx = () => {
+    const ctx = new Proxy({}, {
+      get(_t, prop) {
+        if (prop === "canvas") return { width: 1000, height: 620 };
+        if (prop === "measureText") return () => ({ width: 48 });
+        return () => ctx;
+      },
+      set() { return true; },
+    });
+    return ctx;
+  };
+  class MapCanvas extends EventTarget {
+    constructor() {
+      super();
+      this.width = 1000;
+      this.height = 620;
+      this.style = {};
+    }
+    getBoundingClientRect() {
+      return rect;
+    }
+    getContext() { return fakeCtx(); }
+    setPointerCapture() {}
+  }
+  const map = new MapCanvas();
+  const tip = { hidden: true, dataset: {}, style: {}, innerHTML: "" };
+  globalThis.window = globalThis.window || { innerWidth: 1600, innerHeight: 900 };
+  globalThis.document = {
+    getElementById(id) {
+      if (id === "map") return map;
+      if (id === "tip") return tip;
+      return null;
+    },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    createElement() { return { width: 1000, height: 620, getContext: () => fakeCtx() }; },
+    body: { classList: { add() {}, remove() {}, toggle() {} } },
+    addEventListener() {},
+  };
+  const ui = await import("../js/ui.js");
+  ui.bindMapPointer(map);
+  ui.adoptMapState(createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" }), "cheyenne");
+  const barX = rect.left + 4;
+  const barY = oy + 200;
+  const [barSx, barSy] = letterboxCanvasPoint(barX, barY, rect, 1000, 620);
+  ui.mapView.z = 1;
+  ui.mapView.x = barSx - 352;
+  ui.mapView.y = barSy - 313;
+  ui.mapView.drag = null;
+  map.dispatchEvent(new PointerEvent("pointermove", { clientX: barX, clientY: barY }));
+  map.dispatchEvent(new PointerEvent("pointerup", { clientX: barX, clientY: barY }));
+  assert(ui.readMapPointer().hover === null && ui.readMapPointer().selected === "cheyenne", "a pointer event in the letterbox bar does not hover or select a city");
+  ui.mapView.x = 0;
+  ui.mapView.y = 0;
+  ui.mapView.z = 1;
+  try {
+    map.dispatchEvent(new PointerEvent("pointermove", { clientX, clientY }));
+  } catch {
+    /* redraw can stop after the hover is recorded */
+  }
+  assert(ui.readMapPointer().hover === "denver", "a pointer event on the drawn map still hovers that city");
 }
 assert(/territoryTipHtml/.test(uiSrc) && /Yield \+/.test(uiSrc) && /Works:/.test(uiSrc), "city report and hover keep levy yield and works");
 const closeRoad = closeRoadWidth(3.2);
