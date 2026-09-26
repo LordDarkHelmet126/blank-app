@@ -88,7 +88,7 @@ import {
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
-import { LABEL_ANCHOR, LABEL_MIN_SCREEN, MAP_DETAIL_KEY, applyMapDrag, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
+import { LABEL_ANCHOR, LABEL_MIN_SCREEN, MAP_DETAIL_KEY, applyMapDrag, canvasDisplayScale, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -2280,7 +2280,7 @@ function renderLegend() {
   $("legend").innerHTML = `${phases}<span>Scars ${scars}</span>${banners}<span><i style="background:#5a6a72"></i>Open</span>`;
 }
 
-const mapView = { z: 1, x: 0, y: 0, drag: null, pacific: false, focus: null };
+export const mapView = { z: 1, x: 0, y: 0, drag: null, pacific: false, focus: null };
 
 let mapDetail = false;
 try {
@@ -2432,7 +2432,7 @@ function onMapPointerDown(e) {
   canvas.setPointerCapture?.(e.pointerId);
 }
 
-function onMapPointerMove(e) {
+export function onMapPointerMove(e) {
   if (!mapView.drag) {
     onMapMove(e);
     return;
@@ -2735,10 +2735,19 @@ function stateLabelPx() {
   return Math.max(8, Math.round(16 * stateLabelFit()));
 }
 
-/** City names stay smaller than the postal codes, and at least 8 screen pixels. */
+/** CSS pixels per canvas pixel. Unlaid-out canvases count as 1:1. */
+function mapCssScale() {
+  const canvas = $("map");
+  if (!canvas || !(canvas.width > 0) || !(canvas.height > 0) || !canvas.getBoundingClientRect) return 1;
+  return canvasDisplayScale(canvas.getBoundingClientRect(), canvas.width, canvas.height);
+}
+
+/** City names stay smaller than the postal codes, and at least 8 CSS pixels. */
 function cityNamePx() {
   const z = Math.max(0.2, mapView.z || 1);
-  return Math.max(LABEL_MIN_SCREEN / z, Math.min(stateLabelPx() - 2, 14 / z));
+  const scale = Math.max(0.05, mapCssScale());
+  const floor = LABEL_MIN_SCREEN / (z * scale);
+  return Math.max(floor, Math.min(stateLabelPx() - 2, 14 / z));
 }
 
 function viewWorldRect() {
@@ -3789,6 +3798,30 @@ function drawCityMarkClean(ctx, r, selected) {
   drawTroopBadge(ctx, r, x, y, s);
 }
 
+/** Same rule as the city tooltip and the city report. */
+function garrisonKnown(r) {
+  const p = playerOf(state);
+  if (!r || !p) return false;
+  return r.intel > 0 || !!(p.faction && r.owner === p.faction);
+}
+
+function troopChipLabel(r) {
+  return garrisonKnown(r) ? String(r.garrison) : "?";
+}
+
+/**
+ * A split state is only a contest the player can mark once they hold a city
+ * there or have intel on this one. The starting political map is not enough.
+ */
+function cityIsContested(r) {
+  if (!r || stateWash(r.stateCode)?.kind !== "contested") return false;
+  const p = playerOf(state);
+  if (!p) return false;
+  if (r.intel > 0) return true;
+  if (!p.faction) return false;
+  return state.regions.some((c) => c.stateCode === r.stateCode && !(c.unlockPhase > 0) && c.owner === p.faction);
+}
+
 function showTroopChip(r) {
   if (!(r.garrison > 0)) return false;
   const player = playerOf(state);
@@ -3796,27 +3829,36 @@ function showTroopChip(r) {
   if (r.id === player.region) return true;
   if (player.faction && r.owner === player.faction) return true;
   if (r.intel > 0 && r.owner && r.owner !== player.faction) return true;
-  return stateWash(r.stateCode)?.kind === "contested";
+  return cityIsContested(r);
 }
 
-function drawTroopBadge(ctx, r, x, y, s) {
-  if (!showTroopChip(r)) return;
+function troopChipBox(ctx, r, x, y, s) {
+  if (!showTroopChip(r)) return null;
   const z = Math.max(0.2, mapView.z || 1);
-  const label = String(r.garrison);
+  const label = troopChipLabel(r);
   const fontPx = Math.max(3, Math.min(cityNamePx() - 1, 8 / z));
-  ctx.save();
+  const prev = ctx.font;
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   const bw = Math.max(8 / z, ctx.measureText(label).width + 2);
   const bh = Math.max(4, fontPx + 2);
+  ctx.font = prev;
   const bx = Math.round(x + s * 0.15);
   const by = Math.round(y - s * 0.5 - bh - 1);
+  return { id: r.id, x: bx - 1, y: by - 1, w: bw + 2, h: bh + 2, label, fontPx, bx, by, bw, bh };
+}
+
+function drawTroopBadge(ctx, r, x, y, s) {
+  const box = troopChipBox(ctx, r, x, y, s);
+  if (!box) return;
+  ctx.save();
+  ctx.font = `${box.fontPx}px 'Press Start 2P', 'Courier New', monospace`;
   ctx.fillStyle = "#140e08";
-  ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+  ctx.fillRect(box.x, box.y, box.w, box.h);
   ctx.fillStyle = "#f8d800";
-  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillRect(box.bx, box.by, box.bw, box.bh);
   ctx.fillStyle = "#140e08";
   ctx.textBaseline = "top";
-  ctx.fillText(label, bx + 1, by + 1);
+  ctx.fillText(box.label, box.bx + 1, box.by + 1);
   ctx.restore();
 }
 
@@ -3950,9 +3992,8 @@ function closerToOwn(lx, ly, w, h, own, others) {
   return true;
 }
 
-function cityLabelSlots(x, y, w, h, marker, neighbors) {
-  const view = mapViewRect();
-  let away = 0;
+function labelAngles(x, y, neighbors) {
+  let away = -Math.PI / 2;
   let best = Infinity;
   neighbors.forEach((n) => {
     const d = Math.hypot(n.x - x, n.y - y);
@@ -3965,78 +4006,66 @@ function cityLabelSlots(x, y, w, h, marker, neighbors) {
   for (let i = 0; i < 16; i++) {
     const step = Math.ceil(i / 2) * (Math.PI / 8);
     const ang = away + (i % 2 === 0 ? 1 : -1) * step;
-    dirs.push([Math.cos(ang), Math.sin(ang)]);
+    dirs.push(ang);
   }
-  const gaps = [0.28, 0.7, 1.1, LABEL_ANCHOR, 2.1, 3.0, 4.0];
+  return dirs;
+}
+
+function cityLabelSlots(x, y, w, h, marker, neighbors, far) {
+  const view = mapViewRect();
+  const dirs = labelAngles(x, y, neighbors);
+  const gaps = [];
+  const gapEnd = far ? 9.2 : 4.05;
+  for (let mult = 0.28; mult <= gapEnd + 0.01; mult += far ? 0.55 : 0.28) gaps.push(mult);
+  const nudges = [0, 0.45, -0.45, 0.95, -0.95, 1.5, -1.5, 2.2, -2.2];
+  const maxEdge = marker * (far ? 9.4 : 4.2);
   const slots = [];
   const seen = new Set();
   gaps.forEach((mult) => {
     const gap = Math.max(2, marker * mult);
-    dirs.forEach(([dx, dy]) => {
-      const len = Math.hypot(dx, dy) || 1;
-      const ux = dx / len;
-      const uy = dy / len;
-      const lx = Math.round(x + ux * (marker / 2 + gap) - w / 2);
-      const ly = Math.round(y + uy * (marker / 2 + gap) - h / 2);
-      if (lx < view.x0 || ly < view.y0 || lx + w > view.x1 || ly + h > view.y1) return;
-      const key = `${lx}|${ly}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      if (markerOverlap(x, y, marker, lx, ly, w, h)) return;
-      const edge = labelGap(x, y, marker, lx, ly, w, h);
-      if (edge > marker * 4.05) return;
-      slots.push({ lx, ly, leader: edge > marker * LABEL_ANCHOR + 0.5 });
+    dirs.forEach((ang) => {
+      const ux = Math.cos(ang);
+      const uy = Math.sin(ang);
+      nudges.forEach((nudge) => {
+        const shift = nudge * Math.max(h, 6);
+        const lx = Math.round(x + ux * (marker / 2 + gap) - w / 2 - uy * shift);
+        const ly = Math.round(y + uy * (marker / 2 + gap) - h / 2 + ux * shift);
+        if (lx < view.x0 || ly < view.y0 || lx + w > view.x1 || ly + h > view.y1) return;
+        const key = `${lx}|${ly}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        if (markerOverlap(x, y, marker, lx, ly, w, h)) return;
+        const edge = labelGap(x, y, marker, lx, ly, w, h);
+        if (edge > maxEdge) return;
+        slots.push({ lx, ly, leader: edge > marker * LABEL_ANCHOR + 0.5 });
+      });
     });
   });
   return slots;
 }
 
-function forceCityLabel(x, y, w, h, marker, blocks, neighbors) {
-  const relaxed = pickCityLabel(x, y, w, h, marker, blocks, neighbors, true);
-  if (relaxed) return relaxed;
-  const view = mapViewRect();
-  let away = -Math.PI / 2;
-  let best = Infinity;
-  neighbors.forEach((n) => {
-    const d = Math.hypot(n.x - x, n.y - y);
-    if (d < best) {
-      best = d;
-      away = Math.atan2(y - n.y, x - n.x);
-    }
-  });
-  for (let i = 0; i < 16; i++) {
-    const ang = away + (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * (Math.PI / 8);
-    for (let ring = 0; ring < 6; ring++) {
-      const gap = Math.max(2, marker * (0.35 + ring * 0.55));
-      let lx = Math.round(x + Math.cos(ang) * (marker / 2 + gap) - w / 2);
-      let ly = Math.round(y + Math.sin(ang) * (marker / 2 + gap) - h / 2);
-      lx = Math.round(Math.max(view.x0, Math.min(view.x1 - w, lx)));
-      ly = Math.round(Math.max(view.y0, Math.min(view.y1 - h, ly)));
-      if (markerOverlap(x, y, marker, lx, ly, w, h)) continue;
-      if (claimHits(blocks, lx, ly, w, h, 1)) continue;
-      if (claimHits(cityClaims, lx, ly, w, h, 1)) continue;
-      if (!closerToOwn(lx, ly, w, h, { x, y, marker }, neighbors)) continue;
-      const edge = labelGap(x, y, marker, lx, ly, w, h);
-      return { lx, ly, leader: edge > marker * LABEL_ANCHOR + 0.5 };
-    }
-  }
-  const lx = Math.round(Math.max(view.x0, Math.min(view.x1 - w, x + Math.cos(away) * (marker / 2 + 4) - w / 2)));
-  const ly = Math.round(Math.max(view.y0, Math.min(view.y1 - h, y + Math.sin(away) * (marker / 2 + 4) - h / 2)));
-  return { lx, ly, leader: true };
-}
-
-function pickCityLabel(x, y, w, h, marker, blocks, neighbors, relaxState) {
+function firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, pads) {
   const own = { x, y, marker };
-  const slots = cityLabelSlots(x, y, w, h, marker, neighbors);
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
     if (!closerToOwn(slot.lx, slot.ly, w, h, own, neighbors)) continue;
-    if (claimHits(cityClaims, slot.lx, slot.ly, w, h, 2)) continue;
-    if (!relaxState && claimHits(labelClaims, slot.lx, slot.ly, w, h, 1)) continue;
-    if (claimHits(blocks, slot.lx, slot.ly, w, h, 1)) continue;
+    if (claimHits(cityClaims, slot.lx, slot.ly, w, h, pads.city)) continue;
+    if (claimHits(labelClaims, slot.lx, slot.ly, w, h, pads.state)) continue;
+    if (claimHits(blocks, slot.lx, slot.ly, w, h, pads.block)) continue;
     return slot;
   }
   return null;
+}
+
+/** Longer leader, or a sideways callout. Still refuses tags, labels, markers, and chips. */
+function forceCityLabel(x, y, w, h, marker, blocks, neighbors) {
+  const slots = cityLabelSlots(x, y, w, h, marker, neighbors, true);
+  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, { city: 0, state: 0, block: 0 });
+}
+
+function pickCityLabel(x, y, w, h, marker, blocks, neighbors) {
+  const slots = cityLabelSlots(x, y, w, h, marker, neighbors, false);
+  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, { city: 2, state: 1, block: 1 });
 }
 
 function drawLabelLeader(ctx, x, y, marker, lx, ly, w, h) {
@@ -4106,55 +4135,86 @@ function drawCleanCityLabels(ctx, painted) {
     if (spot) spots.push(spot);
   });
   const neighborsOf = (id) => spots.filter((s) => s.r.id !== id).map((s) => ({ x: s.x, y: s.y, marker: s.marker }));
-  const markerClaims = spots.map((s) => {
-    const badge = showTroopChip(s.r) ? Math.max(8, 12 / z) + 2 : 0;
-    return { id: s.r.id, x: s.x - s.marker / 2 - 2, y: s.y - s.marker / 2 - badge - 2, w: s.marker + 4, h: s.marker + badge + 4 };
+  const markerClaims = spots.map((s) => ({
+    id: s.r.id,
+    x: s.x - s.marker / 2 - 1,
+    y: s.y - s.marker / 2 - 1,
+    w: s.marker + 2,
+    h: s.marker + 2,
+  }));
+  const chipClaims = [];
+  spots.forEach((s) => {
+    const box = troopChipBox(ctx, s.r, s.x, s.y, s.marker);
+    if (box) chipClaims.push(box);
   });
+  const blocksFor = (id) => markerClaims.filter((c) => c.id !== id).concat(chipClaims);
+  const nearest = (s) => {
+    let best = Infinity;
+    spots.forEach((o) => {
+      if (o.r.id === s.r.id) return;
+      best = Math.min(best, Math.hypot(o.x - s.x, o.y - s.y));
+    });
+    return best;
+  };
   const ranked = spots
     .map((s, i) => ({ s, i }))
     .sort((a, b) => {
       const rank = (r) => (r.id === hereId ? 3 : r.id === selectedRegion ? 2 : r.id === hoverRegion ? 1 : 0);
-      return rank(b.s.r) - rank(a.s.r) || a.i - b.i;
+      return rank(b.s.r) - rank(a.s.r) || nearest(a.s) - nearest(b.s) || a.i - b.i;
     });
-  ctx.save();
-  ctx.textBaseline = "top";
-  let pending = ranked;
-  cityLabelSizes(fontPx, z).forEach((sized) => {
+  const placeList = (list, sized, far) => {
     ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
+    const found = [];
     const next = [];
-    pending.forEach(({ s, i }) => {
-      const w = Math.ceil(ctx.measureText(s.r.short).width) + 4;
+    list.forEach((item) => {
+      const w = Math.ceil(ctx.measureText(item.s.r.short).width) + 4;
       const h = Math.ceil(sized + 3);
-      const here = s.r.id === hereId;
-      const selected = s.r.id === selectedRegion;
-      const blocks = markerClaims.filter((c) => c.id !== s.r.id);
-      const placed = pickCityLabel(s.x, s.y, w, h, s.marker, blocks, neighborsOf(s.r.id), false);
+      const blocks = blocksFor(item.s.r.id);
+      const neighbors = neighborsOf(item.s.r.id);
+      const placed = far
+        ? forceCityLabel(item.s.x, item.s.y, w, h, item.s.marker, blocks, neighbors)
+        : pickCityLabel(item.s.x, item.s.y, w, h, item.s.marker, blocks, neighbors);
       if (!placed) {
-        next.push({ s, i, w, h, sized });
+        next.push(item);
         return;
       }
-      cityClaims.push({ x: placed.lx, y: placed.ly, w, h });
-      paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, here, selected, placed.leader, s.x, s.y, s.marker);
+      cityClaims.push({ x: placed.lx, y: placed.ly, w, h, id: item.s.r.id });
+      found.push({ ...item, w, h, sized, placed });
     });
-    pending = next;
+    return { found, next };
+  };
+  ctx.save();
+  ctx.textBaseline = "top";
+  const sizes = cityLabelSizes(fontPx, z, mapCssScale());
+  let pending = ranked;
+  let found = [];
+  sizes.forEach((sized) => {
+    if (!pending.length) return;
+    const pass = placeList(pending, sized, false);
+    found = found.concat(pass.found);
+    pending = pass.next;
   });
   if (pending.length) {
-    const sized = cityLabelSizes(fontPx, z).slice(-1)[0];
-    ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
-    pending.forEach(({ s }) => {
-      const w = Math.ceil(ctx.measureText(s.r.short).width) + 4;
-      const h = Math.ceil(sized + 3);
-      const blocks = markerClaims.filter((c) => c.id !== s.r.id);
-      const neighbors = neighborsOf(s.r.id);
-      const placed = forceCityLabel(s.x, s.y, w, h, s.marker, blocks, neighbors);
-      cityClaims.push({ x: placed.lx, y: placed.ly, w, h });
-      paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, s.r.id === hereId, s.r.id === selectedRegion, placed.leader, s.x, s.y, s.marker);
-    });
+    const sized = sizes[sizes.length - 1];
+    const pass = placeList(pending, sized, true);
+    found = found.concat(pass.found);
+    pending = pass.next;
   }
+  if (pending.length) {
+    cityClaims.length = 0;
+    const sized = sizes[sizes.length - 1];
+    const pass = placeList(ranked, sized, true);
+    found = pass.found;
+  }
+  found.forEach(({ s, w, h, sized, placed }) => {
+    ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
+    paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, s.r.id === hereId, s.r.id === selectedRegion, placed.leader, s.x, s.y, s.marker);
+  });
   ctx.restore();
 }
 
 function drawMap() {
+  if (!state) return;
   labelClaims = [];
   cityClaims = [];
   const canvas = $("map");

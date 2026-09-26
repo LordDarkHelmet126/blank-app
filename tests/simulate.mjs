@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, applyMapDrag, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1350,15 +1350,43 @@ assert(mapDetailFromSave({}, false) === false && mapDetailFromSave({}, true) ===
 assert(/e\.key === "d"/.test(uiSrc) && /btn-map-detail/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")) && /MAP_DETAIL_KEY/.test(uiSrc), "D and the Detail button toggle close-up extras");
 assert(/e\.ctrlKey \|\| e\.altKey \|\| e\.metaKey/.test(uiSrc) && /if \(overlayBusy\(\)\) return;/.test(uiSrc), "D ignores Ctrl Alt Meta and an open dialog");
 assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is stamped on the save and the preference is what Continue keeps");
-assert(/markerClaims/.test(uiSrc) && /claimHits\(labelClaims/.test(uiSrc) && !/if \(soft\) return soft/.test(uiSrc), "city labels treat markers and state tags as hard blocks");
-assert(/cityLabelSizes/.test(uiSrc) && /drawLabelLeader/.test(uiSrc) && /closerToOwn/.test(uiSrc), "city labels shrink, lead, and stay nearer their own marker");
+assert(/markerClaims/.test(uiSrc) && /chipClaims/.test(uiSrc) && /claimHits\(labelClaims/.test(uiSrc) && !/if \(soft\) return soft/.test(uiSrc) && !/relaxState/.test(uiSrc), "city labels treat markers, chips, and state tags as hard blocks");
+assert(/cityLabelSizes/.test(uiSrc) && /drawLabelLeader/.test(uiSrc) && /closerToOwn/.test(uiSrc) && /mapCssScale/.test(uiSrc), "city labels shrink, lead, and stay nearer their own marker");
 assert(/function drawCleanStallFront/.test(uiSrc) && /function drawCleanInvasionAxes/.test(uiSrc) && /function showTroopChip/.test(uiSrc), "clean close-up keeps a thin front, invasion arrows, and a troop badge");
+assert(/function garrisonKnown/.test(uiSrc) && /garrisonKnown\(r\) \? String\(r\.garrison\) : "\?"/.test(uiSrc) && /function cityIsContested/.test(uiSrc), "a troop chip shows a number only when the tooltip would");
+assert(!/stateWash\(r\.stateCode\)\?\.kind === "contested"/.test(uiSrc), "a split state alone does not reveal a garrison");
 assert(!/clampCloseMarkers/.test(uiSrc) && !/mapView\.z = z2/.test(uiSrc) && /applyMapDrag/.test(uiSrc), "clean mode does not zoom the camera to fit markers");
 {
-  const dragged = applyMapDrag({ z: 3.2, x: -100, y: 40 }, 80, -25);
-  assert(dragged.z === 3.2 && dragged.x === -20 && dragged.y === 15, "dragging leaves zoom unchanged");
-  const sizes = cityLabelSizes(14 / 3.2, 3.2);
-  assert(sizes.length > 0 && sizes.every((s) => s * 3.2 >= LABEL_MIN_SCREEN - 0.05), "shrunk labels stay at least 8 screen px");
+  const gameScale = 0.448;
+  const sizes = cityLabelSizes(14 / 3.2, 3.2, gameScale);
+  assert(sizes.length > 0 && sizes.every((s) => s * 3.2 * gameScale >= LABEL_MIN_SCREEN - 0.05), "shrunk labels stay at least 8 screen px");
+  const look = cityLabelSizes(14 / 3.2, 3.2, 1);
+  assert(look.length > 0 && look.every((s) => s * 3.2 >= LABEL_MIN_SCREEN - 0.05) && look.some((s) => s * 3.2 * gameScale < LABEL_MIN_SCREEN - 0.05), "the 8px floor follows the canvas-to-CSS scale");
+  const moveFn = uiSrc.slice(uiSrc.indexOf("function onMapPointerMove"), uiSrc.indexOf("function onMapPointerUp"));
+  assert(/applyMapDrag/.test(moveFn) && !/mapView\.z\s*=/.test(moveFn), "the pointer handler pans without writing zoom");
+  globalThis.localStorage = globalThis.localStorage || { getItem() { return null; }, setItem() {} };
+  const mapEl = {
+    width: 1000,
+    height: 620,
+    getBoundingClientRect() { return { left: 0, top: 0, width: 1000, height: 620 }; },
+  };
+  globalThis.document = {
+    getElementById(id) { return id === "map" ? mapEl : null; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    createElement() { return { width: 1, height: 1, getContext() { return {}; } }; },
+    body: { classList: { add() {}, remove() {}, toggle() {} } },
+    addEventListener() {},
+  };
+  const ui = await import("../js/ui.js");
+  ui.mapView.z = 3.2;
+  ui.mapView.x = -100;
+  ui.mapView.y = 40;
+  ui.mapView.drag = { sx: 0, sy: 0, x: -100, y: 40, moved: false };
+  ui.onMapPointerMove({ clientX: 2, clientY: 1 });
+  assert(ui.mapView.z === 3.2 && ui.mapView.x === -100 && ui.mapView.y === 40 && ui.mapView.drag.moved === false, "a short pointer move is not a drag");
+  ui.onMapPointerMove({ clientX: 80, clientY: -25 });
+  assert(ui.mapView.z === 3.2 && ui.mapView.x === -20 && ui.mapView.y === 15 && ui.mapView.drag.moved === true, "the pointer handler drags without changing zoom");
   const view = { x0: 0, y0: 0, x1: 312, y1: 194 };
   const slid = insetMarkerCenter(4, 90, 8, view);
   assert(slid && slid[0] >= 8 && slid[1] === 90, "a cut marker slides inside without a new zoom");

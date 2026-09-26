@@ -70,16 +70,31 @@ export function insetMarkerCenter(x, y, half, view) {
 }
 
 /**
- * World font sizes for a city name. Every size is at least LABEL_MIN_SCREEN pixels on screen.
+ * How many CSS pixels one canvas pixel occupies for an `object-fit: contain` canvas.
+ * A missing box (headless, not yet laid out) is 1, so the look view stays on canvas pixels.
  */
-export function cityLabelSizes(baseWorld, z) {
+export function canvasDisplayScale(rect, canvasW, canvasH) {
+  const rw = Number(rect?.width) || 0;
+  const rh = Number(rect?.height) || 0;
+  const cw = Number(canvasW) || 0;
+  const ch = Number(canvasH) || 0;
+  if (!(rw > 0 && rh > 0 && cw > 0 && ch > 0)) return 1;
+  return Math.min(rw / cw, rh / ch) || 1;
+}
+
+/**
+ * World font sizes for a city name.
+ * Every size is at least LABEL_MIN_SCREEN CSS pixels, after the canvas-to-screen scale.
+ */
+export function cityLabelSizes(baseWorld, z, cssScale = 1) {
   const zSafe = Math.max(0.2, Number(z) || 1);
-  const minWorld = LABEL_MIN_SCREEN / zSafe;
+  const scale = Math.max(0.05, Number(cssScale) || 1);
+  const minWorld = LABEL_MIN_SCREEN / (zSafe * scale);
   const base = Math.max(minWorld, Number(baseWorld) || minWorld);
   const sizes = [];
-  [1, 0.86, 0.74, 0.64].forEach((scale) => {
-    const sized = base * scale;
-    if (sized * zSafe >= LABEL_MIN_SCREEN - 0.05) sizes.push(sized);
+  [1, 0.86, 0.74, 0.64].forEach((factor) => {
+    const sized = base * factor;
+    if (sized * zSafe * scale >= LABEL_MIN_SCREEN - 0.05) sizes.push(sized);
   });
   if (!sizes.length) sizes.push(minWorld);
   return sizes;
