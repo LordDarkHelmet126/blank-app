@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, calloutCap, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, calloutCap, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, keyPanelInset, labelEdgeGap, labelOwnsMarker, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stableKeyIds, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1352,6 +1352,15 @@ assert(/e\.ctrlKey \|\| e\.altKey \|\| e\.metaKey/.test(uiSrc) && /if \(overlayB
 assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is stamped on the save and the preference is what Continue keeps");
 assert(/markerClaims/.test(uiSrc) && /chipClaims/.test(uiSrc) && /claimHits\(labelClaims/.test(uiSrc) && !/if \(soft\) return soft/.test(uiSrc) && !/relaxState/.test(uiSrc), "city labels treat markers, chips, and state tags as hard blocks");
 assert(/cityLabelSizes/.test(uiSrc) && /drawLabelLeader/.test(uiSrc) && /closerToOwn/.test(uiSrc) && /mapCssScale/.test(uiSrc), "city labels shrink, lead, and stay nearer their own marker");
+assert(!/function nameLines/.test(uiSrc) && !/slice\(0,\s*mid\)/.test(uiSrc), "city names are not split mid-word");
+{
+  const rankSlice = uiSrc.slice(uiSrc.indexOf("const ranked = spots"), uiSrc.indexOf("const measureName"));
+  const legal = uiSrc.slice(uiSrc.indexOf("function firstLegalLabel"), uiSrc.indexOf("function labelCap"));
+  const leaderFn = uiSrc.slice(uiSrc.indexOf("function drawLabelLeader"), uiSrc.indexOf("function paintCityName"));
+  assert(!/hoverRegion/.test(rankSlice) && /stableKeyIds/.test(uiSrc), "label order ignores hover and the key keeps hysteresis");
+  assert(/closerToOwn/.test(legal) && !/mode === "led"/.test(legal) && !/!ownOk && !beside/.test(legal), "every label slot has to belong to its own marker");
+  assert(/setLineDash/.test(leaderFn) && !/#f4efe4/.test(leaderFn) && !/#f0e0b0/.test(leaderFn), "leaders are dashed and are not drawn in the road cream");
+}
 assert(/function drawCleanStallFront/.test(uiSrc) && /function drawCleanInvasionAxes/.test(uiSrc) && /function showTroopChip/.test(uiSrc), "clean close-up keeps a thin front, invasion arrows, and a troop badge");
 assert(/function garrisonKnown/.test(uiSrc) && /garrisonKnown\(r\) \? String\(r\.garrison\) : "\?"/.test(uiSrc) && /function cityIsContested/.test(uiSrc), "a troop chip shows a number only when the tooltip would");
 assert(!/stateWash\(r\.stateCode\)\?\.kind === "contested"/.test(uiSrc), "a split state alone does not reveal a garrison");
@@ -1401,6 +1410,22 @@ assert(!/clampCloseMarkers/.test(uiSrc) && !/mapView\.z = z2/.test(uiSrc) && /ap
   const nearer = [13 * (4 / 9), 4];
   assert(Math.abs(end[0] - 10) < 0.05 && end[1] > 4 && end[1] < 14, "a diagonal leader meets the farther edge of the label");
   assert(Math.hypot(end[0] - nearer[0], end[1] - nearer[1]) > 2, "the leader does not stop at the nearer slab crossing");
+  const own = { x: 0, y: 0, marker: 12 };
+  const squeezed = { x: 34, y: 0, marker: 12 };
+  assert(labelEdgeGap(0, 0, 12, 6, -5, 20, 10) === 0, "a label against its marker has no gap");
+  assert(Math.abs(labelEdgeGap(34, 0, 12, 6, -5, 20, 10) - 2) < 0.01, "a squeezed label is 2px from the other marker");
+  assert(!labelOwnsMarker(6, -5, 20, 10, own, [squeezed], 4), "a label touching another marker is rejected");
+  assert(labelOwnsMarker(6, -5, 20, 10, own, [{ x: 90, y: 0, marker: 12 }], 4), "a label nearer only its own marker is kept");
+  assert(!labelOwnsMarker(28, -4, 18, 8, own, [squeezed], 4), "a label nearer another marker is rejected");
+  assert(stableKeyIds(["klondike"], ["fairbanks", "klondike"], 6).join() === "klondike", "a 6px pan keeps the previous key");
+  assert(stableKeyIds(["spokane"], ["seattle", "spokane"], 0).join() === "spokane", "hover does not change key membership");
+  assert(stableKeyIds(["kenai"], ["seattle", "anchorage"], 13).join() === "anchorage,seattle", "a longer pan renumbers the key by city id");
+  assert(stableKeyIds(null, ["nome", "anchorage"], 0).join() === "anchorage,nome", "a fresh key is numbered by city id");
+  const stroke = Math.max(0.6, 1.2 / 1.3);
+  const inset = keyPanelInset(1.3, 3, stroke, 2);
+  const frameCanvas = (inset - 3) * 1.3;
+  const outer = frameCanvas - (stroke * 1.3) / 2;
+  assert(outer >= 2 - 0.05 && outer <= 2.05, "the key frame, stroke included, sits 2px inside the canvas");
 }
 assert(/letterboxCanvasPoint/.test(uiSrc) && /letterboxContains/.test(uiSrc), "map clicks use the drawn letterbox and ignore the empty bars");
 {
@@ -1493,6 +1518,58 @@ assert(/letterboxCanvasPoint/.test(uiSrc) && /letterboxContains/.test(uiSrc), "m
     /* redraw can stop after the hover is recorded */
   }
   assert(ui.readMapPointer().hover === "denver", "a pointer event on the drawn map still hovers that city");
+  const nome = content.regions.regions.find((r) => r.id === "nome");
+  const [nx, ny] = nome.city || nome.label;
+  const z2 = 2;
+  const nomeSize = Math.max(12, 20 / z2);
+  const x0 = nx + 5;
+  const y0 = ny - 40;
+  ui.mapView.z = z2;
+  ui.mapView.x = -x0 * z2;
+  ui.mapView.y = -y0 * z2;
+  ui.mapView.focus = null;
+  ui.mapView.drag = null;
+  const nomeView = { x0, y0, x1: x0 + 1000 / z2, y1: y0 + 620 / z2 };
+  const nomeAnchor = insetMarkerCenter(nx, ny, nomeSize / 2 + 2, nomeView);
+  const nomeInside = (poly, px, py) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i][0];
+      const yi = poly[i][1];
+      const xj = poly[j][0];
+      const yj = poly[j][1];
+      const intersect = yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi + 0.0001) + xi;
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  };
+  assert(nomeAnchor && !nomeInside(nome.polygon, nomeAnchor[0], nomeAnchor[1]), "Nome's slid marker is drawn off its region shape");
+  const nomeCanvasX = nomeAnchor[0] * z2 + ui.mapView.x;
+  const nomeCanvasY = nomeAnchor[1] * z2 + ui.mapView.y;
+  const nomeClientX = ox + nomeCanvasX * scale;
+  const nomeClientY = oy + nomeCanvasY * scale;
+  assert(letterboxContains(nomeClientX, nomeClientY, rect, 1000, 620), "the slid Nome marker is on the drawn map");
+  try {
+    map.dispatchEvent(new PointerEvent("pointermove", { clientX: nomeClientX, clientY: nomeClientY }));
+  } catch {
+    /* redraw can stop after the hover is recorded */
+  }
+  assert(ui.readMapPointer().hover === "nome", "a pointer on a slid marker hovers that city");
+  ui.mapView.z = 1;
+  ui.mapView.x = 80;
+  ui.mapView.y = 0;
+  ui.mapView.focus = null;
+  const overviewX = ox + (nomeAnchor[0] + 80) * scale;
+  const overviewY = oy + nomeAnchor[1] * scale;
+  try {
+    map.dispatchEvent(new PointerEvent("pointermove", { clientX: overviewX, clientY: overviewY }));
+  } catch {
+    /* redraw can stop after the hover is recorded */
+  }
+  assert(ui.readMapPointer().hover !== "nome", "overview clicks use the region shape, not the close-up slide");
+  const regionFn = uiSrc.slice(uiSrc.indexOf("function regionAt"), uiSrc.indexOf("function hitPoly"));
+  assert(/clearRoads/.test(regionFn) && /markerSquareHit/.test(regionFn) && regionFn.indexOf("markerSquareHit") < regionFn.indexOf("hitPoly"), "drawn markers are hit before region shapes");
+  assert(/onMapClick/.test(uiSrc) && /regionAt\(e\.clientX, e\.clientY, \$\("map"\)\)/.test(uiSrc), "click uses the same drawn-marker hit test as hover");
 }
 assert(/territoryTipHtml/.test(uiSrc) && /Yield \+/.test(uiSrc) && /Works:/.test(uiSrc), "city report and hover keep levy yield and works");
 const closeRoad = closeRoadWidth(3.2);

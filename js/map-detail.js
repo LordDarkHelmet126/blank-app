@@ -215,3 +215,61 @@ export function chordIsMisleading(length, samples, stateA, stateB) {
 
 /** A city name's near edge stays within this many marker widths of its marker. */
 export const LABEL_ANCHOR = 1.5;
+
+/** Another marker this close, in screen pixels, makes the name read as that city. */
+export const LABEL_TOUCH_SCREEN = 5;
+
+/** Edge-to-edge gap from a label box to a marker square. Zero means they touch. */
+export function labelEdgeGap(mx, my, marker, lx, ly, w, h) {
+  const half = (Number(marker) || 0) / 2;
+  const left = mx - half;
+  const right = mx + half;
+  const top = my - half;
+  const bottom = my + half;
+  const dx = lx + w < left ? left - (lx + w) : lx > right ? lx - right : 0;
+  const dy = ly + h < top ? top - (ly + h) : ly > bottom ? ly - bottom : 0;
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * The label belongs to its own marker.
+ * Reject a slot whose centre is nearer another marker, whose edge is nearer another marker,
+ * or that touches another marker (within `touch` world px) even when a leader is drawn.
+ */
+export function labelOwnsMarker(lx, ly, w, h, own, others, touch = 4) {
+  const cx = lx + w / 2;
+  const cy = ly + h / 2;
+  const ownC = Math.hypot(cx - own.x, cy - own.y);
+  const ownGap = labelEdgeGap(own.x, own.y, own.marker, lx, ly, w, h);
+  const touchLimit = Number.isFinite(Number(touch)) ? Number(touch) : 4;
+  for (let i = 0; i < (others || []).length; i++) {
+    const o = others[i];
+    if (Math.hypot(cx - o.x, cy - o.y) <= ownC + 0.25) return false;
+    const gap = labelEdgeGap(o.x, o.y, o.marker, lx, ly, w, h);
+    if (gap <= ownGap + 0.01) return false;
+    if (gap <= touchLimit) return false;
+  }
+  return true;
+}
+
+/**
+ * Key city ids. A pan of 12 canvas px or less keeps the previous list, so hover and a small
+ * nudge cannot renumber it. A new zoom (no previous list, or a longer pan) sorts by city id.
+ */
+export function stableKeyIds(previous, next, panPx) {
+  const sorted = [...(next || [])].map(String).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  if (previous == null || !(Number(panPx) <= 12)) return sorted;
+  return previous.slice();
+}
+
+/**
+ * World-unit inset for a keyed panel.
+ * The frame pad plus half the stroke stays at least `marginCanvas` canvas px inside the map.
+ */
+export function keyPanelInset(z, framePad, strokeWorld, marginCanvas = 2) {
+  const zSafe = Math.max(0.2, Number(z) || 1);
+  const stroke = Math.max(0, Number(strokeWorld) || 0);
+  const pad = Math.max(0, Number(framePad) || 0);
+  const margin = Math.max(0, Number(marginCanvas) || 0);
+  return (margin + (stroke * zSafe) / 2) / zSafe + pad;
+}
