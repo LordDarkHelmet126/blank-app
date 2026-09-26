@@ -93,7 +93,7 @@ const ACTION_RULES = {
   hide: { tab: "personal", min: "free" },
   rest: { tab: "personal", min: "free" },
   seek_legend: { tab: "personal", min: "free" },
-  enlist: { tab: "personal", min: "free", max: "free", maxReason: "You already serve a banner." },
+  enlist: { tab: "personal", min: "free" },
   resign: { tab: "personal", min: "member", max: "opschief", maxReason: "A Front Commander keeps the banner." },
   train: { tab: "personal", placeholder: true, reason: "Train waits on the skills pass." },
   patrol: { tab: "personal", placeholder: true, reason: "Patrol waits on the territory pass." },
@@ -158,7 +158,7 @@ export const ORDER_TASKS = {
     label: "Salvage",
     stat: "INT",
     short: (city) => `Salvage hours in ${city}`,
-    line: (city) => `The salvage shed in ${city} needs hours. Workshop this month. 1985–89 kit only.`,
+    line: (city) => `The salvage shed in ${city} needs hours. Workshop this month.`,
   },
   spy: {
     label: "Spy",
@@ -194,9 +194,10 @@ export function monthIndex(week) {
   return Math.floor(((week || 0) + 0) / 4);
 }
 
-/** 1–13 inside the year. Week 0 is month 1. Week 15 is month 4. */
+/** 1–12 inside the year. The 13th four-week block stays month 12 until the year rolls. Week 0 is month 1. Week 15 is month 4. */
 export function monthLabel(week) {
-  return (monthIndex(week) % 13) + 1;
+  const n = (monthIndex(week) % 13) + 1;
+  return n > 12 ? 12 : n;
 }
 
 export function gradeForDeeds(deeds) {
@@ -344,19 +345,41 @@ export function maybePromote(state, rank) {
       message: `Free Volunteer → Cell Member. The Domestic tab unlocks — one task a month. Commission: ${commissionLabel(state.service.commission)}. Pay grade ${grade}.`,
     };
   }
-  if (current === "member" && deeds >= 28 && p.faction) {
-    const fac = (state.factions || []).find((f) => f.id === p.faction);
-    if (fac && fac.ruler === p.id) return null;
+  if (rulesOwnBanner(state, p)) return null;
+  const trust = trustWithSuperior(state);
+  if (current === "member" && deeds >= 28 && trust >= 50) {
     p.status = "leader";
     return {
       from: "member",
       to: "leader",
       tab: "personnel",
       unlocked: "People",
-      message: "Cell Member → Cell Leader. People and envoy commands unlock. You follow the banner's ask on your ground.",
+      message: `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust} with your superior. People unlocks. You do not need a banner of your own.`,
+    };
+  }
+  if (current === "leader" && deeds >= 48 && trust >= 70) {
+    p.status = "opschief";
+    return {
+      from: "leader",
+      to: "opschief",
+      tab: "personnel",
+      unlocked: "People",
+      message: `Cell Leader → Operations Chief. Deeds ${deeds} and trust ${trust}. You advise the cell. A banner and its chairs still need a Front Commander.`,
     };
   }
   return null;
+}
+
+function rulesOwnBanner(state, p) {
+  if (!p?.faction) return false;
+  const fac = (state.factions || []).find((f) => f.id === p.faction);
+  return !!(fac && fac.ruler === p.id);
+}
+
+function trustWithSuperior(state) {
+  const id = state.service?.superiorId || state.orders?.current?.issuerId || state.orders?.history?.[0]?.issuerId;
+  if (!id) return 40;
+  return state.bonds?.[id] ?? 40;
 }
 
 function statusAllows(rank, rule) {
@@ -377,6 +400,27 @@ function statusAllows(rank, rule) {
 export function applyStatusGate(action, ctx) {
   const rule = ACTION_RULES[action.id] || { tab: action.tab || "personal", min: "free" };
   action.tab = rule.tab;
+  if (action.id === "enlist") {
+    if (ctx.hasFaction) {
+      action.enabled = false;
+      action.statusLocked = true;
+      action.hint = "You already serve a banner.";
+      return action;
+    }
+    const rank = normalizeStatus(ctx.rank) || "free";
+    if (rank === "commander" || rank === "governor" || rank === "chair") {
+      action.enabled = false;
+      action.statusLocked = true;
+      action.hint = "A Front Commander keeps their own banner.";
+      return action;
+    }
+    action.enabled = true;
+    action.statusLocked = false;
+    action.hint = rank === "free"
+      ? "Sign on with the Denver campus cell. You stay in Cheyenne as a Cell Member."
+      : "Sign on with the Denver campus cell. You keep your rank and your deeds.";
+    return action;
+  }
   if (rule.placeholder || action.placeholder) {
     action.enabled = false;
     action.statusLocked = true;
@@ -430,8 +474,13 @@ export function unownedWorkOk(rank, state, actionId) {
 export function orderLead(state) {
   const o = state.orders?.current;
   if (!o) return "";
-  if (o.status === "pending") return `Orders from above: ${o.short} (${o.taskLabel}). Accept, refuse, or propose.`;
-  if (o.status === "accepted" || o.status === "proposed") return `Orders from above: ${o.short} (${o.taskLabel}).`;
+  const tab = COMMAND_TABS.find((t) => t.id === (ACTION_RULES[o.task]?.tab || "domestic"))?.label || "Domestic";
+  if (o.status === "pending") {
+    return `Orders from above. ${o.issuerName} asks you to ${o.short}. Accept, refuse, or propose.`;
+  }
+  if (o.status === "accepted" || o.status === "proposed") {
+    return `Orders from above. Do ${o.short}. It is highlighted on the ${tab} tab.`;
+  }
   return "";
 }
 
@@ -539,7 +588,9 @@ function demoteForStreak(state, streak, why) {
     state.orders.missesInRow = 0;
     return { from: "member", to: "free", log: `Three ${why} in a row. You are a Free Volunteer again.` };
   }
-  return { log: `Three ${why} in a row. The cell is keeping a tally.` };
+  state.orders.refusalsInRow = 0;
+  state.orders.missesInRow = 0;
+  return null;
 }
 
 export function waiveOrder(state, why) {
@@ -551,6 +602,39 @@ export function waiveOrder(state, why) {
   state.orders.current = null;
   state.orders.locked = [];
   return { log: why || "Orders from above stop. You hold the banner." };
+}
+
+/**
+ * Weighted, deterministic task. Territory need, the superior's skills, the player's rank,
+ * and the last two orders. Does not touch the weekly RNG stream.
+ */
+export function pickOrderTask(state, superior) {
+  const week = state.week || 0;
+  const history = state.orders?.history || [];
+  if (week === 0 && !history.length && superior?.id === "cole") return "cultivate";
+  const recent = new Set(history.slice(0, 2).map((h) => h.task).filter(Boolean));
+  const region = (state.regions || []).find((r) => r.id === superior?.regionId) || null;
+  const skills = new Set((superior?.skills || []).filter((id) => ORDER_TASKS[id]));
+  const rank = statusIndex(player(state)?.status || "free");
+  const scored = PROPOSE_TASKS.map((task, i) => {
+    let w = 2;
+    if (skills.has(task)) w += 4;
+    if (region) {
+      if (task === "cultivate" && (region.food ?? 50) < 55) w += 3;
+      if (task === "commerce" && (region.economy ?? 50) < 50) w += 3;
+      if (task === "safety" && (region.order ?? 50) < 50) w += 3;
+      if (task === "drill" && (region.garrison ?? 40) < 40) w += 3;
+      if (task === "fortify" && (region.walls ?? 0) < 25) w += 3;
+      if (task === "spy" && (region.intel ?? 0) < 25) w += 2;
+    }
+    if (task === "research" && rank < statusIndex("leader")) w += 1;
+    if (task === "spy" && rank < statusIndex("member")) w += 1;
+    if (recent.has(task)) w -= 8;
+    const tie = (monthIndex(week) * 3 + i) % 5;
+    return { task, w, tie };
+  });
+  scored.sort((a, b) => b.w - a.w || b.tie - a.tie || (a.task < b.task ? -1 : 1));
+  return scored[0]?.task || "cultivate";
 }
 
 /**
@@ -566,9 +650,8 @@ export function issueMonthlyOrder(state, superior, cityName) {
     state.orders.current = null;
     return null;
   }
-  const skills = (superior.skills || []).filter((id) => ORDER_TASKS[id]);
-  let task = skills.length ? skills[(state.week + String(superior.id).length) % skills.length] : "spy";
-  if ((state.week || 0) === 0 && !state.orders.history.length && superior.id === "cole") task = "cultivate";
+  state.service.superiorId = superior.id;
+  const task = pickOrderTask(state, superior);
   const copy = taskCopy(task, cityName || "this city");
   const order = {
     id: `ord${state.orders.seq++}`,
@@ -708,11 +791,9 @@ export function noteDeeds(state, amount, rank) {
   return { grade, promoted };
 }
 
-export function skimHarvest(state, foodYield, farm) {
-  ensureCareer(state);
-  const skim = Math.min(Math.max(0, foodYield || 0), Math.max(0, farm || 0));
-  state.service.harvestBank += skim;
-  return (foodYield || 0) - skim;
+/** Weekly food stays with the army. The late-summer payout is a separate, logged bonus. */
+export function skimHarvest(_state, foodYield) {
+  return foodYield || 0;
 }
 
 export function payoutHarvest(state) {

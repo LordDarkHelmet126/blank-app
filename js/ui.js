@@ -752,7 +752,18 @@ function bindChrome() {
       if (e.key === "3") doBattle("siege", { kind: "rush" });
       return;
     }
-    if (e.key === "e" && state && state.phase === "strategy") run("end_week");
+    if (e.key === "Escape") {
+      const modal = $("modal");
+      if (modal && !modal.hidden) {
+        e.preventDefault();
+        hideModal();
+        return;
+      }
+    }
+    if ((e.key === "e" || e.key === "E") && state && state.phase === "strategy") {
+      if (overlayBusy()) return;
+      run("end_week");
+    }
     if ((e.key === "l" || e.key === "L") && state?.phase === "strategy" && e.target?.tagName !== "INPUT" && e.target?.tagName !== "TEXTAREA") {
       toggleLegend();
     }
@@ -807,11 +818,7 @@ function wireTitle() {
       commandCat = "personal";
       hideModal();
       render();
-      if (coachForced || localStorage.getItem(COACH_KEY) !== "skip") {
-        coachOn = true;
-        coachStep = 0;
-        openCoach();
-      }
+      scheduleCoach();
     };
   }
   const cont = $("modal-card").querySelector("#ng-continue");
@@ -921,7 +928,7 @@ function hideModal(opts = {}) {
   if (!overlayBusy()) maybeShowOrder();
 }
 
-const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
+const HIRE_LINE = "People → Hire fills an ADD chair (5 generals). Extras wait — Command → Appoint.";
 
 /** Campaign shorts. Siege flavor may say Lane / Inland Ridge; map labels stay Sponsor Lane and Sheds. */
 const INLAND_SIEGE_CUES = {
@@ -1055,12 +1062,11 @@ function nextHint(st) {
 
 function prefixCareer(st, line) {
   if (!st || !line || !line.startsWith("NEXT:")) return line;
-  if (line.includes("Orders from above")) return line;
   const order = orderLead(st);
+  if (order) return `NEXT: ${order}`;
   const cadence = cadenceLead(st);
-  const extra = [order, cadence].filter(Boolean).join(" ");
-  if (!extra) return line;
-  return `NEXT: ${extra} ${line.slice(6)}`;
+  if (!cadence) return line;
+  return `NEXT: ${cadence}. ${line.slice(6)}`;
 }
 
 function nextHintCore(st) {
@@ -1082,21 +1088,21 @@ function nextHintCore(st) {
     const route = routeSentence(st);
     if (route) return `NEXT: ${route}`;
   }
-  if (!p.faction) return "NEXT: Personal → Raise Banner (1 AP). A state frees when its ★ keys are yours — Cheyenne frees Wyoming. Then Plot → Hire.";
+  if (!p.faction) return "NEXT: Finish the month's order. Deeds and trust raise you. A banner of your own can wait.";
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
   const arc = campaignArcLine(st);
   if (arc) {
-    const hire = gens.length === 0 && !ensureCampaign(st).nationalLeader ? " Then Plot → Hire." : "";
+    const hire = gens.length === 0 && !ensureCampaign(st).nationalLeader ? " Then People → Hire." : "";
     return `NEXT: ${arc}${hire}`;
   }
   const rung = rosterRungHint(st, p);
   if (rung) return rung;
   if (gens.length === 0) return `NEXT: ${HIRE_LINE}`;
   if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
-    return `NEXT: Plot → Hire (${gens.length}/5). Same path as the ADD chairs.`;
+    return `NEXT: People → Hire (${gens.length}/5). Same path as the ADD chairs.`;
   }
   if (gens.length < MAX_GENERALS && wait.length) {
-    return `NEXT: Plot → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
+    return `NEXT: Command → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
   }
   if (localJob) return `NEXT: ${st.ap} AP left — Military → Side Mission: ${localJob.name}, or one more tile.`;
   if (jobs.length) return `NEXT: ${st.ap} AP left — ${jobs.length} jobs on the board, or one more tile.`;
@@ -1135,7 +1141,27 @@ function renderObjective() {
   if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
 }
 
+function scheduleCoach() {
+  if (!(coachForced || localStorage.getItem(COACH_KEY) !== "skip")) return;
+  coachOn = true;
+  coachStep = 0;
+  const pending = state?.orders?.current?.status === "pending";
+  if (pending || overlayBusy()) {
+    parkedCoach = true;
+    const el = $("coach");
+    if (el) el.hidden = true;
+    return;
+  }
+  openCoach();
+}
+
 function openCoach() {
+  if (state?.orders?.current?.status === "pending") {
+    parkedCoach = true;
+    const waiting = $("coach");
+    if (waiting) waiting.hidden = true;
+    return;
+  }
   if (overlayBusy()) {
     parkedCoach = true;
     const el = $("coach");
@@ -1185,7 +1211,9 @@ function maybeAdvanceCoach(actionId) {
   if (!coachOn || $("coach").hidden) return;
   const step = COACH_STEPS[coachStep];
   if (!step) return;
-  if (step.id === "banner" && actionId === "raise_banner") coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+  if (step.id === "banner" && ["cultivate", "commerce", "safety", "drill", "fortify", "research", "spy"].includes(actionId)) {
+    coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+  }
   else if (step.id === "hire" && (actionId === "hire" || actionId === "appoint")) {
     coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
   } else if (step.id === "end" && actionId === "end_week") {
@@ -1246,9 +1274,11 @@ function orderHtml() {
     .join("");
   const answer = pending
     ? `<button type="button" class="primary" data-order="accept">Accept <small>(+trust, +deeds when done · ${esc(o.taskLabel)} · ${esc(o.stat)})</small></button>
-       <button type="button" data-order="refuse">Refuse <small>(−trust)</small></button>
+       <button type="button" data-order="refuse">Refuse <small>(−trust, −1 fame. Three refusals in a row demote a Cell Member.)</small></button>
        <button type="button" data-order="propose">Propose instead</button>
-       <div id="propose-row" hidden>${choices}</div>`
+       <p class="muted">A proposal must match ${esc(o.issuerName)}'s skills and trust of 40 or more. Otherwise that task is locked this month.</p>
+       <div id="propose-row" hidden>${choices}</div>
+       <button type="button" data-close>Decide later</button>`
     : `<p class="plus">You took this order. Finish it from the command tabs.</p><button type="button" data-close class="primary">Close</button>`;
   return `<div class="order-layout">
       <div class="order-face" aria-hidden="true">${esc(portraitInitials(o.issuerName))}</div>
@@ -1354,10 +1384,15 @@ function showLockedTip(actionId) {
   if (!btn || !tip) return;
   const action = listActions(state).find((a) => a.id === actionId);
   tip.innerHTML = actionTipHtml(action || { label: actionId, hint: "Locked.", ap: 1, enabled: false });
+  btn.scrollIntoView({ block: "center", inline: "nearest" });
   tip.hidden = false;
   const r = btn.getBoundingClientRect();
-  tip.style.left = `${Math.max(8, Math.min(window.innerWidth - 288, r.left))}px`;
-  tip.style.top = `${Math.max(8, Math.min(window.innerHeight - 140, r.bottom + 6))}px`;
+  const width = 280;
+  const left = Math.max(8, Math.min(window.innerWidth - width - 8, r.left));
+  let top = r.bottom + 6;
+  if (top + 130 > window.innerHeight) top = Math.max(8, r.top - 130);
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
 }
 
 function helpHtml() {
@@ -1365,7 +1400,7 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Reunify is the east walk NE–KS–MO.</li>
+      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Reunify is the east walk already on the board: NE–KS–MO. Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.</li>
       <li><strong>Status plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR, deeds, pay grade, and commission. Treasury (gold/food/AP) lives in the top row.</li>
       <li><strong>Status:</strong> You play one officer. Free Volunteer through Chair of the Provisional Government. Locked commands stay on the tab and say why. Every 4 weeks is a month: an order from above, scrip every 13 weeks, a late-summer harvest, and a Fourth of July county fair.</li>
       <li><strong>Command:</strong> Eight tabs — Personal, Social, Trade, Domestic, Military, People, Plot, Command. Domestic = hall work. Plot = spy and rumor. Military = roads and missions.</li>
@@ -1922,7 +1957,7 @@ function courtHtml() {
   const deskId = syncCourtDesk();
   const look = inlandLook(deskId);
   const desk = inlandDesk(deskId);
-  const courtBase = rung || "NEXT: Roster → Create a friend (they start as Player), or Plot → Hire fills an ADD chair.";
+  const courtBase = rung || "NEXT: Roster → Create a friend (they start as Player), or People → Hire fills an ADD chair.";
   const courtNext = desk && look ? `NEXT: ${desk.line}. ${look.read}. ${courtBase.replace(/^NEXT:\s*/, "")}` : courtBase;
   const courtTitle = look ? `Court — ${look.strip}` : "Court";
   const courtStrip = look
@@ -1950,11 +1985,11 @@ function courtHtml() {
       </div>`);
     } else {
       let hint;
-      if (!p.faction) hint = "Raise Banner, then Plot → Hire.";
-      else if (wait[0]) hint = `Plot → Appoint ${esc(wait[0].name)}.`;
+      if (!p.faction) hint = "Finish orders, or raise a banner, then People → Hire.";
+      else if (wait[0]) hint = `Command → Appoint ${esc(wait[0].name)}.`;
       else if (ladderRoster(state).officer.some((o) => o.region === p.region) && gens.length < MAX_GENERALS) hint = "Roster → Promote an officer to general.";
       else if (ladderRoster(state).player.some((o) => o.region === p.region)) hint = "Roster → Promote a player to officer.";
-      else hint = "Plot → Hire fills this ADD chair.";
+      else hint = "People → Hire fills this ADD chair.";
       chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
         <i class="rank-stripe rank-empty"></i>
         <span class="mini empty-mini">+</span>
@@ -2126,17 +2161,17 @@ const COACH_STEPS = [
   },
   {
     id: "banner",
-    title: "2 / 4  Raise a banner",
-    body: "Click RAISE BANNER on Personal (1 AP) to claim Cheyenne as Northern Front. That frees Wyoming and makes you Front Commander. Eight west-bloc states (AK WA OR ID MT WY UT CO) name you national leader — a title, not a leap. Yukon is the road between, not a ninth. Reunify is the east walk already on the board: NE–KS–MO. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
-    target: '[data-id="raise_banner"]',
-    cat: "personal",
+    title: "2 / 4  This month's order",
+    body: "Do the highlighted order this month. It writes deeds, pay grade, and trust. Cell Leader, then Operations Chief, come from that record. You do not have to raise a banner. Eight west-bloc states name you national leader — a title, not a leap.",
+    target: "#cmd-actions",
+    cat: "domestic",
   },
   {
     id: "hire",
-    title: "3 / 4  Fill an ADD chair",
-    body: "People → Hire. Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint. Same words on the court strip.",
-    target: '[data-id="hire"]',
-    cat: "personnel",
+    title: "3 / 4  Ranks ahead",
+    body: "Finish orders to climb. Fill an ADD chair only after you are a Cell Leader: People → Hire. Command → Appoint waits on a Front Commander. Same words on the court strip.",
+    target: "#status-panel",
+    cat: "personal",
   },
   {
     id: "end",
@@ -2157,6 +2192,7 @@ function actionButton(a) {
   const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
   b.disabled = !live;
   if (!live) b.classList.add("is-locked");
+  if (a.ordered) b.classList.add("is-ordered");
   const lock = !a.enabled ? a.hint || "Locked." : state.ap < a.ap ? `${a.ap} AP` : `${a.ap} AP`;
   b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span><b>${esc(a.label)}</b><small>${esc(lock)}</small></span>`;
   bindTip(b, actionTipHtml(a));
@@ -2179,7 +2215,8 @@ function renderActions() {
   COMMAND_TABS.forEach((tab) => {
     const t = document.createElement("button");
     t.type = "button";
-    t.className = "cmd-tab" + (commandCat === tab.id ? " active" : "");
+    const orderedHere = actions.some((a) => a.ordered && a.tab === tab.id);
+    t.className = "cmd-tab" + (commandCat === tab.id ? " active" : "") + (orderedHere ? " has-order" : "");
     t.innerHTML = `<span>${esc(tab.label)}</span>`;
     bindTip(t, TAB_TIPS[tab.id] || `<strong>${esc(tab.label)}</strong>`);
     t.onclick = () => {
@@ -2339,7 +2376,7 @@ function startAction(a) {
   if (a.needs === "appoint") {
     const cs = appointCandidates(state);
     if (!cs.length) return toast("Court empty. " + HIRE_LINE);
-    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Plot → Appoint puts a court officer in an ADD chair (5 max). Standing orders fire at End Week.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Command → Appoint puts a court officer in an ADD chair (5 max). Standing orders fire at End Week.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-appoint]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -4972,7 +5009,7 @@ function wireOrders() {
         startAction(listActions(state).find((a) => a.id === "hire") || { id: "hire", needs: "hire", label: "Hire" });
         return;
       }
-      toast(playerOf(state).faction ? "No free officer here. Travel, or Officers → Create, then Plot → Hire." : "Raise Banner, then Plot → Hire fills an ADD chair.");
+      toast(playerOf(state).faction ? "No free officer here. Travel, or Officers → Create, then People → Hire." : "People → Hire fills an ADD chair after you are a Cell Leader.");
     };
   });
 }

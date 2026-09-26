@@ -58,6 +58,8 @@ import {
   runPayroll,
   orderLead,
   apMax,
+  noteDeeds,
+  promoteLadder,
 } from "../js/engine.js";
 import { createBattle, autoResolveBattle, battlePloy } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
@@ -1160,7 +1162,7 @@ assert(/demo"\) === "coach"[\s\S]{0,400}get\("focus"\)/.test(uiSrc), "coach demo
 assert(/Cut the berm, Rake the parapet, Rush the gap/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "travel hint names the same siege ploys");
 assert(/--type:\s*16px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 16px");
 assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
-assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
+assert(/HIRE_LINE/.test(uiSrc) && /People → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
 assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 3 is hire into ADD chair");
 assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tiles lead with hire/appoint");
 assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
@@ -1507,7 +1509,7 @@ assert(rankLabel("warlord") === "Front Commander" && normalizeStatus("warlord") 
 assert(normalizeStatus("officer") === "member" && normalizeStatus("prefect") === "leader" && normalizeStatus("national") === "chair", "older status ids");
 assert(career.week === 0 && career.orders?.current?.status === "pending", "week 0 opens a pending order");
 assert(career.orders.current.issuerId === "cole" && career.orders.current.task === "cultivate", "Drew Cole asks for the Cheyenne elevator");
-assert(monthLabel(0) === 1 && monthLabel(15) === 4, "month labels: week 0 is month 1, week 15 is month 4");
+assert(monthLabel(0) === 1 && monthLabel(15) === 4 && monthLabel(48) === 12 && monthLabel(52) === 1, "month labels stay 1–12 and roll into the next year");
 assert(you.grade === 5 && payForGrade(5) === 6 && apMax(career) === 3, "grade 5 pay and volunteer AP");
 assert(/Orders from above/.test(orderLead(career)) && /Accept/.test(orderLead(career)), "order lead tells a new player the ask");
 const gated = listActions(career);
@@ -1666,5 +1668,111 @@ for (let i = 0; i < 3; i++) {
 const spentOut = battlePloy(field, tactics, "rally", 40);
 assert(!spentOut.ok && /Tactic points/.test(spentOut.message), "tactic points stop at the commission cap");
 console.log("ok status ladder, month, pay, orders");
+
+const climb = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(climb, "accept");
+const joined = act(climb, content, "cultivate");
+assert(joined.promoted?.to === "member" && !playerOf(climb).faction, "first order promotes without a banner");
+const enlistRow = listActions(climb).find((a) => a.id === "enlist");
+assert(enlistRow?.enabled && !/already serve/i.test(enlistRow.hint || ""), `factionless member can still enlist: ${enlistRow?.hint}`);
+climb.service.deeds = 28;
+climb.bonds.cole = 55;
+climb.service.superiorId = "cole";
+const toLeader = noteDeeds(climb, 0, "member");
+assert(toLeader.promoted?.to === "leader" && rankOf(climb, playerOf(climb)) === "leader", "deeds and trust promote a banner-less Cell Member");
+const hireGate = listActions(climb).find((a) => a.id === "hire");
+assert(hireGate && !/Needs Cell Leader/.test(hireGate.hint || ""), `People gate opens at Cell Leader: ${hireGate?.hint}`);
+assert(act(climb, content, "enlist").ok, "a banner-less Cell Leader can still enlist");
+assert(rankOf(climb, playerOf(climb)) === "leader" && playerOf(climb).faction === "ember_campus", "enlist keeps Cell Leader under the campus banner");
+assert(listActions(climb).find((a) => a.id === "hire")?.enabled, "enlisted Cell Leader can hire into the cell");
+climb.service.deeds = 48;
+const boss = climb.service.superiorId;
+climb.bonds[boss] = 72;
+const toOps = noteDeeds(climb, 0, "leader");
+assert(toOps.promoted?.to === "opschief" && rankOf(climb, playerOf(climb)) === "opschief", "deeds and trust promote Operations Chief");
+const resigned = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(resigned, "accept");
+act(resigned, content, "cultivate");
+assert(act(resigned, content, "enlist").ok, "member enlists before resigning");
+assert(act(resigned, content, "resign").ok, "resign remains an exit");
+assert(rankOf(resigned, playerOf(resigned)) === "free", "resign returns a Free Volunteer");
+
+const varied = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+const seenTasks = [varied.orders.current.task];
+for (let month = 0; month < 6; month++) {
+  const id = varied.orders.current.id;
+  while (varied.orders.current?.id === id) assert(act(varied, content, "end_week").ok, "month turns");
+  seenTasks.push(varied.orders.current.task);
+}
+assert(seenTasks[0] === "cultivate", "week 0 order stays the Cheyenne elevator");
+assert(new Set(seenTasks.slice(1)).size >= 3, `later months vary: ${seenTasks.join(",")}`);
+for (let i = 2; i < seenTasks.length; i++) {
+  assert(seenTasks[i] !== seenTasks[i - 1], `month ${i} repeated ${seenTasks[i]}`);
+}
+
+const rosterGate = createNewGame(content, { seed: 8, difficulty: "easy", name: "Casey Flint", background: "scout" });
+assert(act(rosterGate, content, "enlist").ok, "enlist joins a banner");
+assert(rankOf(rosterGate, playerOf(rosterGate)) === "member", "enlisted officer is a Cell Member");
+const rosterPal = createCustomOfficer(rosterGate, {
+  name: "Pal Test",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(rosterPal.ok, "roster friend");
+const memberBlocked = promoteLadder(rosterGate, rosterPal.id);
+assert(!memberBlocked.ok && /Cell Leader/.test(memberBlocked.message), `member cannot commission: ${memberBlocked.message}`);
+playerOf(rosterGate).status = "leader";
+const madeOfficer = promoteLadder(rosterGate, rosterPal.id);
+assert(madeOfficer.ok && madeOfficer.to === "officer", `leader commissions an officer: ${madeOfficer.message}`);
+const blockedGeneral = promoteLadder(rosterGate, rosterPal.id);
+assert(!blockedGeneral.ok && /Front Commander/.test(blockedGeneral.message), `leader cannot name a general: ${blockedGeneral.message}`);
+const bannerBench = createNewGame(content, { seed: 8, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(bannerBench, content, "raise_banner");
+const pal2 = createCustomOfficer(bannerBench, {
+  name: "Pal Two",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(promoteLadder(bannerBench, pal2.id).ok, "commander commissions an officer");
+assert(promoteLadder(bannerBench, pal2.id).to === "general", "commander names a general");
+
+const fed = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(fed, content, "raise_banner");
+let hunger = 0;
+let thinWeeks = 0;
+for (let w = 0; w < 34; w++) {
+  assert(act(fed, content, "end_week").ok, `food week ${fed.week}`);
+  if (/Hunger desertion/.test(fed.log[0]?.text || "")) hunger += 1;
+  if ((fed.food || 0) <= 3) thinWeeks += 1;
+}
+assert(hunger <= 2, `hunger desertions stay near the old economy: ${hunger}`);
+assert(thinWeeks < 8, `stores are not pinned at empty: ${thinWeeks} thin weeks, food ${fed.food}`);
+
+const tally = createNewGame(content, { seed: 6, difficulty: "normal", name: "Casey Flint", background: "scout" });
+for (let n = 0; n < 3; n++) {
+  assert(tally.orders.current?.status === "pending", `volunteer order ${n + 1}`);
+  respondToOrder(tally, "refuse");
+  if (n < 2) {
+    const target = tally.week + 4;
+    while (tally.week < target) assert(act(tally, content, "end_week").ok, "week after a volunteer refusal");
+  }
+}
+assert(!tally.log.some((l) => /keeping a tally/.test(l.text)), "a Free Volunteer refusal streak does not narrate a tally");
+assert(tally.orders.refusalsInRow === 0, "the refusal streak resets when it cannot demote");
+
+const oldSave = JSON.parse(serialize(createNewGame(content, { seed: 1, difficulty: "normal", name: "Casey Flint", background: "scout" })));
+oldSave.version = 2;
+const bumped = deserialize(oldSave);
+assert(bumped.version === 3 && JSON.parse(serialize(bumped)).version === 3, "loading a save rewrites it as version 3");
+assert(!/1985–89 kit only/.test(readFileSync(new URL("../js/career.js", import.meta.url), "utf8")), "order lines are not dev notes");
+console.log("ok promotion path, order variety, roster gate, food");
 
 console.log("ALL TESTS PASSED");

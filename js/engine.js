@@ -68,6 +68,7 @@ import {
   resolveOrderChoice,
   runPayroll,
   skimHarvest,
+  statusIndex,
   statusLabel,
   statusShort,
   syncGrade,
@@ -87,6 +88,7 @@ export {
   statusLabel,
   statusShort,
   normalizeStatus,
+  noteDeeds,
   orderLead,
   cadenceLead,
   payForGrade,
@@ -335,6 +337,7 @@ export function promoteLadder(state, officerId) {
   const p = playerOf(state);
   if (!p) return { ok: false, message: "No commander." };
   if (!p.faction) return { ok: false, message: "Raise a banner before promoting." };
+  const career = statusIndex(rankOf(state, p));
   const t = officerOf(state, officerId);
   if (!t || t.alive === false) return { ok: false, message: "No such person on the roster." };
   if (t.id === p.id) return { ok: false, message: "You are the commander. Promote a friend." };
@@ -342,6 +345,9 @@ export function promoteLadder(state, officerId) {
   const from = ladderRankOf(t);
   if (from === "general") return { ok: false, message: `${t.name} is already a general.` };
   if (from === "player") {
+    if (career < statusIndex("leader")) {
+      return { ok: false, message: "Needs Cell Leader to commission an officer." };
+    }
     if (t.region !== p.region) {
       const city = regionOf(state, p.region)?.short || "your city";
       return { ok: false, message: `${t.name} must stand in ${city} to take a commission.` };
@@ -365,6 +371,9 @@ export function promoteLadder(state, officerId) {
     };
   }
   if (from === "officer" && t.faction === p.faction) {
+    if (career < statusIndex("commander")) {
+      return { ok: false, message: "Needs Front Commander to name a general." };
+    }
     const gens = playerCourt(state).filter((o) => o.isGeneral);
     if (gens.length >= MAX_GENERALS) {
       return { ok: false, message: `Five generals already. ${t.name} stays an officer.` };
@@ -862,6 +871,7 @@ export function deserialize(raw) {
     if (!f.bio) f.bio = "";
     if (!f.personalityLean) f.personalityLean = "loyalist";
   });
+  state.version = GAME_VERSION;
   return state;
 }
 
@@ -1304,6 +1314,7 @@ export function listActions(state) {
     monthTask: state.service?.monthTask || null,
     order: state.orders?.current || null,
     locked: state.orders?.locked || [],
+    hasFaction: !!p.faction,
   };
   actions.forEach((action) => {
     if (action.id === "end_week") return;
@@ -1742,29 +1753,36 @@ function doRest(state) {
 
 function doEnlist(state) {
   const p = playerOf(state);
-  if (p.faction || rankOf(state, p) !== "free") return { ok: false, message: "Only a Free Volunteer with no banner can enlist." };
+  const rank = rankOf(state, p);
+  if (p.faction) return { ok: false, message: "You already serve a banner." };
+  if (rank === "commander" || rank === "governor" || rank === "chair") {
+    return { ok: false, message: "A Front Commander keeps their own banner." };
+  }
   const fac = factionOf(state, "ember_campus");
   if (!fac) return { ok: false, message: "No banner is taking names." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  const wasFree = rank === "free";
   p.faction = "ember_campus";
-  p.status = "member";
+  if (wasFree) p.status = "member";
   p.loyalty = Math.max(p.loyalty || 50, 60);
   const here = currentRegion(state);
-  const msg = `${p.name} enlists under ${fac.short} as a Cell Member. Home stays ${here.short}.`;
+  const msg = wasFree
+    ? `${p.name} enlists under ${fac.short} as a Cell Member. Home stays ${here.short}.`
+    : `${p.name} enlists under ${fac.short}. Rank stays ${statusLabel(rank)}. Home stays ${here.short}.`;
   pushLog(state, msg, "alert");
   waiveOrder(state, "The volunteer ask closes. Your new cell will write the next one.");
   openMonthlyOrder(state);
-  return {
-    ok: true,
-    message: msg,
-    promoted: {
+  const res = { ok: true, message: msg };
+  if (wasFree) {
+    res.promoted = {
       from: "free",
       to: "member",
       tab: "domestic",
       unlocked: "Domestic",
-      message: "Free Volunteer → Cell Member under the Denver campus. Domestic opens — one task a month. You can still resign and raise your own banner.",
-    },
-  };
+      message: "Free Volunteer → Cell Member under the Denver campus. Domestic opens — one task a month. Deeds and trust can still raise you to Cell Leader without a banner of your own.",
+    };
+  }
+  return res;
 }
 
 function doResign(state) {
