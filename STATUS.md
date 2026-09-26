@@ -2,7 +2,65 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-23 — Liberation fight and mission desks. The six locked inland ids tint the mission board and a liberation fight the same way siege, yard, field, and court already do. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–9 (through Asia and Oceania). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas stays off the live map. A `?demo=look` frame or `?atlas=1` loads it. It is occupied and not marchable.
+
+## World atlas (Region 9 — Asia and Oceania)
+
+Forty-nine countries, all occupied. This is the last sheet. India is the end-1987 map: Mizoram, Arunachal Pradesh, and Goa are states, and Daman and Diu is a union territory. Pakistan includes FATA, the Northern Areas, and Azad Kashmir as the Line of Control. China keeps Hainan inside Guangdong for a Winter 1985 start and names Tibet the Xizang autonomous region. Hong Kong is British and Macau is Portuguese. Taiwan is the Republic of China. Mongolia is the Soviet-aligned MPR. North and South Korea are atlas countries beside the existing `far_korea` and `kr_inland` desks, which are not duplicated. Japan has 47 prefectures, and Okinawa marks the US bases. Burma keeps that name. Kampuchea is the PRK. East Timor is an Indonesian province. Palau is still the Trust Territory. The fifteen union republics carry a USSR sovereign, and the colonies carry theirs. The whole atlas is one connected component: 216 political units (176 sovereign, 40 dependencies), 3,154 subdivisions, 3,741 territories, 1,169 fictional officers, and 4,355 unique edges (3,721 road, 116 rail, 493 sea, 21 trail, 4 air), 554 of them across a border. Nothing new is playable.
+
+`/?demo=look&view=world` shows the complete globe. `/?demo=look&view=asia` frames Pakistan through Japan and Indonesia. Oceania stays on the world view. `/?demo=look&view=ussr` frames the fifteen union republics and labels their capitals. The WORLD button, wheel-out, and week-0 caption stay on the campaign map. Week 0 is still Cheyenne.
+
+## World atlas (Region 8 — sub-Saharan Africa)
+
+Forty-six countries, all occupied. Ethiopia is fourteen Derg provinces, and Eritrea is a province, not a country. Somalia is eighteen regions, still undivided. Zaire keeps that name, with Kivu unsplit and Shaba still Shaba. Namibia is not a country: twelve South West Africa districts stay under South African administration, and Walvis Bay is a Cape Province city. South Africa is four provinces, and the ten homelands are zones. Zimbabwe is not Rhodesia. Burkina Faso is the thirty provinces of 1984, not Upper Volta. Angola and Mozambique mark their civil-war front provinces and stay dormant. Madagascar and the island states are on the sheet, and Réunion and Mayotte are French. The Cape route, the Mozambique Channel, the Gulf of Guinea, and the Horn and Red Sea tie-in are sea lanes. TAZARA and the Benguela railway are rail. North Africa and Sudan meet the sheet on real crossings, including the Trans-Sahara road and the Aouzou trail. Rosters stay scaled and fictional. Nothing new is playable.
+
+`/?demo=look&view=world` shows the atlas through the Cape and Madagascar. `/?demo=look&view=africa` frames the Sahara crossings through the Cape. `/?demo=look&view=mideast`, `/?demo=look&view=ussr`, and `/?demo=look&view=europe` are unchanged. Close campaign zoom still does not draw the atlas. Week 0 is still Cheyenne.
+
+## World atlas (Region 7 — Middle East and North Africa)
+
+Twenty-two countries, all occupied. North Yemen and South Yemen are separate. Iran and Iraq mark their front provinces and stay dormant; the front itself is a trail, not a highway. Lebanon keeps the Israeli security zone as a zone. Israel holds the West Bank, Gaza, and the Golan as occupation zones. Sinai is Egyptian. Western Sahara is four Moroccan provinces. Sudan is nine regions, still undivided. Afghanistan is a Soviet-occupied republic, tied to Termez by the 1982 Friendship Bridge, with the Salang tunnel inside the country. The Suez Canal, Bab-el-Mandeb, Hormuz, the Red Sea, the Persian Gulf, and the Strait of Gibraltar are sea lanes. Turkey and the southern SSRs meet the region on real crossings. Kushka is the Turkmen spur. Rosters stay scaled and fictional. Nothing new is playable.
+
+`/?demo=look&view=world` shows the atlas through Afghanistan and the two Yemens. `/?demo=look&view=mideast` frames Morocco through Afghanistan. `/?demo=look&view=ussr` and `/?demo=look&view=europe` are unchanged. Close campaign zoom still does not draw the atlas. Week 0 is still Cheyenne.
+
+## World atlas (Region 6 — Eastern Europe and the USSR)
+
+Poland's 49 voivodeships meet the GDR at Frankfurt (Oder), Görlitz, and Szczecin. Czechoslovakia is still one country, with the Czech and Slovak republics as groups on its kraje. Hungary is 19 megye plus Budapest. Romania is 40 județe plus Bucharest, with no Ilfov. Bulgaria is the nine oblasti of 1987, including Mikhailovgrad. Yugoslavia is the six republics plus Vojvodina and Kosovo, seated at regional capitals rather than every opština. Albania is 26 districts. The fifteen SSRs are separate countries. The RSFSR is fully subdivided, including the Far East, Kamchatka, Chukotka (still under Magadan), Sakhalin, and the Kurils. Crimea stays in Ukraine. The Trans-Siberian and the BAM are roads. The Caucasus uses the Military Roads, and Central Asia uses the Pamir Highway, the Anzob Pass, and the Kordai pass. Baltic, Black Sea, and Caspian lanes are sea. The Bering Strait is a sea lane to Nome. Rosters stay scaled: the RSFSR has 12 fictional officers, not 88. Nothing new is playable.
+
+`/?demo=look&view=world` shows the atlas through Chukotka. `/?demo=look&view=ussr` frames Kaliningrad through the Far East. `/?demo=look&view=europe` still frames Western Europe. Close campaign zoom still does not draw the atlas.
+
+## World atlas (Region 5 — Western Europe)
+
+The United Kingdom (1974 counties, 1975 Scottish regions, six Northern Ireland counties), Ireland's 26 counties, the Crown dependencies, France's 96 departments in 22 regions with Corsica, Monaco, Andorra, the Benelux, West Germany's ten Länder, the GDR's fifteen Bezirke, and West Berlin as an enclave with three air corridors and the transit roads. Switzerland, Austria, Liechtenstein, Italy with Sicily and Sardinia, San Marino, Vatican City, Spain with the Balearics, Canaries, Ceuta, and Melilla, Portugal with the Azores and Madeira, Denmark with Greenland and the Faroes, Norway with Svalbard, Sweden, Finland, Iceland, Malta, divided Cyprus, Greece's nomoi, and Turkey's 67 provinces. The Channel, the Great Belt, and the Øresund are ferries. The Little Belt and the Boğaziçi Bridge are roads. The Bosporus is a sea lane. Alpine and Pyrenean crossings are real passes. The roads east into Czechoslovakia, Hungary, and Yugoslavia are on the Region 6 sheet.
+
+`/?demo=look&view=world` shows the atlas, now including Europe. `/?demo=look&view=europe` frames the continent. `/?demo=look&view=atlas&state=CL-VS&city=cl.los_andes` still frames the Andes. Close campaign zoom still does not draw the atlas.
+
+## World atlas (Region 4 — South America)
+
+Colombia (departments, Bogotá Distrito Especial, intendancies, and comisarías), Venezuela (20 states, the Federal District, Amazonas and Delta Amacuro still territories), Guyana, Suriname, French Guiana, Ecuador including the Galápagos by sea, Peru, Bolivia, Brazil (23 states, the territories of Amapá, Roraima, and Fernando de Noronha, and the Distrito Federal; Tocantins is not a state until 1988), Paraguay, Uruguay, Argentina (22 provinces, Tierra del Fuego still a national territory, Capital Federal), Chile (13 regions from 1974), and the Falklands as British-held and sea-only. The Darién stays a gap: Colón–Cartagena is a sea lane. Andes roads cross only at real passes, including Cristo Redentor. The Amazon is a river.
+
+Mexico is now 96 cities and 30 fictional SEDENA/SEMAR officers. Officer posts scale with the country: a one-island dependency keeps two, Belize keeps three, Cuba keeps ten. The old five-officer staff on every Caribbean rock is gone.
+
+`/?demo=look&view=world` shows the Americas. `/?demo=look&view=atlas&state=CL-VS&city=cl.los_andes` frames the Andes at Cristo Redentor. Close campaign zoom still does not draw the atlas.
+
+## World atlas (Region 3 — Mexico, Central America, the Caribbean)
+
+Mexico is 31 states and the Federal District. Central America is the 1980s departments and provinces: Guatemala 22, Belize 6, Honduras 18, El Salvador 14, Nicaragua with Zelaya still one department, Costa Rica 7, Panama 9 plus San Blas and the Canal Area under the treaty transition. The Caribbean is Cuba’s 1976 provinces plus Isla de la Juventud, Haiti’s 9 departments, the Dominican provinces that existed by 1985, Jamaica’s 14 parishes, major Puerto Rican municipios, the principal Bahamas, and the Lesser Antilles through Grenada and Trinidad and Tobago. The Pan-American Highway ends at Yaviza. US–Mexico gates are the real bridges. Florida–Cuba is the existing Gulf Sealift desk, by sea.
+
+## World atlas (Region 2 — Canada)
+
+`data/world/regions/ca.js` is Canada in 1985–89: **10 provinces**, **Yukon**, and the **Northwest Territories** (the eastern Arctic is still NWT; Nunavut is not a separate territory yet). **68** cities, Trans-Canada and CP/CN links, ferries for Vancouver Island, Prince Edward Island, and Newfoundland, and **13** fictional Canadian Forces officers (English and French names). Eleven real border crossings are stitched in `data/world/borders.js` (Peace Arch, Sweetgrass, Pembina, the Sault, Ambassador Bridge, Peace Bridge, Champlain, Houlton, the Alaska Highway, the Klondike Highway, and the Juneau–Prince Rupert ferry).
+
+`/?demo=look&view=world` shows the United States and Canada. `/?demo=look&view=atlas&state=AB&city=ca.calgary` frames Alberta. Close campaign zoom still does not draw the atlas.
+
+## World atlas (Region 1)
+
+`data/world/resources.js` is the yield list. `data/world/regions/us.js` is the United States: **50 states + DC**, **157** cities at real lat/long (the long interstate hops, the Missouri lead belt, and Attu are filled in), road/rail/sea links, and **44** fictional officers (continuity government, occupation prefecture, resistance net, and regional notables). `node tests/world-validate.mjs` checks subdivision, bounding boxes, symmetric links, one connected graph per country, and yields. Sources: `docs/world-data-sources.md`.
+
+World button (or `/?demo=look&view=world`) shows state capitals and the link net on the globe, including Alaska and Hawaii. `/?demo=look&view=atlas&state=FL&city=miami` frames one state with city, road, and yield labels. A second click on a capital frames that state. Close campaign zoom (the default) does not draw the atlas, so Cheyenne stays the week-0 map.
+
+Officers use the campaign personality ids and WAR/INT/POL/CHR, and they stay off the week-0 actor list (`dormant`).
+
+**Last prior checkpoint:** 2026-09-23 — Liberation fight and mission desks. The six locked inland ids tint the mission board and a liberation fight the same way siege, yard, field, and court already do. No new map nodes, roads, leaps, or terrain paint. Inland ids stay `kamchatka`, `siberia`, `havana`, `managua`, `sponsor_lane`, `kr_inland`. Week 0 is still Cheyenne. Phase names stay on the Banners dock. Arizona stays paint-only.
 
 ## Liberation fight and mission desk
 

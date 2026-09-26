@@ -24,6 +24,57 @@ import {
   terrainSize,
 } from "./terrain.js";
 import { WORLD_LAND } from "./world-washes.js";
+
+let atlasApi = null;
+let atlasLoading = null;
+let hoverWorldSuppressed = false;
+let deskClaims = [];
+
+function atlasMode(mapView) {
+  if (!atlasApi) return "off";
+  return atlasApi.atlasMode(mapView);
+}
+function atlasSubdivision(code) {
+  return atlasApi ? atlasApi.atlasSubdivision(code) : null;
+}
+function atlasTerritory(id) {
+  return atlasApi ? atlasApi.atlasTerritory(id) : null;
+}
+function drawAtlasLabels(ctx, opts) {
+  if (!atlasApi) return;
+  atlasApi.drawAtlasLabels(ctx, opts);
+}
+function drawWorldAtlas(ctx, opts) {
+  if (!atlasApi) return;
+  atlasApi.drawWorldAtlas(ctx, opts);
+}
+function pickAtlasCity(x, y, mapView, project) {
+  if (!atlasApi) return null;
+  return atlasApi.pickAtlasCity(x, y, mapView, project);
+}
+function drawAtlasHover(ctx, opts) {
+  if (!atlasApi) return;
+  atlasApi.drawAtlasHover(ctx, opts);
+}
+function loadedWorld() {
+  return atlasApi ? atlasApi.loadedCatalog() : null;
+}
+function atlasHoverId() {
+  return hoverWorldSuppressed ? null : hoverWorld;
+}
+
+/** First atlas view loads the sheets. The live game never calls this. */
+function ensureAtlas() {
+  if (atlasApi) return Promise.resolve(atlasApi);
+  if (!atlasLoading) {
+    atlasLoading = import("./world-atlas.js").then(async (mod) => {
+      await mod.ensureWorldCatalog();
+      atlasApi = mod;
+      return mod;
+    });
+  }
+  return atlasLoading;
+}
 import {
   createNewGame,
   listActions,
@@ -92,6 +143,8 @@ const SAVE_KEY = "northern-front-v01";
 let content;
 let state;
 let selectedRegion = "bethel";
+let selectedWorld = null;
+let hoverWorld = null;
 let hoverRegion = null;
 let ladderNotice = "";
 /** Presentation-only court/officers desk. Not saved and not a map node. */
@@ -484,14 +537,33 @@ export async function boot(loaded) {
     if (!battleFx) playerOf(state).region = "cheyenne";
     render();
     const view = params.get("view");
-    if (view === "world") frameWorld();
+    const atlasView = view === "world" || view === "europe" || view === "ussr" || view === "mideast" || view === "africa" || view === "asia" || view === "atlas";
+    if (atlasView || params.get("atlas") === "1") await ensureAtlas();
+    if (params.get("atlas") === "1") mapView.atlasDebug = true;
+    if (view === "world") frameAtlasWorld();
+    else if (view === "europe") frameEurope();
+    else if (view === "ussr") frameUssr();
+    else if (view === "mideast") frameMideast();
+    else if (view === "africa") frameAfrica();
+    else if (view === "asia") frameAsia();
+    else if (view === "atlas") {
+      const city = params.get("city");
+      if (city) {
+        if (city.includes(".")) selectedWorld = city;
+        else {
+          const hit = (loadedWorld()?.regions || []).flatMap((r) => r.territories).find((t) => t.id.endsWith(`.${city}`));
+          selectedWorld = hit ? hit.id : `us.${city}`;
+        }
+      }
+      frameAtlasState((params.get("state") || "FL").toUpperCase());
+    }
     else if (view === "near") frameNear();
     else if (view === "ca") frameCa();
     else if (view === "gulf") frameGulf();
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
-    if (!battleFx) pulseTravel("cheyenne", "denver", { loop: true });
+    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe" && view !== "ussr" && view !== "mideast" && view !== "africa" && view !== "asia") pulseTravel("cheyenne", "denver", { loop: true });
     frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -573,6 +645,10 @@ export async function boot(loaded) {
     openDemoFight();
     afterFonts();
     return;
+  }
+  if (params.get("atlas") === "1") {
+    await ensureAtlas();
+    mapView.atlasDebug = true;
   }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
@@ -1780,8 +1856,21 @@ function cityHtml() {
         .filter((h) => h.regionId === r.id)
         .map((h) => `<p class="rumor">${esc(h.rumor)}</p>`)
         .join("")}
+      ${atlasNote()}
     </div>
   `;
+}
+
+function atlasNote() {
+  const t = atlasTerritory(selectedWorld);
+  if (!t) return "";
+  const sub = atlasSubdivision(t.subdivision);
+  const posted = (content?.world?.regions || [])
+    .flatMap((region) => region.officers || [])
+    .filter((o) => o.region === t.id);
+  const who = posted.map((o) => `${o.rank} ${o.name}`).join(", ");
+  return `<p class="minus">Atlas · ${esc(sub?.name || t.subdivision)} · ${esc(t.name)}. Occupied, not on the week-0 roads. ${esc((t.yields || []).join(", "))}.${who ? ` ${esc(who)}.` : ""}</p>
+    <p><button type="button" data-frame-atlas="${esc(t.subdivision)}">Frame ${esc(sub?.name || t.subdivision)}</button></p>`;
 }
 
 function weekReportHtml(report) {
@@ -2297,11 +2386,80 @@ function frameBox(x0, y0, x1, y1) {
 function clearForeignFrame() {
   mapView.pacific = false;
   mapView.focus = null;
+  mapView.atlas = null;
+}
+
+function frameAtlasState(code) {
+  const sub = atlasSubdivision(code);
+  if (!sub) return;
+  clearForeignFrame();
+  mapView.atlas = code;
+  if (code === "MX-DIF") {
+    frameLonLat(-101.6, 20.6, -96.8, 18.2, 0.86);
+    return;
+  }
+  if (code === "CL-VS") {
+    frameLonLat(-71.9, -32.4, -68.4, -33.85, 0.82);
+    return;
+  }
+  const b = sub.bbox;
+  frameLonLat(b.minLon, b.maxLat, b.maxLon, b.minLat, 0.78);
+}
+
+function frameEurope() {
+  clearForeignFrame();
+  mapView.atlas = "eu";
+  frameLonLat(-11.5, 66.2, 40.5, 35.2, 0.9);
+}
+
+/** The fifteen union republics, from the Baltic to Alma-Ata. The Far East stays on the world view. */
+function frameUssr() {
+  clearForeignFrame();
+  mapView.atlas = "su";
+  frameLonLat(19, 70, 90, 35.5, 0.92);
+}
+
+/** Morocco through Afghanistan, including undivided Sudan and the two Yemens. */
+function frameMideast() {
+  clearForeignFrame();
+  mapView.atlas = "me";
+  frameLonLat(-18, 43.5, 75, 2.5, 0.9);
+}
+
+/** Cape Verde through the Horn, the Cape, Madagascar, and the island states. */
+function frameAfrica() {
+  clearForeignFrame();
+  mapView.atlas = "ssa";
+  frameLonLat(-26, 28, 65, -36, 0.9);
+}
+
+/** Pakistan through Japan and Indonesia. Oceania stays on the world view. */
+function frameAsia() {
+  clearForeignFrame();
+  mapView.atlas = "asia";
+  frameLonLat(60, 55, 155, -12, 0.9);
 }
 
 function frameWorld() {
   clearForeignFrame();
   const [xWest, yNorth] = projectLL(-175, 78);
+  const [xEast, ySouth] = projectLL(185, -56);
+  const minX = Math.min(xWest, xEast) - 30;
+  const maxX = Math.max(xWest, xEast) + 30;
+  const minY = Math.min(yNorth, ySouth) - 24;
+  const maxY = Math.max(yNorth, ySouth) + 24;
+  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * 0.98;
+  mapView.z = z;
+  mapView.x = (1000 - (minX + maxX) * z) / 2;
+  mapView.y = (620 - (minY + maxY) * z) / 2;
+  drawMap();
+}
+
+/** Demo world sheet. The WORLD button stays on frameWorld so the live map matches the base game. */
+function frameAtlasWorld() {
+  clearForeignFrame();
+  mapView.atlas = "world";
+  const [xWest, yNorth] = projectLL(-192, 84);
   const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
   const maxX = Math.max(xWest, xEast) + 30;
@@ -2339,10 +2497,10 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   const maxX = Math.max(xA, xB);
   const minY = Math.min(yA, yB);
   const maxY = Math.max(yA, yB);
-  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
-  mapView.z = Math.max(0.16, Math.min(3.2, z));
-  mapView.x = (1000 - (minX + maxX) * z) / 2;
-  mapView.y = (620 - (minY + maxY) * z) / 2;
+  const fit = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
+  mapView.z = Math.max(0.16, Math.min(3.2, fit));
+  mapView.x = (1000 - (minX + maxX) * mapView.z) / 2;
+  mapView.y = (620 - (minY + maxY) * mapView.z) / 2;
   drawMap();
 }
 
@@ -2416,10 +2574,36 @@ function hitPoly(poly, x, y) {
   return inside;
 }
 
+function mapSpacePoint(clientX, clientY, canvas) {
+  const [sx, sy] = canvasPoint({ clientX, clientY }, canvas);
+  return [(sx - mapView.x) / mapView.z, (sy - mapView.y) / mapView.z];
+}
+
+function worldAt(clientX, clientY, canvas) {
+  if (atlasMode(mapView) === "off") return null;
+  const [x, y] = mapSpacePoint(clientX, clientY, canvas);
+  return pickAtlasCity(x, y, mapView, projectLL);
+}
+
 function onMapClick(e) {
   if (!state) return;
   const r = regionAt(e.clientX, e.clientY, $("map"));
-  if (!r) return;
+  const world = worldAt(e.clientX, e.clientY, $("map"));
+  if (world && !(r && world.campaignId && r.id === world.campaignId)) {
+    if (selectedWorld === world.id) frameAtlasState(world.subdivision);
+    else selectedWorld = world.id;
+    render();
+    return;
+  }
+  if (selectedWorld) selectedWorld = null;
+  if (!r) {
+    if (hoverWorld) {
+      hoverWorld = null;
+      drawMap();
+    }
+    render();
+    return;
+  }
   selectedRegion = r.id;
   if (coachOn && !$("coach").hidden && COACH_STEPS[coachStep]?.id === "city") {
     coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
@@ -2430,11 +2614,28 @@ function onMapClick(e) {
 
 function onMapMove(e) {
   if (!state) return;
+  const world = worldAt(e.clientX, e.clientY, $("map"));
   const r = regionAt(e.clientX, e.clientY, $("map"));
-  const id = r ? r.id : null;
-  $("map").style.cursor = r ? "pointer" : "crosshair";
-  if (id !== hoverRegion) {
+  const worldId = world && !(r && world.campaignId && r.id === world.campaignId) ? world.id : null;
+  const id = worldId ? null : r ? r.id : null;
+  $("map").style.cursor = worldId || r ? "pointer" : "crosshair";
+  if (id !== hoverRegion || worldId !== hoverWorld) {
+    const hoverOnly =
+      atlasApi &&
+      atlasMode(mapView) !== "off" &&
+      id === hoverRegion &&
+      drawMap.snap &&
+      drawMap.still === atlasStillKey();
     hoverRegion = id;
+    hoverWorld = worldId;
+    if (hoverOnly) {
+      const canvas = $("map");
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(drawMap.snap, 0, 0);
+      if (hoverWorld) paintAtlasHover(ctx);
+      return;
+    }
     drawMap();
   }
 }
@@ -2466,7 +2667,15 @@ function renderMapCaption() {
   const hold = row ? `${row.held}/${row.need} ★` : "";
   const { westN } = arcBoard(state);
   const beat = camp.nationalLeader ? "national leader" : `west ${westN}/8`;
-  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${beat} · ${route} · phase ${camp.phase}`;
+  const mode = atlasMode(mapView);
+  const atlasBit = mode === "world"
+    ? " · atlas occupied"
+    : mode === "state"
+      ? ` · atlas ${mapView.atlas}`
+      : "";
+  const picked = atlasTerritory(selectedWorld);
+  const pickedBit = picked ? ` · ${picked.short}` : "";
+  cap.textContent = `${state._season?.name || ""} ${calendarYear(state.week)} · ${r?.stateCode || "—"} → ${r?.short || "?"} · ${hold} · ${beat} · ${route} · phase ${camp.phase}${atlasBit}${pickedBit}`;
 }
 
 function cityXY(r) {
@@ -2926,8 +3135,11 @@ function drawGlobe(ctx) {
       ctx.stroke();
     });
   });
-  drawWorldStrikes(ctx);
-  if (!mapView.focus) {
+  // The USSR frame is an atlas close-up. The schematic Arctic approach and the
+  // locked far-shore desks stay on the world overview, where Europe's tighter zoom already hides them.
+  const framedAtlas = (mapView.atlas === "su" || mapView.atlas === "me" || mapView.atlas === "ssa" || mapView.atlas === "asia") && !mapView.focus;
+  if (!framedAtlas) drawWorldStrikes(ctx);
+  if (!mapView.focus && !framedAtlas) {
     drawWorldCorridors(ctx);
     drawWorldDesks(ctx);
   }
@@ -3087,7 +3299,15 @@ function drawDeskPlate(ctx, x, y, boxW, boxH, label) {
   ctx.fillText(label, x + 4, y + boxH / 2);
 }
 
+const CAMPAIGN_DESK_IDS = new Set(["gulf_passage", "far_cuba", "far_nicaragua", "far_korea"]);
+
+function claimCampaignDesk(id, x, y, w, h) {
+  if (!CAMPAIGN_DESK_IDS.has(id)) return;
+  deskClaims.push({ x: x - 4, y: y - 4, w: w + 8, h: h + 8 });
+}
+
 function drawWorldDesks(ctx) {
+  deskClaims = [];
   if (mapView.z > 0.92 && !mapView.focus) return;
   const near = nearLabels();
   const focus = mapView.focus;
@@ -3127,6 +3347,7 @@ function drawWorldDesks(ctx) {
         [x + r + 16 / mapView.z, y - boxH / 2],
         [x - boxW - r - 16 / mapView.z, y + r],
       ]);
+      claimCampaignDesk(d.id, bx, by, boxW, boxH);
       drawDeskPlate(ctx, bx, by, boxW, boxH, label);
       return;
     }
@@ -3194,13 +3415,19 @@ function drawWorldDesks(ctx) {
         [x + r + 16 / mapView.z, y - boxH / 2],
       ];
       const [bx, by] = placeNearPlate(boxW, boxH, prefs);
+      claimCampaignDesk(d.id, bx, by, boxW, boxH);
       drawDeskPlate(ctx, bx, by, boxW, boxH, label);
       return;
     }
     const lx = x + r + 4 / mapView.z;
     const ly = y;
+    const boxX = lx - 2;
+    const boxY = ly - fontPx * 0.65;
+    const boxW2 = tw + pad;
+    const boxH2 = fontPx * 1.3;
+    claimCampaignDesk(d.id, boxX, boxY, boxW2, boxH2);
     ctx.fillStyle = "#000018";
-    ctx.fillRect(lx - 2, ly - fontPx * 0.65, tw + pad, fontPx * 1.3);
+    ctx.fillRect(boxX, boxY, boxW2, boxH2);
     ctx.fillStyle = "#f8d800";
     ctx.fillText(label, lx, ly);
   });
@@ -3537,8 +3764,39 @@ function theaterLandPlate() {
   return c;
 }
 
+function atlasStillKey() {
+  return [
+    mapView.x,
+    mapView.y,
+    mapView.z,
+    mapView.atlas || "",
+    mapView.focus || "",
+    mapView.pacific ? 1 : 0,
+    selectedRegion || "",
+    selectedWorld || "",
+    hoverRegion || "",
+    state?.week ?? "",
+    mapFx ? mapFx.kind : "",
+  ].join("|");
+}
+
+function paintAtlasHover(ctx) {
+  ctx.save();
+  ctx.setTransform(mapView.z, 0, 0, mapView.z, mapView.x, mapView.y);
+  drawAtlasHover(ctx, {
+    mapView,
+    project: projectLL,
+    hoverId: hoverWorld,
+    view: mapViewRect(),
+  });
+  ctx.restore();
+}
+
 function drawMap() {
   labelClaims = [];
+  deskClaims = [];
+  const snapAtlas = !!(atlasApi && atlasMode(mapView) !== "off");
+  hoverWorldSuppressed = snapAtlas && !!hoverWorld;
   const canvas = $("map");
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
@@ -3566,32 +3824,71 @@ function drawMap() {
   ctx.imageSmoothingEnabled = false;
   drawGlobe(ctx);
   const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering" || mapView.focus === "korea";
-  ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
+  // Geographic close-ups. The schematic campaign plate (Cheyenne and the west
+  // bloc) would otherwise sit on the Atlantic edge of the Middle East or Africa.
+  const atlasNow = atlasMode(mapView);
+  const atlasCloseup = (atlasNow === "state" || (atlasNow === "world" && mapView.atlas !== "world")) && !mapView.focus;
+  if (!atlasCloseup) ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
   if (mapView.focus) {
     drawWorldCorridors(ctx);
     drawWorldDesks(ctx);
   }
-  ctx.imageSmoothingEnabled = false;
-  mapRoads(painted).forEach((rd) => {
-    const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
-    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
-    drawPixelRoadFull(ctx, rd.a, rd.b, on);
+  drawWorldAtlas(ctx, {
+    mapView,
+    project: projectLL,
+    campaignPoints: painted.map((r) => {
+      const [x, y] = cityXY(r);
+      return { x, y };
+    }),
+    selectedId: selectedWorld,
+    hoverId: atlasHoverId(),
   });
-  drawCampaignRoads(ctx);
-  drawStallFront(ctx);
-  drawInvasionAxes(ctx);
-  drawNukeScars(ctx);
-  if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
-    const now = performance.now();
-    const dur = mapFx.duration || 2400;
-    let t = (now - mapFx.t0) / dur;
-    t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
-    drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
+  ctx.imageSmoothingEnabled = false;
+  if (!atlasCloseup) {
+    mapRoads(painted).forEach((rd) => {
+      const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
+      const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
+      drawPixelRoadFull(ctx, rd.a, rd.b, on);
+    });
+    drawCampaignRoads(ctx);
+    drawStallFront(ctx);
+    drawInvasionAxes(ctx);
+    drawNukeScars(ctx);
+    if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
+      const now = performance.now();
+      const dur = mapFx.duration || 2400;
+      let t = (now - mapFx.t0) / dur;
+      t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
+      drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
+    }
+    painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
+    drawStateLabels(ctx);
+    painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
   }
-  painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
-  drawStateLabels(ctx);
-  painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
+  drawAtlasLabels(ctx, {
+    mapView,
+    project: projectLL,
+    selectedId: selectedWorld,
+    hoverId: atlasHoverId(),
+    view: mapViewRect(),
+    blocked: deskClaims,
+  });
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (snapAtlas) {
+    if (!drawMap.snap || drawMap.snap.width !== canvas.width || drawMap.snap.height !== canvas.height) {
+      drawMap.snap = document.createElement("canvas");
+      drawMap.snap.width = canvas.width;
+      drawMap.snap.height = canvas.height;
+    }
+    drawMap.snap.getContext("2d").drawImage(canvas, 0, 0);
+    drawMap.still = atlasStillKey();
+    hoverWorldSuppressed = false;
+    if (hoverWorld) paintAtlasHover(ctx);
+  } else {
+    hoverWorldSuppressed = false;
+    drawMap.snap = null;
+    drawMap.still = "";
+  }
 }
 
 function drawCityMarkHi(ctx, r, selected) {
@@ -4753,6 +5050,9 @@ function refreshCreator() {
 }
 
 function wireAfterRender() {
+  document.querySelectorAll("[data-frame-atlas]").forEach((btn) => {
+    btn.onclick = () => frameAtlasState(btn.getAttribute("data-frame-atlas"));
+  });
   const add = document.getElementById("c-add");
   if (add) {
     refreshCreator();
