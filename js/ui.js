@@ -3682,7 +3682,10 @@ function drawMap() {
   ctx.imageSmoothingEnabled = false;
   drawGlobe(ctx);
   const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering" || mapView.focus === "korea";
-  ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
+  // The Middle East frame is a geographic close-up. The schematic campaign plate
+  // (Cheyenne and the west bloc) would otherwise sit on the Atlantic edge.
+  const mideastFrame = mapView.atlas === "me" && !mapView.focus;
+  if (!mideastFrame) ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
   if (mapView.focus) {
     drawWorldCorridors(ctx);
     drawWorldDesks(ctx);
@@ -3698,25 +3701,27 @@ function drawMap() {
     hoverId: hoverWorld,
   });
   ctx.imageSmoothingEnabled = false;
-  mapRoads(painted).forEach((rd) => {
-    const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
-    const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
-    drawPixelRoadFull(ctx, rd.a, rd.b, on);
-  });
-  drawCampaignRoads(ctx);
-  drawStallFront(ctx);
-  drawInvasionAxes(ctx);
-  drawNukeScars(ctx);
-  if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
-    const now = performance.now();
-    const dur = mapFx.duration || 2400;
-    let t = (now - mapFx.t0) / dur;
-    t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
-    drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
+  if (!mideastFrame) {
+    mapRoads(painted).forEach((rd) => {
+      const pulse = mapFx?.kind === "travel" && sameRoad(rd.a, rd.b, mapFx.a, mapFx.b);
+      const on = pulse && Math.floor((performance.now() - mapFx.t0) / 420) % 2 === 0;
+      drawPixelRoadFull(ctx, rd.a, rd.b, on);
+    });
+    drawCampaignRoads(ctx);
+    drawStallFront(ctx);
+    drawInvasionAxes(ctx);
+    drawNukeScars(ctx);
+    if (mapFx?.kind === "travel" && mapFx.a && mapFx.b) {
+      const now = performance.now();
+      const dur = mapFx.duration || 2400;
+      let t = (now - mapFx.t0) / dur;
+      t = mapFx.loop ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
+      drawTravelConvoy(ctx, mapFx.a, mapFx.b, t, now, 2);
+    }
+    painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
+    drawStateLabels(ctx);
+    painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
   }
-  painted.forEach((r) => drawCityMarkHi(ctx, r, r.id === selectedRegion));
-  drawStateLabels(ctx);
-  painted.forEach((r) => drawCityPlate(ctx, r, r.id === selectedRegion));
   drawAtlasLabels(ctx, {
     mapView,
     project: projectLL,
