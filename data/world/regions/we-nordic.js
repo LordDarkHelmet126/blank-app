@@ -1987,7 +1987,7 @@ export const FINLAND_REGION = land({
   name: "Finland",
   country: "FI",
   bbox: {"minLon": 18.54, "maxLon": 31.16, "minLat": 58.7, "maxLat": 70.31},
-  notes: "Atlas only. Twelve lääni, the division used until 1997, including Åland. Åland is a ferry to Turku and to Stockholm. No road is drawn to the Soviet Union. Occupied and off the week-0 march.",
+  notes: "Atlas only. Twelve lääni, the division used until 1997, including Åland. Åland is a ferry to Turku and to Stockholm. Vaalimaa, Niirala, and Raja-Jooseppi are the roads into the RSFSR, and Helsinki has ferries to Tallinn and Leningrad. Occupied and off the week-0 march.",
   defaultBiome: "boreal",
   climate: {"_default": {"sun": 2, "weather": 3}},
   biome: {},

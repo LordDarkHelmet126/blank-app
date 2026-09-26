@@ -1978,7 +1978,7 @@ export const EAST_GERMANY_REGION = land({
   name: "East Germany",
   country: "DD",
   bbox: {"minLon": 8.91, "maxLon": 15.95, "minLat": 49.01, "maxLat": 55.49},
-  notes: "Atlas only. Fourteen Bezirke from the 1952 reform, plus East Berlin as the capital district. The five historic Länder are not restored until 1990. Karl-Marx-Stadt has not gone back to Chemnitz. Transit roads from the Federal Republic cross here and end at West Berlin. Occupied and off the week-0 march.",
+  notes: "Atlas only. Fourteen Bezirke from the 1952 reform, plus East Berlin as the capital district. The five historic Länder are not restored until 1990. Karl-Marx-Stadt has not gone back to Chemnitz. Görlitz is the Polish crossing. Transit roads from the Federal Republic cross here and end at West Berlin. Occupied and off the week-0 march.",
   defaultBiome: "temperate",
   climate: {"_default": {"sun": 2, "weather": 2}},
   biome: {},
@@ -2248,6 +2248,17 @@ export const EAST_GERMANY_REGION = land({
     ]
   ],
   [
+    "gorlitz",
+    "Görlitz",
+    "DD-DD",
+    51.152,
+    14.987,
+    "city",
+    [
+      "administration"
+    ]
+  ],
+  [
     "leipzig",
     "Leipzig",
     "DD-LE",
@@ -2358,6 +2369,12 @@ export const EAST_GERMANY_REGION = land({
   [
     "karl_marx_stadt",
     "dresden",
+    "road",
+    "A4"
+  ],
+  [
+    "dresden",
+    "gorlitz",
     "road",
     "A4"
   ],

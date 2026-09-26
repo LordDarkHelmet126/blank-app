@@ -496,6 +496,7 @@ export async function boot(loaded) {
     const view = params.get("view");
     if (view === "world") frameWorld();
     else if (view === "europe") frameEurope();
+    else if (view === "ussr") frameUssr();
     else if (view === "atlas") {
       const city = params.get("city");
       if (city) {
@@ -513,7 +514,7 @@ export async function boot(loaded) {
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
-    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe") pulseTravel("cheyenne", "denver", { loop: true });
+    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe" && view !== "ussr") pulseTravel("cheyenne", "denver", { loop: true });
     frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -2356,6 +2357,13 @@ function frameEurope() {
   clearForeignFrame();
   mapView.atlas = "eu";
   frameLonLat(-11.5, 66.2, 40.5, 35.2, 0.9);
+}
+
+/** Kaliningrad through Chukotka. The Bering link draws on the short arc. */
+function frameUssr() {
+  clearForeignFrame();
+  mapView.atlas = "su";
+  frameLonLat(19, 78, 192, 35, 0.9);
 }
 
 function frameWorld() {

@@ -409,7 +409,7 @@ export const GREECE_REGION = land({
   name: "Greece",
   country: "GR",
   bbox: {"minLon": 18.52, "maxLon": 29.62, "minLat": 33.79, "maxLat": 42.55},
-  notes: "Atlas only. Fifty-one nomoi plus Mount Athos. The 1987 peripheries are not used. Islands are ferries; Lefkada keeps its causeway and Euboea keeps the Euripus bridge. Mount Athos is reached by boat. The land border with Turkey is the Evros road. No road enters Bulgaria. Occupied and off the week-0 march.",
+  notes: "Atlas only. Fifty-one nomoi plus Mount Athos. The 1987 peripheries are not used. Islands are ferries; Lefkada keeps its causeway and Euboea keeps the Euripus bridge. Mount Athos is reached by boat. The land border with Turkey is the Evros road. Kulata enters Bulgaria, Evzoni and Níki enter Yugoslavia, and Kakavia and Kapshticë enter Albania. Occupied and off the week-0 march.",
   defaultBiome: "mediterranean",
   climate: {"_default": {"sun": 5, "weather": 2}},
   biome: {},
@@ -3315,7 +3315,7 @@ export const TURKEY_REGION = land({
     "chr": 36,
     "personality": "recluse",
     "region": "tr.erzurum",
-    "bio": "Fictional eastern commander. No road continues into the Soviet Union."
+    "bio": "Fictional eastern commander. Sarpi is the open road into the Georgian SSR, and Akyaka stays a closed trail."
   },
   {
     "id": "tr_se",

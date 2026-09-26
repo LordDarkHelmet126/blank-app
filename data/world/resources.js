@@ -51,6 +51,8 @@ export const RESOURCES = [
   { id: "sulfur", group: "mine", label: "Sulfur" },
   { id: "tin", group: "mine", label: "Tin" },
   { id: "emeralds", group: "mine", label: "Emeralds" },
+  { id: "diamonds", group: "mine", label: "Diamonds" },
+  { id: "chrome", group: "mine", label: "Chrome" },
   { id: "nitrates", group: "mine", label: "Nitrates" },
   { id: "steel", group: "industry", label: "Steel" },
   { id: "aluminum", group: "industry", label: "Aluminum" },

@@ -27,12 +27,22 @@ const WORLD_CAPS = new Set([
   "se.stockholm",
   "gr.athens",
   "tr.ankara",
+  "pl.warsaw",
+  "cs.prague",
+  "hu.budapest",
+  "ro.bucharest",
+  "bg.sofia",
+  "yu.belgrade",
+  "al.tirana",
+  "ru.moscow",
+  "ua.kiev",
+  "ru.vladivostok",
 ]);
 
 /** World zoom shows the whole atlas. A framed state or province shows its cities up close. */
 export function atlasMode(mapView) {
   if (!mapView || mapView.focus) return "off";
-  if (mapView.atlas === "eu") return "world";
+  if (mapView.atlas === "eu" || mapView.atlas === "su") return "world";
   if (mapView.z < 0.55) return "world";
   if (mapView.atlas && mapView.atlas !== "us") return "state";
   return "off";
@@ -96,6 +106,46 @@ function nearCampaign(x, y, points) {
   return (points || []).some((p) => Math.hypot(p.x - x, p.y - y) < 42);
 }
 
+/** Screen-center longitude, so a date-line link can sit on the near side of the frame. */
+function viewCenterLon(mapView) {
+  const wx = (500 - mapView.x) / (mapView.z || 1);
+  return ((wx - 36) / 942) * 57.9 - 124.8;
+}
+
+/**
+ * The Bering Strait is a short hop. A straight line from Provideniya to Nome
+ * would cross the whole atlas, so the segment is drawn on the copy nearest the view.
+ */
+function projectLink(project, mapView, from, to) {
+  const lon1 = from.lon;
+  const lon2 = to.lon;
+  if (mapView.pacific || Math.abs(lon1 - lon2) <= 180) {
+    const [x1, y1] = project(lon1, from.lat);
+    const [x2, y2] = project(lon2, to.lat);
+    return [x1, y1, x2, y2];
+  }
+  let a = lon1;
+  let b = lon2;
+  if (b - a > 180) b -= 360;
+  else if (a - b > 180) a -= 360;
+  const center = viewCenterLon(mapView);
+  let bestA = a;
+  let bestB = b;
+  let bestD = Infinity;
+  [-360, 0, 360].forEach((shift) => {
+    const mid = (a + b) / 2 + shift;
+    const d = Math.abs(mid - center);
+    if (d < bestD) {
+      bestD = d;
+      bestA = a + shift;
+      bestB = b + shift;
+    }
+  });
+  const [x1, y1] = project(bestA, from.lat);
+  const [x2, y2] = project(bestB, to.lat);
+  return [x1, y1, x2, y2];
+}
+
 /**
  * Geographic atlas. Campaign markers stay on top of a close view;
  * a world city that sits on one of them is not drawn twice.
@@ -120,8 +170,7 @@ export function drawWorldAtlas(ctx, opts) {
   const casing = screenPx(mapView, mode === "state" ? 8 : 3.2);
   const core = screenPx(mapView, mode === "state" ? 4 : 1.6);
   links.forEach((link) => {
-    const [x1, y1] = project(link.from.lon, link.from.lat);
-    const [x2, y2] = project(link.to.lon, link.to.lat);
+    const [x1, y1, x2, y2] = projectLink(project, mapView, link.from, link.to);
     const sea = link.kind === "sea" || link.kind === "air";
     const rail = link.kind === "rail";
     ctx.beginPath();
