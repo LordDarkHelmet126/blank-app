@@ -353,6 +353,79 @@ const PAINT = {
     fig(ctx, 50, 10, PAL.navy, PAL.red);
     px(ctx, 36, 18, 6, 2, PAL.gold);
   },
+  promote_member(ctx) {
+    skyGround(ctx, false, "summer");
+    px(ctx, 0, 28, W, 17, "#6a5030");
+    px(ctx, 0, 28, W, 2, PAL.wheat2);
+    px(ctx, 4, 30, 10, 8, PAL.wheat);
+    px(ctx, 16, 32, 8, 6, PAL.wheat2);
+    px(ctx, 50, 4, 16, 26, PAL.wood);
+    px(ctx, 46, 2, 24, 5, PAL.wood2);
+    px(ctx, 54, 8, 8, 6, "#88b0c8");
+    px(ctx, 54, 16, 8, 4, PAL.crate);
+    px(ctx, 52, 22, 12, 3, PAL.gold);
+    px(ctx, 6, 16, 22, 12, PAL.wood);
+    px(ctx, 8, 18, 8, 6, "#88b0c8");
+    px(ctx, 18, 18, 8, 6, "#c8a060");
+    px(ctx, 10, 12, 2, 6, PAL.wood2);
+    px(ctx, 8, 10, 6, 3, PAL.gold);
+    px(ctx, 9, 8, 4, 2, "#fff2a0");
+    fig(ctx, 30, 12, PAL.olive, PAL.gold);
+    px(ctx, 36, 18, 5, 3, "#e8e0c8");
+    px(ctx, 28, 30, 8, 6, PAL.wheat);
+    px(ctx, 34, 32, 6, 5, PAL.crate);
+    pine(ctx, 68, 14);
+  },
+  promote_leader(ctx) {
+    px(ctx, 0, 0, W, 30, "#3a2818");
+    px(ctx, 0, 30, W, 15, "#503010");
+    px(ctx, 0, 26, W, 4, PAL.wood2);
+    px(ctx, 4, 4, 18, 12, "#88b0c8");
+    px(ctx, 6, 6, 14, 8, "#c8a048");
+    px(ctx, 8, 8, 6, 4, PAL.pine);
+    px(ctx, 14, 9, 4, 3, PAL.blue);
+    px(ctx, 28, 4, 22, 10, "#2a2018");
+    px(ctx, 30, 6, 18, 6, "#e8e0c8");
+    px(ctx, 32, 7, 8, 1, PAL.ink);
+    px(ctx, 32, 9, 12, 1, PAL.ink);
+    px(ctx, 54, 3, 2, 10, PAL.wood2);
+    px(ctx, 52, 1, 6, 3, PAL.gold);
+    px(ctx, 53, 0, 4, 2, "#fff2a0");
+    px(ctx, 8, 20, 64, 4, PAL.wood2);
+    px(ctx, 12, 24, 2, 6, PAL.wood);
+    px(ctx, 66, 24, 2, 6, PAL.wood);
+    px(ctx, 18, 18, 8, 3, PAL.crate);
+    px(ctx, 40, 18, 10, 3, "#c8c8d0");
+    px(ctx, 54, 18, 6, 3, PAL.gold);
+    fig(ctx, 4, 8, PAL.olive, PAL.olive2);
+    fig(ctx, 36, 8, PAL.navy, PAL.gold);
+    fig(ctx, 62, 8, PAL.olive2, PAL.ink);
+    px(ctx, 24, 16, 8, 1, PAL.gold);
+  },
+  promote_opschief(ctx) {
+    px(ctx, 0, 0, W, 16, "#182838");
+    px(ctx, 0, 16, W, 14, "#3a2818");
+    px(ctx, 0, 30, W, 15, "#503010");
+    px(ctx, 58, 2, 2, 28, PAL.ink);
+    px(ctx, 52, 2, 14, 2, PAL.red);
+    px(ctx, 64, 2, 2, 2, PAL.gold);
+    px(ctx, 56, 8, 6, 1, "#a0b0c0");
+    px(ctx, 4, 6, 22, 12, "#101820");
+    px(ctx, 6, 8, 8, 6, "#304878");
+    px(ctx, 16, 8, 8, 6, "#88b0c8");
+    px(ctx, 8, 18, 28, 12, PAL.wood);
+    px(ctx, 10, 20, 24, 6, "#101830");
+    px(ctx, 12, 21, 4, 4, PAL.gold);
+    px(ctx, 18, 22, 6, 2, "#30c030");
+    px(ctx, 26, 21, 6, 4, PAL.red);
+    px(ctx, 12, 27, 20, 2, "#686860");
+    fig(ctx, 40, 10, PAL.olive, PAL.gold);
+    fig(ctx, 50, 12, PAL.olive2, PAL.navy);
+    px(ctx, 46, 20, 6, 2, "#e8e0c8");
+    px(ctx, 4, 32, 14, 6, PAL.wood2);
+    px(ctx, 22, 34, 10, 4, PAL.crate);
+    pine(ctx, 70, 18);
+  },
   porch_challenge(ctx) {
     skyGround(ctx);
     px(ctx, 8, 10, 22, 16, PAL.wood);
@@ -361,6 +434,159 @@ const PAINT = {
     fig(ctx, 52, 12, PAL.olive2, PAL.ink);
   },
 };
+
+const RW = 160;
+const RH = 90;
+
+function head(ctx, x, y, coat, hat, hair) {
+  px(ctx, x, y + 40, 16, 3, "rgba(0,0,0,0.45)");
+  px(ctx, x + 1, y, 12, 3, hat);
+  px(ctx, x - 1, y + 3, 16, 3, hat);
+  px(ctx, x + 1, y + 3, 10, 1, "rgba(255,255,255,0.35)");
+  px(ctx, x + 2, y + 5, 10, 3, hair || hat);
+  px(ctx, x + 3, y + 8, 8, 8, PAL.skin);
+  px(ctx, x + 9, y + 8, 2, 8, "rgba(0,0,0,0.25)");
+  px(ctx, x + 4, y + 9, 3, 1, "#f0d0b0");
+  px(ctx, x + 4, y + 10, 2, 2, PAL.ink);
+  px(ctx, x + 8, y + 10, 2, 2, PAL.ink);
+  px(ctx, x + 5, y + 14, 4, 1, "#804030");
+  px(ctx, x + 4, y + 16, 6, 2, PAL.skin);
+  px(ctx, x + 1, y + 18, 12, 14, coat);
+  px(ctx, x + 9, y + 18, 4, 14, "rgba(0,0,0,0.28)");
+  px(ctx, x + 2, y + 18, 3, 2, "rgba(255,255,255,0.2)");
+  px(ctx, x - 2, y + 19, 4, 10, coat);
+  px(ctx, x + 12, y + 19, 4, 10, coat);
+  px(ctx, x + 12, y + 19, 2, 10, "rgba(0,0,0,0.3)");
+  px(ctx, x + 2, y + 32, 4, 8, "#241810");
+  px(ctx, x + 8, y + 32, 4, 8, "#241810");
+  px(ctx, x + 1, y + 39, 5, 2, "#3a2818");
+  px(ctx, x + 8, y + 39, 5, 2, "#3a2818");
+}
+
+function rankSky(ctx, top, mid) {
+  px(ctx, 0, 0, RW, 28, top);
+  px(ctx, 0, 28, RW, 18, mid);
+  for (let i = 0; i < 16; i++) px(ctx, i * 10 + 2, 8 + (i % 3) * 4, 2, 2, "#f8f8f8");
+}
+
+const RANK_SCENES = {
+  promote_member(ctx) {
+    rankSky(ctx, "#6aa0d0", "#c8d8a0");
+    px(ctx, 0, 46, RW, 44, "#c8a050");
+    px(ctx, 0, 46, RW, 4, "#e0c060");
+    for (let i = 0; i < 14; i++) {
+      px(ctx, 4 + i * 11, 52 + (i % 2) * 6, 6, 10, i % 2 ? "#d8b050" : "#b89030");
+      px(ctx, 6 + i * 11, 50 + (i % 2) * 6, 2, 4, "#f0d878");
+    }
+    px(ctx, 116, 62, 32, 8, "rgba(0,0,0,0.35)");
+    px(ctx, 112, 18, 28, 52, "#684028");
+    px(ctx, 132, 18, 8, 52, "#3a2414");
+    px(ctx, 104, 14, 44, 8, "#886038");
+    px(ctx, 104, 14, 44, 2, "#c8a070");
+    px(ctx, 118, 26, 16, 10, "#88b0c8");
+    px(ctx, 118, 26, 4, 10, "#d0e8f8");
+    px(ctx, 130, 26, 4, 10, "#406080");
+    px(ctx, 120, 40, 12, 8, PAL.crate);
+    px(ctx, 128, 40, 4, 8, "#806018");
+    px(ctx, 116, 52, 20, 4, PAL.gold);
+    px(ctx, 12, 48, 32, 6, "rgba(0,0,0,0.3)");
+    px(ctx, 8, 28, 36, 22, "#684028");
+    px(ctx, 36, 28, 8, 22, "#3a2414");
+    px(ctx, 8, 28, 36, 2, "#a07048");
+    px(ctx, 12, 32, 12, 10, "#88b0c8");
+    px(ctx, 12, 32, 3, 10, "#e8f4ff");
+    px(ctx, 26, 32, 12, 10, "#c8a060");
+    px(ctx, 34, 32, 4, 10, "#806030");
+    px(ctx, 14, 18, 4, 12, "#886038");
+    px(ctx, 10, 16, 12, 4, PAL.gold);
+    px(ctx, 12, 12, 8, 4, "#fff2a0");
+    px(ctx, 12, 12, 8, 1, "#fff8d0");
+    px(ctx, 48, 58, 16, 12, PAL.wheat);
+    px(ctx, 66, 62, 14, 10, PAL.crate);
+    head(ctx, 46, 28, PAL.olive, PAL.gold, "#503010");
+    head(ctx, 72, 30, "#507040", "#c8a060", "#302010");
+    px(ctx, 64, 48, 10, 6, "#e8e0c8");
+  },
+  promote_leader(ctx) {
+    px(ctx, 0, 0, RW, 52, "#3a2818");
+    px(ctx, 0, 52, RW, 38, "#503010");
+    for (let y = 4; y < 48; y += 8) px(ctx, 0, y, RW, 2, "#2a1c10");
+    px(ctx, 8, 8, 36, 28, "#88b0c8");
+    px(ctx, 12, 12, 28, 20, "#c8a048");
+    px(ctx, 16, 16, 10, 8, PAL.pine);
+    px(ctx, 28, 18, 8, 6, PAL.blue);
+    px(ctx, 56, 6, 48, 22, "#241810");
+    px(ctx, 60, 10, 40, 14, "#e8e0c8");
+    px(ctx, 64, 13, 18, 2, PAL.ink);
+    px(ctx, 64, 17, 28, 2, PAL.ink);
+    px(ctx, 118, 4, 6, 24, "#886038");
+    px(ctx, 114, 2, 14, 6, PAL.gold);
+    px(ctx, 116, 0, 10, 4, "#fff2a0");
+    px(ctx, 20, 62, 120, 6, "rgba(0,0,0,0.4)");
+    px(ctx, 16, 50, 128, 8, "#886038");
+    px(ctx, 16, 50, 128, 2, "#c8a070");
+    px(ctx, 16, 56, 128, 8, "#503010");
+    px(ctx, 24, 58, 4, 16, "#503010");
+    px(ctx, 26, 58, 2, 16, "#806040");
+    px(ctx, 132, 58, 4, 16, "#503010");
+    px(ctx, 114, 8, 18, 18, "rgba(248,216,0,0.35)");
+    px(ctx, 36, 46, 16, 6, PAL.crate);
+    px(ctx, 70, 44, 22, 6, "#c8c8d0");
+    px(ctx, 100, 46, 14, 6, PAL.gold);
+    px(ctx, 78, 40, 8, 4, "#f8f8f8");
+    head(ctx, 18, 26, PAL.olive, "#507040", "#302010");
+    head(ctx, 68, 24, PAL.navy, PAL.gold, "#503010");
+    head(ctx, 112, 26, "#507040", PAL.ink, "#201810");
+  },
+  promote_opschief(ctx) {
+    px(ctx, 0, 0, RW, 36, "#182838");
+    px(ctx, 0, 36, RW, 28, "#3a2818");
+    px(ctx, 0, 64, RW, 26, "#503010");
+    px(ctx, 124, 2, 4, 62, PAL.ink);
+    px(ctx, 108, 4, 28, 4, PAL.red);
+    px(ctx, 132, 2, 6, 4, PAL.gold);
+    for (let i = 0; i < 5; i++) px(ctx, 112, 12 + i * 6, 16, 2, "#a0b0c0");
+    px(ctx, 6, 8, 44, 24, "#101820");
+    px(ctx, 10, 12, 16, 14, "#304878");
+    px(ctx, 28, 12, 16, 14, "#88b0c8");
+    px(ctx, 12, 64, 66, 6, "rgba(0,0,0,0.45)");
+    px(ctx, 8, 36, 70, 28, "#684028");
+    px(ctx, 70, 36, 8, 28, "#3a2414");
+    px(ctx, 8, 36, 70, 2, "#a07850");
+    px(ctx, 12, 40, 62, 14, "#101830");
+    px(ctx, 12, 40, 62, 3, "#203050");
+    px(ctx, 16, 44, 10, 8, PAL.gold);
+    px(ctx, 16, 44, 10, 2, "#fff2a0");
+    px(ctx, 30, 46, 16, 4, "#30c030");
+    px(ctx, 30, 46, 16, 1, "#b0ffb0");
+    px(ctx, 32, 50, 12, 6, "rgba(48,192,48,0.35)");
+    px(ctx, 50, 44, 14, 8, PAL.red);
+    px(ctx, 60, 44, 4, 8, "#601010");
+    px(ctx, 14, 56, 50, 4, "#686860");
+    px(ctx, 86, 58, 8, 6, "#e8e0c8");
+    px(ctx, 8, 70, 28, 12, "#886038");
+    px(ctx, 42, 72, 20, 8, PAL.crate);
+    head(ctx, 78, 26, PAL.olive, PAL.gold, "#302010");
+    head(ctx, 104, 28, "#507040", PAL.navy, "#201010");
+    px(ctx, 90, 40, 8, 3, "#c8c8d0");
+    px(ctx, 116, 42, 8, 3, "#c8c8d0");
+  },
+};
+
+function paintRank(fn) {
+  const c = document.createElement("canvas");
+  c.width = RW;
+  c.height = RH;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  fn(ctx);
+  ctx.fillStyle = PAL.ink;
+  ctx.fillRect(0, 0, RW, 3);
+  ctx.fillRect(0, RH - 3, RW, 3);
+  ctx.fillRect(0, 0, 3, RH);
+  ctx.fillRect(RW - 3, 0, 3, RH);
+  return c.toDataURL("image/png");
+}
 
 function paintId(id) {
   const src = document.createElement("canvas");
@@ -457,6 +683,9 @@ export async function bakeScenes() {
   Object.keys(PAINT).forEach((id) => {
     cache[id] = paintId(id);
   });
+  Object.keys(RANK_SCENES).forEach((id) => {
+    cache[id] = paintRank(RANK_SCENES[id]);
+  });
   await Promise.all(
     Object.entries(PHOTO_TINTS).map(async ([id, [src, color]]) => {
       const tinted = await tintPhoto(src, color);
@@ -469,7 +698,7 @@ export async function bakeScenes() {
 export function sceneUrl(id) {
   if (cache[id]) return cache[id];
   try {
-    cache[id] = paintId(id);
+    cache[id] = RANK_SCENES[id] ? paintRank(RANK_SCENES[id]) : paintId(id);
     return cache[id];
   } catch {
     return cache.travel || cache.drill || "art/scenes/scene-council.png";

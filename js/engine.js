@@ -42,8 +42,72 @@ import {
   DUEL_CLOCK_S,
   DUEL_MAX_EXCHANGES,
 } from "./duel.js";
+import {
+  COMMAND_TABS,
+  COMMISSIONS,
+  GRADE_PAY,
+  STATUS_AP,
+  applyStatusGate,
+  cadenceLead,
+  closeMonthOrder,
+  commissionLabel,
+  ensureCareer,
+  fairLine,
+  levyForGrade,
+  issueMonthlyOrder,
+  mirrorCareer,
+  monthIndex,
+  monthLabel,
+  normalizeStatus,
+  noteDeeds,
+  nextRankGoal,
+  orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
+  payForGrade,
+  proposalChoices,
+  payoutHarvest,
+  recordServiceAction,
+  resolveOrderChoice,
+  runPayroll,
+  skimHarvest,
+  statusIndex,
+  statusLabel,
+  statusShort,
+  syncGrade,
+  tabForTask,
+  tacticPointsOf,
+  noteCityWork,
+  opsDeskBlocked,
+  unownedWorkOk,
+  waiveOrder,
+} from "./career.js";
 
 export { courtCandidates, sampleChronicle, calendarYear, seasonPalette };
+export {
+  COMMAND_TABS,
+  COMMISSIONS,
+  GRADE_PAY,
+  monthIndex,
+  monthLabel,
+  statusIndex,
+  statusLabel,
+  statusShort,
+  normalizeStatus,
+  nextRankGoal,
+  noteDeeds,
+  orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
+  cadenceLead,
+  payForGrade,
+  levyForGrade,
+  proposalChoices,
+  tacticPointsOf,
+  commissionLabel,
+  tabForTask,
+  runPayroll,
+};
 export { MISSION_TEMPLATES, openMissions, seedDemoMissions, missionCopy, refreshMissionBoard };
 export {
   createDuel,
@@ -54,7 +118,7 @@ export {
   aiMove,
 };
 
-export const GAME_VERSION = 2;
+export const GAME_VERSION = 3;
 export const MAX_GENERALS = 5;
 export const GENERAL_ORDERS = [
   { id: "auto", label: "By personality" },
@@ -282,6 +346,7 @@ export function promoteLadder(state, officerId) {
   const p = playerOf(state);
   if (!p) return { ok: false, message: "No commander." };
   if (!p.faction) return { ok: false, message: "Raise a banner before promoting." };
+  const career = statusIndex(rankOf(state, p));
   const t = officerOf(state, officerId);
   if (!t || t.alive === false) return { ok: false, message: "No such person on the roster." };
   if (t.id === p.id) return { ok: false, message: "You are the commander. Promote a friend." };
@@ -289,6 +354,9 @@ export function promoteLadder(state, officerId) {
   const from = ladderRankOf(t);
   if (from === "general") return { ok: false, message: `${t.name} is already a general.` };
   if (from === "player") {
+    if (career < statusIndex("leader")) {
+      return { ok: false, message: "Needs Cell Leader to commission an officer." };
+    }
     if (t.region !== p.region) {
       const city = regionOf(state, p.region)?.short || "your city";
       return { ok: false, message: `${t.name} must stand in ${city} to take a commission.` };
@@ -312,6 +380,9 @@ export function promoteLadder(state, officerId) {
     };
   }
   if (from === "officer" && t.faction === p.faction) {
+    if (career < statusIndex("commander")) {
+      return { ok: false, message: "Needs Front Commander to name a general." };
+    }
     const gens = playerCourt(state).filter((o) => o.isGeneral);
     if (gens.length >= MAX_GENERALS) {
       return { ok: false, message: `Five generals already. ${t.name} stays an officer.` };
@@ -390,28 +461,31 @@ export function regionsOfFaction(state, fid) {
   return state.regions.filter((r) => r.owner === fid);
 }
 
-export function rankOf(state, off) {
-  if (!off.faction) return "free";
-  if (off.id === state.playerOfficerId && ensureCampaign(state).nationalLeader) return "national";
-  const fac = factionOf(state, off.faction);
+function derivedStatus(state, off) {
+  if (!off) return "free";
+  const fac = off.faction ? factionOf(state, off.faction) : null;
+  if (off.faction && off.id === state.playerOfficerId && ensureCampaign(state).nationalLeader) return "chair";
   if (fac && fac.ruler === off.id) {
     const n = regionsOfFaction(state, off.faction).length;
-    if (n >= 3) return "governor";
-    return "warlord";
+    return n >= 3 ? "governor" : "commander";
   }
-  if (state.regions.some((r) => r.prefect === off.id)) return "prefect";
-  return "officer";
+  if (!off.faction) return "free";
+  if (fac && fac.opsChiefId === off.id) return "opschief";
+  if (state.regions.some((r) => r.prefect === off.id)) return "leader";
+  return "member";
+}
+
+export function rankOf(state, off) {
+  if (!off) return "free";
+  const derived = derivedStatus(state, off);
+  if (derived === "chair" || derived === "governor" || derived === "commander") return derived;
+  const stored = normalizeStatus(off.status);
+  if (stored === "leader" || stored === "opschief" || stored === "member") return stored;
+  return derived;
 }
 
 export function rankLabel(rank) {
-  return {
-    free: "Free officer",
-    officer: "Serving officer",
-    prefect: "Prefect",
-    warlord: "Warlord",
-    governor: "Governor",
-    national: "National leader",
-  }[rank] || rank;
+  return statusLabel(rank);
 }
 
 export function seasonOf(week) {
@@ -425,15 +499,97 @@ export function seasonOf(week) {
 export function apMax(state) {
   const p = playerOf(state);
   const rank = rankOf(state, p);
-  let ap = 3;
-  if (rank === "prefect") ap = 4;
-  if (rank === "warlord") ap = 5;
-  if (rank === "governor") ap = 6;
-  if (rank === "national") ap = 7;
+  let ap = STATUS_AP[rank] ?? 3;
   ap += Math.min(MAX_GENERALS, playerGenerals(state).length);
   ap += DIFFICULTY[state.difficulty].apBonus;
-  if (ensureCampaign(state).nationalLeader) ap += 1;
   return Math.min(10, ap);
+}
+
+function applyCareerDeltas(state, out) {
+  if (!out) return out;
+  const p = playerOf(state);
+  if (out.bond?.id) addBond(state, out.bond.id, out.bond.delta);
+  if (out.fame && p) {
+    p.fame = Math.max(0, Math.min(100, (p.fame || 0) + out.fame));
+    state.fame = Math.max(0, Math.min(100, (state.fame || 0) + out.fame));
+  }
+  if (out.log) pushLog(state, out.log, out.kind || "alert");
+  mirrorCareer(state);
+  return out;
+}
+
+function superiorContext(state) {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  if (rank === "commander" || rank === "governor" || rank === "chair") return null;
+  let superior = null;
+  if (p.faction) {
+    const fac = factionOf(state, p.faction);
+    if (fac?.ruler && fac.ruler !== p.id) superior = officerOf(state, fac.ruler);
+    else if (fac?.opsChiefId && fac.opsChiefId !== p.id) superior = officerOf(state, fac.opsChiefId);
+  }
+  if (!superior) {
+    const local = livingOfficers(state).filter(
+      (o) => o.id !== p.id && o.region === p.region && o.alive !== false && !o.hidden && !o.retired && !o.friend
+    );
+    const byId = (id) => local.find((o) => o.id === id);
+    if (rank === "leader") superior = byId("hart") || local.find((o) => o.id !== "cole") || local[0] || null;
+    else if (rank === "opschief") superior = byId("nash") || local.find((o) => o.id !== "cole" && o.id !== "hart") || local[0] || null;
+    else superior = byId("cole") || local[0] || null;
+  }
+  if (!superior) return null;
+  const here = regionOf(state, p.region);
+  return {
+    id: superior.id,
+    name: superior.name,
+    personality: superior.personality,
+    skills: skillsForPersonality(superior.personality),
+    rank: rankOf(state, superior),
+    regionId: p.region,
+    city: here?.short || "this city",
+  };
+}
+
+function openMonthlyOrder(state) {
+  ensureCareer(state);
+  const closed = closeMonthOrder(state);
+  applyCareerDeltas(state, closed);
+  const sup = superiorContext(state);
+  const issued = issueMonthlyOrder(state, sup, sup?.city);
+  if (issued?.log) pushLog(state, issued.log, "alert");
+  return { closed, issued };
+}
+
+export function respondToOrder(state, choice, taskId) {
+  ensureCareer(state);
+  const sup = superiorContext(state);
+  const out = resolveOrderChoice(state, choice, taskId, { skills: sup?.skills || [], city: sup?.city });
+  if (!out.ok) return out;
+  applyCareerDeltas(state, out);
+  if (out.demotion) {
+    mirrorCareer(state);
+    out.promoted = out.demotion;
+  }
+  out.tab = out.tab || (state.orders.current ? tabForTask(state.orders.current.task) : null);
+  return out;
+}
+
+function stampService(state, actionId, res, extra) {
+  if (!res?.ok || !state.service) return res;
+  if (actionId === "end_week" || actionId === "raise_banner") return res;
+  const p = playerOf(state);
+  const note = recordServiceAction(
+    state,
+    actionId,
+    { regionId: extra?.regionId || null, hereId: p?.region || null },
+    rankOf(state, p)
+  );
+  if (!note) return res;
+  applyCareerDeltas(state, note);
+  if (note.message) res.message = `${res.message || ""} ${note.message}`.trim();
+  if (note.dings?.length) res.dings = [...(res.dings || []), ...note.dings];
+  if (note.promoted) res.promoted = note.promoted;
+  return res;
 }
 
 export function relationKey(a, b) {
@@ -471,6 +627,7 @@ function applyDifficultyGarrisons(state) {
 
 function attachSeason(state) {
   state._season = seasonOf(state.week);
+  state.month = monthIndex(state.week || 0);
 }
 
 export function unlockedTech(state, content) {
@@ -553,6 +710,10 @@ export function createNewGame(content, opts = {}) {
     age: 34,
     spouseId: null,
     courtingId: null,
+    status: "free",
+    deeds: 0,
+    grade: 5,
+    commission: null,
   };
   officers.unshift(player);
 
@@ -596,6 +757,7 @@ export function createNewGame(content, opts = {}) {
     version: GAME_VERSION,
     title: "Northern Front",
     week: 0,
+    month: 0,
     difficulty,
     seed,
     playerOfficerId: "player",
@@ -643,7 +805,9 @@ export function createNewGame(content, opts = {}) {
   attachSeason(state);
   hydrateLife(state);
   refreshMissionBoard(state);
+  ensureCareer(state);
   state.ap = apMax(state);
+  openMonthlyOrder(state);
 
   setRelation(state, "pof", "banner", 62);
   setRelation(state, "pof", "interior", 12);
@@ -691,11 +855,18 @@ export function deserialize(raw) {
     if (!r.geo) r.geo = { farm: 0, mine: 0, fuel: 0, water: 0, sun: 0, weather: 0, defense: 0 };
   });
   ensureCampaign(state);
+  const hadOrders = !!state.orders;
+  ensureCareer(state);
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
     if (!o.skills) o.skills = skillsForPersonality(o.personality);
     if (!o.portrait) o.portrait = portraitInitials(o.name);
+    if (!o.status) return;
+    const stored = normalizeStatus(o.status);
+    const derived = derivedStatus(state, o);
+    if ((stored === "commander" || stored === "governor" || stored === "chair") && stored !== derived) delete o.status;
   });
+  if (!hadOrders && (state.week || 0) % 4 === 0 && !state.gameOver) openMonthlyOrder(state);
   hydrateLife(state);
   if (state.customSlotsUsed == null) {
     state.customSlotsUsed = (state.officers || []).filter((o) => o.custom).length;
@@ -711,6 +882,7 @@ export function deserialize(raw) {
     if (!f.bio) f.bio = "";
     if (!f.personalityLean) f.personalityLean = "loyalist";
   });
+  state.version = GAME_VERSION;
   return state;
 }
 
@@ -930,7 +1102,7 @@ export function listActions(state) {
     ap: 1,
     group: "domestic",
     enabled: true,
-    hint: "Workshop hours. Calendar still gates 1985–89 kit — M16A2, Jeeps, analog radios. No leapfrog.",
+    hint: "Workshop hours in the salvage shed.",
   });
   actions.push({
     id: "spy",
@@ -938,7 +1110,7 @@ export function listActions(state) {
     ap: 1,
     group: "spy",
     enabled: true,
-    hint: "Scout a region. Schemers and high INT see more.",
+    hint: "Scout an adjacent road. Schemers and high INT see more.",
     needs: "region",
   });
   actions.push({
@@ -946,8 +1118,12 @@ export function listActions(state) {
     label: "Hire",
     ap: 1,
     group: "plot",
-    enabled: hasBanner && hireCandidates(state).length > 0,
-    hint: !hasBanner
+    enabled: (hasBanner && hireCandidates(state).length > 0) || cellRecruitPool(state).length > 0,
+    hint: cellRecruitPool(state).length
+      ? "Recruit a free officer into your cell. They stay in this city. Not a general."
+      : cellRank(state)
+      ? "No free officer in this city who is not above you."
+      : !hasBanner
       ? "Raise a banner first."
       : hireCandidates(state).length
         ? gens >= MAX_GENERALS
@@ -1046,7 +1222,7 @@ export function listActions(state) {
     hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), and Salt Lake (I-80 basin). Reno uses the Wendover rail. Cuba is Gulf Sealift, then Havana. Nicaragua, then Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). No leaping. Focus an inland desk and NEXT names its siege board: Cut the berm, Rake the parapet, Rush the gap.",
     needs: "neighbor",
   });
-  const camp = ensureCampaign(state);
+  const camp = state.campaign || { phase: 1 };
   actions.push({
     id: "war_council",
     label: "War Council",
@@ -1072,13 +1248,18 @@ export function listActions(state) {
     needs: "attack",
   });
   const jobs = openMissions(state);
+  const cellJobs = cellMissions(state, jobs);
   actions.push({
     id: "mission",
-    label: jobs.length ? `Side Mission (${jobs.length})` : "Side Mission",
+    label: cellJobs.length ? `Side Mission (${cellJobs.length})` : jobs.length ? `Side Mission (${jobs.length})` : "Side Mission",
     ap: 1,
     group: "command",
-    enabled: hasBanner && jobs.length > 0,
-    hint: !hasBanner
+    enabled: (hasBanner && jobs.length > 0) || cellJobs.length > 0,
+    hint: cellJobs.length
+      ? "Run this week's cell job in this city. Deeds if you clear it. No banner required."
+      : cellRank(state)
+      ? "One cell job a week. End Week posts the next one in this city."
+      : !hasBanner
       ? "Raise a banner, then take optional jobs (Military → Side Mission)."
       : jobs.length
         ? "Optional jobs: scout, raid, escort, rescue, porch challenge. 1 AP, or set a general to Side mission."
@@ -1098,6 +1279,51 @@ export function listActions(state) {
     needs: "challenge",
   });
   actions.push({
+    id: "rest",
+    label: "Rest",
+    ap: 1,
+    group: "command",
+    enabled: true,
+    hint: "Sit the week out. A wound settles.",
+  });
+  actions.push({
+    id: "enlist",
+    label: "Enlist",
+    ap: 1,
+    group: "command",
+    enabled: !hasBanner,
+    hint: hasBanner ? "You already serve a banner." : "Sign on with the Denver campus cell. You stay in Cheyenne as a Cell Member.",
+  });
+  actions.push({
+    id: "resign",
+    label: "Resign",
+    ap: 1,
+    group: "command",
+    enabled: hasBanner && rank !== "commander" && rank !== "governor" && rank !== "chair",
+    hint: !hasBanner
+      ? "You do not serve a banner, so there is nothing to resign."
+      : rank === "commander" || rank === "governor" || rank === "chair"
+        ? "A Front Commander keeps the banner."
+        : "Leave the banner. You keep your name and fame. Deeds reset. You are a Free Volunteer.",
+  });
+  actions.push({
+    id: "donate",
+    label: "Donate Scrip",
+    ap: 1,
+    group: "command",
+    enabled: state.gold >= 8 && state.service?.donatedWeek !== state.week,
+    hint: state.gold >= 8 ? "Give 8 scrip to the cell. Deeds tick. Once a week." : "Need 8 scrip to donate.",
+  });
+  [
+    ["train", "Train"],
+    ["patrol", "Patrol"],
+    ["note", "Dead-drop Note"],
+    ["visit", "Porch Visit"],
+    ["swap_meet", "Swap Meet"],
+  ].forEach(([id, label]) => {
+    actions.push({ id, label, ap: 1, group: "command", enabled: false, placeholder: true, hint: "Locked." });
+  });
+  actions.push({
     id: "end_week",
     label: "End Week",
     ap: 0,
@@ -1107,8 +1333,116 @@ export function listActions(state) {
   });
 
   void canDomestic;
-  void rank;
+  const gate = {
+    rank,
+    monthTask: state.service?.monthTask || null,
+    order: state.orders?.current || null,
+    locked: state.orders?.locked || [],
+    hasFaction: !!p.faction,
+    worked: state.service?.workWeek === state.week ? state.service.weekWorks || [] : [],
+  };
+  actions.forEach((action) => {
+    if (action.id === "end_week") return;
+    applyStatusGate(action, gate);
+  });
   return actions;
+}
+
+function cellRank(state) {
+  const p = playerOf(state);
+  if (!p || p.faction) return false;
+  const idx = statusIndex(rankOf(state, p));
+  return idx >= statusIndex("leader") && idx < statusIndex("commander");
+}
+
+function commandChain(state) {
+  const p = playerOf(state);
+  const ids = new Set(["cole", "hart", "nash"]);
+  if (state.service?.superiorId) ids.add(state.service.superiorId);
+  if (state.orders?.current?.issuerId) ids.add(state.orders.current.issuerId);
+  (state.orders?.history || []).forEach((h) => {
+    if (h.issuerId) ids.add(h.issuerId);
+  });
+  if (p?.faction) {
+    const fac = (state.factions || []).find((f) => f.id === p.faction);
+    if (fac?.ruler && fac.ruler !== p.id) ids.add(fac.ruler);
+    if (fac?.opsChiefId && fac.opsChiefId !== p.id) ids.add(fac.opsChiefId);
+  }
+  if (p?.id) ids.delete(p.id);
+  return ids;
+}
+
+export function cellRecruitPool(state) {
+  const p = playerOf(state);
+  if (!cellRank(state)) return [];
+  const cell = new Set(state.service?.cell || []);
+  const above = commandChain(state);
+  return visibleOfficers(state).filter(
+    (o) =>
+      o.id !== p.id &&
+      !o.faction &&
+      o.region === p.region &&
+      o.alive !== false &&
+      !o.friend &&
+      o.ladder !== "player" &&
+      !cell.has(o.id) &&
+      !above.has(o.id)
+  );
+}
+
+export function hireMenuOfficers(state) {
+  const p = playerOf(state);
+  if (p && !p.faction && cellRank(state)) return cellRecruitPool(state);
+  return hireCandidates(state);
+}
+
+function cellHash(state) {
+  const p = playerOf(state);
+  const s = `${state.seed >>> 0}|${state.week || 0}|${p?.region || ""}|cell`;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function postCellMission(state) {
+  if (!cellRank(state)) return null;
+  const svc = state.service;
+  const p = playerOf(state);
+  if (!svc || !p || !state.missions || !Array.isArray(state.missions.board)) return null;
+  if (svc.cellJobWeek === state.week) {
+    return state.missions.board.find((j) => j.cell && !j.done && j.regionId === p.region) || null;
+  }
+  const open = state.missions.board.find((j) => j.cell && !j.done && j.regionId === p.region);
+  if (open) {
+    svc.cellJobWeek = state.week;
+    return open;
+  }
+  const templates = ["scout_road", "escort_convoy", "radio_run", "cache_pull", "ford_watch", "ranch_relay"];
+  const templateId = templates[cellHash(state) % templates.length];
+  const t = templateOf(templateId);
+  state.missions.seq = (state.missions.seq || 0) + 1;
+  const job = {
+    id: `cell_${state.missions.seq}`,
+    templateId,
+    name: t?.name || "Cell job",
+    regionId: p.region,
+    week: state.week || 0,
+    ap: t?.ap || 1,
+    done: false,
+    cell: true,
+  };
+  state.missions.board.push(job);
+  svc.cellJobWeek = state.week;
+  return job;
+}
+
+function cellMissions(state, jobs) {
+  const p = playerOf(state);
+  if (!cellRank(state)) return [];
+  return (jobs || []).filter((j) => j.cell && j.regionId === p.region);
 }
 
 export function hireCandidates(state) {
@@ -1433,6 +1767,11 @@ function alliedFactions(state) {
 }
 
 export function act(state, content, actionId, extra = {}) {
+  const res = actDispatch(state, content, actionId, extra);
+  return stampService(state, actionId, res, extra);
+}
+
+function actDispatch(state, content, actionId, extra = {}) {
   attachSeason(state);
   if (state.gameOver) return { ok: false, message: "The campaign is finished." };
   if ((state.phase === "battle" && actionId !== "battle") || (state.phase === "duel" && actionId !== "duel")) {
@@ -1453,6 +1792,10 @@ export function act(state, content, actionId, extra = {}) {
   if (defn.ap > 0 && state.ap < defn.ap) return { ok: false, message: "Not enough AP." };
 
   if (actionId === "raise_banner") return raiseBanner(state);
+  if (actionId === "rest") return doRest(state);
+  if (actionId === "enlist") return doEnlist(state);
+  if (actionId === "resign") return doResign(state);
+  if (actionId === "donate") return doDonate(state);
   if (actionId === "drill") return domestic(state, "drill", stats);
   if (actionId === "commerce") return domestic(state, "commerce", stats);
   if (actionId === "cultivate") return domestic(state, "cultivate", stats);
@@ -1504,7 +1847,10 @@ function foundNorthernFront(state, region, absorbRetinue) {
   }
   p.fame += 12;
   state.fame += 12;
-  pushLog(state, `Northern Front is declared in ${region.name}. You are warlord of a thin place.`, "alert");
+  p.status = "commander";
+  const waived = waiveOrder(state, "You hold the banner. Orders from above stop.");
+  if (waived?.log) pushLog(state, waived.log, "alert");
+  pushLog(state, `Northern Front is declared in ${region.name}. You are Front Commander of a thin place.`, "alert");
   tickCampaign(state);
 }
 
@@ -1515,53 +1861,153 @@ function raiseBanner(state) {
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   foundNorthernFront(state, here, true);
   state.ap = Math.max(0, apMax(state) - 1);
-  return { ok: true, message: `Banner raised over ${here.short}.` };
+  return { ok: true, message: `Banner raised over ${here.short}. You are Front Commander.`, promoted: { from: "free", to: "commander", tab: "command", unlocked: "Command", message: "Free Volunteer → Front Commander. Command, People, and Domestic open on ground you hold." } };
+}
+
+function doRest(state) {
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  const p = playerOf(state);
+  p.wound = false;
+  const msg = `You rest in ${currentRegion(state).short}.`;
+  pushLog(state, msg, "player");
+  return { ok: true, message: msg };
+}
+
+function doEnlist(state) {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  if (p.faction) return { ok: false, message: "You already serve a banner." };
+  if (rank === "commander" || rank === "governor" || rank === "chair") {
+    return { ok: false, message: "A Front Commander keeps their own banner." };
+  }
+  const fac = factionOf(state, "ember_campus");
+  if (!fac) return { ok: false, message: "No banner is taking names." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  const wasFree = rank === "free";
+  p.faction = "ember_campus";
+  if (wasFree) p.status = "member";
+  p.loyalty = Math.max(p.loyalty || 50, 60);
+  const here = currentRegion(state);
+  const msg = wasFree
+    ? `${p.name} enlists under ${fac.short} as a Cell Member. Home stays ${here.short}.`
+    : `${p.name} enlists under ${fac.short}. Rank stays ${statusLabel(rank)}. Home stays ${here.short}.`;
+  pushLog(state, msg, "alert");
+  waiveOrder(state, "The volunteer ask closes. Your new cell will write the next one.");
+  openMonthlyOrder(state);
+  const res = { ok: true, message: msg };
+  if (wasFree) {
+    res.promoted = {
+      from: "free",
+      to: "member",
+      tab: "domestic",
+      unlocked: "Domestic",
+      message: "Free Volunteer → Cell Member under the Denver campus. Domestic opens — one task a month. Deeds and trust can still raise you to Cell Leader without a banner of your own.",
+    };
+  }
+  return res;
+}
+
+function doResign(state) {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  if (rank === "commander" || rank === "governor" || rank === "chair") {
+    return { ok: false, message: "A Front Commander keeps the banner." };
+  }
+  if (rank === "free" && !p.faction) return { ok: false, message: "You are already a Free Volunteer." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  p.faction = null;
+  p.status = "free";
+  p.isGeneral = false;
+  state.service.deeds = 0;
+  state.service.grade = 5;
+  state.service.commission = null;
+  p.commission = null;
+  mirrorCareer(state);
+  waiveOrder(state, "You resign. The old ask is void.");
+  openMonthlyOrder(state);
+  const msg = `You resign. Fame stays. Deeds reset. You are a Free Volunteer in ${currentRegion(state).short}.`;
+  pushLog(state, msg, "alert");
+  return { ok: true, message: msg };
+}
+
+function doDonate(state) {
+  ensureCareer(state);
+  if (state.service.donatedWeek === state.week) return { ok: false, message: "One donation a week." };
+  if (state.gold < 8) return { ok: false, message: "Need 8 scrip to donate." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  state.gold -= 8;
+  state.service.donatedWeek = state.week;
+  const p = playerOf(state);
+  const noted = noteDeeds(state, 2, rankOf(state, p));
+  const issuer = state.orders.current?.issuerId;
+  if (issuer) addBond(state, issuer, 2);
+  const msg = `You donate 8 scrip. Deeds ${state.service.deeds}. Grade ${state.service.grade}.`;
+  pushLog(state, msg, "player");
+  const res = { ok: true, message: msg };
+  if (noted.grade?.changed) res.dings = [`GRADE ${state.service.grade}`];
+  if (noted.promoted) res.promoted = noted.promoted;
+  return res;
 }
 
 function domestic(state, kind, stats) {
   const here = currentRegion(state);
-  if (!ownedByPlayer(state, here)) return { ok: false, message: "You do not hold this region." };
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  const owned = ownedByPlayer(state, here);
+  if (!owned && opsDeskBlocked(state, rank, kind)) {
+    return { ok: false, message: "Once this week. That desk is already worked." };
+  }
+  const coOp = unownedWorkOk(rank, state, kind);
+  if (!owned && !coOp) return { ok: false, message: "You do not hold this region." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const season = state._season;
+  const share = coOp && !ownedByPlayer(state, here) ? 0.5 : 1;
   let msg = "";
   if (kind === "drill") {
     const g = geoOf(here);
-    const gain = 3 + Math.floor(stats.war / 18) + (g.sun ? 1 : 0) + nextInt(state, 0, 3);
+    const gain = Math.max(1, Math.round((3 + Math.floor(stats.war / 18) + (g.sun ? 1 : 0) + nextInt(state, 0, 3)) * share));
     here.garrison = Math.min(280, here.garrison + gain);
     here.order = Math.min(100, here.order + 1);
     msg = `Drill in ${here.short}: garrison +${gain} (now ${here.garrison}).`;
   } else if (kind === "commerce") {
     const g = geoOf(here);
-    const gain = Math.max(2, Math.round((4 + stats.pol / 12 + g.mine * 2 + g.fuel + g.water) * season.commerce) + nextInt(state, 0, 3));
+    const gain = Math.max(1, Math.round((Math.max(2, Math.round((4 + stats.pol / 12 + g.mine * 2 + g.fuel + g.water) * season.commerce) + nextInt(state, 0, 3))) * share));
     state.gold += gain;
     here.economy = Math.min(100, here.economy + 1);
     msg = `Commerce in ${here.short}: +${gain} gold (treasury ${state.gold}).`;
   } else if (kind === "cultivate") {
     const g = geoOf(here);
     const harsh = Math.max(0.4, 1 - g.weather * 0.14);
-    const gain = Math.max(2, Math.round((5 + stats.pol / 14 + g.farm * 2 + g.sun + g.water) * season.food * harsh) + nextInt(state, 0, 2));
+    const gain = Math.max(1, Math.round((Math.max(2, Math.round((5 + stats.pol / 14 + g.farm * 2 + g.sun + g.water) * season.food * harsh) + nextInt(state, 0, 2))) * share));
     state.food += gain;
     here.food = Math.min(100, here.food + 2 + g.farm);
     msg = `Cultivate in ${here.short}: +${gain} stores (food ${state.food}).`;
   } else if (kind === "fortify") {
     const g = geoOf(here);
-    const gain = 2 + Math.floor(stats.war / 25) + (here.type === "naval" ? 1 : 0) + g.defense;
+    const gain = Math.max(1, Math.round((2 + Math.floor(stats.war / 25) + (here.type === "naval" ? 1 : 0) + g.defense) * share));
     here.walls = Math.min(90, here.walls + gain);
     msg = `Fortify ${here.short}: walls ${here.walls}.`;
   } else if (kind === "safety") {
-    const gain = 3 + Math.floor(stats.chr / 20);
+    const gain = Math.max(1, Math.round((3 + Math.floor(stats.chr / 20)) * share));
     here.order = Math.min(100, here.order + gain);
     msg = `Safety in ${here.short}: order ${here.order}.`;
   }
+  if (!owned && normalizeStatus(rank) === "opschief") noteCityWork(state, kind);
   pushLog(state, msg, "player");
   return { ok: true, message: msg };
 }
 
 function doResearch(state, content, stats) {
+  const here = currentRegion(state);
+  const rank = rankOf(state, playerOf(state));
+  if (!ownedByPlayer(state, here) && opsDeskBlocked(state, rank, "research")) {
+    return { ok: false, message: "Once this week. The shed is already worked." };
+  }
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const gain = 1 + Math.floor(stats.int / 30) + (chance(state, 0.2) ? 1 : 0);
   state.research.points += gain;
-  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}). 1985–89 kit still waits on the calendar.`;
+  if (!ownedByPlayer(state, here) && normalizeStatus(rank) === "opschief") noteCityWork(state, "research");
+  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}).`;
   pushLog(state, msg, "player");
   tryUnlockTech(state, content, true);
   return { ok: true, message: msg };
@@ -1627,8 +2073,12 @@ function doHide(state, stats) {
 }
 
 function doSpy(state, regionId, stats) {
-  const target = regionOf(state, regionId || currentRegion(state).id);
+  const here = currentRegion(state);
+  const target = regionOf(state, regionId || here.id);
   if (!target) return { ok: false, message: "No such region." };
+  if (target.id !== here.id && !isAdjacent(state, here, target)) {
+    return { ok: false, message: "Adjacent roads only. No leaping." };
+  }
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const diff = DIFFICULTY[state.difficulty];
   const roll = nextInt(state, 1, 100);
@@ -1657,7 +2107,27 @@ function ownerName(state, region) {
 
 function doHire(state, officerId, stats) {
   const p = playerOf(state);
-  if (!p.faction) return { ok: false, message: "Raise a banner first." };
+  if (!p.faction) {
+    if (!cellRank(state)) return { ok: false, message: "Needs Cell Leader to recruit into the cell." };
+    const t = officerOf(state, officerId);
+    if (!t || t.faction || t.region !== p.region || !isVisibleOfficer(state, t) || t.friend) {
+      return { ok: false, message: "No free officer here to recruit." };
+    }
+    if (commandChain(state).has(t.id)) {
+      return { ok: false, message: "That officer sits above you. They are not a recruit." };
+    }
+    ensureCareer(state);
+    const cell = state.service.cell;
+    if (cell.includes(t.id)) return { ok: false, message: "Already in your cell." };
+    if (state.gold < 8) return { ok: false, message: "Needs 8 scrip." };
+    if (!spend(state, 1)) return { ok: false, message: "No AP." };
+    state.gold -= 8;
+    cell.push(t.id);
+    addBond(state, t.id, 8);
+    const msg = `${t.name} joins your cell in ${currentRegion(state).short}. Not a general.`;
+    pushLog(state, msg, "alert");
+    return { ok: true, message: msg, dings: ["CELL"] };
+  }
   const t = officerOf(state, officerId);
   if (!t || t.faction || t.region !== p.region || !isVisibleOfficer(state, t)) {
     return { ok: false, message: "No free officer here to hire." };
@@ -1748,11 +2218,22 @@ function lockedMissionDesk(id) {
   return inlandDesk(id) ? id : null;
 }
 
+function grantCellDeeds(state, res, job) {
+  if (!res?.ok || res.success !== true || !job?.cell) return res;
+  if (!cellRank(state) || playerOf(state).faction) return res;
+  const bump = noteDeeds(state, 4, rankOf(state, playerOf(state)));
+  res.message = `${res.message || ""} Cell deeds +4.`.trim();
+  if (bump.promoted && !res.promoted) res.promoted = bump.promoted;
+  return res;
+}
+
 function doMission(state, jobId, officerId, deskId) {
   const p = playerOf(state);
-  if (!p.faction) return { ok: false, message: "Raise a banner first." };
+  const forCell = cellRank(state);
+  if (!p.faction && !forCell) return { ok: false, message: "Raise a banner first." };
   const job = missionById(state, jobId);
   if (!job || job.done) return { ok: false, message: "That job is gone. End Week refreshes the board." };
+  if (forCell && job.regionId !== p.region) return { ok: false, message: "A cell mission stays in this city." };
   if (p.region !== job.regionId) {
     return { ok: false, message: `Travel to ${regionOf(state, job.regionId)?.short || job.regionId} first.` };
   }
@@ -1765,7 +2246,7 @@ function doMission(state, jobId, officerId, deskId) {
     if (!foe) {
       const res = resolveMission(state, job, actor, missionHelpers());
       pushLog(state, res.report || res.message, "player");
-      return { ...res, sceneId: res.sceneId || "mission", deskId: desk };
+      return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk }, job);
     }
     beginDuel(state, actor, foe, {
       jobId: job.id,
@@ -1776,13 +2257,13 @@ function doMission(state, jobId, officerId, deskId) {
     });
     const msg = `Porch challenge: ${foe.name} in ${regionOf(state, job.regionId)?.short || "town"}.`;
     pushLog(state, msg, "war");
-    return { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk };
+    return grantCellDeeds(state, { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk }, job);
   }
   if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
   const actor = officerOf(state, officerId) || p;
   const res = resolveMission(state, job, actor, missionHelpers());
   pushLog(state, res.report || res.message, "player");
-  return { ...res, sceneId: res.sceneId || "mission", deskId: desk };
+  return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk }, job);
 }
 
 function runStandingMission(state, off) {
@@ -2293,7 +2774,9 @@ function doAttack(state, content, extra) {
   if (fromHold) here.garrison -= commit;
   else p.retinue -= commit;
   const techAtk = techAtkBonus(state, content) + (lead ? Math.floor((lead.war || 0) / 40) : 0);
-  const battle = createBattle(state, content, here.id, dest.id, commit, techAtk);
+  const battle = createBattle(state, content, here.id, dest.id, commit, techAtk, {
+    tacticPoints: tacticPointsOf(p),
+  });
   battle.defenderPersonality = defenderPersonality(state, dest);
   battle.fromHold = fromHold;
   if (lead) {
@@ -2358,6 +2841,7 @@ export function startInlandBattle(state, content, nodeId, extra = {}) {
     walls: extra.walls,
     field,
     forceSiege: !field,
+    tacticPoints: tacticPointsOf(playerOf(state)),
   });
   stampBattleDesk(battle, nodeId);
   battle.defenderPersonality = defenderPersonality(state, regionOf(state, nodeId) || battle.deskRegion || { id: nodeId, owner: null });
@@ -2414,6 +2898,10 @@ function resolveBattle(state, battle) {
     }
     p.fame += 8;
     state.fame += 8;
+    const deedNote = noteDeeds(state, 4, rankOf(state, p));
+    if (deedNote.promoted) {
+      pushLog(state, deedNote.promoted.message, "alert");
+    }
     livingOfficers(state)
       .filter((o) => o.faction === old && o.region === dest.id)
       .forEach((o) => {
@@ -2541,6 +3029,7 @@ function applyOfficerChoice(state, off, choice, playerStaff) {
 
 function officerActAI(state, content, off) {
   if (off.id === "player" || off.alive === false) return null;
+  if (!off.faction && off.cellVolunteer) return null;
   if (off.hidden && !state.discovered.includes(off.id) && off.legend) {
     if (state.week >= 6 && chance(state, 0.2)) {
       noteLegendRumor(state, off.id);
@@ -2641,7 +3130,7 @@ function upkeep(state) {
   let yieldGold = 0;
   held.forEach((r) => {
     const y = geoYield(r, season);
-    yieldFood += y.food;
+    yieldFood += skimHarvest(state, y.food, geoOf(r).farm);
     yieldGold += y.gold;
     r.food = Math.min(100, r.food + Math.round((2 + geoOf(r).farm) * season.food * y.harsh));
     if (r.order < 30) r.garrison = Math.max(0, r.garrison - 1);
@@ -2655,7 +3144,7 @@ function upkeep(state) {
     notes.push(`A cache is cracked open (+${found} food). You are not allowed to starve out of the game.`);
   }
   if (!held.length && p.faction) {
-    notes.push("No ground under the banner — you are a warlord in name. Hide, spy, or take a town.");
+    notes.push("No ground under the banner — the title has no town. Hide, spy, or take a town.");
   }
   if (!p.faction) {
     p.retinue = Math.max(4, p.retinue);
@@ -2720,6 +3209,11 @@ function randomEvent(state) {
 export function weekTease(state) {
   const bits = [];
   const p = playerOf(state);
+  const ahead = (state.week || 0) + 1;
+  if (ahead % 4 === 0) bits.push("a new order from above");
+  if (ahead % 13 === 0) bits.push("scrip payroll");
+  if (ahead % 52 === 27) bits.push("the county fair");
+  if (ahead % 52 === 34) bits.push("the late-summer harvest");
   if ((state.week + 1) % 13 === 0) bits.push("a season turn");
   const jobs = openMissions(state);
   if (jobs.length) bits.push(`${jobs.length} side job${jobs.length === 1 ? "" : "s"}`);
@@ -2769,12 +3263,39 @@ export function endWeek(state, content) {
 
   state.week += 1;
   attachSeason(state);
+  if (state.week % 4 === 0) {
+    const opened = openMonthlyOrder(state);
+    if (opened?.closed?.log) report.push(opened.closed.log);
+    if (opened?.issued?.log) report.push(opened.issued.log);
+  }
+  if (state.week % 13 === 0) {
+    const pNow = playerOf(state);
+    const ruler = rankOf(state, pNow) === "commander" || rankOf(state, pNow) === "governor" || rankOf(state, pNow) === "chair";
+    const staff = ruler ? playerCourt(state).filter((o) => o.id !== pNow.id) : [];
+    const payLine = runPayroll(state, { ruler, staff });
+    report.push(payLine);
+    pushLog(state, payLine, "week");
+  }
+  if (state.week % 52 === 34) {
+    const harvestLine = payoutHarvest(state);
+    report.push(harvestLine);
+    pushLog(state, harvestLine, "week");
+  }
+  if (state.week % 52 === 27) {
+    const fair = fairLine(currentRegion(state)?.short || "town");
+    report.push(fair);
+    pushLog(state, fair, "week");
+    const who = playerOf(state);
+    who.fame = Math.min(100, (who.fame || 0) + 1);
+    state.fame = Math.min(100, (state.fame || 0) + 1);
+  }
   const year = state.week > 0 && state.week % 52 === 0;
   const seasonChanged = state._season?.id !== prevSeason;
   const life = tickLife(state, { year, seasonChanged });
   const chronicle = buildChronicle(state, { year, seasonChanged, lifeEvents: life.events });
   tryUnlockTech(state, content, true);
   refreshMissionBoard(state);
+  postCellMission(state);
   state.ap = apMax(state);
   playerOf(state).fame = Math.min(100, playerOf(state).fame + (playerOf(state).faction ? 1 : 0));
 

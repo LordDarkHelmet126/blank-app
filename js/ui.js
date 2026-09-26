@@ -34,12 +34,29 @@ import {
   playerGenerals,
   rankOf,
   rankLabel,
+  statusShort,
+  statusLabel,
+  statusIndex,
   apMax,
+  orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
+  nextRankGoal,
+  cadenceLead,
+  respondToOrder,
+  noteDeeds,
+  commissionLabel,
+  payForGrade,
+  levyForGrade,
+  monthLabel,
+  COMMAND_TABS,
+  proposalChoices,
   regionOf,
   startInlandBattle,
   factionOf,
   getRelation,
   hireCandidates,
+  hireMenuOfficers,
   attackCandidates,
   neighborRegions,
   serialize,
@@ -574,6 +591,80 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "status" || params.get("demo") === "menu") {
+    suppressOrderPrompt = true;
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    const want = params.get("status");
+    if (want === "member") {
+      respondToOrder(state, "accept");
+      act(state, content, "cultivate");
+      if (state.service) state.service.monthTask = null;
+    }
+    if (want === "leader" || want === "opschief") {
+      playerOf(state).status = want;
+      createCustomOfficer(state, { name: "Lane Voss", personality: "merchant", war: 40, int: 40, pol: 40, chr: 40 });
+      commandCat = params.get("cat") || "personnel";
+    }
+    selectedRegion = "cheyenne";
+    commandCat = params.get("cat") || "domestic";
+    hideModal({ flush: false });
+    render();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "locked") {
+    suppressOrderPrompt = true;
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    selectedRegion = "cheyenne";
+    const tipId = params.get("tip") || "drill";
+    const tipped = listActions(state).find((a) => a.id === tipId);
+    commandCat = params.get("cat") || tipped?.tab || "military";
+    hideModal({ flush: false });
+    render();
+    showLockedTip(tipId);
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "fromabove") {
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    selectedRegion = "cheyenne";
+    commandCat = "personal";
+    hideModal({ flush: false });
+    render();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "promoted") {
+    suppressOrderPrompt = true;
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    respondToOrder(state, "accept");
+    const rankShot = params.get("rank");
+    let done = act(state, content, "cultivate");
+    if (rankShot === "leader" || rankShot === "opschief") {
+      playerOf(state).status = rankShot === "opschief" ? "leader" : "member";
+      if (state.service) {
+        state.service.deeds = rankShot === "opschief" ? 48 : 28;
+        state.service.superiorId = "cole";
+      }
+      state.bonds = state.bonds || {};
+      state.bonds.cole = rankShot === "opschief" ? 75 : 55;
+      done = noteDeeds(state, 0, rankShot === "opschief" ? "leader" : "member");
+    }
+    selectedRegion = "cheyenne";
+    commandCat = "domestic";
+    hideModal({ flush: false });
+    render();
+    if (done.promoted) {
+      showEventScene({
+        id: done.promoted.scene || "promote_member",
+        title: statusLabel(done.promoted.to),
+        text: done.promoted.message || done.message,
+        celebrate: true,
+      });
+    }
+    afterFonts();
+    return;
+  }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
   afterFonts();
@@ -581,7 +672,9 @@ export async function boot(loaded) {
 
 function afterFonts() {
   const again = () => {
-    if (state) render();
+    if (!state) return;
+    render();
+    if (demoQuery().get("demo") === "locked") showLockedTip(demoQuery().get("tip") || "drill");
   };
   if (document.fonts?.ready) document.fonts.ready.then(again).catch(() => {});
 }
@@ -594,6 +687,11 @@ function bindChrome() {
     wireAfterRender();
   };
   $("btn-help").onclick = () => showModal(helpHtml());
+  $("btn-order").onclick = () => reopenPendingOrder();
+  $("objective").addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    focusMonthWork();
+  });
   $("btn-coach").onclick = () => {
     coachOn = true;
     coachStep = 0;
@@ -681,7 +779,19 @@ function bindChrome() {
       if (e.key === "3") doBattle("siege", { kind: "rush" });
       return;
     }
-    if (e.key === "e" && state && state.phase === "strategy") run("end_week");
+    if (e.key === "Escape") {
+      const modal = $("modal");
+      if (modal && !modal.hidden) {
+        if ($("modal-card")?.querySelector("#ng-start")) return;
+        e.preventDefault();
+        hideModal();
+        return;
+      }
+    }
+    if ((e.key === "e" || e.key === "E") && state && state.phase === "strategy") {
+      if (overlayBusy()) return;
+      run("end_week");
+    }
     if ((e.key === "l" || e.key === "L") && state?.phase === "strategy" && e.target?.tagName !== "INPUT" && e.target?.tagName !== "TEXTAREA") {
       toggleLegend();
     }
@@ -692,7 +802,7 @@ function titleScreenHtml(hasSave) {
   return `
     <p class="muted">Original IP. Alaska-first western theater. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
-    <p><strong>Click Begin week 0.</strong> You start alone in Cheyenne. First job: raise a banner, spend AP, then End Week.</p>
+    <p><strong>Click Begin week 0.</strong> You start as a Free Volunteer in Cheyenne. The first month opens with an order from above. Raise a banner when you want your own color.</p>
     <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
@@ -733,14 +843,10 @@ function wireTitle() {
       const name = $("modal-card").querySelector("#ng-name").value;
       state = createNewGame(content, { name, background: bg, difficulty: diff });
       selectedRegion = "cheyenne";
-      commandCat = "domestic";
+      commandCat = "personal";
       hideModal();
       render();
-      if (coachForced || localStorage.getItem(COACH_KEY) !== "skip") {
-        coachOn = true;
-        coachStep = 0;
-        openCoach();
-      }
+      scheduleCoach();
     };
   }
   const cont = $("modal-card").querySelector("#ng-continue");
@@ -815,7 +921,9 @@ function showModal(html, opts = {}) {
           ? " states-card"
           : opts.kind === "missions"
             ? " missions-card"
-            : "";
+            : opts.kind === "order"
+              ? " order-card"
+              : "";
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
@@ -827,6 +935,7 @@ function showModal(html, opts = {}) {
   } else clearDeskPaint($("modal-card"));
   wireTitle();
   wireAfterRender();
+  $("modal-card").scrollTop = 0;
   const close = $("modal-card").querySelector("[data-close]");
   if (close) close.onclick = hideModal;
   const helpCoach = $("modal-card").querySelector("#help-coach");
@@ -845,9 +954,10 @@ function hideModal(opts = {}) {
   $("modal").hidden = true;
   $("modal-card").className = "modal-card";
   if (opts.flush !== false) flushOverlays();
+  if (!overlayBusy()) maybeShowOrder();
 }
 
-const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
+const HIRE_LINE = "People → Hire fills an ADD chair (5 generals). Extras wait — Command → Appoint.";
 
 /** Campaign shorts. Siege flavor may say Lane / Inland Ridge; map labels stay Sponsor Lane and Sheds. */
 const INLAND_SIEGE_CUES = {
@@ -976,6 +1086,19 @@ function frameForInlandFocus(id) {
 }
 
 function nextHint(st) {
+  return prefixCareer(st, nextHintCore(st));
+}
+
+function prefixCareer(st, line) {
+  if (!st || !line || !line.startsWith("NEXT:")) return line;
+  const order = orderLead(st);
+  if (order) return `NEXT: ${order}`;
+  const cadence = cadenceLead(st);
+  if (!cadence) return line;
+  return `NEXT: ${cadence}. ${line.slice(6)}`;
+}
+
+function nextHintCore(st) {
   if (!st || st.gameOver) return "Campaign closed.";
   if (st.phase === "duel") {
     const spec = st.duel?.you?.style?.specialLabel;
@@ -994,21 +1117,26 @@ function nextHint(st) {
     const route = routeSentence(st);
     if (route) return `NEXT: ${route}`;
   }
-  if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). A state frees when its ★ keys are yours — Cheyenne frees Wyoming. Then Plot → Hire.";
+  if (!p.faction) {
+    const rungNow = rankOf(st, p);
+    if (rungNow === "opschief") return "NEXT: Next rank is Front Commander. Raise a banner of your own for ground and ADD chairs.";
+    if (rungNow === "leader") return leaderNextLine(st);
+    return "NEXT: Finish the month's order. Deeds and trust raise you. A banner is the Front Commander rank.";
+  }
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
   const arc = campaignArcLine(st);
   if (arc) {
-    const hire = gens.length === 0 && !ensureCampaign(st).nationalLeader ? " Then Plot → Hire." : "";
+    const hire = gens.length === 0 && !ensureCampaign(st).nationalLeader ? " Then People → Hire." : "";
     return `NEXT: ${arc}${hire}`;
   }
   const rung = rosterRungHint(st, p);
   if (rung) return rung;
   if (gens.length === 0) return `NEXT: ${HIRE_LINE}`;
   if (gens.length < MAX_GENERALS && hireCandidates(st).length) {
-    return `NEXT: Plot → Hire (${gens.length}/5). Same path as the ADD chairs.`;
+    return `NEXT: People → Hire (${gens.length}/5). Same path as the ADD chairs.`;
   }
   if (gens.length < MAX_GENERALS && wait.length) {
-    return `NEXT: Plot → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
+    return `NEXT: Command → Appoint ${wait[0].name} into an ADD chair (${gens.length}/5).`;
   }
   if (localJob) return `NEXT: ${st.ap} AP left — Military → Side Mission: ${localJob.name}, or one more tile.`;
   if (jobs.length) return `NEXT: ${st.ap} AP left — ${jobs.length} jobs on the board, or one more tile.`;
@@ -1045,9 +1173,33 @@ function renderObjective() {
   }
   const end = $("btn-end");
   if (end) end.setAttribute("data-tip", `End Week. Next week may bring ${weekTease(state)}. Fresh AP.`);
+  const pendingOrder = state.orders?.current?.status === "pending";
+  const orderBtn = $("btn-order");
+  if (orderBtn) orderBtn.hidden = !pendingOrder;
+  bar.classList.toggle("has-order", !!pendingOrder);
+}
+
+function scheduleCoach() {
+  if (!(coachForced || localStorage.getItem(COACH_KEY) !== "skip")) return;
+  coachOn = true;
+  coachStep = 0;
+  const pending = state?.orders?.current?.status === "pending";
+  if (pending || overlayBusy()) {
+    parkedCoach = true;
+    const el = $("coach");
+    if (el) el.hidden = true;
+    return;
+  }
+  openCoach();
 }
 
 function openCoach() {
+  if (state?.orders?.current?.status === "pending") {
+    parkedCoach = true;
+    const waiting = $("coach");
+    if (waiting) waiting.hidden = true;
+    return;
+  }
   if (overlayBusy()) {
     parkedCoach = true;
     const el = $("coach");
@@ -1090,14 +1242,18 @@ function applyCoachRing() {
   const step = COACH_STEPS[coachStep];
   if (!step?.target) return;
   const el = document.querySelector(step.target);
-  if (el) el.classList.add("coach-ring");
+  if (!el) return;
+  el.classList.add("coach-ring");
+  el.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 function maybeAdvanceCoach(actionId) {
   if (!coachOn || $("coach").hidden) return;
   const step = COACH_STEPS[coachStep];
   if (!step) return;
-  if (step.id === "banner" && actionId === "raise_banner") coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+  if (step.id === "banner" && ["cultivate", "commerce", "safety", "drill", "fortify", "research", "spy"].includes(actionId)) {
+    coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
+  }
   else if (step.id === "hire" && (actionId === "hire" || actionId === "appoint")) {
     coachStep = Math.min(coachStep + 1, COACH_STEPS.length - 1);
   } else if (step.id === "end" && actionId === "end_week") {
@@ -1107,20 +1263,58 @@ function maybeAdvanceCoach(actionId) {
   openCoach();
 }
 
+function placeTip(anchor) {
+  const tip = $("tip");
+  if (!tip || !anchor) return;
+  tip.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const tipW = Math.min(280, tip.offsetWidth || 260);
+  const tipH = tip.offsetHeight || 96;
+  const side = document.querySelector(".side");
+  const plate = document.querySelector("#officer-plate");
+  const sideRight = side ? side.getBoundingClientRect().right : r.right;
+  let left = sideRight + 8;
+  let top = Math.max(8, r.top);
+  if (left + tipW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - tipW - 8);
+  if (top + tipH > window.innerHeight - 8) top = Math.max(8, window.innerHeight - tipH - 8);
+  const pr = plate?.getBoundingClientRect();
+  const overlaps =
+    pr &&
+    left < pr.right &&
+    left + tipW > pr.left &&
+    top < pr.bottom &&
+    top + tipH > pr.top;
+  if (overlaps) {
+    left = Math.min(window.innerWidth - tipW - 8, Math.max(8, pr.right + 8));
+    if (top + tipH > pr.top && top < pr.bottom) top = Math.max(8, pr.top - tipH - 8);
+  }
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
+function fillTip(html) {
+  const tip = $("tip");
+  tip.innerHTML = html;
+  tip.classList.toggle("tip-long", (tip.textContent || "").length > 220);
+  if (!tip.dataset.boundLeave) {
+    tip.dataset.boundLeave = "1";
+    tip.addEventListener("mouseleave", () => {
+      tip.hidden = true;
+    });
+  }
+  return tip;
+}
+
 function bindTip(el, text) {
   if (!el || !text) return;
   const show = (e) => {
-    const tip = $("tip");
-    tip.innerHTML = text;
-    tip.hidden = false;
-    const r = (e.currentTarget || el).getBoundingClientRect();
-    const x = Math.max(8, Math.min(window.innerWidth - 288, r.left));
-    const y = r.bottom + 6;
-    tip.style.left = `${x}px`;
-    tip.style.top = `${Math.min(window.innerHeight - 8, y)}px`;
+    fillTip(text);
+    placeTip(e.currentTarget || el);
   };
-  const hide = () => {
-    $("tip").hidden = true;
+  const hide = (e) => {
+    const tip = $("tip");
+    if (e?.relatedTarget && tip.contains(e.relatedTarget)) return;
+    tip.hidden = true;
   };
   el.addEventListener("mouseenter", show);
   el.addEventListener("mouseleave", hide);
@@ -1131,7 +1325,179 @@ function bindTip(el, text) {
 function actionTipHtml(a) {
   const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
   const cost = live ? `<span class="tip-ap">${a.ap} AP</span>` : `<span class="tip-lock">${a.enabled ? "Need more AP" : "LOCKED"}</span>`;
-  return `<strong>${esc(a.label)}</strong>${cost}<p>${esc(a.hint || "")}</p>`;
+  const why = a.hint || "";
+  return `<strong>${esc(a.label)}</strong>${cost}<p>${esc(why)}</p>`;
+}
+
+let orderShownFor = null;
+let suppressOrderPrompt = false;
+
+function bondTicks(n) {
+  const v = Math.max(0, Math.min(100, Number(n) || 0));
+  const on = Math.round(v / 10);
+  return Array.from({ length: 10 }, (_, i) => `<i${i < on ? ' class="on"' : ""}></i>`).join("");
+}
+
+function orderHtml() {
+  const o = state.orders?.current;
+  if (!o) return `<h2>No order</h2><button type="button" data-close>Close</button>`;
+  const issuer = state.officers.find((x) => x.id === o.issuerId);
+  const bond = state.bonds?.[o.issuerId] ?? 40;
+  const pending = o.status === "pending";
+  const choices = proposalChoices(o.task)
+    .map(
+      (id) =>
+        `<button type="button" data-propose="${id}">${esc(id === "research" ? "Salvage" : id[0].toUpperCase() + id.slice(1))}</button>`
+    )
+    .join("");
+  const answer = pending
+    ? `<button type="button" class="primary" data-order="accept">Accept <small>(+trust, +deeds when done · ${esc(o.taskLabel)} · ${esc(o.stat)})</small></button>
+       <button type="button" data-order="refuse">Refuse <small>(−trust, −1 fame. Three refusals in a row demote a Cell Member.)</small></button>
+       <button type="button" data-order="propose">Propose instead</button>
+       <p class="muted">A proposal must match ${esc(o.issuerName)}'s skills and trust of 40 or more. Otherwise that task is locked this month.</p>
+       <div id="propose-row" hidden>${choices}</div>
+       <button type="button" data-close>Decide later</button>`
+    : `<p class="plus">You took this order. Finish it from the command tabs.</p><button type="button" data-close class="primary">Close</button>`;
+  return `<div class="order-layout">
+      <div class="order-face" aria-hidden="true">${esc(portraitInitials(o.issuerName))}</div>
+      <div>
+        <h2>${esc(o.issuerName)}</h2>
+        <p class="muted">${esc(issuer?.title || "Cell")} · ${esc(issuer?.personality || "")} · Bond <span class="loy-bar">${bondTicks(bond)}</span> ${bond}</p>
+        <p class="order-line">"${esc(o.line)}"</p>
+        <p class="muted">${esc(o.short)} · ${esc(o.taskLabel)} · ${esc(o.stat)}</p>
+      </div>
+    </div>
+    <div class="order-choices">${answer}</div>`;
+}
+
+function reopenPendingOrder() {
+  const o = state?.orders?.current;
+  if (!o || o.status !== "pending") return;
+  openOrderDialog();
+  const card = $("modal-card");
+  if (card) card.scrollTop = 0;
+}
+
+function focusOrderedTile() {
+  const btn = document.querySelector("#cmd-actions button.is-ordered");
+  if (!btn) return;
+  btn.scrollIntoView({ block: "nearest", inline: "nearest" });
+  btn.focus({ preventScroll: true });
+}
+
+function focusMonthWork() {
+  const o = state?.orders?.current;
+  if (!o) return;
+  if (o.status === "pending") {
+    reopenPendingOrder();
+    return;
+  }
+  if (o.status !== "accepted" && o.status !== "proposed") return;
+  const live = listActions(state).find((a) => a.ordered);
+  if (live?.tab) commandCat = live.tab;
+  renderActions();
+  focusOrderedTile();
+}
+
+function serviceHtml() {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  const svc = state.service || { deeds: 0, grade: 5, completed: 0, refused: 0, failed: 0 };
+  const rows = (state.orders?.history || [])
+    .slice(0, 8)
+    .map(
+      (h) =>
+        `<li>Wk ${h.week} · ${esc(h.short || h.taskLabel)} · ${esc(h.status)} · ${esc(h.issuerName || "")}</li>`
+    )
+    .join("");
+  return `<h2>Service record</h2>
+    <p><span class="rank-badge rank-${esc(rank)}">${esc(rankLabel(rank))}</span></p>
+    <p>Deeds ${svc.deeds} · Grade ${svc.grade} · Pay ${payForGrade(svc.grade)} scrip · Levy cap ${levyForGrade(svc.grade)}</p>
+    <p>Commission ${esc(commissionLabel(svc.commission))} · Fame ${state.fame}. Commission sets tactic points in a field fight.</p>
+    <p class="muted">Done ${svc.completed || 0} · Refused ${svc.refused || 0} · Failed ${svc.failed || 0}. Deeds raise grade. Grade sets pay. A completed order can promote you.</p>
+    <ul class="week-ai">${rows || "<li>No closed orders yet.</li>"}</ul>
+    <button type="button" data-close class="primary">Close</button>`;
+}
+
+function openOrderDialog() {
+  const o = state.orders?.current;
+  if (!o) return;
+  orderShownFor = o.id;
+  showModal(orderHtml(), { kind: "order" });
+  wireOrderDialog();
+}
+
+function wireOrderDialog() {
+  const root = $("modal-card");
+  if (!root) return;
+  root.querySelectorAll("[data-order]").forEach((btn) => {
+    btn.onclick = () => {
+      if (btn.dataset.order === "propose") {
+        const row = root.querySelector("#propose-row");
+        if (row) row.hidden = !row.hidden;
+        return;
+      }
+      answerOrder(btn.dataset.order);
+    };
+  });
+  root.querySelectorAll("[data-propose]").forEach((btn) => {
+    btn.onclick = () => answerOrder("propose", btn.dataset.propose);
+  });
+  const accept = root.querySelector("[data-order='accept']");
+  if (accept) accept.focus();
+}
+
+function answerOrder(choice, taskId) {
+  const res = respondToOrder(state, choice, taskId);
+  if (!res.ok) {
+    toast(res.message);
+    return;
+  }
+  if (res.approved === false) {
+    toast(res.message);
+    showModal(orderHtml(), { kind: "order" });
+    wireOrderDialog();
+    renderObjective();
+    return;
+  }
+  if (res.tab) commandCat = res.tab;
+  hideModal();
+  render();
+  if (choice === "accept" || res.approved) {
+    focusOrderedTile();
+    requestAnimationFrame(focusOrderedTile);
+  }
+  if (res.promoted) {
+    showEventScene({
+      id: res.promoted.scene || "promote_member",
+      title: statusLabel(res.promoted.to),
+      text: res.promoted.message || res.message,
+      celebrate: true,
+    });
+  } else {
+    toast(res.message);
+  }
+}
+
+function maybeShowOrder() {
+  if (suppressOrderPrompt || !state) return;
+  if (demoQuery().get("demo") === "coach") return;
+  const o = state.orders?.current;
+  if (!o || o.status !== "pending") return;
+  if (o.id === orderShownFor) return;
+  if (overlayBusy()) return;
+  if (state.phase !== "strategy") return;
+  openOrderDialog();
+}
+
+function showLockedTip(actionId) {
+  const btn = document.querySelector(`#cmd-actions button[data-id="${actionId}"]`);
+  const tip = $("tip");
+  if (!btn || !tip) return;
+  const action = listActions(state).find((a) => a.id === actionId);
+  fillTip(actionTipHtml(action || { label: actionId, hint: "Locked.", ap: 1, enabled: false }));
+  btn.scrollIntoView({ block: "center", inline: "nearest" });
+  placeTip(btn);
 }
 
 function helpHtml() {
@@ -1139,9 +1505,10 @@ function helpHtml() {
     <h2>How to play</h2>
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
-      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Reunify is the east walk NE–KS–MO.</li>
-      <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
-      <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
+      <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Reunify is the east walk already on the board: NE–KS–MO. Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.</li>
+      <li><strong>Status plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR, deeds, pay grade, and commission. Treasury (gold/food/AP) lives in the top row.</li>
+      <li><strong>Status:</strong> You play one officer. Free Volunteer through Chair of the Provisional Government. Locked commands stay on the tab and say why. Every 4 weeks is a month: an order from above, scrip every 13 weeks, a late-summer harvest, and a Fourth of July county fair.</li>
+      <li><strong>Command:</strong> Eight tabs — Personal, Social, Trade, Domestic, Military, People, Plot, Command. Domestic = hall work. Plot = spy and rumor. Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
       <li><strong>Roster:</strong> Dock → Roster. Create a friend at the top of that screen (they start as a player). Pick a named original face, then Promote to officer, then general. RANK CONFIRMED and NEXT name the rung. A promoted officer in this city can take the yard or lead a march.</li>
       <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Keys 1/2/3: Strike / Guard / Special · style move (e.g. Special · Dust Feint). Press in the green window. Clock ~99s if both stay up.</li>
@@ -1323,11 +1690,16 @@ function missionsHtml() {
   if (!state) return `<p>No game.</p>`;
   const p = playerOf(state);
   const jobs = openMissions(state);
+  const rung = rankOf(state, p);
+  const cellPlay = !p.faction && (rung === "leader" || rung === "opschief");
+  const shown = cellPlay ? jobs.filter((j) => j.cell && j.regionId === p.region) : jobs;
   const stash = (state.stash || []).slice(-8);
-    const empty = jobs.length
+    const empty = shown.length
     ? ""
-    : `<p class="muted">No jobs. Raise a banner, then End Week. Scout, raid, escort, radio, cache, ford, strip, claim, ice, ranch, porch.</p>`;
-  const rows = jobs
+    : cellPlay
+      ? `<p class="muted">One cell job a week. End Week posts the next one in this city. Deeds if you clear it.</p>`
+      : `<p class="muted">No jobs. Raise a banner, then End Week. Scout, raid, escort, radio, cache, ford, strip, claim, ice, ranch, porch.</p>`;
+  const rows = shown
     .map((j) => {
       const dest = regionOf(state, j.regionId);
       const here = j.regionId === p.region;
@@ -1549,6 +1921,14 @@ function run(id, extra) {
       text: `${res.officerName || "A legend"} answers. Original character — a hidden free officer. Hire them if you share their ground.`,
       regionId: res.regionId || playerOf(state).region,
     });
+  } else if (res.promoted && !res.weekEnd) {
+    if (res.promoted.tab) commandCat = res.promoted.tab;
+    showEventScene({
+      id: res.promoted.scene || "promote_member",
+      title: statusLabel(res.promoted.to),
+      text: res.promoted.message || res.message || "Rank confirmed.",
+      celebrate: true,
+    });
   } else if (res.sceneId && !res.weekEnd) {
     showEventScene({
       id: res.sceneId,
@@ -1596,14 +1976,18 @@ export function render() {
   const p = playerOf(state);
   $("week").textContent = String(state.week);
   $("season").textContent = `${state._season?.name || ""} ${calendarYear(state.week)}`;
+  const monthEl = $("month");
+  if (monthEl) monthEl.textContent = String(monthLabel(state.week));
   $("ap").textContent = `${state.ap}/${apMax(state)}`;
   $("gold").textContent = String(state.gold);
   $("food").textContent = String(state.food);
   $("fame").textContent = String(state.fame);
-  $("rank").textContent = rankLabel(rankOf(state, p));
+  $("rank").textContent = statusShort(rankOf(state, p));
   $("app").dataset.season = state._season?.id || "";
   $("officer-plate").innerHTML = officerHtml();
+  $("officer-plate").classList.toggle("is-open", plateOpen);
   $("city-stats").innerHTML = cityHtml();
+  $("city-stats").classList.toggle("is-open", cityOpen);
   if ($("court-strip")) $("court-strip").innerHTML = courtHtml();
   paintCourtDesk();
   renderActions();
@@ -1616,6 +2000,7 @@ export function render() {
   wireOrders();
   wireAfterRender();
   applyCoachRing();
+  maybeShowOrder();
   if (state.phase === "battle") openBattle();
   else {
     $("battle").hidden = true;
@@ -1643,10 +2028,21 @@ function officerHtml() {
   const here = regionOf(state, p.region);
   const rank = rankLabel(rankOf(state, p));
   const stripe = fac?.color || "#607838";
+  const goal = nextRankGoal(state, rankOf(state, p));
   return `
+    <button type="button" class="plate-summary" data-toggle-plate>
+      <b>${esc(p.name)}</b>
+      <span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span>
+      <span id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5}</span>
+      <span class="goal-line">${esc(goal)}</span>
+    </button>
+    <p class="plate-tools">
+      <button type="button" data-open-service>Service record</button>
+      ${state.orders?.current ? `<button type="button" data-open-order>Order</button>` : ""}
+    </p>
     <div class="chrome-head">
-      <span class="panel-title">Ruler</span>
-      <span class="panel-why">Who holds this chair.</span>
+      <span class="panel-title">Status</span>
+      <span class="panel-why">Service record for this officer.</span>
     </div>
     <div class="plate-body">
       <i class="banner-stripe" style="background:${esc(stripe)}"></i>
@@ -1656,8 +2052,12 @@ function officerHtml() {
       </div>
       <div class="officer-meta">
         <h2>${esc(p.name)}</h2>
-        <p class="officer-rankline"><span class="rank-badge rank-commander">${esc(rank)}</span>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
+        <p class="officer-rankline"><span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span></p>
+        <p class="muted">${esc(p.title)} · ${fac ? esc(fac.short) : "No banner"}</p>
         <p class="muted">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""} · ${esc(here?.short || "?")} · AP ${state.ap}/${apMax(state)}</p>
+        <p class="service-line">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
+        <p class="service-line">Commission ${esc(commissionLabel(state.service?.commission))} · Fame ${state.fame}</p>
+        <p class="service-line goal-line" id="next-goal">${esc(nextRankGoal(state, rankOf(state, p)))}</p>
         ${loyBar(p.loyalty)}
         <div class="stat-row">
           <span><b>WAR</b><strong>${p.war}</strong></span>
@@ -1680,7 +2080,14 @@ function courtHtml() {
   const deskId = syncCourtDesk();
   const look = inlandLook(deskId);
   const desk = inlandDesk(deskId);
-  const courtBase = rung || "NEXT: Roster → Create a friend (they start as Player), or Plot → Hire fills an ADD chair.";
+  const cellHire = leaderHireAvailable(state);
+  const courtBase = rung || (p.faction
+    ? "NEXT: Roster → Create a friend (they start as Player), or People → Hire fills an ADD chair."
+    : cellHire
+      ? "NEXT: People → Hire recruits into your cell. A banner fills the ADD chairs."
+      : statusIndex(rankOf(state, p)) >= statusIndex("leader")
+        ? "NEXT: Hire waits until a free officer is in this city. A banner fills the ADD chairs."
+        : "NEXT: Finish orders to Cell Leader. A banner fills the ADD chairs.");
   const courtNext = desk && look ? `NEXT: ${desk.line}. ${look.read}. ${courtBase.replace(/^NEXT:\s*/, "")}` : courtBase;
   const courtTitle = look ? `Court — ${look.strip}` : "Court";
   const courtStrip = look
@@ -1708,11 +2115,17 @@ function courtHtml() {
       </div>`);
     } else {
       let hint;
-      if (!p.faction) hint = "Raise Banner, then Plot → Hire.";
-      else if (wait[0]) hint = `Plot → Appoint ${esc(wait[0].name)}.`;
+      if (!p.faction) {
+        hint = cellHire
+          ? "People → Hire recruits into your cell. Not an ADD chair."
+          : statusIndex(rankOf(state, p)) >= statusIndex("leader")
+            ? "No free officer in this city to recruit. Not an ADD chair."
+            : "Finish orders to Cell Leader. Hire waits on a free officer in this city.";
+      }
+      else if (wait[0]) hint = `Command → Appoint ${esc(wait[0].name)}.`;
       else if (ladderRoster(state).officer.some((o) => o.region === p.region) && gens.length < MAX_GENERALS) hint = "Roster → Promote an officer to general.";
       else if (ladderRoster(state).player.some((o) => o.region === p.region)) hint = "Roster → Promote a player to officer.";
-      else hint = "Plot → Hire fills this ADD chair.";
+      else hint = "People → Hire fills this ADD chair.";
       chairs.push(`<button type="button" class="court-chair empty" data-add-gen="${i}">
         <i class="rank-stripe rank-empty"></i>
         <span class="mini empty-mini">+</span>
@@ -1727,7 +2140,7 @@ function cityHtml() {
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const p = playerOf(state);
   const f = r.owner ? factionOf(state, r.owner) : null;
-  const known = r.intel > 0 || (playerOf(state).faction && r.owner === playerOf(state).faction);
+  const known = r.id === p.region || r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? r.garrison : "???";
   const walls = known ? r.walls : "?";
   const order = known ? r.order : "?";
@@ -1736,6 +2149,9 @@ function cityHtml() {
   const minus = (r.minus || []).join(" · ");
   const kind = markerKind(r);
   return `
+    <button type="button" class="city-summary" data-toggle-city>
+      <b>City</b> ${esc(r.stateCode || "—")} → ${esc(r.short)} · ECON ${econ} · LEVY ${garr}
+    </button>
     <div class="chrome-head">
       <span class="panel-title">City report</span>
       <span class="panel-why">Selected city.</span>
@@ -1808,9 +2224,24 @@ const ACTION_CATS = {
   military: ["travel", "attack", "mission", "challenge"],
 };
 const TAB_TIPS = {
-  domestic: "<strong>Domestic</strong><p>Town work: raise a banner, food, gold, walls, salvage.</p>",
-  plot: "<strong>Plot</strong><p>People work: hire, appoint generals, court, spy, rumor, alliance, challenge.</p>",
-  military: "<strong>Military</strong><p>Move on gold roads, march, take a side mission, or challenge an officer in this city.</p>",
+  personal: "<strong>Personal</strong><p>Train, rest, enlist, resign, raise a banner. Locked rows say why.</p>",
+  social: "<strong>Social</strong><p>Court. Notes and porch visits come later.</p>",
+  trade: "<strong>Trade</strong><p>Donate scrip. The swap meet comes later.</p>",
+  domestic: "<strong>Domestic</strong><p>Town work: food, gold, order, walls, salvage. Needs Cell Member.</p>",
+  military: "<strong>Military</strong><p>Travel is free. Drill, march, and missions open with rank.</p>",
+  personnel: "<strong>People</strong><p>Hire and the roster ladder. Needs a leader or the Front Commander.</p>",
+  plot: "<strong>Plot</strong><p>Spy is open to a Free Volunteer. Rumor and persuade need a cell.</p>",
+  command: "<strong>Command</strong><p>Envoy, appoint, standing chair, war council. Needs the banner.</p>",
+};
+const TAB_TIPS_PLAIN = {
+  personal: "Personal — rest, enlist, raise banner.",
+  social: "Social — court.",
+  trade: "Trade — donate scrip.",
+  domestic: "Domestic — one task a month until you lead.",
+  military: "Military — travel now. Drill and march with rank.",
+  personnel: "People — hire and promote.",
+  plot: "Plot — spy, rumor, persuade.",
+  command: "Command — envoy, appoint, council.",
 };
 const SCENE_ACTIONS = new Set([
   "raise_banner",
@@ -1852,7 +2283,9 @@ const SCENE_ACTIONS = new Set([
   "challenge",
   "porch_challenge",
 ]);
-let commandCat = "domestic";
+let commandCat = "personal";
+let plateOpen = false;
+let cityOpen = false;
 const COACH_KEY = "northern-front-v01-coach";
 let coachForced = false;
 let coachOn = true;
@@ -1869,17 +2302,17 @@ const COACH_STEPS = [
   },
   {
     id: "banner",
-    title: "2 / 4  Raise a banner",
-    body: "Click RAISE BANNER (1 AP) to claim Cheyenne as Northern Front. That frees Wyoming. Eight west-bloc states (AK WA OR ID MT WY UT CO) name you national leader — a title, not a leap. Yukon is the road between, not a ninth. Reunify is the east walk already on the board: NE–KS–MO. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
-    target: '[data-id="raise_banner"]',
+    title: "2 / 4  This month's order",
+    body: "Do the highlighted order this month. It writes deeds, pay grade, and trust. Cell Leader, then Operations Chief, come from that record. You do not have to raise a banner. Eight west-bloc states name you national leader — a title, not a leap.",
+    target: "#cmd-actions",
     cat: "domestic",
   },
   {
     id: "hire",
-    title: "3 / 4  Fill an ADD chair",
-    body: "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint. Same words on the court strip.",
-    target: '[data-id="hire"]',
-    cat: "plot",
+    title: "3 / 4  Ranks ahead",
+    body: "Finish orders to climb. People → Hire, once you are a Cell Leader and a free officer is in your city, recruits into your cell — not an ADD chair. Fill an ADD chair after you raise a banner: People → Hire, then Command → Appoint. Appoint waits on a Front Commander.",
+    target: "#status-panel",
+    cat: "personal",
   },
   {
     id: "end",
@@ -1899,7 +2332,9 @@ function actionButton(a) {
   b.dataset.id = a.id;
   const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
   b.disabled = !live;
-  const lock = !a.enabled ? "LOCK" : state.ap < a.ap ? `${a.ap}AP` : `${a.ap}`;
+  if (!live) b.classList.add("is-locked");
+  if (a.ordered) b.classList.add("is-ordered");
+  const lock = `${a.ap} AP`;
   b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span><b>${esc(a.label)}</b><small>${esc(lock)}</small></span>`;
   bindTip(b, actionTipHtml(a));
   b.onclick = () => {
@@ -1916,26 +2351,26 @@ function renderActions() {
   tabs.innerHTML = "";
   box.innerHTML = "";
   const actions = listActions(state).filter((a) => a.id !== "end_week");
-  [
-    ["domestic", "Domestic", "drill"],
-    ["plot", "Plot", "spy"],
-    ["military", "Military", "attack"],
-  ].forEach(([id, label, artId]) => {
+  const known = new Set(COMMAND_TABS.map((t) => t.id));
+  if (!known.has(commandCat)) commandCat = "personal";
+  COMMAND_TABS.forEach((tab) => {
     const t = document.createElement("button");
     t.type = "button";
-    t.className = "cmd-tab" + (commandCat === id ? " active" : "");
-    t.innerHTML = `<img src="${sceneArt(artId)}" alt="" /><span>${label}</span>`;
-    bindTip(t, TAB_TIPS[id]);
+    const orderedHere = actions.some((a) => a.ordered && a.tab === tab.id);
+    t.className = "cmd-tab" + (commandCat === tab.id ? " active" : "") + (orderedHere ? " has-order" : "");
+    t.innerHTML = `<span>${esc(tab.label)}</span>`;
+    bindTip(t, TAB_TIPS[tab.id] || `<strong>${esc(tab.label)}</strong>`);
     t.onclick = () => {
-      commandCat = id;
+      commandCat = tab.id;
       renderActions();
     };
     tabs.appendChild(t);
   });
-  ACTION_CATS[commandCat].forEach((id) => {
-    const a = actions.find((x) => x.id === id);
-    if (a) box.appendChild(actionButton(a));
-  });
+  const why = $("cmd-why");
+  if (why) why.textContent = TAB_TIPS_PLAIN[commandCat] || "Commands for this status.";
+  actions
+    .filter((a) => (a.tab || "personal") === commandCat)
+    .forEach((a) => box.appendChild(actionButton(a)));
 }
 
 const CHARGE_SCENE_IDS = new Set(["travel", "attack"]);
@@ -2009,6 +2444,7 @@ function hideEventScene() {
     return;
   }
   flushOverlays();
+  if (!overlayBusy()) maybeShowOrder();
 }
 
 function startSeasonFx(seasonId) {
@@ -2056,7 +2492,8 @@ function stopSceneFx() {
 
 function startAction(a) {
   if (a.needs === "region" || a.needs === "neighbor") {
-    const list = a.needs === "neighbor" ? neighborRegions(state) : state.regions;
+    const list = a.needs === "neighbor" || a.id === "spy" ? neighborRegions(state) : state.regions;
+    if (!list.length) return toast("No adjacent road from this city.");
     showModal(`<h2>${esc(a.label)}</h2><p class="muted">Adjacent roads only. No leaping.</p>${list.map((r) => `<button class="list-btn" data-act="${a.id}" data-region="${r.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${geoTags(r).map((t) => t.label).join("/") || "—"}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-region]").forEach((btn) => {
       btn.onclick = () => {
@@ -2067,9 +2504,18 @@ function startAction(a) {
     return;
   }
   if (a.needs === "hire") {
-    const cs = hireCandidates(state);
-    if (!cs.length) return toast("No free officers in this region. Travel, or Officers → Create (cap 10).");
-    showModal(`<h2>Hire into court / generals</h2><p class="muted">${HIRE_LINE}</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    const cellHire = !playerOf(state).faction;
+    const cs = hireMenuOfficers(state);
+    if (!cs.length) {
+      return toast(cellHire
+        ? "No free officer in this city who is not above you."
+        : "No free officers in this region. Travel, or Officers → Create (cap 10).");
+    }
+    const title = cellHire ? "Recruit into your cell" : "Hire into court / generals";
+    const blurb = cellHire
+      ? "People → Hire recruits a free officer into your cell. Not an ADD chair. A banner fills those chairs. 8 scrip."
+      : HIRE_LINE;
+    showModal(`<h2>${title}</h2><p class="muted">${blurb}</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-hire]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -2081,7 +2527,7 @@ function startAction(a) {
   if (a.needs === "appoint") {
     const cs = appointCandidates(state);
     if (!cs.length) return toast("Court empty. " + HIRE_LINE);
-    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Plot → Appoint puts a court officer in an ADD chair (5 max). Standing orders fire at End Week.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    showModal(`<h2>Appoint general (${playerGenerals(state).length}/5)</h2><p class="muted">Command → Appoint puts a court officer in an ADD chair (5 max). Standing orders fire at End Week.</p>${cs.map((o) => `<button class="list-btn" data-appoint="${o.id}"><img class="cmd-thumb" src="${sceneArt("appoint")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ${esc(o.title)}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-appoint]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -4070,7 +4516,8 @@ function drawBattle(now = performance.now()) {
     }
   }
   const lead = b.commanderName ? ` · led by ${b.commanderRank ? ladderLabel(b.commanderRank) + " " : ""}${b.commanderName}` : "";
-  $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
+  const tp = b.ploysLeft == null ? (b.ployUsed ? 0 : 1) : b.ploysLeft;
+  $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · TP ${tp} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
   const sky = $("battle-sky");
   if (sky) {
@@ -4713,7 +5160,7 @@ function wireOrders() {
         startAction(listActions(state).find((a) => a.id === "hire") || { id: "hire", needs: "hire", label: "Hire" });
         return;
       }
-      toast(playerOf(state).faction ? "No free officer here. Travel, or Officers → Create, then Plot → Hire." : "Raise Banner, then Plot → Hire fills an ADD chair.");
+      toast(playerOf(state).faction ? "No free officer here. Travel, or Officers → Create, then People → Hire." : "People → Hire fills an ADD chair after you are a Cell Leader.");
     };
   });
 }
@@ -4812,6 +5259,24 @@ function wireAfterRender() {
   });
   document.querySelectorAll("[data-open-roster]").forEach((btn) => {
     btn.onclick = () => openRoster();
+  });
+  document.querySelectorAll("[data-open-order]").forEach((btn) => {
+    btn.onclick = () => openOrderDialog();
+  });
+  document.querySelectorAll("[data-open-service]").forEach((btn) => {
+    btn.onclick = () => showModal(serviceHtml(), { kind: "order" });
+  });
+  document.querySelectorAll("[data-toggle-plate]").forEach((btn) => {
+    btn.onclick = () => {
+      plateOpen = !plateOpen;
+      $("officer-plate")?.classList.toggle("is-open", plateOpen);
+    };
+  });
+  document.querySelectorAll("[data-toggle-city]").forEach((btn) => {
+    btn.onclick = () => {
+      cityOpen = !cityOpen;
+      $("city-stats")?.classList.toggle("is-open", cityOpen);
+    };
   });
   wireMissionButtons();
   wireDynamicModals();

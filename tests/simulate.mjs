@@ -30,6 +30,8 @@ import {
   battleCmd,
   challengeCandidates,
   hireCandidates,
+  hireMenuOfficers,
+  cellRecruitPool,
   ladderRankOf,
   ladderLabel,
   ladderRoster,
@@ -49,8 +51,22 @@ import {
   geoYield,
   geoTags,
   startInlandBattle,
+  rankOf,
+  rankLabel,
+  respondToOrder,
+  monthLabel,
+  normalizeStatus,
+  payForGrade,
+  runPayroll,
+  orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
+  nextRankGoal,
+  apMax,
+  noteDeeds,
+  promoteLadder,
 } from "../js/engine.js";
-import { createBattle, autoResolveBattle } from "../js/battle.js";
+import { createBattle, autoResolveBattle, battlePloy } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
   regionIsSiege,
@@ -586,8 +602,10 @@ console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
 act(spyState, content, "raise_banner");
-res = act(spyState, content, "spy", { regionId: "anchorage" });
+res = act(spyState, content, "spy", { regionId: "denver" });
 assert(res.ok, `spy: ${res.message}`);
+res = act(spyState, content, "spy", { regionId: "nome" });
+assert(!res.ok && /Adjacent roads only/.test(res.message || ""), `spy stays on an adjacent road: ${res.message}`);
 res = act(spyState, content, "ally", { factionId: "compact" });
 assert(res.ok, `ally: ${res.message}`);
 const beforeHire = playerGenerals(spyState).length;
@@ -961,7 +979,7 @@ const missionSrc = readFileSync(new URL("../js/missions.js", import.meta.url), "
 assert(!/wolverine/i.test(missionSrc), "mission copy must not use Wolverines");
 assert(/get\("demo"\) === "generals"/.test(uiSrc) && /get\("demo"\) === "missions"/.test(uiSrc), "generals/missions demo hooks");
 assert(/get\("demo"\) === "layout"/.test(uiSrc), "layout demo hook");
-assert(/panel-title">Ruler/.test(uiSrc) && /court-strip/.test(uiSrc), "ruler plate + court strip");
+assert(/panel-title">Status/.test(uiSrc) && /id="status-panel"/.test(uiSrc) && /court-strip/.test(uiSrc), "status plate + court strip");
 assert(/get\("take"\) === "1"/.test(uiSrc), "missions take=1 vignette hook");
 assert(/data-add-gen/.test(uiSrc), "court-strip ADD empty general slots");
 assert(!/You card/.test(uiSrc), "layout copy uses court strip, not You card");
@@ -1151,7 +1169,7 @@ assert(/demo"\) === "coach"[\s\S]{0,400}get\("focus"\)/.test(uiSrc), "coach demo
 assert(/Cut the berm, Rake the parapet, Rush the gap/.test(readFileSync(new URL("../js/engine.js", import.meta.url), "utf8")), "travel hint names the same siege ploys");
 assert(/--type:\s*16px/.test(readFileSync(new URL("../css/game.css", import.meta.url), "utf8")), "HUD type is 16px");
 assert(!/militia horse scouts\. Original partisan kit/.test(missionSrc), "mission WEST copy shortened");
-assert(/HIRE_LINE/.test(uiSrc) && /Plot → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
+assert(/HIRE_LINE/.test(uiSrc) && /People → Hire fills an ADD chair/.test(uiSrc), "hire/ADD/coach share one path");
 assert(/id: "hire"/.test(uiSrc) && /Fill an ADD chair/.test(uiSrc), "coach step 3 is hire into ADD chair");
 assert(/plot: \["hire", "appoint", "court", "challenge"/.test(uiSrc), "plot tiles lead with hire/appoint");
 assert(/slice\(-2\)/.test(uiSrc), "duel log is two lines");
@@ -1482,5 +1500,430 @@ assert(!/wolverine|tekken|street fighter|red dawn/i.test(terrainSrc), "face name
 assert(/FRIEND ADDED/.test(uiSrc) && /just-ranked/.test(uiSrc) && /rank-stripe/.test(uiSrc), "friend added banner, rank flash, and rank stripe");
 assert(/\.roster-create \.face-tile span \{[^}]*font-size:\s*12px/.test(cssSrc), "create face names are readable");
 console.log("ok roster ladder");
+
+const careerSrc = readFileSync(new URL("../js/career.js", import.meta.url), "utf8");
+assert(!/wolverine|red dawn|koei|cao cao|liu bei|zhuge/i.test(careerSrc), "career copy stays original IP");
+assert(/function prefixCareer/.test(uiSrc) && /orderLead\(/.test(uiSrc), "NEXT names the monthly order");
+assert(/is-locked/.test(uiSrc) && /data-open-order/.test(uiSrc) && /data-open-service/.test(uiSrc), "locked rows and service/order buttons");
+assert(/get\("demo"\) === "status"/.test(uiSrc) && /get\("demo"\) === "fromabove"/.test(uiSrc), "status and order demos");
+assert(/get\("demo"\) === "locked"/.test(uiSrc) && /get\("demo"\) === "promoted"/.test(uiSrc), "locked tip and promotion demos");
+
+const career = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const you = playerOf(career);
+assert(rankOf(career, you) === "free", "new game is a Free Volunteer");
+assert(rankLabel(rankOf(career, you)) === "Free Volunteer", "status label");
+assert(rankLabel("warlord") === "Front Commander" && normalizeStatus("warlord") === "commander", "warlord id maps to Front Commander");
+assert(normalizeStatus("officer") === "member" && normalizeStatus("prefect") === "leader" && normalizeStatus("national") === "chair", "older status ids");
+assert(career.week === 0 && career.orders?.current?.status === "pending", "week 0 opens a pending order");
+assert(career.orders.current.issuerId === "cole" && career.orders.current.task === "cultivate", "Drew Cole asks for the Cheyenne elevator");
+assert(monthLabel(0) === 1 && monthLabel(15) === 4 && monthLabel(48) === 12 && monthLabel(52) === 1, "month labels stay 1–12 and roll into the next year");
+assert(you.grade === 5 && payForGrade(5) === 6 && apMax(career) === 3, "grade 5 pay and volunteer AP");
+assert(/Orders from above/.test(orderLead(career)) && /Accept/.test(orderLead(career)), "order lead tells a new player the ask");
+const gated = listActions(career);
+const hintOf = (id) => gated.find((a) => a.id === id);
+assert(hintOf("travel")?.enabled && hintOf("spy")?.enabled && hintOf("raise_banner")?.enabled, "travel, spy, and raise banner stay open");
+assert(hintOf("drill") && !hintOf("drill").enabled && /Cell Member/.test(hintOf("drill").hint) && hintOf("drill").tab === "military", "drill is visible, greyed, military");
+assert(!hintOf("hire")?.enabled && /Cell Leader/.test(hintOf("hire").hint), "hire needs Cell Leader");
+assert(!hintOf("appoint")?.enabled && /Front Commander/.test(hintOf("appoint").hint), "appoint needs Front Commander");
+assert(!hintOf("ally")?.enabled && /Cell Leader/.test(hintOf("ally").hint), "ally needs Cell Leader");
+assert(!hintOf("cultivate")?.enabled && /Cell Member/.test(hintOf("cultivate").hint), "cultivate locked until the order is taken");
+assert(hintOf("note")?.statusLocked && hintOf("note").hint, "placeholder social row stays visible");
+
+const ops = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(ops).status = "opschief";
+playerOf(ops).faction = "ember_campus";
+const advise = listActions(ops).find((a) => a.id === "appoint");
+assert(rankOf(ops, playerOf(ops)) === "opschief" && advise && !advise.enabled && /Advise only/.test(advise.hint), "ops chief advises, does not appoint");
+
+const bond0 = career.bonds.cole || 40;
+const accepted = respondToOrder(career, "accept");
+assert(accepted.ok && career.orders.current.status === "accepted", `accept: ${accepted.message}`);
+assert(career.bonds.cole === bond0 + 4, "accept raises trust");
+assert(listActions(career).find((a) => a.id === "cultivate")?.enabled, "accepted order unlocks cultivate");
+const cultivated = act(career, content, "cultivate");
+assert(cultivated.ok && cultivated.promoted?.to === "member", `order done promotes: ${cultivated.message}`);
+assert(career.service.deeds >= 8 && career.service.grade === 4 && payForGrade(career.service.grade) === 10, "deeds raise pay grade");
+assert(rankOf(career, playerOf(career)) === "member" && career.service.commission === "squad", "Cell Member with Squad Lead");
+assert(career.orders.current == null && career.orders.history.some((h) => h.status === "done"), "completed order closes");
+assert(playerOf(career).fame === 8 + 3, "a finished order adds fame");
+const spent = listActions(career).find((a) => a.id === "commerce");
+assert(spent && !spent.enabled && /spent|one task/i.test(spent.hint), "member's one task is spent");
+career.service.monthTask = null;
+assert(listActions(career).find((a) => a.id === "commerce")?.enabled, "clearing the month task opens commerce");
+assert(listActions(career).find((a) => a.id === "hire") && !listActions(career).find((a) => a.id === "hire").enabled, "People hire stays locked at Cell Member");
+
+const refused = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const fame0 = playerOf(refused).fame;
+const refusal = respondToOrder(refused, "refuse");
+assert(refusal.ok && refused.orders.current == null, "refuse clears the order");
+assert(refused.orders.history.some((h) => h.status === "refused"), "refusal hits the service history");
+assert(refused.bonds.cole === 32 && playerOf(refused).fame === fame0 - 1, "refuse costs trust and fame");
+
+const proposed = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const safety = respondToOrder(proposed, "propose", "safety");
+assert(safety.ok && safety.approved && proposed.orders.current.task === "safety" && proposed.orders.current.status === "proposed", `loyalist approves safety: ${safety.message}`);
+
+const mismatched = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const commerceNo = respondToOrder(mismatched, "propose", "commerce");
+assert(commerceNo.ok && commerceNo.approved === false && mismatched.orders.locked.includes("commerce"), "off-skill proposal locks the task");
+assert(/locked/i.test(listActions(mismatched).find((a) => a.id === "commerce")?.hint || ""), "locked task explains itself");
+
+const thin = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+thin.bonds.cole = 20;
+const thinProp = respondToOrder(thin, "propose", "safety");
+assert(thinProp.ok && thinProp.approved === false && /40/.test(thinProp.message), "thin trust blocks a matching proposal");
+
+const streak = createNewGame(content, { seed: 9, difficulty: "easy", name: "Casey Flint", background: "scout" });
+playerOf(streak).status = "member";
+let demoted = null;
+for (let n = 0; n < 3; n++) {
+  assert(streak.orders.current?.status === "pending", `pending order before refusal ${n + 1}`);
+  const out = respondToOrder(streak, "refuse");
+  if (out.demotion) demoted = out.demotion;
+  if (n < 2) {
+    const target = streak.week + 4;
+    while (streak.week < target) assert(act(streak, content, "end_week").ok, "month rolls after a refusal");
+  }
+}
+assert(demoted?.to === "free" && rankOf(streak, playerOf(streak)) === "free", "three refusals drop a Cell Member to Free Volunteer");
+
+const round = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(round, "accept");
+act(round, content, "cultivate");
+const loadedCareer = deserialize(serialize(round));
+assert(loadedCareer.service.deeds === round.service.deeds && playerOf(loadedCareer).status === "member", "save/load keeps deeds and status");
+assert(loadedCareer.service.grade === 4 && loadedCareer.service.commission === "squad", "save/load keeps grade and commission");
+assert(loadedCareer.orders.history.some((h) => h.status === "done"), "save/load keeps the service history");
+
+const legacy = JSON.parse(serialize(createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" })));
+delete legacy.orders;
+delete legacy.service;
+const migrated = deserialize(legacy);
+assert(migrated.service && migrated.orders.current?.task === "cultivate" && migrated.orders.current.issuerId === "cole", "old week-0 save grows a first order");
+
+const aliasGame = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+aliasGame.officers.find((o) => o.id === "hart").status = "prefect";
+playerOf(aliasGame).status = "warlord";
+const aliasLoaded = deserialize(serialize(aliasGame));
+assert(aliasLoaded.officers.find((o) => o.id === "hart").status === "leader", "prefect save loads as Cell Leader");
+assert(!playerOf(aliasLoaded).status && rankOf(aliasLoaded, playerOf(aliasLoaded)) === "free", "stale warlord on a volunteer is dropped");
+
+const bannerCareer = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+assert(act(bannerCareer, content, "raise_banner").ok, "raise banner still founds the front");
+assert(rankOf(bannerCareer, playerOf(bannerCareer)) === "commander" && bannerCareer.orders.current == null, "banner waives orders and jumps to Front Commander");
+assert(bannerCareer.orders.history.some((h) => h.status === "waived"), "waived order is on the record");
+assert(apMax(bannerCareer) === 7, "Front Commander AP is 6 plus the easy bonus");
+playerOf(bannerCareer).status = "warlord";
+const bannerLoaded = deserialize(serialize(bannerCareer));
+assert(playerOf(bannerLoaded).status === "commander" && rankOf(bannerLoaded, playerOf(bannerLoaded)) === "commander", "warlord ruler save loads as commander");
+["denver", "billings"].forEach((id) => {
+  regionOf(bannerLoaded, id).owner = "northern_front";
+});
+assert(rankOf(bannerLoaded, playerOf(bannerLoaded)) === "governor", "three regions make a Provisional Governor");
+bannerLoaded.campaign.nationalLeader = true;
+assert(rankOf(bannerLoaded, playerOf(bannerLoaded)) === "chair" && apMax(bannerLoaded) === 9, "national leader is Chair with chair AP");
+
+const calendar = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+const firstOrderId = calendar.orders.current.id;
+for (let i = 0; i < 4; i++) assert(act(calendar, content, "end_week").ok, `calendar week ${i}`);
+assert(calendar.week === 4 && calendar.orders.current && calendar.orders.current.id !== firstOrderId, "a new month issues a new order");
+assert(calendar.orders.history.some((h) => h.id === firstOrderId && h.status === "lapsed"), "an unanswered order lapses");
+let sawPay = false;
+let sawFair = false;
+let sawHarvest = false;
+while (calendar.week < 34) {
+  const ended = act(calendar, content, "end_week");
+  assert(ended.ok, `cadence week ${calendar.week}`);
+  const report = (ended.report || []).join("\n");
+  if (calendar.week % 13 === 0) {
+    assert(/Scrip payroll/.test(report), `pay on week ${calendar.week}`);
+    sawPay = true;
+  }
+  if (calendar.week % 52 === 27) {
+    assert(/county fair/i.test(report), "Fourth of July county fair is on the calendar");
+    sawFair = true;
+  }
+  if (calendar.week % 52 === 34) {
+    assert(/Late-summer harvest/.test(report), "late-summer harvest pays out");
+    sawHarvest = true;
+  }
+}
+assert(sawPay && sawFair && sawHarvest, "payroll, fair, and harvest each fired");
+
+const purse = createNewGame(content, { seed: 2, difficulty: "normal", name: "Casey Flint", background: "scout" });
+purse.service.grade = 4;
+const goldBefore = purse.gold;
+const payLine = runPayroll(purse, { ruler: false });
+assert(purse.gold === goldBefore + 10 && /scrip payroll/i.test(payLine), `grade 4 pay: ${payLine}`);
+const bench = { grade: 5, loyalty: 60 };
+purse.gold = 0;
+const shortLine = runPayroll(purse, { ruler: true, staff: [bench] });
+assert(bench.loyalty === 56 && /unpaid|short/i.test(shortLine), `unpaid court: ${shortLine}`);
+
+const column = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+act(column, content, "raise_banner");
+playerOf(column).commission = "section";
+const opened = act(column, content, "attack", { regionId: "denver", auto: false });
+assert(opened.ok && column.battle?.ploysLeft === 2, `section lead opens two tactic points: ${opened.message}`);
+column.phase = "strategy";
+const field = createNewGame(content, { seed: 7, difficulty: "easy", name: "Riley Cho", background: "fighter" });
+const tactics = createBattle(field, content, "cheyenne", "denver", 20, 0, { tacticPoints: 3, field: true });
+for (let i = 0; i < 3; i++) {
+  const spentPloy = battlePloy(field, tactics, "rally", 40);
+  assert(spentPloy.ok, `ploy ${i + 1}: ${spentPloy.message}`);
+}
+const spentOut = battlePloy(field, tactics, "rally", 40);
+assert(!spentOut.ok && /Tactic points/.test(spentOut.message), "tactic points stop at the commission cap");
+console.log("ok status ladder, month, pay, orders");
+
+const climb = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(climb, "accept");
+const joined = act(climb, content, "cultivate");
+assert(joined.promoted?.to === "member" && !playerOf(climb).faction, "first order promotes without a banner");
+const enlistRow = listActions(climb).find((a) => a.id === "enlist");
+assert(enlistRow?.enabled && !/already serve/i.test(enlistRow.hint || ""), `factionless member can still enlist: ${enlistRow?.hint}`);
+climb.service.deeds = 28;
+climb.bonds.cole = 55;
+climb.service.superiorId = "cole";
+const toLeader = noteDeeds(climb, 0, "member");
+assert(toLeader.promoted?.to === "leader" && rankOf(climb, playerOf(climb)) === "leader", "deeds and trust promote a banner-less Cell Member");
+const hireGate = listActions(climb).find((a) => a.id === "hire");
+assert(hireGate && !/Needs Cell Leader/.test(hireGate.hint || ""), `People gate opens at Cell Leader: ${hireGate?.hint}`);
+assert(act(climb, content, "enlist").ok, "a banner-less Cell Leader can still enlist");
+assert(rankOf(climb, playerOf(climb)) === "leader" && playerOf(climb).faction === "ember_campus", "enlist keeps Cell Leader under the campus banner");
+assert(listActions(climb).find((a) => a.id === "hire")?.enabled, "enlisted Cell Leader can hire into the cell");
+climb.service.deeds = 48;
+const boss = climb.service.superiorId;
+climb.bonds[boss] = 72;
+const toOps = noteDeeds(climb, 0, "leader");
+assert(toOps.promoted?.to === "opschief" && rankOf(climb, playerOf(climb)) === "opschief", "deeds and trust promote Operations Chief");
+const resigned = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(resigned, "accept");
+act(resigned, content, "cultivate");
+assert(act(resigned, content, "enlist").ok, "member enlists before resigning");
+assert(act(resigned, content, "resign").ok, "resign remains an exit");
+assert(rankOf(resigned, playerOf(resigned)) === "free", "resign returns a Free Volunteer");
+
+const varied = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+const seenTasks = [varied.orders.current.task];
+assert(varied.orders.current.issuerId === "cole", "week 0 issuer is Drew Cole");
+for (let month = 0; month < 8; month++) {
+  const id = varied.orders.current.id;
+  while (varied.orders.current?.id === id) assert(act(varied, content, "end_week").ok, "month turns");
+  seenTasks.push(varied.orders.current.task);
+}
+assert(seenTasks[0] === "cultivate", "week 0 order stays the Cheyenne elevator");
+assert(new Set(seenTasks).size === 7, `every order task appears: ${seenTasks.join(",")}`);
+for (let i = 1; i < seenTasks.length; i++) {
+  assert(seenTasks[i] !== seenTasks[i - 1], `month ${i} repeated ${seenTasks[i]}`);
+}
+assert(/asks you to work the /i.test(orderLead(createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" }))), "pending NEXT uses a single verb");
+const said = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+respondToOrder(said, "accept");
+assert(/Orders from above\. Work the /.test(orderLead(said)) && !/Do Work/.test(orderLead(said)), "accepted NEXT does not double the verb");
+
+const bosses = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+playerOf(bosses).status = "leader";
+{
+  const id = bosses.orders.current.id;
+  while (bosses.orders.current?.id === id) assert(act(bosses, content, "end_week").ok, "leader month");
+}
+assert(bosses.orders.current.issuerId === "hart", `Cell Leader hears from someone else: ${bosses.orders.current.issuerId}`);
+playerOf(bosses).status = "opschief";
+{
+  const id = bosses.orders.current.id;
+  while (bosses.orders.current?.id === id) assert(act(bosses, content, "end_week").ok, "ops month");
+}
+assert(bosses.orders.current.issuerId === "nash", `Operations Chief hears from a third issuer: ${bosses.orders.current.issuerId}`);
+playerOf(bosses).status = "leader";
+playerOf(bosses).region = "denver";
+{
+  const id = bosses.orders.current.id;
+  while (bosses.orders.current?.id === id) assert(act(bosses, content, "end_week").ok, "denver month");
+}
+const denverBoss = bosses.officers.find((o) => o.id === bosses.orders.current.issuerId);
+assert(denverBoss?.region === "denver", "the issuer follows the city");
+
+const cellLead = createNewGame(content, { seed: 8, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(cellLead).status = "leader";
+const above = cellRecruitPool(cellLead).map((o) => o.id);
+assert(!above.includes("cole") && !above.includes("hart") && !above.includes("nash"), `superiors stay out of the cell pool: ${above.join(",")}`);
+const refusedBoss = act(cellLead, content, "hire", { officerId: "cole" });
+assert(!refusedBoss.ok && /above you/.test(refusedBoss.message || ""), refusedBoss.message);
+const volunteer = createCustomOfficer(cellLead, { name: "Lane Voss", personality: "merchant", war: 40, int: 40, pol: 40, chr: 40 });
+assert(volunteer.ok, volunteer.message);
+const cellHire = listActions(cellLead).find((a) => a.id === "hire");
+assert(cellHire?.enabled && /cell/i.test(cellHire.hint || ""), `Cell Leader can recruit: ${cellHire?.hint}`);
+const menu = hireMenuOfficers(cellLead);
+assert(menu.some((o) => o.id === volunteer.id) && !menu.some((o) => o.id === "cole"), "the hire menu is the cell pool");
+const joinedCell = act(cellLead, content, "hire", { officerId: volunteer.id });
+assert(joinedCell.ok && cellLead.service.cell.includes(volunteer.id) && !playerOf(cellLead).faction, joinedCell.message);
+const snap = (s) => JSON.stringify(s);
+const pure = createNewGame(content, { seed: 11, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const pureBefore = snap(pure);
+listActions(pure);
+listActions(pure);
+listActions(pure);
+assert(snap(pure) === pureBefore, "listActions changes nothing on a new game");
+playerOf(pure).status = "leader";
+const pureLead = snap(pure);
+listActions(pure);
+listActions(pure);
+assert(snap(pure) === pureLead, "listActions changes nothing for a Cell Leader");
+const dryCell = createNewGame(content, { seed: 11, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(dryCell).status = "leader";
+dryCell.missions = { board: [], seq: 0, lastRefresh: -1 };
+const dryBefore = snap(dryCell);
+const cellMission = listActions(dryCell).find((a) => a.id === "mission");
+assert(snap(dryCell) === dryBefore, "an empty board is not filled by a redraw");
+assert(cellMission && !cellMission.enabled && /End Week posts/.test(cellMission.hint || "") && !/Raise a banner/.test(cellMission.hint || ""), cellMission?.hint);
+assert(act(dryCell, content, "end_week").ok, "End Week posts the cell job");
+const posted = openMissions(dryCell).filter((j) => j.cell && j.regionId === playerOf(dryCell).region);
+assert(posted.length === 1, `one cell job a week: ${posted.length}`);
+const redraw = snap(dryCell);
+listActions(dryCell);
+listActions(dryCell);
+assert(snap(dryCell) === redraw, "redraw does not repost the cell job");
+let sawCellSuccess = false;
+for (let n = 0; n < 16 && !sawCellSuccess; n++) {
+  const job = openMissions(dryCell).find((j) => j.cell && j.regionId === playerOf(dryCell).region);
+  assert(job, "the week has one open cell job");
+  const deedsBefore = dryCell.service.deeds || 0;
+  const ran = act(dryCell, content, "mission", { jobId: job.id });
+  assert(ran.ok && !/Raise a banner/.test(ran.message || ""), ran.message);
+  if (ran.success) {
+    assert(dryCell.service.deeds === deedsBefore + 4, `a clear pays 4 deeds: ${dryCell.service.deeds}`);
+    sawCellSuccess = true;
+  } else {
+    assert(dryCell.service.deeds === deedsBefore, `a failed cell job pays nothing: ${ran.message}`);
+  }
+  assert(job.done, "the job closes either way");
+  assert(!act(dryCell, content, "mission", { jobId: job.id }).ok, "the same job cannot be run again");
+  const held = snap(dryCell);
+  listActions(dryCell);
+  assert(snap(dryCell) === held && !openMissions(dryCell).some((j) => j.cell), "a redraw does not revive the job");
+  if (!sawCellSuccess) assert(act(dryCell, content, "end_week").ok, "next week posts the next cell job");
+}
+assert(sawCellSuccess, "a cleared cell job pays deeds");
+const played = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(played, "accept");
+const climbed = act(played, content, "cultivate");
+assert(climbed.promoted?.to === "member" && !playerOf(played).faction, "the real order path reaches Cell Member");
+played.service.deeds = 28;
+played.bonds.cole = 55;
+played.service.superiorId = "cole";
+const led = noteDeeds(played, 0, "member");
+assert(led.promoted?.to === "leader", "deeds and trust reach Cell Leader in play");
+assert(/People → Hire/.test(led.promoted.message || ""), led.promoted.message);
+assert(leaderHireAvailable(played), "a free officer is in reach");
+const rosterPool = cellRecruitPool(played).map((o) => o.id);
+assert(rosterPool.includes("pell") && rosterPool.includes("briggs"), `Cheyenne volunteers are recruitable: ${rosterPool.join(",")}`);
+assert(!rosterPool.includes("cole") && !rosterPool.includes("hart") && !rosterPool.includes("nash"), "superiors stay out");
+assert(listActions(played).find((a) => a.id === "hire")?.enabled, "People → Hire is live for this Leader");
+const hiredPell = act(played, content, "hire", { officerId: "pell" });
+assert(hiredPell.ok && played.service.cell.includes("pell") && !playerOf(played).faction, hiredPell.message);
+const bannerHire = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+assert(act(bannerHire, content, "raise_banner").ok, "a banner can be raised in Cheyenne");
+const stillFree = hireCandidates(bannerHire).map((o) => o.id);
+assert(stillFree.includes("pell") && stillFree.includes("briggs"), `volunteers stay hireable under a banner: ${stillFree.join(",")}`);
+assert(listActions(bannerHire).find((a) => a.id === "hire")?.enabled, "People → Hire stays open after the banner");
+const hiredBriggs = act(bannerHire, content, "hire", { officerId: "briggs" });
+assert(hiredBriggs.ok && !/No free officer|above you|not a recruit/i.test(hiredBriggs.message || ""), hiredBriggs.message);
+const lone = createNewGame(content, { seed: 6, difficulty: "normal", name: "Casey Flint", background: "scout" });
+lone.officers.forEach((o) => {
+  if (!o.faction && o.region === "cheyenne" && o.id !== "cole" && o.id !== "hart" && o.id !== "nash" && o.id !== "player") o.region = "nome";
+});
+lone.service.deeds = 28;
+lone.bonds.cole = 55;
+lone.service.superiorId = "cole";
+const alone = noteDeeds(lone, 0, "free");
+assert(alone.promoted?.to === "member", "quiet path still promotes");
+lone.service.deeds = 28;
+const aloneLead = noteDeeds(lone, 0, "member");
+assert(aloneLead.promoted?.to === "leader" && !/People → Hire/.test(aloneLead.promoted.message || ""), aloneLead.promoted?.message);
+assert(!leaderHireAvailable(lone) && !/People → Hire/.test(leaderNextLine(lone)), leaderNextLine(lone));
+assert(!listActions(lone).find((a) => a.id === "hire")?.enabled, "Hire stays locked when the city has no recruit");
+const hireUi = uiSrc.slice(uiSrc.indexOf('a.needs === "hire"'), uiSrc.indexOf('a.needs === "appoint"'));
+assert(/hireMenuOfficers\(state\)/.test(hireUi) && /Recruit into your cell/.test(hireUi) && /data-hire=/.test(hireUi), "People → Hire opens the cell-recruit picker");
+const bareLeader = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(bareLeader).status = "leader";
+const bareResign = listActions(bareLeader).find((a) => a.id === "resign");
+assert(!bareResign.enabled && /do not serve a banner/i.test(bareResign.hint || ""), bareResign.hint);
+const opsChief = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(opsChief).status = "opschief";
+assert(apMax(opsChief) === 6, `Operations Chief AP is 6: ${apMax(opsChief)}`);
+assert(listActions(opsChief).find((a) => a.id === "cultivate")?.enabled, "Operations Chief can work the city");
+assert(/Front Commander/.test(nextRankGoal(opsChief, "opschief")) && /banner/i.test(nextRankGoal(opsChief, "opschief")), "the plate names the next rank");
+assert(act(opsChief, content, "cultivate").ok, "Operations Chief cultivates without a banner");
+assert(!act(opsChief, content, "cultivate").ok, "that desk is once per week");
+assert(act(opsChief, content, "drill").ok, "a different desk is still open");
+
+const rosterGate = createNewGame(content, { seed: 8, difficulty: "easy", name: "Casey Flint", background: "scout" });
+assert(act(rosterGate, content, "enlist").ok, "enlist joins a banner");
+assert(rankOf(rosterGate, playerOf(rosterGate)) === "member", "enlisted officer is a Cell Member");
+const rosterPal = createCustomOfficer(rosterGate, {
+  name: "Pal Test",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(rosterPal.ok, "roster friend");
+const memberBlocked = promoteLadder(rosterGate, rosterPal.id);
+assert(!memberBlocked.ok && /Cell Leader/.test(memberBlocked.message), `member cannot commission: ${memberBlocked.message}`);
+playerOf(rosterGate).status = "leader";
+const madeOfficer = promoteLadder(rosterGate, rosterPal.id);
+assert(madeOfficer.ok && madeOfficer.to === "officer", `leader commissions an officer: ${madeOfficer.message}`);
+const blockedGeneral = promoteLadder(rosterGate, rosterPal.id);
+assert(!blockedGeneral.ok && /Front Commander/.test(blockedGeneral.message), `leader cannot name a general: ${blockedGeneral.message}`);
+const bannerBench = createNewGame(content, { seed: 8, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(bannerBench, content, "raise_banner");
+const pal2 = createCustomOfficer(bannerBench, {
+  name: "Pal Two",
+  ladder: "player",
+  personality: "loyalist",
+  war: 40,
+  int: 40,
+  pol: 40,
+  chr: 40,
+});
+assert(promoteLadder(bannerBench, pal2.id).ok, "commander commissions an officer");
+assert(promoteLadder(bannerBench, pal2.id).to === "general", "commander names a general");
+
+const fed = createNewGame(content, { seed: 4, difficulty: "easy", name: "Casey Flint", background: "scout" });
+act(fed, content, "raise_banner");
+let hunger = 0;
+let thinWeeks = 0;
+for (let w = 0; w < 34; w++) {
+  assert(act(fed, content, "end_week").ok, `food week ${fed.week}`);
+  if (/Hunger desertion/.test(fed.log[0]?.text || "")) hunger += 1;
+  if ((fed.food || 0) <= 3) thinWeeks += 1;
+}
+assert(hunger <= 2, `hunger desertions stay near the old economy: ${hunger}`);
+assert(thinWeeks < 8, `stores are not pinned at empty: ${thinWeeks} thin weeks, food ${fed.food}`);
+
+const tally = createNewGame(content, { seed: 6, difficulty: "normal", name: "Casey Flint", background: "scout" });
+for (let n = 0; n < 3; n++) {
+  assert(tally.orders.current?.status === "pending", `volunteer order ${n + 1}`);
+  respondToOrder(tally, "refuse");
+  if (n < 2) {
+    const target = tally.week + 4;
+    while (tally.week < target) assert(act(tally, content, "end_week").ok, "week after a volunteer refusal");
+  }
+}
+assert(!tally.log.some((l) => /keeping a tally/.test(l.text)), "a Free Volunteer refusal streak does not narrate a tally");
+assert(tally.orders.refusalsInRow === 0, "the refusal streak resets when it cannot demote");
+
+const oldSave = JSON.parse(serialize(createNewGame(content, { seed: 1, difficulty: "normal", name: "Casey Flint", background: "scout" })));
+oldSave.version = 2;
+const bumped = deserialize(oldSave);
+assert(bumped.version === 3 && JSON.parse(serialize(bumped)).version === 3, "loading a save rewrites it as version 3");
+assert(!/1985–89 kit only/.test(readFileSync(new URL("../js/career.js", import.meta.url), "utf8")), "order lines are not dev notes");
+assert(/function reopenPendingOrder/.test(uiSrc) && /btn-order/.test(uiSrc), "a pending order reopens from the NEXT bar");
+assert(/id="btn-order"/.test(readFileSync(new URL("../index.html", import.meta.url), "utf8")), "the Order button is in the page");
+assert(/\$\("modal-card"\)\?\.querySelector\("#ng-start"\)/.test(uiSrc), "Esc leaves the title dialog up");
+console.log("ok promotion path, order variety, roster gate, food");
 
 console.log("ALL TESTS PASSED");
