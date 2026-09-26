@@ -2,7 +2,13 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–8 (through sub-Saharan Africa). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–9 (through Asia and Oceania). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+
+## World atlas (Region 9 — Asia and Oceania)
+
+Forty-nine countries, all occupied. This is the last sheet. India is the end-1987 map: Mizoram, Arunachal Pradesh, and Goa are states, and Daman and Diu is a union territory. Pakistan includes FATA, the Northern Areas, and Azad Kashmir as the Line of Control. China includes Hainan as a province and names Tibet the Xizang autonomous region. Hong Kong is British and Macau is Portuguese. Taiwan is the Republic of China. Mongolia is the Soviet-aligned MPR. North and South Korea are atlas countries beside the existing `far_korea` and `kr_inland` desks, which are not duplicated. Japan has 47 prefectures, and Okinawa marks the US bases. Burma keeps that name. Cambodia is the PRK. East Timor is an Indonesian province. Palau is still the Trust Territory. The whole atlas is one connected component: 216 countries, 3,155 subdivisions, 3,741 territories, 1,169 fictional officers, and 4,355 unique edges (3,721 road, 116 rail, 493 sea, 21 trail, 4 air), 554 of them across a border. Nothing new is playable.
+
+`/?demo=look&view=world` shows the complete globe. `/?demo=look&view=asia` frames Pakistan through Japan and Indonesia. Oceania stays on the world view. `/?demo=look&view=africa`, `/?demo=look&view=mideast`, `/?demo=look&view=ussr`, and `/?demo=look&view=europe` are unchanged. Close campaign zoom still does not draw the atlas. Week 0 is still Cheyenne.
 
 ## World atlas (Region 8 — sub-Saharan Africa)
 
