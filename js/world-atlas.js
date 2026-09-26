@@ -61,7 +61,7 @@ function collect(mode, atlasCode) {
   const byId = new Map(all.map((t) => [t.id, t]));
   let cities = all;
   if (mode === "world") {
-    cities = all.filter((t) => t.role === "capital" || REMOTE.has(t.subdivision));
+    cities = all.filter((t) => t.role === "capital" || REMOTE.has(t.subdivision) || WORLD_CAPS.has(t.id));
   }
   if (mode === "state") {
     const states = new Set([atlasCode]);
