@@ -1822,6 +1822,13 @@ assert(!rosterPool.includes("cole") && !rosterPool.includes("hart") && !rosterPo
 assert(listActions(played).find((a) => a.id === "hire")?.enabled, "People → Hire is live for this Leader");
 const hiredPell = act(played, content, "hire", { officerId: "pell" });
 assert(hiredPell.ok && played.service.cell.includes("pell") && !playerOf(played).faction, hiredPell.message);
+const bannerHire = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+assert(act(bannerHire, content, "raise_banner").ok, "a banner can be raised in Cheyenne");
+const stillFree = hireCandidates(bannerHire).map((o) => o.id);
+assert(stillFree.includes("pell") && stillFree.includes("briggs"), `volunteers stay hireable under a banner: ${stillFree.join(",")}`);
+assert(listActions(bannerHire).find((a) => a.id === "hire")?.enabled, "People → Hire stays open after the banner");
+const hiredBriggs = act(bannerHire, content, "hire", { officerId: "briggs" });
+assert(hiredBriggs.ok && !/No free officer|above you|not a recruit/i.test(hiredBriggs.message || ""), hiredBriggs.message);
 const lone = createNewGame(content, { seed: 6, difficulty: "normal", name: "Casey Flint", background: "scout" });
 lone.officers.forEach((o) => {
   if (!o.faction && o.region === "cheyenne" && o.id !== "cole" && o.id !== "hart" && o.id !== "nash" && o.id !== "player") o.region = "nome";

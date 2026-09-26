@@ -1292,15 +1292,29 @@ function placeTip(anchor) {
   tip.style.top = `${top}px`;
 }
 
+function fillTip(html) {
+  const tip = $("tip");
+  tip.innerHTML = html;
+  tip.classList.toggle("tip-long", (tip.textContent || "").length > 220);
+  if (!tip.dataset.boundLeave) {
+    tip.dataset.boundLeave = "1";
+    tip.addEventListener("mouseleave", () => {
+      tip.hidden = true;
+    });
+  }
+  return tip;
+}
+
 function bindTip(el, text) {
   if (!el || !text) return;
   const show = (e) => {
-    const tip = $("tip");
-    tip.innerHTML = text;
+    fillTip(text);
     placeTip(e.currentTarget || el);
   };
-  const hide = () => {
-    $("tip").hidden = true;
+  const hide = (e) => {
+    const tip = $("tip");
+    if (e?.relatedTarget && tip.contains(e.relatedTarget)) return;
+    tip.hidden = true;
   };
   el.addEventListener("mouseenter", show);
   el.addEventListener("mouseleave", hide);
@@ -1481,7 +1495,7 @@ function showLockedTip(actionId) {
   const tip = $("tip");
   if (!btn || !tip) return;
   const action = listActions(state).find((a) => a.id === actionId);
-  tip.innerHTML = actionTipHtml(action || { label: actionId, hint: "Locked.", ap: 1, enabled: false });
+  fillTip(actionTipHtml(action || { label: actionId, hint: "Locked.", ap: 1, enabled: false }));
   btn.scrollIntoView({ block: "center", inline: "nearest" });
   placeTip(btn);
 }

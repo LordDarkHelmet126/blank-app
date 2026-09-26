@@ -2207,6 +2207,8 @@ hr {
   position: fixed;
   z-index: 40;
   max-width: 280px;
+  max-height: calc(100vh - 16px);
+  overflow: auto;
   padding: var(--pad);
   background: #000030;
   border: var(--chrome);
@@ -2214,6 +2216,17 @@ hr {
   color: var(--ice);
   pointer-events: none;
   text-transform: none;
+}
+.tip.tip-long {
+  max-width: min(640px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  line-height: 1.35;
+  pointer-events: auto;
+}
+.tip.tip-long p {
+  column-width: 240px;
+  column-gap: 14px;
+  margin: 0;
 }
 .tip strong { display: block; color: var(--amber); margin-bottom: 4px; }
 .tip .tip-ap { color: var(--ok); }
