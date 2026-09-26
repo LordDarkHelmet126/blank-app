@@ -88,7 +88,7 @@ import {
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
-import { LABEL_ANCHOR, MAP_DETAIL_KEY, chordIsMisleading, closeRoadWidth, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
+import { LABEL_ANCHOR, LABEL_MIN_SCREEN, MAP_DETAIL_KEY, applyMapDrag, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "./map-detail.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -2442,8 +2442,9 @@ function onMapPointerMove(e) {
   const dy = sy - mapView.drag.sy;
   if (Math.hypot(dx, dy) > 3) mapView.drag.moved = true;
   if (!mapView.drag.moved) return;
-  mapView.x = mapView.drag.x + dx;
-  mapView.y = mapView.drag.y + dy;
+  const next = applyMapDrag({ z: mapView.z, x: mapView.drag.x, y: mapView.drag.y }, dx, dy);
+  mapView.x = next.x;
+  mapView.y = next.y;
   drawMap();
 }
 
@@ -2734,10 +2735,25 @@ function stateLabelPx() {
   return Math.max(8, Math.round(16 * stateLabelFit()));
 }
 
-/** City names stay smaller than the postal codes at the same zoom. */
+/** City names stay smaller than the postal codes, and at least 8 screen pixels. */
 function cityNamePx() {
   const z = Math.max(0.2, mapView.z || 1);
-  return Math.max(4, Math.min(stateLabelPx() - 2, 14 / z));
+  return Math.max(LABEL_MIN_SCREEN / z, Math.min(stateLabelPx() - 2, 14 / z));
+}
+
+function viewWorldRect() {
+  const z = mapView.z || 1;
+  return {
+    x0: -mapView.x / z,
+    y0: -mapView.y / z,
+    x1: (1000 - mapView.x) / z,
+    y1: (620 - mapView.y) / z,
+  };
+}
+
+/** Drawn centre of a close-up marker. Null when the city centre is already off-canvas. */
+function closeMarkerAnchor(x, y, size) {
+  return insetMarkerCenter(x, y, size / 2 + 2, viewWorldRect());
 }
 
 function closeMarkerSize() {
@@ -3736,9 +3752,12 @@ function drawClearRoads(ctx, painted) {
 }
 
 function drawCityMarkClean(ctx, r, selected) {
-  const [x, y] = cityXY(r);
+  const [gx, gy] = cityXY(r);
   const here = playerOf(state).region === r.id;
   const s = closeMarkerSize() * (here ? 1.28 : 1);
+  const anchor = closeMarkerAnchor(gx, gy, s);
+  if (!anchor) return;
+  const [x, y] = anchor;
   const half = s / 2;
   const x0 = Math.round(x - half);
   const y0 = Math.round(y - half);
@@ -3770,12 +3789,20 @@ function drawCityMarkClean(ctx, r, selected) {
   drawTroopBadge(ctx, r, x, y, s);
 }
 
-function drawTroopBadge(ctx, r, x, y, s) {
-  if (!(r.garrison > 0)) return;
+function showTroopChip(r) {
+  if (!(r.garrison > 0)) return false;
   const player = playerOf(state);
-  const known = r.intel > 0 || r.id === player?.region || (player?.faction && r.owner === player.faction);
+  if (!player) return false;
+  if (r.id === player.region) return true;
+  if (player.faction && r.owner === player.faction) return true;
+  if (r.intel > 0 && r.owner && r.owner !== player.faction) return true;
+  return stateWash(r.stateCode)?.kind === "contested";
+}
+
+function drawTroopBadge(ctx, r, x, y, s) {
+  if (!showTroopChip(r)) return;
   const z = Math.max(0.2, mapView.z || 1);
-  const label = known ? String(r.garrison) : "?";
+  const label = String(r.garrison);
   const fontPx = Math.max(3, Math.min(cityNamePx() - 1, 8 / z));
   ctx.save();
   ctx.font = `${fontPx}px 'Press Start 2P', 'Courier New', monospace`;
@@ -3785,7 +3812,7 @@ function drawTroopBadge(ctx, r, x, y, s) {
   const by = Math.round(y - s * 0.5 - bh - 1);
   ctx.fillStyle = "#140e08";
   ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
-  ctx.fillStyle = known ? "#f8d800" : "#d8c48a";
+  ctx.fillStyle = "#f8d800";
   ctx.fillRect(bx, by, bw, bh);
   ctx.fillStyle = "#140e08";
   ctx.textBaseline = "top";
@@ -3806,20 +3833,26 @@ function drawCleanStallFront(ctx) {
     if (prev && isAdjacent(state, prev, r)) {
       const a = cityXY(prev);
       const b = cityXY(r);
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const off = 6 / z;
+      const ox = (-dy / len) * off;
+      const oy = (dx / len) * off;
       ctx.save();
       ctx.lineCap = "butt";
       ctx.strokeStyle = "#1a120c";
-      ctx.lineWidth = 2.4 / z;
+      ctx.lineWidth = 4.2 / z;
       ctx.beginPath();
-      ctx.moveTo(a[0], a[1]);
-      ctx.lineTo(b[0], b[1]);
+      ctx.moveTo(a[0] + ox, a[1] + oy);
+      ctx.lineTo(b[0] + ox, b[1] + oy);
       ctx.stroke();
-      ctx.strokeStyle = "#f4f4f4";
-      ctx.lineWidth = 1.1 / z;
-      ctx.setLineDash([6 / z, 4 / z]);
+      ctx.strokeStyle = "#f8d800";
+      ctx.lineWidth = 2.4 / z;
+      ctx.setLineDash([8 / z, 5 / z]);
       ctx.beginPath();
-      ctx.moveTo(a[0], a[1]);
-      ctx.lineTo(b[0], b[1]);
+      ctx.moveTo(a[0] + ox, a[1] + oy);
+      ctx.lineTo(b[0] + ox, b[1] + oy);
       ctx.stroke();
       ctx.restore();
     }
@@ -3876,35 +3909,13 @@ function drawCleanInvasionAxes(ctx) {
   drawCleanAxis(ctx, [334, 467], [482, 579], "#8c4a4a");
 }
 
-/** Keep close-up city markers fully inside the canvas. Detail mode does not move the camera. */
-function clampCloseMarkers(painted) {
-  const z = mapView.z || 1;
-  const pad = closeMarkerSize() / 2 + 2;
-  const x0 = -mapView.x / z;
-  const y0 = -mapView.y / z;
-  const x1 = (1000 - mapView.x) / z;
-  const y1 = (620 - mapView.y) / z;
-  let nx0 = x0;
-  let ny0 = y0;
-  let nx1 = x1;
-  let ny1 = y1;
-  painted.forEach((r) => {
-    const [x, y] = cityXY(r);
-    if (x < x0 || x > x1 || y < y0 || y > y1) return;
-    if (x - pad < x0 - 0.5) nx0 = Math.min(nx0, x - pad);
-    if (x + pad > x1 + 0.5) nx1 = Math.max(nx1, x + pad);
-    if (y - pad < y0 - 0.5) ny0 = Math.min(ny0, y - pad);
-    if (y + pad > y1 + 0.5) ny1 = Math.max(ny1, y + pad);
-  });
-  if (nx0 === x0 && ny0 === y0 && nx1 === x1 && ny1 === y1) return;
-  const bw = Math.max(1, nx1 - nx0);
-  const bh = Math.max(1, ny1 - ny0);
-  const z2 = Math.min(z, 1000 / bw, 620 / bh);
-  const cx = (nx0 + nx1) / 2;
-  const cy = (ny0 + ny1) / 2;
-  mapView.z = z2;
-  mapView.x = 500 - cx * z2;
-  mapView.y = 310 - cy * z2;
+/** Marker draw point for labels and chips. Cities whose centres are off-canvas are skipped. */
+function cleanCitySpot(r, hereId) {
+  const [x, y] = cityXY(r);
+  const marker = closeMarkerSize() * (r.id === hereId ? 1.28 : 1);
+  const anchor = closeMarkerAnchor(x, y, marker);
+  if (!anchor) return null;
+  return { r, x: anchor[0], y: anchor[1], gx: x, gy: y, marker };
 }
 
 function claimHits(list, x, y, w, h, pad) {
@@ -3926,121 +3937,220 @@ function labelGap(mx, my, marker, lx, ly, w, h) {
   return Math.hypot(dx, dy);
 }
 
-function cityLabelSlots(x, y, w, h, marker) {
+function closerToOwn(lx, ly, w, h, own, others) {
+  const cx = lx + w / 2;
+  const cy = ly + h / 2;
+  const ownC = Math.hypot(cx - own.x, cy - own.y);
+  const ownGap = labelGap(own.x, own.y, own.marker, lx, ly, w, h);
+  for (let i = 0; i < others.length; i++) {
+    const o = others[i];
+    if (Math.hypot(cx - o.x, cy - o.y) <= ownC + 0.25) return false;
+    if (labelGap(o.x, o.y, o.marker, lx, ly, w, h) + 0.25 < ownGap) return false;
+  }
+  return true;
+}
+
+function cityLabelSlots(x, y, w, h, marker, neighbors) {
   const view = mapViewRect();
-  const maxGap = marker * LABEL_ANCHOR;
-  const gaps = [Math.max(2, marker * 0.28), marker * 0.8, maxGap];
-  const ix = (view.x0 + view.x1) / 2 >= x ? 1 : -1;
-  const iy = (view.y0 + view.y1) / 2 >= y ? 1 : -1;
-  const dirs = [
-    [ix, 0],
-    [-ix, 0],
-    [0, iy],
-    [0, -iy],
-    [ix, iy],
-    [-ix, iy],
-    [ix, -iy],
-    [-ix, -iy],
-  ];
+  let away = 0;
+  let best = Infinity;
+  neighbors.forEach((n) => {
+    const d = Math.hypot(n.x - x, n.y - y);
+    if (d < best) {
+      best = d;
+      away = Math.atan2(y - n.y, x - n.x);
+    }
+  });
+  const dirs = [];
+  for (let i = 0; i < 16; i++) {
+    const step = Math.ceil(i / 2) * (Math.PI / 8);
+    const ang = away + (i % 2 === 0 ? 1 : -1) * step;
+    dirs.push([Math.cos(ang), Math.sin(ang)]);
+  }
+  const gaps = [0.28, 0.7, 1.1, LABEL_ANCHOR, 2.1, 3.0, 4.0];
   const slots = [];
   const seen = new Set();
-  const maxX = Math.max(view.x0, view.x1 - w);
-  const maxY = Math.max(view.y0, view.y1 - h);
-  gaps.forEach((gap) => {
+  gaps.forEach((mult) => {
+    const gap = Math.max(2, marker * mult);
     dirs.forEach(([dx, dy]) => {
-      let x0 = x - w / 2;
-      let y0 = y - h / 2;
-      if (dx > 0) x0 = x + marker / 2 + gap;
-      else if (dx < 0) x0 = x - w - marker / 2 - gap;
-      if (dy > 0) y0 = y + marker / 2 + gap;
-      else if (dy < 0) y0 = y - h - marker / 2 - gap;
-      const lx = Math.round(Math.max(view.x0, Math.min(maxX, x0)));
-      const ly = Math.round(Math.max(view.y0, Math.min(maxY, y0)));
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const lx = Math.round(x + ux * (marker / 2 + gap) - w / 2);
+      const ly = Math.round(y + uy * (marker / 2 + gap) - h / 2);
+      if (lx < view.x0 || ly < view.y0 || lx + w > view.x1 || ly + h > view.y1) return;
       const key = `${lx}|${ly}`;
       if (seen.has(key)) return;
       seen.add(key);
       if (markerOverlap(x, y, marker, lx, ly, w, h)) return;
-      if (labelGap(x, y, marker, lx, ly, w, h) > maxGap + 0.5) return;
-      slots.push([lx, ly]);
+      const edge = labelGap(x, y, marker, lx, ly, w, h);
+      if (edge > marker * 4.05) return;
+      slots.push({ lx, ly, leader: edge > marker * LABEL_ANCHOR + 0.5 });
     });
   });
   return slots;
 }
 
-function pickCityLabel(x, y, w, h, marker, blocks) {
-  const slots = cityLabelSlots(x, y, w, h, marker);
+function forceCityLabel(x, y, w, h, marker, blocks, neighbors) {
+  const relaxed = pickCityLabel(x, y, w, h, marker, blocks, neighbors, true);
+  if (relaxed) return relaxed;
+  const view = mapViewRect();
+  let away = -Math.PI / 2;
+  let best = Infinity;
+  neighbors.forEach((n) => {
+    const d = Math.hypot(n.x - x, n.y - y);
+    if (d < best) {
+      best = d;
+      away = Math.atan2(y - n.y, x - n.x);
+    }
+  });
+  for (let i = 0; i < 16; i++) {
+    const ang = away + (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2) * (Math.PI / 8);
+    for (let ring = 0; ring < 6; ring++) {
+      const gap = Math.max(2, marker * (0.35 + ring * 0.55));
+      let lx = Math.round(x + Math.cos(ang) * (marker / 2 + gap) - w / 2);
+      let ly = Math.round(y + Math.sin(ang) * (marker / 2 + gap) - h / 2);
+      lx = Math.round(Math.max(view.x0, Math.min(view.x1 - w, lx)));
+      ly = Math.round(Math.max(view.y0, Math.min(view.y1 - h, ly)));
+      if (markerOverlap(x, y, marker, lx, ly, w, h)) continue;
+      if (claimHits(blocks, lx, ly, w, h, 1)) continue;
+      if (claimHits(cityClaims, lx, ly, w, h, 1)) continue;
+      if (!closerToOwn(lx, ly, w, h, { x, y, marker }, neighbors)) continue;
+      const edge = labelGap(x, y, marker, lx, ly, w, h);
+      return { lx, ly, leader: edge > marker * LABEL_ANCHOR + 0.5 };
+    }
+  }
+  const lx = Math.round(Math.max(view.x0, Math.min(view.x1 - w, x + Math.cos(away) * (marker / 2 + 4) - w / 2)));
+  const ly = Math.round(Math.max(view.y0, Math.min(view.y1 - h, y + Math.sin(away) * (marker / 2 + 4) - h / 2)));
+  return { lx, ly, leader: true };
+}
+
+function pickCityLabel(x, y, w, h, marker, blocks, neighbors, relaxState) {
+  const own = { x, y, marker };
+  const slots = cityLabelSlots(x, y, w, h, marker, neighbors);
   for (let i = 0; i < slots.length; i++) {
-    const [lx, ly] = slots[i];
-    if (claimHits(cityClaims, lx, ly, w, h, 2)) continue;
-    if (claimHits(labelClaims, lx, ly, w, h, 1)) continue;
-    if (claimHits(blocks, lx, ly, w, h, 1)) continue;
-    return [lx, ly];
+    const slot = slots[i];
+    if (!closerToOwn(slot.lx, slot.ly, w, h, own, neighbors)) continue;
+    if (claimHits(cityClaims, slot.lx, slot.ly, w, h, 2)) continue;
+    if (!relaxState && claimHits(labelClaims, slot.lx, slot.ly, w, h, 1)) continue;
+    if (claimHits(blocks, slot.lx, slot.ly, w, h, 1)) continue;
+    return slot;
   }
   return null;
+}
+
+function drawLabelLeader(ctx, x, y, marker, lx, ly, w, h) {
+  const z = Math.max(0.2, mapView.z || 1);
+  const cx = lx + w / 2;
+  const cy = ly + h / 2;
+  const ang = Math.atan2(cy - y, cx - x);
+  const x1 = x + Math.cos(ang) * (marker / 2 + 1);
+  const y1 = y + Math.sin(ang) * (marker / 2 + 1);
+  let x2 = cx;
+  let y2 = cy;
+  const dx = cx - x1;
+  const dy = cy - y1;
+  if (dx !== 0) {
+    const tx = dx > 0 ? (lx - x1) / dx : (lx + w - x1) / dx;
+    if (tx > 0 && tx < 1) {
+      x2 = x1 + dx * tx;
+      y2 = y1 + dy * tx;
+    }
+  }
+  if (dy !== 0) {
+    const ty = dy > 0 ? (ly - y1) / dy : (ly + h - y1) / dy;
+    if (ty > 0 && ty < 1) {
+      const yy = y1 + dy * ty;
+      const xx = x1 + dx * ty;
+      if (Math.hypot(xx - x1, yy - y1) < Math.hypot(x2 - x1, y2 - y1)) {
+        x2 = xx;
+        y2 = yy;
+      }
+    }
+  }
+  ctx.save();
+  ctx.strokeStyle = "#f4efe4";
+  ctx.lineWidth = Math.max(0.6, 1.5 / z);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function paintCityName(ctx, r, px, py, w, h, here, selected, leader, x, y, marker) {
+  const z = Math.max(0.2, mapView.z || 1);
+  if (leader) drawLabelLeader(ctx, x, y, marker, px, py, w, h);
+  ctx.fillStyle = selected ? "#f8d800" : "#0c0c16";
+  ctx.fillRect(px, py, w, h);
+  if (here && !selected) {
+    ctx.strokeStyle = "#f8d800";
+    ctx.lineWidth = Math.max(0.5, 1.2 / z);
+    ctx.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
+  }
+  ctx.fillStyle = selected ? "#000018" : here ? "#f8d800" : "#f4efe4";
+  ctx.fillText(r.short, px + 2, py + 1);
 }
 
 function drawCleanCityLabels(ctx, painted) {
   const fontPx = cityNamePx();
   const z = mapView.z || 1;
-  const canvas = {
-    x0: -mapView.x / z,
-    y0: -mapView.y / z,
-    x1: (1000 - mapView.x) / z,
-    y1: (620 - mapView.y) / z,
-  };
-  const shown = painted.filter((r) => {
-    if (!r.short) return false;
-    const [x, y] = cityXY(r);
-    return x >= canvas.x0 && x <= canvas.x1 && y >= canvas.y0 && y <= canvas.y1;
-  });
+  const canvas = viewWorldRect();
   const hereId = playerOf(state).region;
-  const markerClaims = shown.map((r) => {
+  const spots = [];
+  painted.forEach((r) => {
+    if (!r.short) return;
     const [x, y] = cityXY(r);
-    const s = closeMarkerSize() * (r.id === hereId ? 1.28 : 1);
-    const badge = r.garrison > 0 ? Math.max(8, 12 / z) + 2 : 0;
-    return { id: r.id, x: x - s / 2 - 2, y: y - s / 2 - badge - 2, w: s + 4, h: s + badge + 4 };
+    if (x < canvas.x0 || x > canvas.x1 || y < canvas.y0 || y > canvas.y1) return;
+    const spot = cleanCitySpot(r, hereId);
+    if (spot) spots.push(spot);
   });
-  const ranked = shown
-    .map((r, i) => ({ r, i }))
+  const neighborsOf = (id) => spots.filter((s) => s.r.id !== id).map((s) => ({ x: s.x, y: s.y, marker: s.marker }));
+  const markerClaims = spots.map((s) => {
+    const badge = showTroopChip(s.r) ? Math.max(8, 12 / z) + 2 : 0;
+    return { id: s.r.id, x: s.x - s.marker / 2 - 2, y: s.y - s.marker / 2 - badge - 2, w: s.marker + 4, h: s.marker + badge + 4 };
+  });
+  const ranked = spots
+    .map((s, i) => ({ s, i }))
     .sort((a, b) => {
       const rank = (r) => (r.id === hereId ? 3 : r.id === selectedRegion ? 2 : r.id === hoverRegion ? 1 : 0);
-      return rank(b.r) - rank(a.r) || a.i - b.i;
+      return rank(b.s.r) - rank(a.s.r) || a.i - b.i;
     });
   ctx.save();
   ctx.textBaseline = "top";
   let pending = ranked;
-  [1, 0.82, 0.64, 0.5, 0.4].forEach((scale) => {
-    const sized = Math.max(4, fontPx * scale);
+  cityLabelSizes(fontPx, z).forEach((sized) => {
     ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
     const next = [];
-    pending.forEach(({ r, i }) => {
-      const name = r.short;
-      const w = Math.ceil(ctx.measureText(name).width) + 4;
+    pending.forEach(({ s, i }) => {
+      const w = Math.ceil(ctx.measureText(s.r.short).width) + 4;
       const h = Math.ceil(sized + 3);
-      const [x, y] = cityXY(r);
-      const here = r.id === hereId;
-      const selected = r.id === selectedRegion;
-      const marker = closeMarkerSize() * (here ? 1.28 : 1);
-      const blocks = markerClaims.filter((c) => c.id !== r.id);
-      const placed = pickCityLabel(x, y, w, h, marker, blocks);
+      const here = s.r.id === hereId;
+      const selected = s.r.id === selectedRegion;
+      const blocks = markerClaims.filter((c) => c.id !== s.r.id);
+      const placed = pickCityLabel(s.x, s.y, w, h, s.marker, blocks, neighborsOf(s.r.id), false);
       if (!placed) {
-        next.push({ r, i });
+        next.push({ s, i, w, h, sized });
         return;
       }
-      const [px, py] = placed;
-      cityClaims.push({ x: px, y: py, w, h });
-      ctx.fillStyle = selected ? "#f8d800" : "#0c0c16";
-      ctx.fillRect(px, py, w, h);
-      if (here && !selected) {
-        ctx.strokeStyle = "#f8d800";
-        ctx.lineWidth = Math.max(0.5, 1.2 / z);
-        ctx.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
-      }
-      ctx.fillStyle = selected ? "#000018" : here ? "#f8d800" : "#f4efe4";
-      ctx.fillText(name, px + 2, py + 1);
+      cityClaims.push({ x: placed.lx, y: placed.ly, w, h });
+      paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, here, selected, placed.leader, s.x, s.y, s.marker);
     });
     pending = next;
   });
+  if (pending.length) {
+    const sized = cityLabelSizes(fontPx, z).slice(-1)[0];
+    ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
+    pending.forEach(({ s }) => {
+      const w = Math.ceil(ctx.measureText(s.r.short).width) + 4;
+      const h = Math.ceil(sized + 3);
+      const blocks = markerClaims.filter((c) => c.id !== s.r.id);
+      const neighbors = neighborsOf(s.r.id);
+      const placed = forceCityLabel(s.x, s.y, w, h, s.marker, blocks, neighbors);
+      cityClaims.push({ x: placed.lx, y: placed.ly, w, h });
+      paintCityName(ctx, s.r, placed.lx, placed.ly, w, h, s.r.id === hereId, s.r.id === selectedRegion, placed.leader, s.x, s.y, s.marker);
+    });
+  }
   ctx.restore();
 }
 
@@ -4059,7 +4169,6 @@ function drawMap() {
   o.imageSmoothingEnabled = false;
   const painted = state.regions.filter((r) => theaterVisible(state, r) || r.id === "gulf_passage");
   const layer = mapLayers();
-  if (layer.clearRoads) clampCloseMarkers(painted);
   paintTheaterTerrain(o, state, {
     painted,
     selectedId: selectedRegion,

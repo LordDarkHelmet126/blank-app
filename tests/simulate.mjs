@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, chordIsMisleading, closeRoadWidth, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, applyMapDrag, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1351,9 +1351,21 @@ assert(/e\.key === "d"/.test(uiSrc) && /btn-map-detail/.test(readFileSync(new UR
 assert(/e\.ctrlKey \|\| e\.altKey \|\| e\.metaKey/.test(uiSrc) && /if \(overlayBusy\(\)\) return;/.test(uiSrc), "D ignores Ctrl Alt Meta and an open dialog");
 assert(/stampMapDetail/.test(uiSrc) && /mapDetailFromSave/.test(uiSrc), "detail toggle is stamped on the save and the preference is what Continue keeps");
 assert(/markerClaims/.test(uiSrc) && /claimHits\(labelClaims/.test(uiSrc) && !/if \(soft\) return soft/.test(uiSrc), "city labels treat markers and state tags as hard blocks");
-assert(/\[1, 0\.82, 0\.64, 0\.5, 0\.4\]/.test(uiSrc), "city labels shrink before they drop");
-assert(/function drawCleanStallFront/.test(uiSrc) && /function drawCleanInvasionAxes/.test(uiSrc) && /function drawTroopBadge/.test(uiSrc), "clean close-up keeps a thin front, invasion arrows, and a troop badge");
-assert(/if \(layer\.clearRoads\) clampCloseMarkers/.test(uiSrc), "close-up camera keeps markers on screen");
+assert(/cityLabelSizes/.test(uiSrc) && /drawLabelLeader/.test(uiSrc) && /closerToOwn/.test(uiSrc), "city labels shrink, lead, and stay nearer their own marker");
+assert(/function drawCleanStallFront/.test(uiSrc) && /function drawCleanInvasionAxes/.test(uiSrc) && /function showTroopChip/.test(uiSrc), "clean close-up keeps a thin front, invasion arrows, and a troop badge");
+assert(!/clampCloseMarkers/.test(uiSrc) && !/mapView\.z = z2/.test(uiSrc) && /applyMapDrag/.test(uiSrc), "clean mode does not zoom the camera to fit markers");
+{
+  const dragged = applyMapDrag({ z: 3.2, x: -100, y: 40 }, 80, -25);
+  assert(dragged.z === 3.2 && dragged.x === -20 && dragged.y === 15, "dragging leaves zoom unchanged");
+  const sizes = cityLabelSizes(14 / 3.2, 3.2);
+  assert(sizes.length > 0 && sizes.every((s) => s * 3.2 >= LABEL_MIN_SCREEN - 0.05), "shrunk labels stay at least 8 screen px");
+  const view = { x0: 0, y0: 0, x1: 312, y1: 194 };
+  const slid = insetMarkerCenter(4, 90, 8, view);
+  assert(slid && slid[0] >= 8 && slid[1] === 90, "a cut marker slides inside without a new zoom");
+  const corner = insetMarkerCenter(1, 1, 8, view);
+  assert(corner && corner[0] >= 8 && corner[1] >= 8, "a corner marker whose centre is in view slides inside");
+  assert(insetMarkerCenter(-30, 90, 8, view) === null, "a marker whose centre is off-canvas is not used to move the camera");
+}
 assert(/letterboxCanvasPoint/.test(uiSrc), "map clicks use the same letterbox as the drawn canvas");
 {
   const rect = { left: 6, top: 171.2, width: 1428, height: 722.8 };

@@ -2,6 +2,8 @@
 
 export const CLOSE_ZOOM = 1.15;
 export const MAP_DETAIL_KEY = "northern-front-v01-map-detail";
+/** City names stay readable. Screen pixels, not world units. */
+export const LABEL_MIN_SCREEN = 8;
 
 /**
  * What the canvas should paint.
@@ -40,6 +42,47 @@ export function stampMapDetail(state, on) {
  */
 export function mapDetailFromSave(_saved, fallback) {
   return !!fallback;
+}
+
+/**
+ * Pan by a drag delta. Zoom is copied through unchanged.
+ */
+export function applyMapDrag(view, dx, dy) {
+  return { z: view.z, x: view.x + dx, y: view.y + dy };
+}
+
+/**
+ * Slide a marker that would be cut by the view fully inside.
+ * A marker whose centre is already outside is left off the canvas (null) so the camera is not pulled.
+ * Zoom is not part of the result.
+ */
+export function insetMarkerCenter(x, y, half, view) {
+  const centerIn = x >= view.x0 && x <= view.x1 && y >= view.y0 && y <= view.y1;
+  const minX = view.x0 + half;
+  const maxX = view.x1 - half;
+  const minY = view.y0 + half;
+  const maxY = view.y1 - half;
+  if (!(maxX > minX && maxY > minY)) return centerIn ? [x, y] : null;
+  const nx = Math.min(maxX, Math.max(minX, x));
+  const ny = Math.min(maxY, Math.max(minY, y));
+  if (!centerIn && Math.hypot(nx - x, ny - y) > half + 0.01) return null;
+  return [nx, ny];
+}
+
+/**
+ * World font sizes for a city name. Every size is at least LABEL_MIN_SCREEN pixels on screen.
+ */
+export function cityLabelSizes(baseWorld, z) {
+  const zSafe = Math.max(0.2, Number(z) || 1);
+  const minWorld = LABEL_MIN_SCREEN / zSafe;
+  const base = Math.max(minWorld, Number(baseWorld) || minWorld);
+  const sizes = [];
+  [1, 0.86, 0.74, 0.64].forEach((scale) => {
+    const sized = base * scale;
+    if (sized * zSafe >= LABEL_MIN_SCREEN - 0.05) sizes.push(sized);
+  });
+  if (!sizes.length) sizes.push(minWorld);
+  return sizes;
 }
 
 /**

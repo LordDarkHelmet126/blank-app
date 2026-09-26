@@ -211,12 +211,24 @@ button:disabled { opacity: 0.55; cursor: not-allowed; outline: none; filter: gra
 }
 .chrome-head.map-head { flex-wrap: wrap; align-items: center; overflow: visible; row-gap: 4px; }
 .zoom-btns, .zoom-btns button, #btn-map-detail, #btn-legend { flex: 0 0 auto; white-space: nowrap; }
+.btn-short { display: none; }
 @media (max-width: 1440px) {
   .chrome-head.map-head { gap: 6px; }
   .map-head .panel-title { font-size: 13px; }
   .wash-key { font-size: 11px; gap: 5px; }
   .wash-key i { width: 12px; height: 12px; margin-right: 3px; border-width: 2px; }
   .zoom-btns button, #btn-legend { padding: 3px 6px; font-size: 12px; }
+}
+@media (max-width: 1360px) {
+  .chrome-head.map-head { flex-wrap: nowrap; gap: 4px; row-gap: 0; padding: 2px 6px; }
+  .map-head .panel-title { font-size: 11px; }
+  .map-head .wash-key { font-size: 9px; gap: 3px; }
+  .map-head .wash-key i { width: 8px; height: 8px; margin-right: 2px; border-width: 2px; }
+  .map-head .zoom-btns button,
+  .map-head #btn-legend { padding: 2px 4px; font-size: 9px; }
+  .map-head .map-caption { font-size: 10px; }
+  .map-head .btn-long { display: none; }
+  .map-head .btn-short { display: inline; }
 }
 .wash-key {
   display: flex;
