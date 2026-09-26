@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { loadContent } from "../js/content.js";
 import { validateWorld, worldCatalog, worldCounts, toOfficerRecords, requiredCommandSlots } from "../js/world.js";
+import { atlasMode } from "../js/world-atlas.js";
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -238,6 +239,131 @@ assert(worldBy.get("fr.chamonix").neighbors.some((n) => n.id === "it.courmayeur"
 assert(worldBy.get("at.innsbruck").neighbors.some((n) => n.id === "it.bolzano" && n.kind === "road"), "Brenner");
 assert(worldBy.get("fr.hendaye").neighbors.some((n) => n.id === "es.irun" && n.kind === "road"), "Hendaye–Irun");
 assert(["gb", "ie", "im", "je", "gg", "gi", "fr", "mc", "ad", "nl", "be", "lu", "de", "dd", "wb", "ch", "at", "li", "it", "sm", "va", "es", "pt", "dk", "no", "se", "fi", "is", "mt", "cy", "nc", "gr", "tr"].every((id) => content.world.regions.find((r) => r.id === id).playable === false), "Western Europe stays unplayable");
+
+function rosterSize(n) {
+  if (n <= 2) return 2;
+  if (n <= 7) return 3;
+  if (n >= 80) return 12;
+  if (n >= 40) return 8;
+  if (n >= 25) return 7;
+  if (n >= 15) return 6;
+  return 5;
+}
+
+const eastIds = ["pl", "cs", "hu", "ro", "bg", "yu", "al", "ru", "ua", "by", "md", "ee", "lv", "lt", "ge", "am", "az", "kz", "uz", "kg", "tj", "tm"];
+const eastExpect = {
+  pl: [53, 8], cs: [13, 5], hu: [21, 6], ro: [41, 8], bg: [15, 6], yu: [42, 8], al: [26, 7],
+  ru: [110, 12], ua: [29, 7], by: [6, 3], md: [12, 5], ee: [16, 6], lv: [26, 7], lt: [44, 8],
+  ge: [6, 3], am: [3, 3], az: [5, 3], kz: [19, 6], uz: [13, 5], kg: [5, 3], tj: [5, 3], tm: [5, 3],
+};
+const earlySubs = new Set(["us", "ca"].flatMap((id) => content.world.regions.find((r) => r.id === id).subdivisions.map((s) => s.id)));
+eastIds.forEach((id) => {
+  const region = content.world.regions.find((r) => r.id === id);
+  const count = counts.find((c) => c.id === id);
+  const [cities, officers] = eastExpect[id];
+  assert(region && region.playable === false && region.status === "occupied" && region.reach === "later", `${id} stays dormant`);
+  assert(count.territories === cities && count.officers === officers, `${id} is ${cities} cities and ${officers} officers, got ${count.territories}/${count.officers}`);
+  assert(count.officers === rosterSize(count.territories) && count.playable === 0, `${id} roster stays normalized`);
+  assert(region.subdivisions.every((s) => !earlySubs.has(s.id) && s.id.startsWith(`${region.country}-`)), `${id} subdivision ids stay prefixed`);
+  const records = toOfficerRecords(region);
+  assert(records.length === officers && records.every((o) => o.dormant && o.world && o.fictional && o.faction == null), `${id} officers stay off the week-0 list`);
+  assert(region.officers.every((o) => /fiction/i.test(o.bio)), `${id} bios stay fictional`);
+});
+assert(!content.world.regions.some((r) => r.id === "cz" || r.id === "sk"), "Czechoslovakia is still one country");
+assert(!["cn", "jp", "ir", "af", "mn"].some((id) => content.world.regions.some((r) => r.id === id)), "China, Japan, Iran, Afghanistan, and Mongolia stay off this sheet");
+
+const pl = content.world.regions.find((r) => r.id === "pl");
+assert(pl.subdivisions.length === 49 && pl.subdivisions.every((s) => s.kind === "voivodeship"), "49 Polish voivodeships");
+assert(!pl.territories.some((t) => t.neighbors.some((n) => n.id.startsWith("de.") || n.id.startsWith("wb."))), "Poland meets the GDR, not West Germany or West Berlin");
+assert(worldBy.get("dd.gorlitz").neighbors.some((n) => n.id === "pl.zgorzelec" && n.kind === "road"), "Görlitz–Zgorzelec");
+assert(worldBy.get("dd.frankfurt_oder").neighbors.some((n) => n.id === "pl.slubice" && n.kind === "road"), "Frankfurt (Oder)–Słubice");
+assert(worldBy.get("pl.katowice").yields.includes("coal") && worldBy.get("pl.katowice").yields.includes("steel"), "Upper Silesian coal and steel");
+
+const cs = content.world.regions.find((r) => r.id === "cs");
+const csGroups = new Set(cs.subdivisions.map((s) => s.group));
+assert(cs.subdivisions.length === 12 && csGroups.size === 2 && csGroups.has("Czech Socialist Republic") && csGroups.has("Slovak Socialist Republic"), "Czech and Slovak republics inside one Czechoslovakia");
+assert(worldBy.get("at.vienna").neighbors.some((n) => n.id === "cs.bratislava" && n.kind === "road"), "Petržalka–Berg");
+
+const hu = content.world.regions.find((r) => r.id === "hu");
+assert(hu.subdivisions.filter((s) => s.kind === "megye").length === 19, "19 Hungarian megye");
+assert(hu.subdivisions.some((s) => s.name === "Budapest"), "Budapest");
+assert(hu.subdivisions.some((s) => s.name === "Győr-Sopron") && hu.subdivisions.some((s) => s.name === "Szabolcs-Szatmár"), "Hungarian megye keep their 1980s names");
+assert(worldBy.get("at.eisenstadt").neighbors.some((n) => n.id === "hu.sopron" && n.kind === "road"), "Klingenbach–Sopron");
+
+const ro = content.world.regions.find((r) => r.id === "ro");
+assert(ro.subdivisions.filter((s) => s.kind === "judet").length === 40, "40 Romanian județe");
+assert(ro.subdivisions.some((s) => s.kind === "municipality" && /bucharest/i.test(s.name)), "Bucharest municipality");
+assert(!ro.subdivisions.some((s) => /ilfov/i.test(s.name)), "Ilfov is not restored until 1997");
+assert(worldBy.get("ro.giurgiu").neighbors.some((n) => n.id === "bg.ruse" && n.kind === "road"), "Giurgiu–Ruse Friendship Bridge");
+assert(worldBy.get("ro.drobeta").neighbors.some((n) => n.id === "bg.vidin" && n.kind === "sea"), "Calafat–Vidin is still a ferry");
+assert(!worldBy.get("ro.drobeta").neighbors.some((n) => n.id === "bg.vidin" && n.kind === "road"), "no Calafat–Vidin bridge");
+
+const bg = content.world.regions.find((r) => r.id === "bg");
+assert(bg.subdivisions.length === 9 && bg.subdivisions.every((s) => s.kind === "oblast"), "nine Bulgarian oblasti of 1987");
+assert(bg.subdivisions.some((s) => s.name === "Mikhailovgrad"), "Mikhailovgrad has not become Montana");
+assert(!bg.subdivisions.some((s) => s.name === "Montana" || s.name === "Blagoevgrad"), "1987 Bulgaria is not the later 28 oblasti");
+assert(worldBy.get("bg.blagoevgrad").neighbors.some((n) => n.id === "gr.serres" && n.kind === "road"), "Kulata–Promachonas");
+assert(worldBy.get("bg.svilengrad").neighbors.some((n) => n.id === "tr.edirne" && n.kind === "road"), "Kapitan Andreevo");
+
+const yu = content.world.regions.find((r) => r.id === "yu");
+const yuGroups = new Set(yu.subdivisions.map((s) => s.group));
+["Slovenia", "Croatia", "Bosnia and Herzegovina", "Serbia", "Montenegro", "Macedonia", "Serbia — Vojvodina", "Serbia — Kosovo"].forEach((group) => {
+  assert(yuGroups.has(group), `Yugoslavia keeps ${group}`);
+});
+assert(worldBy.has("yu.titograd"), "Titograd has not become Podgorica");
+assert(worldBy.get("yu.ljubljana").neighbors.some((n) => n.id === "at.klagenfurt" && n.kind === "road" && /Loibl/.test(n.via)), "Loibl, not the 1991 Karawanks tunnel");
+assert(worldBy.get("yu.koper").neighbors.some((n) => n.id === "it.trieste" && n.kind === "road"), "Fernetti–Sežana");
+assert(content.world.regions.find((r) => r.id === "al").subdivisions.length === 26, "26 Albanian districts");
+assert(worldBy.get("al.kukes").yields.includes("chrome") && worldBy.get("al.gjirokaster").neighbors.some((n) => n.id === "gr.ioannina" && n.kind === "road"), "Albanian chrome and the Kakavia road");
+
+const ru = content.world.regions.find((r) => r.id === "ru");
+assert(ru.subdivisions.filter((s) => s.kind === "oblast").length === 49, "49 RSFSR oblasts");
+assert(ru.subdivisions.filter((s) => s.kind === "krai").length === 6, "6 RSFSR krais");
+assert(ru.subdivisions.filter((s) => s.kind === "assr").length === 16, "16 RSFSR ASSRs");
+assert(ru.subdivisions.filter((s) => s.kind === "autonomous_okrug").length === 10, "10 autonomous okrugs");
+assert(ru.subdivisions.filter((s) => /chechen/i.test(s.name)).length === 1, "Chechen-Ingush stays one ASSR");
+assert(ru.subdivisions.some((s) => s.id === "RU-KAM"), "Kamchatka");
+assert(ru.subdivisions.some((s) => s.id === "RU-SAK"), "Sakhalin");
+assert(ru.subdivisions.some((s) => s.id === "RU-CHU" && s.group === "Magadan Oblast"), "Chukotka is still part of Magadan Oblast");
+assert(ru.subdivisions.some((s) => s.id === "RU-KOR" && s.group === "Kamchatka Oblast"), "Koryak stays inside Kamchatka");
+assert(ru.territories.some((t) => t.name === "Gorky") && ru.territories.some((t) => t.name === "Sverdlovsk") && ru.territories.some((t) => t.name === "Leningrad"), "RSFSR keeps 1980s city names");
+assert(worldBy.get("ru.provideniya").lon > 170, "Chukotka is stored east of Greenwich");
+assert(worldBy.get("ru.kurilsk").neighbors.every((n) => n.kind === "sea"), "the Kurils are reached by sea");
+assert(worldBy.get("ru.yuzhno_sakhalinsk").neighbors.some((n) => n.id === "ru.sovetskaya_gavan" && n.kind === "sea"), "Vanino–Kholmsk ferry");
+assert(!worldBy.get("ru.kaliningrad").neighbors.some((n) => n.id.startsWith("ru.") && n.kind === "road"), "Kaliningrad has no road across the republic");
+assert(worldBy.get("ru.kaliningrad").neighbors.some((n) => n.id === "ru.leningrad" && n.kind === "sea"), "Kaliningrad–Leningrad is a Baltic lane");
+assert(ru.territories.some((t) => t.neighbors.some((n) => n.kind === "road" && /Trans-Siberian/.test(n.via || ""))), "the Trans-Siberian is drawn as a road");
+assert(worldBy.get("ru.taishet").neighbors.some((n) => n.id === "ru.bratsk" && n.kind === "road" && n.via === "BAM"), "BAM is a road");
+assert(worldBy.get("ru.khabarovsk").neighbors.some((n) => n.id === "ru.vladivostok" && n.kind === "road"), "the Trans-Siberian reaches Vladivostok");
+assert(worldBy.get("ru.ordzhonikidze").neighbors.some((n) => n.id === "ge.tbilisi" && n.kind === "road" && /Cross Pass/.test(n.via)), "Georgian Military Road");
+assert(worldBy.get("ru.makhachkala").neighbors.filter((n) => n.id === "az.baku").length === 1 && worldBy.get("ru.makhachkala").neighbors.some((n) => n.id === "az.baku" && n.kind === "road"), "Derbent is a coastal road");
+assert(worldBy.get("az.baku").neighbors.some((n) => n.id === "tm.krasnovodsk" && n.kind === "sea"), "Baku–Krasnovodsk ferry");
+assert(worldBy.get("az.baku").neighbors.some((n) => n.id === "az.nakhichevan" && n.kind === "air"), "Nakhichevan is reached by air");
+assert(!worldBy.get("az.baku").neighbors.some((n) => n.id === "az.nakhichevan" && n.kind === "road"), "no invented road across Armenia to Nakhichevan");
+assert(worldBy.get("tj.dushanbe").neighbors.some((n) => n.id === "tj.khujand" && n.kind === "road" && /Anzob/.test(n.via)), "Anzob Pass");
+assert(worldBy.get("kg.osh").neighbors.some((n) => n.id === "tj.khorog" && n.kind === "road" && /Pamir/.test(n.via)), "Pamir Highway");
+assert(worldBy.get("kg.frunze").neighbors.some((n) => n.id === "kz.alma_ata" && n.kind === "road" && /Kordai/.test(n.via)), "Kordai pass");
+assert(worldBy.get("ru.mirny").yields.includes("diamonds") && worldBy.get("kz.aktyubinsk").yields.includes("chrome"), "Mirny diamonds and Aktyubinsk chrome");
+
+const ua = content.world.regions.find((r) => r.id === "ua");
+assert(ua.subdivisions.some((s) => s.id === "UA-CR" && s.name === "Crimea"), "Crimea is a Ukrainian oblast");
+assert(!ru.subdivisions.some((s) => /crimea/i.test(s.name)), "Crimea is not drawn as a Russian subdivision");
+assert(worldBy.get("ua.simferopol").neighbors.some((n) => n.id === "ua.kherson" && n.kind === "road"), "Perekop isthmus");
+assert(!worldBy.get("ua.simferopol").neighbors.some((n) => n.id.startsWith("ru.") && n.kind === "road"), "no Kerch bridge");
+assert(worldBy.get("ua.sevastopol").neighbors.some((n) => n.id === "ru.novorossiysk" && n.kind === "sea"), "Crimea to Novorossiysk is a sea lane");
+assert(worldBy.get("ua.odessa").neighbors.some((n) => n.id === "bg.varna" && n.kind === "sea"), "Black Sea lane");
+assert(worldBy.get("fi.helsinki").neighbors.some((n) => n.id === "ee.tallinn" && n.kind === "sea"), "Tallinn–Helsinki ferry");
+assert(worldBy.get("fi.helsinki").neighbors.some((n) => n.id === "ru.leningrad" && n.kind === "sea"), "Leningrad Baltic shipping");
+assert(worldBy.get("se.stockholm").neighbors.some((n) => n.id === "lv.riga" && n.kind === "sea"), "Stockholm–Riga");
+assert(worldBy.get("pl.gdansk").neighbors.some((n) => n.id === "ru.kaliningrad" && n.kind === "sea"), "Gdańsk–Kaliningrad");
+assert(worldBy.get("us.nome").neighbors.some((n) => n.id === "ru.provideniya" && n.kind === "sea"), "Bering Strait is a sea lane");
+assert(!worldBy.get("us.nome").neighbors.some((n) => n.id === "ru.provideniya" && n.kind === "road"), "no Bering highway");
+assert(worldBy.get("no.vadso").neighbors.some((n) => n.id === "ru.murmansk" && n.kind === "road"), "Kirkenes–Borisoglebsk");
+assert(worldBy.get("tr.artvin").neighbors.some((n) => n.id === "ge.batumi" && n.kind === "road"), "Sarpi");
+assert(worldBy.get("tr.kars").neighbors.some((n) => n.id === "am.leninakan" && n.kind === "trail"), "Akyaka stays closed");
+assert(worldBy.get("ru.petropavlovsk").neighbors.some((n) => n.id === "ru.magadan" && n.kind === "sea"), "Sea of Okhotsk");
+assert(atlasMode({ atlas: "su", z: 2, focus: null }) === "world", "the USSR close-up labels capitals, not every city");
+assert(atlasMode({ atlas: "eu", z: 2, focus: null }) === "world", "the Europe close-up stays in world mode");
 
 console.log("ok world catalog");
 counts.forEach((c) => {
