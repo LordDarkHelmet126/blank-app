@@ -5,6 +5,7 @@ import { CA_REGION } from "../data/world/regions/ca.js";
 import { MEXICO_REGION } from "../data/world/regions/mexico.js";
 import { CENTRAL_AMERICA } from "../data/world/regions/central-america.js";
 import { CARIBBEAN } from "../data/world/regions/caribbean.js";
+import { SOUTH_AMERICA } from "../data/world/regions/south-america.js";
 
 function modesFor(kind) {
   if (kind === "sea") return ["sea"];
@@ -34,9 +35,17 @@ export const WORLD_REGIONS = stitchBorders([
   MEXICO_REGION,
   ...CENTRAL_AMERICA,
   ...CARIBBEAN,
+  ...SOUTH_AMERICA,
 ]);
 
 const COMMAND_SLOTS = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];
+
+/** Roster size follows the country. A one-island post does not get a five-chair staff. */
+export function requiredCommandSlots(territoryCount) {
+  if (territoryCount <= 2) return ["head_of_state", "field_officer"];
+  if (territoryCount <= 7) return ["head_of_state", "defense_minister", "field_officer"];
+  return COMMAND_SLOTS;
+}
 const STATUSES = new Set(["neutral", "occupied", "held"]);
 const LINK_KINDS = new Set(["road", "rail", "sea", "trail"]);
 
@@ -204,7 +213,7 @@ export function validateRegion(region, opts = {}) {
     }
     if (officerNames && o.name && officerNames.has(o.name)) fail(`${o.name} copies a campaign officer`);
   });
-  COMMAND_SLOTS.forEach((slot) => {
+  requiredCommandSlots(terrs.length).forEach((slot) => {
     if (!slots.has(slot)) fail(`missing command slot ${slot}`);
   });
 

@@ -2343,6 +2343,10 @@ function frameAtlasState(code) {
     frameLonLat(-101.6, 20.6, -96.8, 18.2, 0.86);
     return;
   }
+  if (code === "CL-VS") {
+    frameLonLat(-71.9, -32.4, -68.4, -33.85, 0.82);
+    return;
+  }
   const b = sub.bbox;
   frameLonLat(b.minLon, b.maxLat, b.maxLon, b.minLat, 0.78);
 }

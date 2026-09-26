@@ -14,6 +14,10 @@ const WORLD_CAPS = new Set([
   "gt.guatemala",
   "cu.havana",
   "pa.panama",
+  "co.bogota",
+  "br.brasilia",
+  "pe.lima",
+  "ar.buenos_aires",
 ]);
 
 /** World zoom shows the whole atlas. A framed state or province shows its cities up close. */

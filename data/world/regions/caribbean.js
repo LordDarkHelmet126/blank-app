@@ -90,6 +90,11 @@ export const CUBA_REGION = region({
     { id: "cu_cmd_betancourt", name: "Nuria Betancourt", title: "Chief of the General Staff", rank: "General de División", branch: "FAR", slot: "chief_of_staff", war: 78, int: 84, pol: 58, chr: 54, personality: "cautious", region: "cu.havana", bio: "Estado Mayor. Carretera Central is a road. The Isle of Youth is a ferry." },
     { id: "cu_cmd_tamayo", name: "Osvaldo Tamayo", title: "Eastern Army", rank: "General de Brigada", branch: "FAR", slot: "front_commander", war: 80, int: 72, pol: 48, chr: 52, personality: "aggressive", region: "cu.santiago", bio: "Santiago general. Sugar, the port, and the Windward Passage. Moa’s nickel is a mine, not a fleet." },
     { id: "cu_fld_noa", name: "Caridad Noa", title: "Moa post", rank: "Mayor", branch: "FAR", slot: "field_officer", war: 64, int: 70, pol: 40, chr: 56, personality: "merchant", region: "cu.moa", bio: "Field grade at the nickel works. She counts ore and the coast road." },
+    { id: "cu_cmd_pino", name: "Rubén Pino", title: "Western Army", rank: "General de Brigada", branch: "FAR", slot: "front_commander", war: 74, int: 70, pol: 46, chr: 50, personality: "loyalist", region: "cu.pinar", bio: "Pinar del Río. Tobacco and the Yucatán Channel. The Straits are still the Gulf Sealift desk." },
+    { id: "cu_cmd_sosa", name: "Elisa Sosa", title: "Central Army", rank: "General de Brigada", branch: "FAR", slot: "front_commander", war: 76, int: 73, pol: 48, chr: 55, personality: "cautious", region: "cu.santa_clara", bio: "Villa Clara. Sugar and the Carretera Central through the middle of the island." },
+    { id: "cu_cmd_marquez", name: "Hilario Márquez", title: "Western Naval", rank: "Capitán de Navío", branch: "MGR", slot: "front_commander", war: 72, int: 74, pol: 40, chr: 52, personality: "cautious", region: "cu.cienfuegos", bio: "Marina de Guerra Revolucionaria at Cienfuegos. A harbor, not a road to the Isle." },
+    { id: "cu_fld_otero", name: "Dalia Otero", title: "Isle of Youth", rank: "Capitán", branch: "FAR", slot: "field_officer", war: 58, int: 66, pol: 42, chr: 60, personality: "loyalist", region: "cu.nueva_gerona", bio: "Nueva Gerona. The Batabanó ferry is the link. Citrus, not a province created in 2011." },
+    { id: "cu_fld_mena", name: "Basilio Mena", title: "Matanzas citrus", rank: "Mayor", branch: "FAR", slot: "field_officer", war: 60, int: 64, pol: 38, chr: 54, personality: "merchant", region: "cu.matanzas", bio: "Matanzas. Citrus and the coast road. He does not rename the 1976 provinces." },
   ]),
 });
 
@@ -445,9 +450,7 @@ export const USVI_REGION = island({
   ],
   officers: staff([
     { id: "vi_cmd_heyliger", name: "Lydia Heyliger", title: "Governor", rank: "Governor", branch: "civilian", slot: "head_of_state", war: 22, int: 74, pol: 80, chr: 76, personality: "diplomat", region: "vi.charlotte_amalie", bio: "Fictional governor in Charlotte Amalie. Three islands, ferries between them." },
-    { id: "vi_cmd_hodge", name: "Carlton Hodge", title: "Adjutant General", rank: "Brigadier General", branch: "VI National Guard", slot: "defense_minister", war: 66, int: 68, pol: 52, chr: 58, personality: "loyalist", region: "vi.charlotte_amalie", bio: "Virgin Islands National Guard. A guard, not a fleet." },
-    { id: "vi_cmd_penn", name: "Agnes Penn", title: "Guard chief of staff", rank: "Colonel", branch: "VI National Guard", slot: "chief_of_staff", war: 60, int: 70, pol: 48, chr: 62, personality: "cautious", region: "vi.charlotte_amalie", bio: "Staff colonel. St. John and St. Croix are boats from St. Thomas." },
-    { id: "vi_cmd_joseph", name: "Marcus Joseph", title: "St. Thomas company", rank: "Major", branch: "VI National Guard", slot: "front_commander", war: 62, int: 60, pol: 42, chr: 56, personality: "loyalist", region: "vi.charlotte_amalie", bio: "Charlotte Amalie major. The harbor and the ferry east." },
+    { id: "vi_cmd_hodge", name: "Carlton Hodge", title: "Adjutant General", rank: "Brigadier General", branch: "VI National Guard", slot: "defense_minister", war: 66, int: 68, pol: 52, chr: 58, personality: "loyalist", region: "vi.charlotte_amalie", bio: "Virgin Islands National Guard. A guard, not a fleet. St. John and St. Croix are boats." },
     { id: "vi_fld_clarke", name: "Ruth Clarke", title: "St. Croix post", rank: "Captain", branch: "VI National Guard", slot: "field_officer", war: 58, int: 62, pol: 40, chr: 64, personality: "merchant", region: "vi.christiansted", bio: "Christiansted captain. Sugar left in the fields, and a port." },
   ]),
 });
@@ -468,11 +471,8 @@ export const BVI_REGION = island({
   ],
   links: [["road_town", "spanish_town", "sea", "interisland ferry"]],
   officers: staff([
-    { id: "vg_cmd_frett", name: "Inez Frett", title: "Chief Minister", rank: "Chief Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 72, pol: 80, chr: 74, personality: "diplomat", region: "vg.road_town", bio: "Fictional chief minister in Road Town. The governor is the Crown’s officer; she runs the government." },
-    { id: "vg_cmd_harrigan", name: "Samuel Harrigan", title: "Commissioner of Police", rank: "Commissioner", branch: "Police", slot: "defense_minister", war: 58, int: 66, pol: 50, chr: 60, personality: "cautious", region: "vg.road_town", bio: "There is no standing army. The police commissioner is the security desk." },
-    { id: "vg_cmd_lettsome", name: "Edith Lettsome", title: "Police staff", rank: "Superintendent", branch: "Police", slot: "chief_of_staff", war: 52, int: 68, pol: 48, chr: 64, personality: "loyalist", region: "vg.road_town", bio: "Staff superintendent. Tortola to Virgin Gorda is a ferry." },
-    { id: "vg_cmd_penn", name: "Alfred Penn", title: "Road Town", rank: "Inspector", branch: "Police", slot: "front_commander", war: 54, int: 60, pol: 42, chr: 56, personality: "loyalist", region: "vg.road_town", bio: "Road Town inspector. The harbor and the short run to St. Thomas." },
-    { id: "vg_fld_flax", name: "Cora Flax", title: "Virgin Gorda", rank: "Sergeant", branch: "Police", slot: "field_officer", war: 48, int: 58, pol: 40, chr: 62, personality: "merchant", region: "vg.spanish_town", bio: "Spanish Town sergeant. Fisheries and the ferry west." },
+    { id: "vg_cmd_frett", name: "Inez Frett", title: "Chief Minister", rank: "Chief Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 72, pol: 80, chr: 74, personality: "diplomat", region: "vg.road_town", bio: "Fictional chief minister in Road Town. There is no standing army. Tortola to Virgin Gorda is a ferry." },
+    { id: "vg_fld_flax", name: "Cora Flax", title: "Virgin Gorda", rank: "Sergeant", branch: "Police", slot: "field_officer", war: 48, int: 58, pol: 40, chr: 62, personality: "merchant", region: "vg.spanish_town", bio: "Spanish Town sergeant. Fisheries and the ferry west. The police are the security desk." },
   ]),
 });
 
@@ -485,11 +485,8 @@ export const ANGUILLA_REGION = island({
   subs: [{ id: "AI-AI", name: "Anguilla", kind: "district" }],
   cities: [["the_valley", "The Valley", "AI-AI", 18.2206, -63.0517, "capital", ["fisheries", "salt"]]],
   officers: staff([
-    { id: "ai_cmd_harrigan", name: "Elsie Richardson", title: "Chief Minister", rank: "Chief Minister", branch: "civilian", slot: "head_of_state", war: 20, int: 70, pol: 78, chr: 74, personality: "diplomat", region: "ai.the_valley", bio: "Fictional chief minister in The Valley. One island, sea on every side." },
-    { id: "ai_cmd_hodge", name: "Walter Hodge", title: "Commissioner of Police", rank: "Commissioner", branch: "Police", slot: "defense_minister", war: 52, int: 64, pol: 48, chr: 58, personality: "cautious", region: "ai.the_valley", bio: "No army. The police commissioner is the security post." },
-    { id: "ai_cmd_carty", name: "Norma Carty", title: "Police staff", rank: "Superintendent", branch: "Police", slot: "chief_of_staff", war: 48, int: 66, pol: 46, chr: 62, personality: "loyalist", region: "ai.the_valley", bio: "Staff superintendent. Saint-Martin is a short boat, not a bridge." },
-    { id: "ai_cmd_gumbs", name: "Calvin Gumbs", title: "Valley post", rank: "Inspector", branch: "Police", slot: "front_commander", war: 50, int: 58, pol: 40, chr: 54, personality: "loyalist", region: "ai.the_valley", bio: "The Valley inspector. Salt ponds and the harbor." },
-    { id: "ai_fld_lake", name: "Pearl Lake", title: "Road Bay", rank: "Sergeant", branch: "Police", slot: "field_officer", war: 46, int: 56, pol: 38, chr: 60, personality: "merchant", region: "ai.the_valley", bio: "Road Bay sergeant. Fisheries and the run to St. Kitts." },
+    { id: "ai_cmd_harrigan", name: "Elsie Richardson", title: "Chief Minister", rank: "Chief Minister", branch: "civilian", slot: "head_of_state", war: 20, int: 70, pol: 78, chr: 74, personality: "diplomat", region: "ai.the_valley", bio: "Fictional chief minister in The Valley. One island, no army. Saint-Martin is a short boat, not a bridge." },
+    { id: "ai_fld_lake", name: "Pearl Lake", title: "Road Bay", rank: "Sergeant", branch: "Police", slot: "field_officer", war: 46, int: 56, pol: 38, chr: 60, personality: "merchant", region: "ai.the_valley", bio: "Road Bay sergeant. Fisheries, the salt ponds, and the run to St. Kitts." },
   ]),
 });
 
@@ -509,10 +506,7 @@ export const ST_KITTS_REGION = island({
   ],
   links: [["basseterre", "charlestown", "sea", "Nevis ferry"]],
   officers: staff([
-    { id: "kn_cmd_liburd", name: "Constance Liburd", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 24, int: 72, pol: 82, chr: 76, personality: "diplomat", region: "kn.basseterre", bio: "Fictional prime minister in Basseterre. Sugar still matters. Nevis is a ferry." },
-    { id: "kn_cmd_williams", name: "Joseph Williams", title: "Minister of National Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 40, int: 68, pol: 70, chr: 62, personality: "cautious", region: "kn.basseterre", bio: "National security. A defence force small enough to name its officers." },
-    { id: "kn_cmd_heyliger", name: "Randolph Heyliger", title: "Defence Force commander", rank: "Lieutenant Colonel", branch: "Defence Force", slot: "chief_of_staff", war: 64, int: 66, pol: 44, chr: 52, personality: "loyalist", region: "kn.basseterre", bio: "Defence Force commander. He does not bridge the Narrows." },
-    { id: "kn_cmd_cabey", name: "Marva Cabey", title: "Basseterre company", rank: "Major", branch: "Defence Force", slot: "front_commander", war: 60, int: 62, pol: 42, chr: 58, personality: "loyalist", region: "kn.basseterre", bio: "Basseterre major. The harbor and the sugar belt." },
+    { id: "kn_cmd_liburd", name: "Constance Liburd", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 24, int: 72, pol: 82, chr: 76, personality: "diplomat", region: "kn.basseterre", bio: "Fictional prime minister in Basseterre. Sugar still matters. The defence force is small, and Nevis is a ferry." },
     { id: "kn_fld_pemberton", name: "Earl Pemberton", title: "Nevis post", rank: "Captain", branch: "Defence Force", slot: "field_officer", war: 56, int: 58, pol: 40, chr: 60, personality: "merchant", region: "kn.charlestown", bio: "Charlestown captain. The ferry is the link, and he knows the schedule." },
   ]),
 });
@@ -533,10 +527,7 @@ export const ANTIGUA_REGION = island({
   ],
   links: [["st_johns", "codrington", "sea", "Barbuda boat"]],
   officers: staff([
-    { id: "ag_cmd_samuel", name: "Eunice Samuel", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 24, int: 74, pol: 82, chr: 76, personality: "diplomat", region: "ag.st_johns", bio: "Fictional prime minister in St. John's. Barbuda is a boat north, not a parish of the town." },
-    { id: "ag_cmd_teague", name: "Lester Teague", title: "Minister of Defence", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 42, int: 68, pol: 70, chr: 60, personality: "cautious", region: "ag.st_johns", bio: "Defence minister for a small force. He does not annex Montserrat." },
-    { id: "ag_cmd_francis", name: "Gloria Francis", title: "Defence Force commander", rank: "Lieutenant Colonel", branch: "Defence Force", slot: "chief_of_staff", war: 64, int: 66, pol: 46, chr: 54, personality: "loyalist", region: "ag.st_johns", bio: "Defence Force commander. The harbor is the base." },
-    { id: "ag_cmd_bird", name: "Alton Christian", title: "St. John's company", rank: "Major", branch: "Defence Force", slot: "front_commander", war: 60, int: 60, pol: 42, chr: 56, personality: "ambitious", region: "ag.st_johns", bio: "St. John's major. Sugar, the port, and the next island by sea." },
+    { id: "ag_cmd_samuel", name: "Eunice Samuel", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 24, int: 74, pol: 82, chr: 76, personality: "diplomat", region: "ag.st_johns", bio: "Fictional prime minister in St. John's. A small defence force. Barbuda is a boat north, not a parish of the town." },
     { id: "ag_fld_beazer", name: "Mabel Beazer", title: "Codrington", rank: "Captain", branch: "Defence Force", slot: "field_officer", war: 52, int: 58, pol: 40, chr: 64, personality: "loyalist", region: "ag.codrington", bio: "Codrington captain. Fisheries and the boat south." },
   ]),
 });
@@ -550,11 +541,8 @@ export const MONTSERRAT_REGION = island({
   subs: [{ id: "MS-MS", name: "Montserrat", kind: "district" }],
   cities: [["plymouth", "Plymouth", "MS-MS", 16.7064, -62.2158, "capital", ["cotton", "vegetables"]]],
   officers: staff([
-    { id: "ms_cmd_meade", name: "Vera Meade", title: "Chief Minister", rank: "Chief Minister", branch: "civilian", slot: "head_of_state", war: 20, int: 70, pol: 76, chr: 72, personality: "diplomat", region: "ms.plymouth", bio: "Fictional chief minister in Plymouth. The capital is still on the southwest coast." },
-    { id: "ms_cmd_daley", name: "Oswald Daley", title: "Commissioner of Police", rank: "Commissioner", branch: "Police", slot: "defense_minister", war: 50, int: 62, pol: 46, chr: 56, personality: "cautious", region: "ms.plymouth", bio: "No army. Police are the security force." },
-    { id: "ms_cmd_ryan", name: "Claudia Ryan", title: "Police staff", rank: "Superintendent", branch: "Police", slot: "chief_of_staff", war: 46, int: 64, pol: 44, chr: 60, personality: "loyalist", region: "ms.plymouth", bio: "Staff superintendent. Guadeloupe is the next land, by sea." },
-    { id: "ms_cmd_weekes", name: "Arthur Weekes", title: "Plymouth", rank: "Inspector", branch: "Police", slot: "front_commander", war: 48, int: 56, pol: 40, chr: 52, personality: "loyalist", region: "ms.plymouth", bio: "Plymouth inspector. The harbor and the cotton plots." },
-    { id: "ms_fld_tuitt", name: "Irene Tuitt", title: "Harbour post", rank: "Sergeant", branch: "Police", slot: "field_officer", war: 44, int: 54, pol: 38, chr: 58, personality: "merchant", region: "ms.plymouth", bio: "Harbour sergeant. She watches boats, not a volcano that has not erupted yet." },
+    { id: "ms_cmd_meade", name: "Vera Meade", title: "Chief Minister", rank: "Chief Minister", branch: "civilian", slot: "head_of_state", war: 20, int: 70, pol: 76, chr: 72, personality: "diplomat", region: "ms.plymouth", bio: "Fictional chief minister in Plymouth. No army. The capital is still on the southwest coast." },
+    { id: "ms_fld_tuitt", name: "Irene Tuitt", title: "Harbour post", rank: "Sergeant", branch: "Police", slot: "field_officer", war: 44, int: 54, pol: 38, chr: 58, personality: "merchant", region: "ms.plymouth", bio: "Harbour sergeant. Cotton, boats, and Guadeloupe by sea. The eruption is 1995." },
   ]),
 });
 
@@ -584,9 +572,7 @@ export const GUADELOUPE_REGION = island({
   ],
   officers: staff([
     { id: "gp_cmd_laurent", name: "Hélène Laurent", title: "Prefect", rank: "Prefect", branch: "civilian", slot: "head_of_state", war: 28, int: 78, pol: 80, chr: 68, personality: "diplomat", region: "gp.basse_terre", bio: "Fictional prefect in Basse-Terre. Guadeloupe is a French department, not a sovereign army." },
-    { id: "gp_cmd_morel", name: "Commandant Yves Morel", title: "Gendarmerie commander", rank: "Colonel", branch: "Gendarmerie", slot: "defense_minister", war: 70, int: 72, pol: 48, chr: 52, personality: "loyalist", region: "gp.basse_terre", bio: "Commandant de gendarmerie. Paris is the ministry. He holds the department." },
-    { id: "gp_cmd_baptiste", name: "Claire Baptiste", title: "Gendarmerie staff", rank: "Lieutenant Colonel", branch: "Gendarmerie", slot: "chief_of_staff", war: 62, int: 74, pol: 46, chr: 58, personality: "cautious", region: "gp.pointe_a_pitre", bio: "Staff officer at Pointe-à-Pitre. Marie-Galante is a ferry. Saint-Martin is a longer one." },
-    { id: "gp_cmd_fleming", name: "Lucien Fleming", title: "Saint-Martin company", rank: "Captain", branch: "Gendarmerie", slot: "front_commander", war: 60, int: 64, pol: 42, chr: 50, personality: "merchant", region: "gp.marigot", bio: "Marigot captain. The Anguilla crossing is a boat he can see." },
+    { id: "gp_cmd_morel", name: "Commandant Yves Morel", title: "Gendarmerie commander", rank: "Colonel", branch: "Gendarmerie", slot: "defense_minister", war: 70, int: 72, pol: 48, chr: 52, personality: "loyalist", region: "gp.basse_terre", bio: "Commandant de gendarmerie. Paris is the ministry. Marie-Galante and Saint-Martin are ferries." },
     { id: "gp_fld_rosier", name: "Annick Rosier", title: "Basse-Terre post", rank: "Lieutenant", branch: "Gendarmerie", slot: "field_officer", war: 54, int: 62, pol: 40, chr: 60, personality: "loyalist", region: "gp.basse_terre", bio: "Basse-Terre lieutenant. Bananas, sugar, and the N1." },
   ]),
 });
@@ -600,11 +586,8 @@ export const DOMINICA_REGION = island({
   subs: [{ id: "DM-DM", name: "Dominica", kind: "island" }],
   cities: [["roseau", "Roseau", "DM-DM", 15.301, -61.388, "capital", ["bananas", "cocoa", "administration"]]],
   officers: staff([
-    { id: "dm_cmd_shillingford", name: "Irene Shillingford", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 24, int: 76, pol: 82, chr: 74, personality: "diplomat", region: "dm.roseau", bio: "Fictional prime minister in Roseau. Parishes are a gap on this sheet, not a second country." },
-    { id: "dm_cmd_joseph", name: "Albert Joseph", title: "Minister of National Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 40, int: 68, pol: 70, chr: 60, personality: "cautious", region: "dm.roseau", bio: "National security for a small defence force." },
-    { id: "dm_cmd_carbon", name: "Mavis Carbon", title: "Defence Force commander", rank: "Major", branch: "Defence Force", slot: "chief_of_staff", war: 60, int: 64, pol: 44, chr: 56, personality: "loyalist", region: "dm.roseau", bio: "Defence Force commander. Guadeloupe and Martinique are sea neighbors." },
-    { id: "dm_cmd_gordon", name: "Felix Gordon", title: "Roseau company", rank: "Captain", branch: "Defence Force", slot: "front_commander", war: 56, int: 58, pol: 40, chr: 52, personality: "loyalist", region: "dm.roseau", bio: "Roseau captain. Bananas and the harbor." },
-    { id: "dm_fld_laville", name: "Cynthia Laville", title: "Harbour post", rank: "Lieutenant", branch: "Defence Force", slot: "field_officer", war: 50, int: 56, pol: 38, chr: 60, personality: "merchant", region: "dm.roseau", bio: "Harbour lieutenant. She counts boats, not parishes this map left off." },
+    { id: "dm_cmd_shillingford", name: "Irene Shillingford", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 24, int: 76, pol: 82, chr: 74, personality: "diplomat", region: "dm.roseau", bio: "Fictional prime minister in Roseau. A small defence force. Parishes are a gap on this sheet, not a second country." },
+    { id: "dm_fld_laville", name: "Cynthia Laville", title: "Harbour post", rank: "Lieutenant", branch: "Defence Force", slot: "field_officer", war: 50, int: 56, pol: 38, chr: 60, personality: "merchant", region: "dm.roseau", bio: "Harbour lieutenant. Bananas, and Guadeloupe and Martinique by sea." },
   ]),
 });
 
@@ -633,9 +616,7 @@ export const MARTINIQUE_REGION = island({
   ],
   officers: staff([
     { id: "mq_cmd_dumas", name: "Étienne Dumas", title: "Prefect", rank: "Prefect", branch: "civilian", slot: "head_of_state", war: 26, int: 78, pol: 78, chr: 66, personality: "diplomat", region: "mq.fort_de_france", bio: "Fictional prefect in Fort-de-France. A French department with four arrondissements." },
-    { id: "mq_cmd_renard", name: "Commandant Paul Renard", title: "Gendarmerie commander", rank: "Colonel", branch: "Gendarmerie", slot: "defense_minister", war: 68, int: 72, pol: 46, chr: 50, personality: "loyalist", region: "mq.fort_de_france", bio: "Commandant de gendarmerie. He reports up the French chain." },
-    { id: "mq_cmd_louis", name: "Sylvie Louis", title: "Gendarmerie staff", rank: "Lieutenant Colonel", branch: "Gendarmerie", slot: "chief_of_staff", war: 60, int: 74, pol: 44, chr: 58, personality: "cautious", region: "mq.fort_de_france", bio: "Staff officer. The N1, N2, and N5 stay on the island." },
-    { id: "mq_cmd_marcel", name: "Joël Marcel", title: "Atlantic coast", rank: "Captain", branch: "Gendarmerie", slot: "front_commander", war: 58, int: 62, pol: 40, chr: 52, personality: "loyalist", region: "mq.la_trinite", bio: "La Trinité captain. Bananas and the windward road." },
+    { id: "mq_cmd_renard", name: "Commandant Paul Renard", title: "Gendarmerie commander", rank: "Colonel", branch: "Gendarmerie", slot: "defense_minister", war: 68, int: 72, pol: 46, chr: 50, personality: "loyalist", region: "mq.fort_de_france", bio: "Commandant de gendarmerie. He reports up the French chain. The N1, N2, and N5 stay on the island." },
     { id: "mq_fld_cesar", name: "Aline César", title: "Saint-Pierre post", rank: "Lieutenant", branch: "Gendarmerie", slot: "field_officer", war: 52, int: 64, pol: 38, chr: 60, personality: "recluse", region: "mq.saint_pierre", bio: "Saint-Pierre lieutenant. The old town and the road south to the capital." },
   ]),
 });
@@ -649,11 +630,8 @@ export const ST_LUCIA_REGION = island({
   subs: [{ id: "LC-LC", name: "Saint Lucia", kind: "island" }],
   cities: [["castries", "Castries", "LC-LC", 14.0101, -60.99, "capital", ["bananas", "port", "administration"]]],
   officers: staff([
-    { id: "lc_cmd_charles", name: "Dora Charles", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 74, pol: 82, chr: 76, personality: "diplomat", region: "lc.castries", bio: "Fictional prime minister in Castries. Bananas are the crop. Parishes are a gap." },
-    { id: "lc_cmd_compton", name: "Nigel Montoute", title: "Minister of National Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 40, int: 68, pol: 70, chr: 60, personality: "cautious", region: "lc.castries", bio: "National security. A small defence force beside the police." },
-    { id: "lc_cmd_jnmarie", name: "Aubrey Jn Marie", title: "Defence Force commander", rank: "Major", branch: "Defence Force", slot: "chief_of_staff", war: 60, int: 64, pol: 44, chr: 54, personality: "loyalist", region: "lc.castries", bio: "Defence Force commander. Martinique and St. Vincent are sea lanes." },
-    { id: "lc_cmd_frederick", name: "Esther Frederick", title: "Castries company", rank: "Captain", branch: "Defence Force", slot: "front_commander", war: 56, int: 60, pol: 42, chr: 58, personality: "loyalist", region: "lc.castries", bio: "Castries captain. The harbor and the banana sheds." },
-    { id: "lc_fld_alexander", name: "Peter Alexander", title: "Harbour post", rank: "Lieutenant", branch: "Defence Force", slot: "field_officer", war: 50, int: 56, pol: 38, chr: 52, personality: "merchant", region: "lc.castries", bio: "Harbour lieutenant. He watches the channel, not a parish map." },
+    { id: "lc_cmd_charles", name: "Dora Charles", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 74, pol: 82, chr: 76, personality: "diplomat", region: "lc.castries", bio: "Fictional prime minister in Castries. Bananas are the crop. A small defence force. Parishes are a gap." },
+    { id: "lc_fld_alexander", name: "Peter Alexander", title: "Harbour post", rank: "Lieutenant", branch: "Defence Force", slot: "field_officer", war: 50, int: 56, pol: 38, chr: 52, personality: "merchant", region: "lc.castries", bio: "Harbour lieutenant. Martinique and St. Vincent are sea lanes." },
   ]),
 });
 
@@ -673,10 +651,7 @@ export const ST_VINCENT_REGION = island({
   ],
   links: [["kingstown", "port_elizabeth", "sea", "Bequia ferry"]],
   officers: staff([
-    { id: "vc_cmd_boyea", name: "Lorna Boyea", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 72, pol: 80, chr: 74, personality: "diplomat", region: "vc.kingstown", bio: "Fictional prime minister in Kingstown. Bequia is a ferry. The rest of the Grenadines are a gap." },
-    { id: "vc_cmd_striker", name: "Hugh Straker", title: "Minister of National Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 40, int: 66, pol: 68, chr: 58, personality: "cautious", region: "vc.kingstown", bio: "National security for a small force." },
-    { id: "vc_cmd_jack", name: "Cecil Jack", title: "Defence Force commander", rank: "Major", branch: "Defence Force", slot: "chief_of_staff", war: 58, int: 62, pol: 42, chr: 50, personality: "loyalist", region: "vc.kingstown", bio: "Defence Force commander. Barbados is east by sea. Grenada is south by sea." },
-    { id: "vc_cmd_young", name: "Miriam Young", title: "Kingstown company", rank: "Captain", branch: "Defence Force", slot: "front_commander", war: 54, int: 58, pol: 40, chr: 56, personality: "loyalist", region: "vc.kingstown", bio: "Kingstown captain. Bananas and the harbor." },
+    { id: "vc_cmd_boyea", name: "Lorna Boyea", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 72, pol: 80, chr: 74, personality: "diplomat", region: "vc.kingstown", bio: "Fictional prime minister in Kingstown. A small defence force. Bequia is a ferry. Barbados and Grenada are sea lanes." },
     { id: "vc_fld_sutherland", name: "Ezra Sutherland", title: "Bequia", rank: "Lieutenant", branch: "Defence Force", slot: "field_officer", war: 50, int: 56, pol: 36, chr: 60, personality: "merchant", region: "vc.port_elizabeth", bio: "Port Elizabeth lieutenant. The ferry is the whole of his front." },
   ]),
 });
@@ -690,11 +665,8 @@ export const BARBADOS_REGION = island({
   subs: [{ id: "BB-BB", name: "Barbados", kind: "island" }],
   cities: [["bridgetown", "Bridgetown", "BB-BB", 13.0975, -59.6167, "capital", ["sugarcane", "port", "administration"]]],
   officers: staff([
-    { id: "bb_cmd_greaves", name: "Cynthia Greaves", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 76, pol: 84, chr: 78, personality: "diplomat", region: "bb.bridgetown", bio: "Fictional prime minister in Bridgetown. Sugar and the port. Parishes are a gap." },
-    { id: "bb_cmd_yearwood", name: "Errol Yearwood", title: "Minister of Defence and Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 42, int: 70, pol: 72, chr: 64, personality: "cautious", region: "bb.bridgetown", bio: "Defence and security. The Barbados Defence Force is small and professional." },
-    { id: "bb_cmd_alleyne", name: "Rudolph Alleyne", title: "BDF Chief of Staff", rank: "Colonel", branch: "BDF", slot: "chief_of_staff", war: 66, int: 70, pol: 46, chr: 54, personality: "loyalist", region: "bb.bridgetown", bio: "Barbados Defence Force. The island has no land neighbor. St. Vincent is a sea lane west." },
-    { id: "bb_cmd_brathwaite", name: "Olga Brathwaite", title: "Bridgetown battalion", rank: "Major", branch: "BDF", slot: "front_commander", war: 60, int: 64, pol: 42, chr: 58, personality: "loyalist", region: "bb.bridgetown", bio: "Bridgetown major. The careenage and the sugar belt." },
-    { id: "bb_fld_chase", name: "Winston Chase", title: "Harbour company", rank: "Captain", branch: "BDF", slot: "field_officer", war: 56, int: 58, pol: 38, chr: 52, personality: "merchant", region: "bb.bridgetown", bio: "Harbour captain. He watches the roadstead." },
+    { id: "bb_cmd_greaves", name: "Cynthia Greaves", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 22, int: 76, pol: 84, chr: 78, personality: "diplomat", region: "bb.bridgetown", bio: "Fictional prime minister in Bridgetown. Sugar and the port. The defence force is small. Parishes are a gap." },
+    { id: "bb_fld_chase", name: "Winston Chase", title: "Harbour company", rank: "Captain", branch: "BDF", slot: "field_officer", war: 56, int: 58, pol: 38, chr: 52, personality: "merchant", region: "bb.bridgetown", bio: "Harbour captain. No land neighbor. St. Vincent is a sea lane west." },
   ]),
 });
 
@@ -732,9 +704,7 @@ export const GRENADA_REGION = island({
   ],
   officers: staff([
     { id: "gd_cmd_baptiste", name: "Marcus Baptiste", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 26, int: 74, pol: 80, chr: 72, personality: "diplomat", region: "gd.st_georges", bio: "Fictional prime minister in St. George's. Nutmeg, cocoa, and a police force. Not the revolutionary command." },
-    { id: "gd_cmd_noel", name: "Clotilde Noel", title: "Minister of National Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 42, int: 70, pol: 72, chr: 64, personality: "cautious", region: "gd.st_georges", bio: "National security after 1983 is police and a small defence unit." },
-    { id: "gd_cmd_andrew", name: "Fitzroy Andrew", title: "Commissioner of Police", rank: "Commissioner", branch: "RGPF", slot: "chief_of_staff", war: 64, int: 68, pol: 50, chr: 56, personality: "loyalist", region: "gd.st_georges", bio: "Royal Grenada Police Force. The parishes are a ring road. Carriacou is a ferry." },
-    { id: "gd_cmd_thomas", name: "Eileen Thomas", title: "Eastern parishes", rank: "Superintendent", branch: "RGPF", slot: "front_commander", war: 56, int: 62, pol: 44, chr: 60, personality: "loyalist", region: "gd.grenville", bio: "Grenville superintendent. Nutmeg sheds and the windward road." },
+    { id: "gd_cmd_noel", name: "Clotilde Noel", title: "Minister of National Security", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 42, int: 70, pol: 72, chr: 64, personality: "cautious", region: "gd.st_georges", bio: "National security after 1983 is police and a small defence unit. The parishes are a ring road." },
     { id: "gd_fld_coy", name: "Desmond Coy", title: "Carriacou", rank: "Inspector", branch: "RGPF", slot: "field_officer", war: 52, int: 58, pol: 40, chr: 54, personality: "merchant", region: "gd.hillsborough", bio: "Hillsborough inspector. The ferry to St. George's is his supply line." },
   ]),
 });

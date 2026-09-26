@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { loadContent } from "../js/content.js";
-import { validateWorld, worldCatalog, worldCounts, toOfficerRecords } from "../js/world.js";
+import { validateWorld, worldCatalog, worldCounts, toOfficerRecords, requiredCommandSlots } from "../js/world.js";
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -141,13 +141,55 @@ assert(worldBy.get("jm.mandeville").yields.includes("bauxite"), "Jamaica bauxite
 assert(worldBy.get("tt.point_fortin").yields.includes("oil") && worldBy.get("tt.mayaro").yields.includes("natural_gas"), "Trinidad oil and gas");
 assert(worldBy.get("do.bonao").yields.includes("nickel") && worldBy.get("do.cotui").yields.includes("gold"), "Dominican nickel and gold");
 assert(worldBy.get("do.san_pedro").yields.includes("sugarcane"), "Dominican sugar");
-assert(content.world.regions.filter((r) => ["mx", "gt", "bz", "hn", "sv", "ni", "cr", "pa", "cu", "ht", "do", "jm", "pr", "bs", "vi", "vg", "ai", "kn", "ag", "ms", "gp", "dm", "mq", "lc", "vc", "bb", "gd", "tt"].includes(r.id)).every((r) => r.playable === false && r.officers.length >= 5), "Region 3 stays unplayable with a command staff");
-const slots = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];
+assert(content.world.regions.filter((r) => ["mx", "gt", "bz", "hn", "sv", "ni", "cr", "pa", "cu", "ht", "do", "jm", "pr", "bs", "vi", "vg", "ai", "kn", "ag", "ms", "gp", "dm", "mq", "lc", "vc", "bb", "gd", "tt"].includes(r.id)).every((r) => r.playable === false), "Region 3 stays unplayable");
+const mxCount = counts.find((c) => c.id === "mx");
+assert(mxCount.territories >= 90, `Mexico needs about 90 cities, got ${mxCount.territories}`);
+assert(mxCount.officers >= 28 && mxCount.officers <= 36, `Mexico roster scales up, got ${mxCount.officers}`);
+assert(cu.officers.length >= 8, `Cuba is large enough for a wider staff, got ${cu.officers.length}`);
+assert(content.world.regions.find((r) => r.id === "ai").officers.length === 2, "Anguilla keeps a two-officer post");
+assert(content.world.regions.find((r) => r.id === "bz").officers.length === 3, "Belize scales down from a full staff");
 content.world.regions.forEach((r) => {
-  if (r.id === "us" || r.id === "ca") return;
-  slots.forEach((slot) => assert(r.officers.some((o) => o.slot === slot), `${r.id} has ${slot}`));
+  requiredCommandSlots(r.territories.length).forEach((slot) => assert(r.officers.some((o) => o.slot === slot), `${r.id} has ${slot}`));
   assert(toOfficerRecords(r).every((o) => o.dormant && o.world && o.fictional && o.faction == null), `${r.id} officers stay dormant`);
 });
+
+const br = content.world.regions.find((r) => r.id === "br");
+assert(br.subdivisions.filter((s) => s.kind === "state").length === 23, "23 Brazilian states");
+assert(!br.subdivisions.some((s) => /tocantins/i.test(s.name)), "Tocantins is not a state yet");
+assert(br.subdivisions.filter((s) => s.kind === "territory").map((s) => s.id).sort().join() === "BR-AP,BR-FN,BR-RR", "Amapá, Roraima, Fernando de Noronha");
+assert(br.subdivisions.some((s) => s.id === "BR-DF" && s.kind === "district"), "Distrito Federal");
+assert(worldBy.get("br.porto_nacional").subdivision === "BR-GO", "Porto Nacional is still Goiás");
+assert(worldBy.get("br.carajas").yields.includes("iron"), "Carajás iron");
+assert(worldBy.get("br.ribeirao").yields.includes("coffee") && worldBy.get("br.londrina").yields.includes("soybeans"), "coffee and soy");
+assert(worldBy.get("br.recife").yields.includes("sugarcane") && worldBy.get("br.sao_bernardo").yields.includes("autos"), "sugar and autos");
+assert(worldBy.get("br.santarem").yields.includes("timber") && worldBy.get("br.foz").yields.includes("hydro"), "timber and Itaipú");
+assert(worldBy.get("br.noronha").neighbors.every((n) => n.kind === "sea"), "Noronha is sea-only");
+const ar = content.world.regions.find((r) => r.id === "ar");
+assert(ar.subdivisions.filter((s) => s.kind === "province").length === 22, "22 Argentine provinces");
+assert(ar.subdivisions.some((s) => s.id === "AR-TF" && s.kind === "territory"), "Tierra del Fuego is still a territory");
+assert(ar.subdivisions.some((s) => s.id === "AR-CF" && s.kind === "district"), "Capital Federal");
+assert(worldBy.get("ar.rosario").yields.includes("cattle") && worldBy.get("ar.rosario").yields.includes("wheat"), "Argentine beef and wheat");
+assert(worldBy.get("ar.comodoro").yields.includes("oil") && worldBy.get("ar.viedma").yields.includes("wool"), "Patagonian oil and wool");
+const cl = content.world.regions.find((r) => r.id === "cl");
+assert(cl.subdivisions.length === 13, "13 Chilean regions");
+assert(!cl.subdivisions.some((s) => /Los Ríos|Ñuble|Parinacota/i.test(s.name)), "no post-1974 Chilean regions");
+assert(worldBy.get("cl.calama").yields.includes("copper") && worldBy.get("cl.iquique").yields.includes("nitrates"), "Chilean copper and nitrates");
+assert(worldBy.get("cl.talca").yields.includes("grapes") && worldBy.get("cl.talca").yields.includes("apples"), "Chilean wine grapes and fruit");
+assert(worldBy.get("ar.mendoza").neighbors.some((n) => n.id === "cl.los_andes" && n.kind === "road"), "Cristo Redentor");
+assert(!worldBy.get("pa.yaviza").neighbors.some((n) => n.id.startsWith("co.")), "no Darién road");
+assert(worldBy.get("pa.colon").neighbors.some((n) => n.id === "co.cartagena" && n.kind === "sea"), "Panama–Colombia is a sea lane");
+assert(worldBy.get("ec.puerto_ayora").neighbors.every((n) => n.kind === "sea"), "Galápagos are sea-only");
+assert(worldBy.get("ec.puerto_baquerizo").neighbors.every((n) => n.kind === "sea"), "Galápagos capital is sea-only");
+assert(worldBy.get("fk.stanley").neighbors.every((n) => n.kind === "sea"), "Falklands are sea-only");
+assert(!worldBy.get("fk.stanley").neighbors.some((n) => n.id.startsWith("ar.")), "no Falklands road to Argentina");
+assert(worldBy.get("ve.maracaibo").yields.includes("oil") && worldBy.get("ve.ciudad_guayana").yields.includes("iron") && worldBy.get("ve.ciudad_guayana").yields.includes("bauxite"), "Venezuelan oil, iron, bauxite");
+assert(worldBy.get("co.manizales").yields.includes("coffee") && worldBy.get("co.albania").yields.includes("coal") && worldBy.get("co.muzo").yields.includes("emeralds") && worldBy.get("co.barrancabermeja").yields.includes("oil"), "Colombian coffee, coal, emeralds, oil");
+assert(worldBy.get("pe.moquegua").yields.includes("copper") && worldBy.get("pe.cerro_de_pasco").yields.includes("silver") && worldBy.get("pe.chimbote").yields.includes("fisheries"), "Peruvian copper, silver, fishmeal");
+assert(worldBy.get("bo.oruro").yields.includes("tin") && worldBy.get("bo.tarija").yields.includes("natural_gas"), "Bolivian tin and gas");
+assert(worldBy.get("py.encarnacion").yields.includes("cotton") && worldBy.get("py.ciudad_del_este").yields.includes("soybeans") && worldBy.get("py.ciudad_del_este").yields.includes("hydro"), "Paraguayan cotton, soy, Itaipú");
+assert(worldBy.get("uy.montevideo").yields.includes("cattle") && worldBy.get("uy.montevideo").yields.includes("wool"), "Uruguayan beef and wool");
+assert(worldBy.get("gy.linden").yields.includes("bauxite") && worldBy.get("sr.paranam").yields.includes("bauxite") && worldBy.get("sr.nieuw_nickerie").yields.includes("rice"), "Guianas bauxite, rice");
+assert(["co", "ve", "gy", "sr", "gf", "ec", "pe", "bo", "br", "py", "uy", "ar", "cl", "fk"].every((id) => content.world.regions.find((r) => r.id === id).playable === false), "South America stays unplayable");
 
 console.log("ok world catalog");
 counts.forEach((c) => {

@@ -144,10 +144,8 @@ export const BELIZE_REGION = region({
   ],
   officers: staff([
     { id: "bz_cmd_palacio", name: "Clement Palacio", title: "Prime Minister", rank: "Prime Minister", branch: "civilian", slot: "head_of_state", war: 26, int: 74, pol: 86, chr: 78, personality: "diplomat", region: "bz.belmopan", bio: "Fictional prime minister in Belmopan. English and Creole on the same desk. The districts stay six." },
-    { id: "bz_cmd_castillo", name: "Ruth Castillo", title: "Minister of Home Affairs and Defence", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 40, int: 76, pol: 72, chr: 68, personality: "cautious", region: "bz.belmopan", bio: "Defence sits with Home Affairs. She does not invent a second army." },
-    { id: "bz_cmd_moguel", name: "Edwin Moguel", title: "BDF Commandant", rank: "Lieutenant Colonel", branch: "BDF", slot: "chief_of_staff", war: 72, int: 70, pol: 48, chr: 56, personality: "loyalist", region: "bz.belize_city", bio: "Belize Defence Force commandant, British-trained and small. He holds the Northern and Western Highways." },
-    { id: "bz_cmd_garbutt", name: "Ivor Garbutt", title: "Northern sector", rank: "Major", branch: "BDF", slot: "front_commander", war: 68, int: 64, pol: 42, chr: 50, personality: "cautious", region: "bz.orange_walk", bio: "Orange Walk major. Sugar country and the Corozal gate. No leap into Petén." },
-    { id: "bz_fld_usher", name: "Selma Usher", title: "Belmopan guard", rank: "Captain", branch: "BDF", slot: "field_officer", war: 60, int: 62, pol: 44, chr: 66, personality: "loyalist", region: "bz.belmopan", bio: "Captain at the capital. Administration and the Western Highway, in that order." },
+    { id: "bz_cmd_castillo", name: "Ruth Castillo", title: "Minister of Home Affairs and Defence", rank: "Minister", branch: "civilian", slot: "defense_minister", war: 40, int: 76, pol: 72, chr: 68, personality: "cautious", region: "bz.belmopan", bio: "Defence sits with Home Affairs. The BDF is British-trained and small. She does not invent a second army." },
+    { id: "bz_fld_usher", name: "Selma Usher", title: "Belmopan guard", rank: "Captain", branch: "BDF", slot: "field_officer", war: 60, int: 62, pol: 44, chr: 66, personality: "loyalist", region: "bz.belmopan", bio: "Captain at the capital. The Northern and Western Highways, and no leap into Petén." },
   ]),
 });
 
