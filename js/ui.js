@@ -34,7 +34,18 @@ import {
   playerGenerals,
   rankOf,
   rankLabel,
+  statusShort,
+  statusLabel,
   apMax,
+  orderLead,
+  cadenceLead,
+  respondToOrder,
+  commissionLabel,
+  payForGrade,
+  levyForGrade,
+  monthLabel,
+  COMMAND_TABS,
+  proposalChoices,
   regionOf,
   startInlandBattle,
   factionOf,
@@ -574,6 +585,64 @@ export async function boot(loaded) {
     afterFonts();
     return;
   }
+  if (params.get("demo") === "status" || params.get("demo") === "menu") {
+    suppressOrderPrompt = true;
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    const want = params.get("status");
+    if (want === "member") {
+      respondToOrder(state, "accept");
+      act(state, content, "cultivate");
+      if (state.service) state.service.monthTask = null;
+    }
+    selectedRegion = "cheyenne";
+    commandCat = params.get("cat") || "domestic";
+    hideModal({ flush: false });
+    render();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "locked") {
+    suppressOrderPrompt = true;
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    selectedRegion = "cheyenne";
+    const tipId = params.get("tip") || "drill";
+    const tipped = listActions(state).find((a) => a.id === tipId);
+    commandCat = params.get("cat") || tipped?.tab || "military";
+    hideModal({ flush: false });
+    render();
+    showLockedTip(tipId);
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "fromabove") {
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    selectedRegion = "cheyenne";
+    commandCat = "personal";
+    hideModal({ flush: false });
+    render();
+    afterFonts();
+    return;
+  }
+  if (params.get("demo") === "promoted") {
+    suppressOrderPrompt = true;
+    state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
+    respondToOrder(state, "accept");
+    const done = act(state, content, "cultivate");
+    selectedRegion = "cheyenne";
+    commandCat = "domestic";
+    hideModal({ flush: false });
+    render();
+    if (done.promoted) {
+      showEventScene({
+        id: "appoint",
+        title: statusLabel(done.promoted.to),
+        text: done.promoted.message || done.message,
+        celebrate: true,
+      });
+    }
+    afterFonts();
+    return;
+  }
   const saved = localStorage.getItem(SAVE_KEY);
   showModal(titleScreenHtml(!!saved));
   afterFonts();
@@ -581,7 +650,9 @@ export async function boot(loaded) {
 
 function afterFonts() {
   const again = () => {
-    if (state) render();
+    if (!state) return;
+    render();
+    if (demoQuery().get("demo") === "locked") showLockedTip(demoQuery().get("tip") || "drill");
   };
   if (document.fonts?.ready) document.fonts.ready.then(again).catch(() => {});
 }
@@ -692,7 +763,7 @@ function titleScreenHtml(hasSave) {
   return `
     <p class="muted">Original IP. Alaska-first western theater. Not a licensed war film or Koei title.</p>
     <h1>NORTHERN FRONT</h1>
-    <p><strong>Click Begin week 0.</strong> You start alone in Cheyenne. First job: raise a banner, spend AP, then End Week.</p>
+    <p><strong>Click Begin week 0.</strong> You start as a Free Volunteer in Cheyenne. The first month opens with an order from above. Raise a banner when you want your own color.</p>
     <p>Occupiers already hold Anchorage, the Slope, Kenai, and Kodiak. Hire up to five generals later, or stay a ghost.</p>
     <div class="field"><label>Officer name</label><input id="ng-name" maxlength="28" value="Alex Rourke" /></div>
     <p>Background</p>
@@ -733,7 +804,7 @@ function wireTitle() {
       const name = $("modal-card").querySelector("#ng-name").value;
       state = createNewGame(content, { name, background: bg, difficulty: diff });
       selectedRegion = "cheyenne";
-      commandCat = "domestic";
+      commandCat = "personal";
       hideModal();
       render();
       if (coachForced || localStorage.getItem(COACH_KEY) !== "skip") {
@@ -815,7 +886,9 @@ function showModal(html, opts = {}) {
           ? " states-card"
           : opts.kind === "missions"
             ? " missions-card"
-            : "";
+            : opts.kind === "order"
+              ? " order-card"
+              : "";
   $("modal-card").className = "modal-card" + extra;
   $("modal-card").innerHTML = html;
   $("modal").hidden = false;
@@ -845,6 +918,7 @@ function hideModal(opts = {}) {
   $("modal").hidden = true;
   $("modal-card").className = "modal-card";
   if (opts.flush !== false) flushOverlays();
+  if (!overlayBusy()) maybeShowOrder();
 }
 
 const HIRE_LINE = "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint.";
@@ -976,6 +1050,20 @@ function frameForInlandFocus(id) {
 }
 
 function nextHint(st) {
+  return prefixCareer(st, nextHintCore(st));
+}
+
+function prefixCareer(st, line) {
+  if (!st || !line || !line.startsWith("NEXT:")) return line;
+  if (line.includes("Orders from above")) return line;
+  const order = orderLead(st);
+  const cadence = cadenceLead(st);
+  const extra = [order, cadence].filter(Boolean).join(" ");
+  if (!extra) return line;
+  return `NEXT: ${extra} ${line.slice(6)}`;
+}
+
+function nextHintCore(st) {
   if (!st || st.gameOver) return "Campaign closed.";
   if (st.phase === "duel") {
     const spec = st.duel?.you?.style?.specialLabel;
@@ -994,7 +1082,7 @@ function nextHint(st) {
     const route = routeSentence(st);
     if (route) return `NEXT: ${route}`;
   }
-  if (!p.faction) return "NEXT: Domestic → Raise Banner (1 AP). A state frees when its ★ keys are yours — Cheyenne frees Wyoming. Then Plot → Hire.";
+  if (!p.faction) return "NEXT: Personal → Raise Banner (1 AP). A state frees when its ★ keys are yours — Cheyenne frees Wyoming. Then Plot → Hire.";
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
   const arc = campaignArcLine(st);
   if (arc) {
@@ -1131,7 +1219,145 @@ function bindTip(el, text) {
 function actionTipHtml(a) {
   const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
   const cost = live ? `<span class="tip-ap">${a.ap} AP</span>` : `<span class="tip-lock">${a.enabled ? "Need more AP" : "LOCKED"}</span>`;
-  return `<strong>${esc(a.label)}</strong>${cost}<p>${esc(a.hint || "")}</p>`;
+  const why = a.hint || "";
+  return `<strong>${esc(a.label)}</strong>${cost}<p>${esc(why)}</p>`;
+}
+
+let orderShownFor = null;
+let suppressOrderPrompt = false;
+
+function bondTicks(n) {
+  const v = Math.max(0, Math.min(100, Number(n) || 0));
+  const on = Math.round(v / 10);
+  return Array.from({ length: 10 }, (_, i) => `<i${i < on ? ' class="on"' : ""}></i>`).join("");
+}
+
+function orderHtml() {
+  const o = state.orders?.current;
+  if (!o) return `<h2>No order</h2><button type="button" data-close>Close</button>`;
+  const issuer = state.officers.find((x) => x.id === o.issuerId);
+  const bond = state.bonds?.[o.issuerId] ?? 40;
+  const pending = o.status === "pending";
+  const choices = proposalChoices(o.task)
+    .map(
+      (id) =>
+        `<button type="button" data-propose="${id}">${esc(id === "research" ? "Salvage" : id[0].toUpperCase() + id.slice(1))}</button>`
+    )
+    .join("");
+  const answer = pending
+    ? `<button type="button" class="primary" data-order="accept">Accept <small>(+trust, +deeds when done · ${esc(o.taskLabel)} · ${esc(o.stat)})</small></button>
+       <button type="button" data-order="refuse">Refuse <small>(−trust)</small></button>
+       <button type="button" data-order="propose">Propose instead</button>
+       <div id="propose-row" hidden>${choices}</div>`
+    : `<p class="plus">You took this order. Finish it from the command tabs.</p><button type="button" data-close class="primary">Close</button>`;
+  return `<div class="order-layout">
+      <div class="order-face" aria-hidden="true">${esc(portraitInitials(o.issuerName))}</div>
+      <div>
+        <h2>${esc(o.issuerName)}</h2>
+        <p class="muted">${esc(issuer?.title || "Cell")} · ${esc(issuer?.personality || "")} · Bond <span class="loy-bar">${bondTicks(bond)}</span> ${bond}</p>
+        <p class="order-line">"${esc(o.line)}"</p>
+        <p class="muted">${esc(o.short)} · ${esc(o.taskLabel)} · ${esc(o.stat)}</p>
+      </div>
+    </div>
+    <div class="order-choices">${answer}</div>
+    <p class="next-line">${esc(nextHint(state))}</p>`;
+}
+
+function serviceHtml() {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  const svc = state.service || { deeds: 0, grade: 5, completed: 0, refused: 0, failed: 0 };
+  const rows = (state.orders?.history || [])
+    .slice(0, 8)
+    .map(
+      (h) =>
+        `<li>Wk ${h.week} · ${esc(h.short || h.taskLabel)} · ${esc(h.status)} · ${esc(h.issuerName || "")}</li>`
+    )
+    .join("");
+  return `<h2>Service record</h2>
+    <p><span class="rank-badge rank-${esc(rank)}">${esc(rankLabel(rank))}</span></p>
+    <p>Deeds ${svc.deeds} · Grade ${svc.grade} · Pay ${payForGrade(svc.grade)} scrip · Levy cap ${levyForGrade(svc.grade)}</p>
+    <p>Commission ${esc(commissionLabel(svc.commission))} · Fame ${state.fame}. Commission sets tactic points in a field fight.</p>
+    <p class="muted">Done ${svc.completed || 0} · Refused ${svc.refused || 0} · Failed ${svc.failed || 0}. Deeds raise grade. Grade sets pay. A completed order can promote you.</p>
+    <ul class="week-ai">${rows || "<li>No closed orders yet.</li>"}</ul>
+    <button type="button" data-close class="primary">Close</button>`;
+}
+
+function openOrderDialog() {
+  const o = state.orders?.current;
+  if (!o) return;
+  orderShownFor = o.id;
+  showModal(orderHtml(), { kind: "order" });
+  wireOrderDialog();
+}
+
+function wireOrderDialog() {
+  const root = $("modal-card");
+  if (!root) return;
+  root.querySelectorAll("[data-order]").forEach((btn) => {
+    btn.onclick = () => {
+      if (btn.dataset.order === "propose") {
+        const row = root.querySelector("#propose-row");
+        if (row) row.hidden = !row.hidden;
+        return;
+      }
+      answerOrder(btn.dataset.order);
+    };
+  });
+  root.querySelectorAll("[data-propose]").forEach((btn) => {
+    btn.onclick = () => answerOrder("propose", btn.dataset.propose);
+  });
+}
+
+function answerOrder(choice, taskId) {
+  const res = respondToOrder(state, choice, taskId);
+  if (!res.ok) {
+    toast(res.message);
+    return;
+  }
+  if (res.approved === false) {
+    toast(res.message);
+    showModal(orderHtml(), { kind: "order" });
+    wireOrderDialog();
+    renderObjective();
+    return;
+  }
+  if (res.tab) commandCat = res.tab;
+  hideModal();
+  render();
+  if (res.promoted) {
+    showEventScene({
+      id: "appoint",
+      title: statusLabel(res.promoted.to),
+      text: res.promoted.message || res.message,
+      celebrate: true,
+    });
+  } else {
+    toast(res.message);
+  }
+}
+
+function maybeShowOrder() {
+  if (suppressOrderPrompt || !state) return;
+  if (demoQuery().get("demo") === "coach") return;
+  const o = state.orders?.current;
+  if (!o || o.status !== "pending") return;
+  if (o.id === orderShownFor) return;
+  if (overlayBusy()) return;
+  if (state.phase !== "strategy") return;
+  openOrderDialog();
+}
+
+function showLockedTip(actionId) {
+  const btn = document.querySelector(`#cmd-actions button[data-id="${actionId}"]`);
+  const tip = $("tip");
+  if (!btn || !tip) return;
+  const action = listActions(state).find((a) => a.id === actionId);
+  tip.innerHTML = actionTipHtml(action || { label: actionId, hint: "Locked.", ap: 1, enabled: false });
+  tip.hidden = false;
+  const r = btn.getBoundingClientRect();
+  tip.style.left = `${Math.max(8, Math.min(window.innerWidth - 288, r.left))}px`;
+  tip.style.top = `${Math.max(8, Math.min(window.innerHeight - 140, r.bottom + 6))}px`;
 }
 
 function helpHtml() {
@@ -1140,8 +1366,9 @@ function helpHtml() {
     <p>Each turn is <strong>one week</strong>. Yellow strip at the top always names the next click. Spend AP on Command tiles, then End Week.</p>
     <ul>
       <li><strong>Theater:</strong> Continental US coastline plus an Alaska/Yukon spur. Biomes (wet forest, Rockies, desert, plains, eastern woods, AK ice) and 1980s American markers — ranch houses, grain elevators, oil pumps, bunkers, radio towers. Not Chinese roofs. STATE → territories. Adjacent roads only — no leaping. Farm/mine/fuel/water/sun/weather/defense change weekly yields. Alternate routes (ferry vs ALCAN, pass vs rail). A state frees when its ★ keys are yours. Eight west-bloc states (AK–CO; Yukon is only the road) name you national leader — a title, not a leap. Reunify is the east walk NE–KS–MO.</li>
-      <li><strong>Ruler plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR. Treasury (gold/food/AP) lives in the top row.</li>
-      <li><strong>Command:</strong> Domestic = hall work. Plot = people (hire, court, spy). Military = roads and missions.</li>
+      <li><strong>Status plate:</strong> your name, age, loyalty, WAR/INT/POL/CHR, deeds, pay grade, and commission. Treasury (gold/food/AP) lives in the top row.</li>
+      <li><strong>Status:</strong> You play one officer. Free Volunteer through Chair of the Provisional Government. Locked commands stay on the tab and say why. Every 4 weeks is a month: an order from above, scrip every 13 weeks, a late-summer harvest, and a Fourth of July county fair.</li>
+      <li><strong>Command:</strong> Eight tabs — Personal, Social, Trade, Domestic, Military, People, Plot, Command. Domestic = hall work. Plot = spy and rumor. Military = roads and missions.</li>
       <li><strong>Court:</strong> ${HIRE_LINE} Standing orders run at End Week.</li>
       <li><strong>Roster:</strong> Dock → Roster. Create a friend at the top of that screen (they start as a player). Pick a named original face, then Promote to officer, then general. RANK CONFIRMED and NEXT name the rung. A promoted officer in this city can take the yard or lead a march.</li>
       <li><strong>Yard duel:</strong> Plot/Military → Challenge, or a Porch challenge mission. Keys 1/2/3: Strike / Guard / Special · style move (e.g. Special · Dust Feint). Press in the green window. Clock ~99s if both stay up.</li>
@@ -1549,6 +1776,14 @@ function run(id, extra) {
       text: `${res.officerName || "A legend"} answers. Original character — a hidden free officer. Hire them if you share their ground.`,
       regionId: res.regionId || playerOf(state).region,
     });
+  } else if (res.promoted && !res.weekEnd) {
+    if (res.promoted.tab) commandCat = res.promoted.tab;
+    showEventScene({
+      id: "appoint",
+      title: statusLabel(res.promoted.to),
+      text: res.promoted.message || res.message || "Rank confirmed.",
+      celebrate: true,
+    });
   } else if (res.sceneId && !res.weekEnd) {
     showEventScene({
       id: res.sceneId,
@@ -1596,11 +1831,13 @@ export function render() {
   const p = playerOf(state);
   $("week").textContent = String(state.week);
   $("season").textContent = `${state._season?.name || ""} ${calendarYear(state.week)}`;
+  const monthEl = $("month");
+  if (monthEl) monthEl.textContent = String(monthLabel(state.week));
   $("ap").textContent = `${state.ap}/${apMax(state)}`;
   $("gold").textContent = String(state.gold);
   $("food").textContent = String(state.food);
   $("fame").textContent = String(state.fame);
-  $("rank").textContent = rankLabel(rankOf(state, p));
+  $("rank").textContent = statusShort(rankOf(state, p));
   $("app").dataset.season = state._season?.id || "";
   $("officer-plate").innerHTML = officerHtml();
   $("city-stats").innerHTML = cityHtml();
@@ -1616,6 +1853,7 @@ export function render() {
   wireOrders();
   wireAfterRender();
   applyCoachRing();
+  maybeShowOrder();
   if (state.phase === "battle") openBattle();
   else {
     $("battle").hidden = true;
@@ -1645,8 +1883,8 @@ function officerHtml() {
   const stripe = fac?.color || "#607838";
   return `
     <div class="chrome-head">
-      <span class="panel-title">Ruler</span>
-      <span class="panel-why">Who holds this chair.</span>
+      <span class="panel-title">Status</span>
+      <span class="panel-why">Service record for this officer.</span>
     </div>
     <div class="plate-body">
       <i class="banner-stripe" style="background:${esc(stripe)}"></i>
@@ -1656,8 +1894,11 @@ function officerHtml() {
       </div>
       <div class="officer-meta">
         <h2>${esc(p.name)}</h2>
-        <p class="officer-rankline"><span class="rank-badge rank-commander">${esc(rank)}</span>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
+        <p class="officer-rankline"><span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
         <p class="muted">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""} · ${esc(here?.short || "?")} · AP ${state.ap}/${apMax(state)}</p>
+        <p class="service-line" id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
+        <p class="service-line">Commission ${esc(commissionLabel(state.service?.commission))} · Fame ${state.fame}</p>
+        <p class="service-actions"><button type="button" data-open-service>Service record</button>${state.orders?.current ? `<button type="button" data-open-order>Order</button>` : ""}</p>
         ${loyBar(p.loyalty)}
         <div class="stat-row">
           <span><b>WAR</b><strong>${p.war}</strong></span>
@@ -1808,9 +2049,24 @@ const ACTION_CATS = {
   military: ["travel", "attack", "mission", "challenge"],
 };
 const TAB_TIPS = {
-  domestic: "<strong>Domestic</strong><p>Town work: raise a banner, food, gold, walls, salvage.</p>",
-  plot: "<strong>Plot</strong><p>People work: hire, appoint generals, court, spy, rumor, alliance, challenge.</p>",
-  military: "<strong>Military</strong><p>Move on gold roads, march, take a side mission, or challenge an officer in this city.</p>",
+  personal: "<strong>Personal</strong><p>Train, rest, enlist, resign, raise a banner. Locked rows say why.</p>",
+  social: "<strong>Social</strong><p>Court. Notes and porch visits come later.</p>",
+  trade: "<strong>Trade</strong><p>Donate scrip. The swap meet comes later.</p>",
+  domestic: "<strong>Domestic</strong><p>Town work: food, gold, order, walls, salvage. Needs Cell Member.</p>",
+  military: "<strong>Military</strong><p>Travel is free. Drill, march, and missions open with rank.</p>",
+  personnel: "<strong>People</strong><p>Hire and the roster ladder. Needs a leader or the Front Commander.</p>",
+  plot: "<strong>Plot</strong><p>Spy is open to a Free Volunteer. Rumor and persuade need a cell.</p>",
+  command: "<strong>Command</strong><p>Envoy, appoint, standing chair, war council. Needs the banner.</p>",
+};
+const TAB_TIPS_PLAIN = {
+  personal: "Personal — rest, enlist, raise banner.",
+  social: "Social — court.",
+  trade: "Trade — donate scrip.",
+  domestic: "Domestic — one task a month until you lead.",
+  military: "Military — travel now. Drill and march with rank.",
+  personnel: "People — hire and promote.",
+  plot: "Plot — spy, rumor, persuade.",
+  command: "Command — envoy, appoint, council.",
 };
 const SCENE_ACTIONS = new Set([
   "raise_banner",
@@ -1852,7 +2108,7 @@ const SCENE_ACTIONS = new Set([
   "challenge",
   "porch_challenge",
 ]);
-let commandCat = "domestic";
+let commandCat = "personal";
 const COACH_KEY = "northern-front-v01-coach";
 let coachForced = false;
 let coachOn = true;
@@ -1870,16 +2126,16 @@ const COACH_STEPS = [
   {
     id: "banner",
     title: "2 / 4  Raise a banner",
-    body: "Click RAISE BANNER (1 AP) to claim Cheyenne as Northern Front. That frees Wyoming. Eight west-bloc states (AK WA OR ID MT WY UT CO) name you national leader — a title, not a leap. Yukon is the road between, not a ninth. Reunify is the east walk already on the board: NE–KS–MO. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
+    body: "Click RAISE BANNER on Personal (1 AP) to claim Cheyenne as Northern Front. That frees Wyoming and makes you Front Commander. Eight west-bloc states (AK WA OR ID MT WY UT CO) name you national leader — a title, not a leap. Yukon is the road between, not a ninth. Reunify is the east walk already on the board: NE–KS–MO. Adjacent roads: Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), Salt Lake (I-80 basin). No leap to Seattle. Cuba is Gulf Sealift, then Havana. Nicaragua opens Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). Focus one of those inland desks and NEXT names its foreign siege board: Cut the berm, Rake the parapet, Rush the gap.",
     target: '[data-id="raise_banner"]',
-    cat: "domestic",
+    cat: "personal",
   },
   {
     id: "hire",
     title: "3 / 4  Fill an ADD chair",
-    body: "Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint. Same words on the court strip.",
+    body: "People → Hire. Plot → Hire fills an ADD chair (5 generals). Extras wait — Plot → Appoint. Same words on the court strip.",
     target: '[data-id="hire"]',
-    cat: "plot",
+    cat: "personnel",
   },
   {
     id: "end",
@@ -1899,7 +2155,8 @@ function actionButton(a) {
   b.dataset.id = a.id;
   const live = a.enabled && !(a.ap > 0 && state.ap < a.ap);
   b.disabled = !live;
-  const lock = !a.enabled ? "LOCK" : state.ap < a.ap ? `${a.ap}AP` : `${a.ap}`;
+  if (!live) b.classList.add("is-locked");
+  const lock = !a.enabled ? a.hint || "Locked." : state.ap < a.ap ? `${a.ap} AP` : `${a.ap} AP`;
   b.innerHTML = `<img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span><b>${esc(a.label)}</b><small>${esc(lock)}</small></span>`;
   bindTip(b, actionTipHtml(a));
   b.onclick = () => {
@@ -1916,26 +2173,25 @@ function renderActions() {
   tabs.innerHTML = "";
   box.innerHTML = "";
   const actions = listActions(state).filter((a) => a.id !== "end_week");
-  [
-    ["domestic", "Domestic", "drill"],
-    ["plot", "Plot", "spy"],
-    ["military", "Military", "attack"],
-  ].forEach(([id, label, artId]) => {
+  const known = new Set(COMMAND_TABS.map((t) => t.id));
+  if (!known.has(commandCat)) commandCat = "personal";
+  COMMAND_TABS.forEach((tab) => {
     const t = document.createElement("button");
     t.type = "button";
-    t.className = "cmd-tab" + (commandCat === id ? " active" : "");
-    t.innerHTML = `<img src="${sceneArt(artId)}" alt="" /><span>${label}</span>`;
-    bindTip(t, TAB_TIPS[id]);
+    t.className = "cmd-tab" + (commandCat === tab.id ? " active" : "");
+    t.innerHTML = `<span>${esc(tab.label)}</span>`;
+    bindTip(t, TAB_TIPS[tab.id] || `<strong>${esc(tab.label)}</strong>`);
     t.onclick = () => {
-      commandCat = id;
+      commandCat = tab.id;
       renderActions();
     };
     tabs.appendChild(t);
   });
-  ACTION_CATS[commandCat].forEach((id) => {
-    const a = actions.find((x) => x.id === id);
-    if (a) box.appendChild(actionButton(a));
-  });
+  const why = $("cmd-why");
+  if (why) why.textContent = TAB_TIPS_PLAIN[commandCat] || "Commands for this status.";
+  actions
+    .filter((a) => (a.tab || "personal") === commandCat)
+    .forEach((a) => box.appendChild(actionButton(a)));
 }
 
 const CHARGE_SCENE_IDS = new Set(["travel", "attack"]);
@@ -2009,6 +2265,7 @@ function hideEventScene() {
     return;
   }
   flushOverlays();
+  if (!overlayBusy()) maybeShowOrder();
 }
 
 function startSeasonFx(seasonId) {
@@ -4070,7 +4327,8 @@ function drawBattle(now = performance.now()) {
     }
   }
   const lead = b.commanderName ? ` · led by ${b.commanderRank ? ladderLabel(b.commanderRank) + " " : ""}${b.commanderName}` : "";
-  $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
+  const tp = b.ploysLeft == null ? (b.ployUsed ? 0 : 1) : b.ploysLeft;
+  $("battle-meta").textContent = `${b.weather} · impulse ${b.round}/${b.maxRounds} · morale A ${b.morale.atk} / D ${b.morale.def} · TP ${tp} · ${b.turn === "atk" ? "your impulse" : "enemy impulse"}${lead}`;
   $("battle-log").innerHTML = b.log.slice(-12).map((l) => `<li>${esc(l)}</li>`).join("");
   const sky = $("battle-sky");
   if (sky) {
@@ -4812,6 +5070,12 @@ function wireAfterRender() {
   });
   document.querySelectorAll("[data-open-roster]").forEach((btn) => {
     btn.onclick = () => openRoster();
+  });
+  document.querySelectorAll("[data-open-order]").forEach((btn) => {
+    btn.onclick = () => openOrderDialog();
+  });
+  document.querySelectorAll("[data-open-service]").forEach((btn) => {
+    btn.onclick = () => showModal(serviceHtml(), { kind: "order" });
   });
   wireMissionButtons();
   wireDynamicModals();

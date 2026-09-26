@@ -124,6 +124,7 @@ export function createBattle(state, content, fromId, toId, commit, techAtk, opts
     morale,
     log: [`${weatherLabel(weather)} over ${dest.name}.`],
     ployUsed: false,
+    ploysLeft: Number.isFinite(opts?.tacticPoints) ? Math.max(0, opts.tacticPoints) : 1,
     selected: null,
     result: null,
     cols: COLS,
@@ -242,9 +243,11 @@ export function battleClickCell(state, battle, x, y) {
 }
 
 export function battlePloy(state, battle, kind, intStat) {
-  if (battle.ployUsed) return { ok: false, message: "Ploy already spent." };
+  const left = battle.ploysLeft == null ? (battle.ployUsed ? 0 : 1) : battle.ploysLeft;
+  if (left <= 0) return { ok: false, message: "Tactic points spent." };
   if (battle.turn !== "atk" || battle.result) return { ok: false, message: "Not now." };
-  battle.ployUsed = true;
+  battle.ploysLeft = left - 1;
+  battle.ployUsed = battle.ploysLeft <= 0;
   if (kind === "rally") {
     const gain = 6 + Math.floor(intStat / 20);
     battle.morale.atk += gain;

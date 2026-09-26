@@ -15,15 +15,15 @@
           <div class="brand-mark">NF</div>
           <div>
             <h1>Northern Front</h1>
-            <p class="tag"><span id="season">Winter 1985</span> · WEEK <span id="week">0</span></p>
+            <p class="tag"><span id="season">Winter 1985</span> · MONTH <span id="month">1</span> · WEEK <span id="week">0</span></p>
           </div>
         </div>
         <div class="treasury">
           <div class="meter" data-tip="Action Points. Each command tile costs AP. When you are done, End Week."><span>AP</span><strong id="ap">0</strong></div>
           <div class="meter" data-tip="Gold. Commerce raises it. Upkeep and hires spend it."><span>Gold</span><strong id="gold">0</strong></div>
           <div class="meter" data-tip="Food. Cultivate raises it. Empty stores starve the levy."><span>Food</span><strong id="food">0</strong></div>
-          <div class="meter" data-tip="Fame. Wins and deeds. Helps rank and talks."><span>Fame</span><strong id="fame">0</strong></div>
-          <div class="meter" data-tip="Rank. Grows as you hold ground. More rank, more AP."><span>Rank</span><strong id="rank">Free</strong></div>
+          <div class="meter" data-tip="Fame. Wins, orders, and the county fair. Caps your commission."><span>Fame</span><strong id="fame">0</strong></div>
+          <div class="meter" data-tip="Status. Free Volunteer up to Chair of the Provisional Government. Higher status, more AP."><span>Status</span><strong id="rank">Volunteer</strong></div>
         </div>
         <div class="top-actions">
           <button type="button" id="btn-help">Help</button>
@@ -49,7 +49,7 @@
           <section class="card cmd-card">
             <div class="chrome-head">
               <span class="panel-title">Command</span>
-              <span class="panel-why">Hall / people / roads.</span>
+              <span class="panel-why" id="cmd-why">Personal — rest, enlist, raise banner.</span>
             </div>
             <div class="cmd-tabs" id="cmd-tabs"></div>
             <div id="cmd-actions" class="cmd-actions"></div>

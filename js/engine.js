@@ -42,8 +42,61 @@ import {
   DUEL_CLOCK_S,
   DUEL_MAX_EXCHANGES,
 } from "./duel.js";
+import {
+  COMMAND_TABS,
+  COMMISSIONS,
+  GRADE_PAY,
+  STATUS_AP,
+  applyStatusGate,
+  cadenceLead,
+  closeMonthOrder,
+  commissionLabel,
+  ensureCareer,
+  fairLine,
+  levyForGrade,
+  issueMonthlyOrder,
+  mirrorCareer,
+  monthIndex,
+  monthLabel,
+  normalizeStatus,
+  noteDeeds,
+  orderLead,
+  payForGrade,
+  proposalChoices,
+  payoutHarvest,
+  recordServiceAction,
+  resolveOrderChoice,
+  runPayroll,
+  skimHarvest,
+  statusLabel,
+  statusShort,
+  syncGrade,
+  tabForTask,
+  tacticPointsOf,
+  unownedWorkOk,
+  waiveOrder,
+} from "./career.js";
 
 export { courtCandidates, sampleChronicle, calendarYear, seasonPalette };
+export {
+  COMMAND_TABS,
+  COMMISSIONS,
+  GRADE_PAY,
+  monthIndex,
+  monthLabel,
+  statusLabel,
+  statusShort,
+  normalizeStatus,
+  orderLead,
+  cadenceLead,
+  payForGrade,
+  levyForGrade,
+  proposalChoices,
+  tacticPointsOf,
+  commissionLabel,
+  tabForTask,
+  runPayroll,
+};
 export { MISSION_TEMPLATES, openMissions, seedDemoMissions, missionCopy, refreshMissionBoard };
 export {
   createDuel,
@@ -54,7 +107,7 @@ export {
   aiMove,
 };
 
-export const GAME_VERSION = 2;
+export const GAME_VERSION = 3;
 export const MAX_GENERALS = 5;
 export const GENERAL_ORDERS = [
   { id: "auto", label: "By personality" },
@@ -390,28 +443,31 @@ export function regionsOfFaction(state, fid) {
   return state.regions.filter((r) => r.owner === fid);
 }
 
-export function rankOf(state, off) {
-  if (!off.faction) return "free";
-  if (off.id === state.playerOfficerId && ensureCampaign(state).nationalLeader) return "national";
-  const fac = factionOf(state, off.faction);
+function derivedStatus(state, off) {
+  if (!off) return "free";
+  const fac = off.faction ? factionOf(state, off.faction) : null;
+  if (off.faction && off.id === state.playerOfficerId && ensureCampaign(state).nationalLeader) return "chair";
   if (fac && fac.ruler === off.id) {
     const n = regionsOfFaction(state, off.faction).length;
-    if (n >= 3) return "governor";
-    return "warlord";
+    return n >= 3 ? "governor" : "commander";
   }
-  if (state.regions.some((r) => r.prefect === off.id)) return "prefect";
-  return "officer";
+  if (!off.faction) return "free";
+  if (fac && fac.opsChiefId === off.id) return "opschief";
+  if (state.regions.some((r) => r.prefect === off.id)) return "leader";
+  return "member";
+}
+
+export function rankOf(state, off) {
+  if (!off) return "free";
+  const derived = derivedStatus(state, off);
+  if (derived === "chair" || derived === "governor" || derived === "commander") return derived;
+  const stored = normalizeStatus(off.status);
+  if (stored === "leader" || stored === "opschief" || stored === "member") return stored;
+  return derived;
 }
 
 export function rankLabel(rank) {
-  return {
-    free: "Free officer",
-    officer: "Serving officer",
-    prefect: "Prefect",
-    warlord: "Warlord",
-    governor: "Governor",
-    national: "National leader",
-  }[rank] || rank;
+  return statusLabel(rank);
 }
 
 export function seasonOf(week) {
@@ -425,15 +481,95 @@ export function seasonOf(week) {
 export function apMax(state) {
   const p = playerOf(state);
   const rank = rankOf(state, p);
-  let ap = 3;
-  if (rank === "prefect") ap = 4;
-  if (rank === "warlord") ap = 5;
-  if (rank === "governor") ap = 6;
-  if (rank === "national") ap = 7;
+  let ap = STATUS_AP[rank] ?? 3;
   ap += Math.min(MAX_GENERALS, playerGenerals(state).length);
   ap += DIFFICULTY[state.difficulty].apBonus;
-  if (ensureCampaign(state).nationalLeader) ap += 1;
   return Math.min(10, ap);
+}
+
+function applyCareerDeltas(state, out) {
+  if (!out) return out;
+  const p = playerOf(state);
+  if (out.bond?.id) addBond(state, out.bond.id, out.bond.delta);
+  if (out.fame && p) {
+    p.fame = Math.max(0, Math.min(100, (p.fame || 0) + out.fame));
+    state.fame = Math.max(0, Math.min(100, (state.fame || 0) + out.fame));
+  }
+  if (out.log) pushLog(state, out.log, out.kind || "alert");
+  mirrorCareer(state);
+  return out;
+}
+
+function superiorContext(state) {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  if (rank === "commander" || rank === "governor" || rank === "chair") return null;
+  let superior = null;
+  if (p.faction) {
+    const fac = factionOf(state, p.faction);
+    if (fac?.ruler && fac.ruler !== p.id) superior = officerOf(state, fac.ruler);
+    else if (fac?.opsChiefId && fac.opsChiefId !== p.id) superior = officerOf(state, fac.opsChiefId);
+  }
+  if (!superior) {
+    const local = livingOfficers(state).filter(
+      (o) => o.id !== p.id && o.region === p.region && o.alive !== false && !o.hidden && !o.retired
+    );
+    const prefer = ["cole", "hart", "nash"];
+    superior = prefer.map((id) => local.find((o) => o.id === id)).find(Boolean) || local[0] || null;
+  }
+  if (!superior) return null;
+  const here = regionOf(state, p.region);
+  return {
+    id: superior.id,
+    name: superior.name,
+    personality: superior.personality,
+    skills: skillsForPersonality(superior.personality),
+    rank: rankOf(state, superior),
+    regionId: p.region,
+    city: here?.short || "this city",
+  };
+}
+
+function openMonthlyOrder(state) {
+  ensureCareer(state);
+  const closed = closeMonthOrder(state);
+  applyCareerDeltas(state, closed);
+  const sup = superiorContext(state);
+  const issued = issueMonthlyOrder(state, sup, sup?.city);
+  if (issued?.log) pushLog(state, issued.log, "alert");
+  return { closed, issued };
+}
+
+export function respondToOrder(state, choice, taskId) {
+  ensureCareer(state);
+  const sup = superiorContext(state);
+  const out = resolveOrderChoice(state, choice, taskId, { skills: sup?.skills || [], city: sup?.city });
+  if (!out.ok) return out;
+  applyCareerDeltas(state, out);
+  if (out.demotion) {
+    mirrorCareer(state);
+    out.promoted = out.demotion;
+  }
+  out.tab = out.tab || (state.orders.current ? tabForTask(state.orders.current.task) : null);
+  return out;
+}
+
+function stampService(state, actionId, res, extra) {
+  if (!res?.ok || !state.service) return res;
+  if (actionId === "end_week" || actionId === "raise_banner") return res;
+  const p = playerOf(state);
+  const note = recordServiceAction(
+    state,
+    actionId,
+    { regionId: extra?.regionId || null, hereId: p?.region || null },
+    rankOf(state, p)
+  );
+  if (!note) return res;
+  applyCareerDeltas(state, note);
+  if (note.message) res.message = `${res.message || ""} ${note.message}`.trim();
+  if (note.dings?.length) res.dings = [...(res.dings || []), ...note.dings];
+  if (note.promoted) res.promoted = note.promoted;
+  return res;
 }
 
 export function relationKey(a, b) {
@@ -471,6 +607,7 @@ function applyDifficultyGarrisons(state) {
 
 function attachSeason(state) {
   state._season = seasonOf(state.week);
+  state.month = monthIndex(state.week || 0);
 }
 
 export function unlockedTech(state, content) {
@@ -553,6 +690,10 @@ export function createNewGame(content, opts = {}) {
     age: 34,
     spouseId: null,
     courtingId: null,
+    status: "free",
+    deeds: 0,
+    grade: 5,
+    commission: null,
   };
   officers.unshift(player);
 
@@ -596,6 +737,7 @@ export function createNewGame(content, opts = {}) {
     version: GAME_VERSION,
     title: "Northern Front",
     week: 0,
+    month: 0,
     difficulty,
     seed,
     playerOfficerId: "player",
@@ -643,7 +785,9 @@ export function createNewGame(content, opts = {}) {
   attachSeason(state);
   hydrateLife(state);
   refreshMissionBoard(state);
+  ensureCareer(state);
   state.ap = apMax(state);
+  openMonthlyOrder(state);
 
   setRelation(state, "pof", "banner", 62);
   setRelation(state, "pof", "interior", 12);
@@ -691,11 +835,18 @@ export function deserialize(raw) {
     if (!r.geo) r.geo = { farm: 0, mine: 0, fuel: 0, water: 0, sun: 0, weather: 0, defense: 0 };
   });
   ensureCampaign(state);
+  const hadOrders = !!state.orders;
+  ensureCareer(state);
   (state.officers || []).forEach((o) => {
     if (!o.standingOrder) o.standingOrder = "auto";
     if (!o.skills) o.skills = skillsForPersonality(o.personality);
     if (!o.portrait) o.portrait = portraitInitials(o.name);
+    if (!o.status) return;
+    const stored = normalizeStatus(o.status);
+    const derived = derivedStatus(state, o);
+    if ((stored === "commander" || stored === "governor" || stored === "chair") && stored !== derived) delete o.status;
   });
+  if (!hadOrders && (state.week || 0) % 4 === 0 && !state.gameOver) openMonthlyOrder(state);
   hydrateLife(state);
   if (state.customSlotsUsed == null) {
     state.customSlotsUsed = (state.officers || []).filter((o) => o.custom).length;
@@ -1098,6 +1249,47 @@ export function listActions(state) {
     needs: "challenge",
   });
   actions.push({
+    id: "rest",
+    label: "Rest",
+    ap: 1,
+    group: "command",
+    enabled: true,
+    hint: "Sit the week out. A wound settles.",
+  });
+  actions.push({
+    id: "enlist",
+    label: "Enlist",
+    ap: 1,
+    group: "command",
+    enabled: !hasBanner,
+    hint: hasBanner ? "You already serve a banner." : "Sign on with the Denver campus cell. You stay in Cheyenne as a Cell Member.",
+  });
+  actions.push({
+    id: "resign",
+    label: "Resign",
+    ap: 1,
+    group: "command",
+    enabled: hasBanner && rank !== "commander" && rank !== "governor" && rank !== "chair",
+    hint: "Leave the banner. You keep your name and fame. Deeds reset. You are a Free Volunteer.",
+  });
+  actions.push({
+    id: "donate",
+    label: "Donate Scrip",
+    ap: 1,
+    group: "command",
+    enabled: state.gold >= 8 && state.service?.donatedWeek !== state.week,
+    hint: state.gold >= 8 ? "Give 8 scrip to the cell. Deeds tick. Once a week." : "Need 8 scrip to donate.",
+  });
+  [
+    ["train", "Train"],
+    ["patrol", "Patrol"],
+    ["note", "Dead-drop Note"],
+    ["visit", "Porch Visit"],
+    ["swap_meet", "Swap Meet"],
+  ].forEach(([id, label]) => {
+    actions.push({ id, label, ap: 1, group: "command", enabled: false, placeholder: true, hint: "Locked." });
+  });
+  actions.push({
     id: "end_week",
     label: "End Week",
     ap: 0,
@@ -1107,7 +1299,16 @@ export function listActions(state) {
   });
 
   void canDomestic;
-  void rank;
+  const gate = {
+    rank,
+    monthTask: state.service?.monthTask || null,
+    order: state.orders?.current || null,
+    locked: state.orders?.locked || [],
+  };
+  actions.forEach((action) => {
+    if (action.id === "end_week") return;
+    applyStatusGate(action, gate);
+  });
   return actions;
 }
 
@@ -1433,6 +1634,11 @@ function alliedFactions(state) {
 }
 
 export function act(state, content, actionId, extra = {}) {
+  const res = actDispatch(state, content, actionId, extra);
+  return stampService(state, actionId, res, extra);
+}
+
+function actDispatch(state, content, actionId, extra = {}) {
   attachSeason(state);
   if (state.gameOver) return { ok: false, message: "The campaign is finished." };
   if ((state.phase === "battle" && actionId !== "battle") || (state.phase === "duel" && actionId !== "duel")) {
@@ -1453,6 +1659,10 @@ export function act(state, content, actionId, extra = {}) {
   if (defn.ap > 0 && state.ap < defn.ap) return { ok: false, message: "Not enough AP." };
 
   if (actionId === "raise_banner") return raiseBanner(state);
+  if (actionId === "rest") return doRest(state);
+  if (actionId === "enlist") return doEnlist(state);
+  if (actionId === "resign") return doResign(state);
+  if (actionId === "donate") return doDonate(state);
   if (actionId === "drill") return domestic(state, "drill", stats);
   if (actionId === "commerce") return domestic(state, "commerce", stats);
   if (actionId === "cultivate") return domestic(state, "cultivate", stats);
@@ -1504,7 +1714,10 @@ function foundNorthernFront(state, region, absorbRetinue) {
   }
   p.fame += 12;
   state.fame += 12;
-  pushLog(state, `Northern Front is declared in ${region.name}. You are warlord of a thin place.`, "alert");
+  p.status = "commander";
+  const waived = waiveOrder(state, "You hold the banner. Orders from above stop.");
+  if (waived?.log) pushLog(state, waived.log, "alert");
+  pushLog(state, `Northern Front is declared in ${region.name}. You are Front Commander of a thin place.`, "alert");
   tickCampaign(state);
 }
 
@@ -1515,41 +1728,122 @@ function raiseBanner(state) {
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   foundNorthernFront(state, here, true);
   state.ap = Math.max(0, apMax(state) - 1);
-  return { ok: true, message: `Banner raised over ${here.short}.` };
+  return { ok: true, message: `Banner raised over ${here.short}. You are Front Commander.`, promoted: { from: "free", to: "commander", tab: "command", unlocked: "Command", message: "Free Volunteer → Front Commander. Command, People, and Domestic open on ground you hold." } };
+}
+
+function doRest(state) {
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  const p = playerOf(state);
+  p.wound = false;
+  const msg = `You rest in ${currentRegion(state).short}.`;
+  pushLog(state, msg, "player");
+  return { ok: true, message: msg };
+}
+
+function doEnlist(state) {
+  const p = playerOf(state);
+  if (p.faction || rankOf(state, p) !== "free") return { ok: false, message: "Only a Free Volunteer with no banner can enlist." };
+  const fac = factionOf(state, "ember_campus");
+  if (!fac) return { ok: false, message: "No banner is taking names." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  p.faction = "ember_campus";
+  p.status = "member";
+  p.loyalty = Math.max(p.loyalty || 50, 60);
+  const here = currentRegion(state);
+  const msg = `${p.name} enlists under ${fac.short} as a Cell Member. Home stays ${here.short}.`;
+  pushLog(state, msg, "alert");
+  waiveOrder(state, "The volunteer ask closes. Your new cell will write the next one.");
+  openMonthlyOrder(state);
+  return {
+    ok: true,
+    message: msg,
+    promoted: {
+      from: "free",
+      to: "member",
+      tab: "domestic",
+      unlocked: "Domestic",
+      message: "Free Volunteer → Cell Member under the Denver campus. Domestic opens — one task a month. You can still resign and raise your own banner.",
+    },
+  };
+}
+
+function doResign(state) {
+  const p = playerOf(state);
+  const rank = rankOf(state, p);
+  if (rank === "commander" || rank === "governor" || rank === "chair") {
+    return { ok: false, message: "A Front Commander keeps the banner." };
+  }
+  if (rank === "free" && !p.faction) return { ok: false, message: "You are already a Free Volunteer." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  p.faction = null;
+  p.status = "free";
+  p.isGeneral = false;
+  state.service.deeds = 0;
+  state.service.grade = 5;
+  state.service.commission = null;
+  p.commission = null;
+  mirrorCareer(state);
+  waiveOrder(state, "You resign. The old ask is void.");
+  openMonthlyOrder(state);
+  const msg = `You resign. Fame stays. Deeds reset. You are a Free Volunteer in ${currentRegion(state).short}.`;
+  pushLog(state, msg, "alert");
+  return { ok: true, message: msg };
+}
+
+function doDonate(state) {
+  ensureCareer(state);
+  if (state.service.donatedWeek === state.week) return { ok: false, message: "One donation a week." };
+  if (state.gold < 8) return { ok: false, message: "Need 8 scrip to donate." };
+  if (!spend(state, 1)) return { ok: false, message: "No AP." };
+  state.gold -= 8;
+  state.service.donatedWeek = state.week;
+  const p = playerOf(state);
+  const noted = noteDeeds(state, 2, rankOf(state, p));
+  const issuer = state.orders.current?.issuerId;
+  if (issuer) addBond(state, issuer, 2);
+  const msg = `You donate 8 scrip. Deeds ${state.service.deeds}. Grade ${state.service.grade}.`;
+  pushLog(state, msg, "player");
+  const res = { ok: true, message: msg };
+  if (noted.grade?.changed) res.dings = [`GRADE ${state.service.grade}`];
+  if (noted.promoted) res.promoted = noted.promoted;
+  return res;
 }
 
 function domestic(state, kind, stats) {
   const here = currentRegion(state);
-  if (!ownedByPlayer(state, here)) return { ok: false, message: "You do not hold this region." };
+  const p = playerOf(state);
+  const coOp = unownedWorkOk(rankOf(state, p), state, kind);
+  if (!ownedByPlayer(state, here) && !coOp) return { ok: false, message: "You do not hold this region." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const season = state._season;
+  const share = coOp && !ownedByPlayer(state, here) ? 0.5 : 1;
   let msg = "";
   if (kind === "drill") {
     const g = geoOf(here);
-    const gain = 3 + Math.floor(stats.war / 18) + (g.sun ? 1 : 0) + nextInt(state, 0, 3);
+    const gain = Math.max(1, Math.round((3 + Math.floor(stats.war / 18) + (g.sun ? 1 : 0) + nextInt(state, 0, 3)) * share));
     here.garrison = Math.min(280, here.garrison + gain);
     here.order = Math.min(100, here.order + 1);
     msg = `Drill in ${here.short}: garrison +${gain} (now ${here.garrison}).`;
   } else if (kind === "commerce") {
     const g = geoOf(here);
-    const gain = Math.max(2, Math.round((4 + stats.pol / 12 + g.mine * 2 + g.fuel + g.water) * season.commerce) + nextInt(state, 0, 3));
+    const gain = Math.max(1, Math.round((Math.max(2, Math.round((4 + stats.pol / 12 + g.mine * 2 + g.fuel + g.water) * season.commerce) + nextInt(state, 0, 3))) * share));
     state.gold += gain;
     here.economy = Math.min(100, here.economy + 1);
     msg = `Commerce in ${here.short}: +${gain} gold (treasury ${state.gold}).`;
   } else if (kind === "cultivate") {
     const g = geoOf(here);
     const harsh = Math.max(0.4, 1 - g.weather * 0.14);
-    const gain = Math.max(2, Math.round((5 + stats.pol / 14 + g.farm * 2 + g.sun + g.water) * season.food * harsh) + nextInt(state, 0, 2));
+    const gain = Math.max(1, Math.round((Math.max(2, Math.round((5 + stats.pol / 14 + g.farm * 2 + g.sun + g.water) * season.food * harsh) + nextInt(state, 0, 2))) * share));
     state.food += gain;
     here.food = Math.min(100, here.food + 2 + g.farm);
     msg = `Cultivate in ${here.short}: +${gain} stores (food ${state.food}).`;
   } else if (kind === "fortify") {
     const g = geoOf(here);
-    const gain = 2 + Math.floor(stats.war / 25) + (here.type === "naval" ? 1 : 0) + g.defense;
+    const gain = Math.max(1, Math.round((2 + Math.floor(stats.war / 25) + (here.type === "naval" ? 1 : 0) + g.defense) * share));
     here.walls = Math.min(90, here.walls + gain);
     msg = `Fortify ${here.short}: walls ${here.walls}.`;
   } else if (kind === "safety") {
-    const gain = 3 + Math.floor(stats.chr / 20);
+    const gain = Math.max(1, Math.round((3 + Math.floor(stats.chr / 20)) * share));
     here.order = Math.min(100, here.order + gain);
     msg = `Safety in ${here.short}: order ${here.order}.`;
   }
@@ -2293,7 +2587,9 @@ function doAttack(state, content, extra) {
   if (fromHold) here.garrison -= commit;
   else p.retinue -= commit;
   const techAtk = techAtkBonus(state, content) + (lead ? Math.floor((lead.war || 0) / 40) : 0);
-  const battle = createBattle(state, content, here.id, dest.id, commit, techAtk);
+  const battle = createBattle(state, content, here.id, dest.id, commit, techAtk, {
+    tacticPoints: tacticPointsOf(p),
+  });
   battle.defenderPersonality = defenderPersonality(state, dest);
   battle.fromHold = fromHold;
   if (lead) {
@@ -2358,6 +2654,7 @@ export function startInlandBattle(state, content, nodeId, extra = {}) {
     walls: extra.walls,
     field,
     forceSiege: !field,
+    tacticPoints: tacticPointsOf(playerOf(state)),
   });
   stampBattleDesk(battle, nodeId);
   battle.defenderPersonality = defenderPersonality(state, regionOf(state, nodeId) || battle.deskRegion || { id: nodeId, owner: null });
@@ -2414,6 +2711,10 @@ function resolveBattle(state, battle) {
     }
     p.fame += 8;
     state.fame += 8;
+    const deedNote = noteDeeds(state, 4, rankOf(state, p));
+    if (deedNote.promoted) {
+      pushLog(state, deedNote.promoted.message, "alert");
+    }
     livingOfficers(state)
       .filter((o) => o.faction === old && o.region === dest.id)
       .forEach((o) => {
@@ -2641,7 +2942,7 @@ function upkeep(state) {
   let yieldGold = 0;
   held.forEach((r) => {
     const y = geoYield(r, season);
-    yieldFood += y.food;
+    yieldFood += skimHarvest(state, y.food, geoOf(r).farm);
     yieldGold += y.gold;
     r.food = Math.min(100, r.food + Math.round((2 + geoOf(r).farm) * season.food * y.harsh));
     if (r.order < 30) r.garrison = Math.max(0, r.garrison - 1);
@@ -2655,7 +2956,7 @@ function upkeep(state) {
     notes.push(`A cache is cracked open (+${found} food). You are not allowed to starve out of the game.`);
   }
   if (!held.length && p.faction) {
-    notes.push("No ground under the banner — you are a warlord in name. Hide, spy, or take a town.");
+    notes.push("No ground under the banner — the title has no town. Hide, spy, or take a town.");
   }
   if (!p.faction) {
     p.retinue = Math.max(4, p.retinue);
@@ -2720,6 +3021,11 @@ function randomEvent(state) {
 export function weekTease(state) {
   const bits = [];
   const p = playerOf(state);
+  const ahead = (state.week || 0) + 1;
+  if (ahead % 4 === 0) bits.push("a new order from above");
+  if (ahead % 13 === 0) bits.push("scrip payroll");
+  if (ahead % 52 === 27) bits.push("the county fair");
+  if (ahead % 52 === 34) bits.push("the late-summer harvest");
   if ((state.week + 1) % 13 === 0) bits.push("a season turn");
   const jobs = openMissions(state);
   if (jobs.length) bits.push(`${jobs.length} side job${jobs.length === 1 ? "" : "s"}`);
@@ -2769,6 +3075,32 @@ export function endWeek(state, content) {
 
   state.week += 1;
   attachSeason(state);
+  if (state.week % 4 === 0) {
+    const opened = openMonthlyOrder(state);
+    if (opened?.closed?.log) report.push(opened.closed.log);
+    if (opened?.issued?.log) report.push(opened.issued.log);
+  }
+  if (state.week % 13 === 0) {
+    const pNow = playerOf(state);
+    const ruler = rankOf(state, pNow) === "commander" || rankOf(state, pNow) === "governor" || rankOf(state, pNow) === "chair";
+    const staff = ruler ? playerCourt(state).filter((o) => o.id !== pNow.id) : [];
+    const payLine = runPayroll(state, { ruler, staff });
+    report.push(payLine);
+    pushLog(state, payLine, "week");
+  }
+  if (state.week % 52 === 34) {
+    const harvestLine = payoutHarvest(state);
+    report.push(harvestLine);
+    pushLog(state, harvestLine, "week");
+  }
+  if (state.week % 52 === 27) {
+    const fair = fairLine(currentRegion(state)?.short || "town");
+    report.push(fair);
+    pushLog(state, fair, "week");
+    const who = playerOf(state);
+    who.fame = Math.min(100, (who.fame || 0) + 1);
+    state.fame = Math.min(100, (state.fame || 0) + 1);
+  }
   const year = state.week > 0 && state.week % 52 === 0;
   const seasonChanged = state._season?.id !== prevSeason;
   const life = tickLife(state, { year, seasonChanged });
