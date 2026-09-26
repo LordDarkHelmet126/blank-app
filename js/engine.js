@@ -75,6 +75,8 @@ import {
   syncGrade,
   tabForTask,
   tacticPointsOf,
+  noteCityWork,
+  opsDeskBlocked,
   unownedWorkOk,
   waiveOrder,
 } from "./career.js";
@@ -1096,7 +1098,7 @@ export function listActions(state) {
     ap: 1,
     group: "domestic",
     enabled: true,
-    hint: "Workshop hours. Calendar still gates 1985–89 kit — M16A2, Jeeps, analog radios. No leapfrog.",
+    hint: "Workshop hours in the salvage shed.",
   });
   actions.push({
     id: "spy",
@@ -1104,7 +1106,7 @@ export function listActions(state) {
     ap: 1,
     group: "spy",
     enabled: true,
-    hint: "Scout a region. Schemers and high INT see more.",
+    hint: "Scout an adjacent road. Schemers and high INT see more.",
     needs: "region",
   });
   actions.push({
@@ -1115,6 +1117,8 @@ export function listActions(state) {
     enabled: (hasBanner && hireCandidates(state).length > 0) || cellRecruitPool(state).length > 0,
     hint: cellRecruitPool(state).length
       ? "Recruit a free officer into your cell. They stay in this city. Not a general."
+      : cellRank(state)
+      ? "No free officer in this city who is not above you."
       : !hasBanner
       ? "Raise a banner first."
       : hireCandidates(state).length
@@ -1239,6 +1243,7 @@ export function listActions(state) {
       : "Need 8 garrison in a held region, or 8 personal retinue as a free officer.",
     needs: "attack",
   });
+  if (cellRank(state)) ensureCellMission(state);
   const jobs = openMissions(state);
   actions.push({
     id: "mission",
@@ -1247,7 +1252,9 @@ export function listActions(state) {
     group: "command",
     enabled: (hasBanner && jobs.length > 0) || cellMissions(state, jobs).length > 0,
     hint: cellMissions(state, jobs).length
-      ? "Run a side mission in this city for the cell. No banner required."
+      ? "Run a side mission in this city for the cell. It writes deeds. No banner required."
+      : cellRank(state)
+      ? "A cell job is posted in this city. It writes deeds."
       : !hasBanner
       ? "Raise a banner, then take optional jobs (Military → Side Mission)."
       : jobs.length
@@ -1328,6 +1335,7 @@ export function listActions(state) {
     order: state.orders?.current || null,
     locked: state.orders?.locked || [],
     hasFaction: !!p.faction,
+    worked: state.service?.workWeek === state.week ? state.service.weekWorks || [] : [],
   };
   actions.forEach((action) => {
     if (action.id === "end_week") return;
@@ -1343,11 +1351,29 @@ function cellRank(state) {
   return idx >= statusIndex("leader") && idx < statusIndex("commander");
 }
 
+function commandChain(state) {
+  const p = playerOf(state);
+  const ids = new Set(["cole", "hart", "nash"]);
+  if (state.service?.superiorId) ids.add(state.service.superiorId);
+  if (state.orders?.current?.issuerId) ids.add(state.orders.current.issuerId);
+  (state.orders?.history || []).forEach((h) => {
+    if (h.issuerId) ids.add(h.issuerId);
+  });
+  if (p?.faction) {
+    const fac = (state.factions || []).find((f) => f.id === p.faction);
+    if (fac?.ruler && fac.ruler !== p.id) ids.add(fac.ruler);
+    if (fac?.opsChiefId && fac.opsChiefId !== p.id) ids.add(fac.opsChiefId);
+  }
+  if (p?.id) ids.delete(p.id);
+  return ids;
+}
+
 export function cellRecruitPool(state) {
   const p = playerOf(state);
   if (!cellRank(state)) return [];
   ensureCareer(state);
   const cell = new Set(state.service.cell || []);
+  const above = commandChain(state);
   return visibleOfficers(state).filter(
     (o) =>
       o.id !== p.id &&
@@ -1356,8 +1382,52 @@ export function cellRecruitPool(state) {
       o.alive !== false &&
       !o.friend &&
       o.ladder !== "player" &&
-      !cell.has(o.id)
+      !cell.has(o.id) &&
+      !above.has(o.id)
   );
+}
+
+export function hireMenuOfficers(state) {
+  const p = playerOf(state);
+  if (p && !p.faction && cellRank(state)) return cellRecruitPool(state);
+  return hireCandidates(state);
+}
+
+function cellHash(state) {
+  const p = playerOf(state);
+  const s = `${state.seed >>> 0}|${state.week || 0}|${p?.region || ""}|cell`;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function ensureCellMission(state) {
+  if (!cellRank(state)) return null;
+  const p = playerOf(state);
+  if (!state.missions || !Array.isArray(state.missions.board)) {
+    state.missions = { board: [], seq: state.missions?.seq || 0, lastRefresh: state.missions?.lastRefresh ?? -1 };
+  }
+  const local = state.missions.board.find((j) => !j.done && j.regionId === p.region);
+  if (local) return local;
+  const templates = ["scout_road", "escort_convoy", "radio_run", "cache_pull", "ford_watch", "ranch_relay"];
+  const templateId = templates[cellHash(state) % templates.length];
+  const t = templateOf(templateId);
+  state.missions.seq = (state.missions.seq || 0) + 1;
+  const job = {
+    id: `cell_${state.missions.seq}`,
+    templateId,
+    name: t?.name || "Cell job",
+    regionId: p.region,
+    week: state.week || 0,
+    ap: t?.ap || 1,
+    done: false,
+    cell: true,
+  };
+  state.missions.board.push(job);
+  return job;
 }
 
 function cellMissions(state, jobs) {
@@ -1873,8 +1943,13 @@ function doDonate(state) {
 function domestic(state, kind, stats) {
   const here = currentRegion(state);
   const p = playerOf(state);
-  const coOp = unownedWorkOk(rankOf(state, p), state, kind);
-  if (!ownedByPlayer(state, here) && !coOp) return { ok: false, message: "You do not hold this region." };
+  const rank = rankOf(state, p);
+  const owned = ownedByPlayer(state, here);
+  if (!owned && opsDeskBlocked(state, rank, kind)) {
+    return { ok: false, message: "Once this week. That desk is already worked." };
+  }
+  const coOp = unownedWorkOk(rank, state, kind);
+  if (!owned && !coOp) return { ok: false, message: "You do not hold this region." };
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const season = state._season;
   const share = coOp && !ownedByPlayer(state, here) ? 0.5 : 1;
@@ -1908,15 +1983,22 @@ function domestic(state, kind, stats) {
     here.order = Math.min(100, here.order + gain);
     msg = `Safety in ${here.short}: order ${here.order}.`;
   }
+  if (!owned && normalizeStatus(rank) === "opschief") noteCityWork(state, kind);
   pushLog(state, msg, "player");
   return { ok: true, message: msg };
 }
 
 function doResearch(state, content, stats) {
+  const here = currentRegion(state);
+  const rank = rankOf(state, playerOf(state));
+  if (!ownedByPlayer(state, here) && opsDeskBlocked(state, rank, "research")) {
+    return { ok: false, message: "Once this week. The shed is already worked." };
+  }
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const gain = 1 + Math.floor(stats.int / 30) + (chance(state, 0.2) ? 1 : 0);
   state.research.points += gain;
-  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}). 1985–89 kit still waits on the calendar.`;
+  if (!ownedByPlayer(state, here) && normalizeStatus(rank) === "opschief") noteCityWork(state, "research");
+  const msg = `Workshop hours: +${gain} salvage (pool ${state.research.points}).`;
   pushLog(state, msg, "player");
   tryUnlockTech(state, content, true);
   return { ok: true, message: msg };
@@ -1982,8 +2064,12 @@ function doHide(state, stats) {
 }
 
 function doSpy(state, regionId, stats) {
-  const target = regionOf(state, regionId || currentRegion(state).id);
+  const here = currentRegion(state);
+  const target = regionOf(state, regionId || here.id);
   if (!target) return { ok: false, message: "No such region." };
+  if (target.id !== here.id && !isAdjacent(state, here, target)) {
+    return { ok: false, message: "Adjacent roads only. No leaping." };
+  }
   if (!spend(state, 1)) return { ok: false, message: "No AP." };
   const diff = DIFFICULTY[state.difficulty];
   const roll = nextInt(state, 1, 100);
@@ -2017,6 +2103,9 @@ function doHire(state, officerId, stats) {
     const t = officerOf(state, officerId);
     if (!t || t.faction || t.region !== p.region || !isVisibleOfficer(state, t) || t.friend) {
       return { ok: false, message: "No free officer here to recruit." };
+    }
+    if (commandChain(state).has(t.id)) {
+      return { ok: false, message: "That officer sits above you. They are not a recruit." };
     }
     ensureCareer(state);
     const cell = state.service.cell;
@@ -2120,9 +2209,18 @@ function lockedMissionDesk(id) {
   return inlandDesk(id) ? id : null;
 }
 
+function grantCellDeeds(state, res) {
+  if (!res?.ok || !cellRank(state) || playerOf(state).faction) return res;
+  const bump = noteDeeds(state, 4, rankOf(state, playerOf(state)));
+  res.message = `${res.message || ""} Cell deeds +4.`.trim();
+  if (bump.promoted && !res.promoted) res.promoted = bump.promoted;
+  return res;
+}
+
 function doMission(state, jobId, officerId, deskId) {
   const p = playerOf(state);
   const forCell = cellRank(state);
+  if (forCell) ensureCellMission(state);
   if (!p.faction && !forCell) return { ok: false, message: "Raise a banner first." };
   const job = missionById(state, jobId);
   if (!job || job.done) return { ok: false, message: "That job is gone. End Week refreshes the board." };
@@ -2139,7 +2237,7 @@ function doMission(state, jobId, officerId, deskId) {
     if (!foe) {
       const res = resolveMission(state, job, actor, missionHelpers());
       pushLog(state, res.report || res.message, "player");
-      return { ...res, sceneId: res.sceneId || "mission", deskId: desk };
+      return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk });
     }
     beginDuel(state, actor, foe, {
       jobId: job.id,
@@ -2150,13 +2248,13 @@ function doMission(state, jobId, officerId, deskId) {
     });
     const msg = `Porch challenge: ${foe.name} in ${regionOf(state, job.regionId)?.short || "town"}.`;
     pushLog(state, msg, "war");
-    return { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk };
+    return grantCellDeeds(state, { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk });
   }
   if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
   const actor = officerOf(state, officerId) || p;
   const res = resolveMission(state, job, actor, missionHelpers());
   pushLog(state, res.report || res.message, "player");
-  return { ...res, sceneId: res.sceneId || "mission", deskId: desk };
+  return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk });
 }
 
 function runStandingMission(state, off) {

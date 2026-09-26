@@ -303,7 +303,7 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 .map-legend .key-con { background: #c9a06a; border-color: #f8f8f8; }
 .map-legend .key-held { background: #d4a056; border-color: #f8d800; }
 
-.side { display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: auto; }
+.side { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow: hidden; }
 .card {
   background: var(--panel);
   border: var(--chrome);
@@ -343,8 +343,51 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: min-content;
-  overflow: visible;
+  min-height: 0;
+  overflow: hidden;
+}
+.officer-plate.is-open {
+  flex: 0 1 auto;
+  max-height: 42%;
+  overflow: auto;
+}
+.officer-plate:not(.is-open) .chrome-head,
+.officer-plate:not(.is-open) .plate-body { display: none; }
+.plate-summary,
+.city-summary {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 4px 8px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+.plate-summary:hover,
+.city-summary:hover,
+.plate-summary:active,
+.city-summary:active {
+  transform: none;
+  box-shadow: none;
+  color: var(--amber);
+}
+.plate-summary b,
+.city-summary b {
+  color: var(--amber);
+  font-weight: 400;
+}
+.plate-summary .goal-line,
+.city-summary .goal-line {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .plate-body {
   display: flex;
@@ -431,7 +474,11 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 }
 .loy-bar i.on { background: var(--amber); }
 .plate-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.city-stats { flex: 0 0 auto; min-height: min-content; overflow: visible; }
+.city-stats { flex: 0 0 auto; min-height: 0; overflow: hidden; }
+.city-stats.is-open { flex: 0 1 auto; max-height: 34%; overflow: auto; }
+.city-stats:not(.is-open) .chrome-head,
+.city-stats:not(.is-open) .city-oversee,
+.city-stats:not(.is-open) .city-body { display: none; }
 .city-stats .city-body { padding: 6px 8px; line-height: 1.5; }
 .city-stats .city-body .plus,
 .city-stats .city-body .minus { margin: 2px 0 0; }
@@ -469,12 +516,12 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
 .city-grid .pill:nth-child(3n) { border-right: 0; }
 .city-grid .pill:nth-child(n+4) { border-bottom: 0; }
 .cmd-card {
-  flex: 0 0 auto;
-  min-height: min-content;
+  flex: 1 1 auto;
+  min-height: 128px;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 .cmd-card .panel-why {
   overflow: hidden;
@@ -569,9 +616,9 @@ body.look-map #btn-legend { padding: 2px 6px; font-size: 10px; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 4px;
-  overflow: visible;
-  min-height: 60px;
-  flex: 0 0 auto;
+  overflow: auto;
+  min-height: 36px;
+  flex: 1 1 auto;
   align-content: start;
   padding: 4px;
 }

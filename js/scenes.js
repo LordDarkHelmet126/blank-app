@@ -355,31 +355,76 @@ const PAINT = {
   },
   promote_member(ctx) {
     skyGround(ctx, false, "summer");
-    px(ctx, 48, 8, 14, 22, PAL.wood);
-    px(ctx, 44, 6, 22, 4, PAL.wood2);
-    px(ctx, 8, 28, 28, 6, PAL.wheat);
-    px(ctx, 10, 24, 24, 4, PAL.wheat2);
-    fig(ctx, 18, 12, PAL.olive, PAL.gold);
-    px(ctx, 30, 22, 6, 2, PAL.crate);
+    px(ctx, 0, 28, W, 17, "#6a5030");
+    px(ctx, 0, 28, W, 2, PAL.wheat2);
+    px(ctx, 4, 30, 10, 8, PAL.wheat);
+    px(ctx, 16, 32, 8, 6, PAL.wheat2);
+    px(ctx, 50, 4, 16, 26, PAL.wood);
+    px(ctx, 46, 2, 24, 5, PAL.wood2);
+    px(ctx, 54, 8, 8, 6, "#88b0c8");
+    px(ctx, 54, 16, 8, 4, PAL.crate);
+    px(ctx, 52, 22, 12, 3, PAL.gold);
+    px(ctx, 6, 16, 22, 12, PAL.wood);
+    px(ctx, 8, 18, 8, 6, "#88b0c8");
+    px(ctx, 18, 18, 8, 6, "#c8a060");
+    px(ctx, 10, 12, 2, 6, PAL.wood2);
+    px(ctx, 8, 10, 6, 3, PAL.gold);
+    px(ctx, 9, 8, 4, 2, "#fff2a0");
+    fig(ctx, 30, 12, PAL.olive, PAL.gold);
+    px(ctx, 36, 18, 5, 3, "#e8e0c8");
+    px(ctx, 28, 30, 8, 6, PAL.wheat);
+    px(ctx, 34, 32, 6, 5, PAL.crate);
+    pine(ctx, 68, 14);
   },
   promote_leader(ctx) {
-    skyGround(ctx);
-    px(ctx, 22, 22, 36, 6, PAL.wood);
-    px(ctx, 24, 18, 8, 4, PAL.crate);
-    px(ctx, 40, 16, 10, 6, "#c8c8d0");
-    fig(ctx, 8, 10, PAL.olive, PAL.olive2);
-    fig(ctx, 58, 10, PAL.navy, PAL.gold);
-    px(ctx, 34, 14, 8, 2, PAL.gold);
+    px(ctx, 0, 0, W, 30, "#3a2818");
+    px(ctx, 0, 30, W, 15, "#503010");
+    px(ctx, 0, 26, W, 4, PAL.wood2);
+    px(ctx, 4, 4, 18, 12, "#88b0c8");
+    px(ctx, 6, 6, 14, 8, "#c8a048");
+    px(ctx, 8, 8, 6, 4, PAL.pine);
+    px(ctx, 14, 9, 4, 3, PAL.blue);
+    px(ctx, 28, 4, 22, 10, "#2a2018");
+    px(ctx, 30, 6, 18, 6, "#e8e0c8");
+    px(ctx, 32, 7, 8, 1, PAL.ink);
+    px(ctx, 32, 9, 12, 1, PAL.ink);
+    px(ctx, 54, 3, 2, 10, PAL.wood2);
+    px(ctx, 52, 1, 6, 3, PAL.gold);
+    px(ctx, 53, 0, 4, 2, "#fff2a0");
+    px(ctx, 8, 20, 64, 4, PAL.wood2);
+    px(ctx, 12, 24, 2, 6, PAL.wood);
+    px(ctx, 66, 24, 2, 6, PAL.wood);
+    px(ctx, 18, 18, 8, 3, PAL.crate);
+    px(ctx, 40, 18, 10, 3, "#c8c8d0");
+    px(ctx, 54, 18, 6, 3, PAL.gold);
+    fig(ctx, 4, 8, PAL.olive, PAL.olive2);
+    fig(ctx, 36, 8, PAL.navy, PAL.gold);
+    fig(ctx, 62, 8, PAL.olive2, PAL.ink);
+    px(ctx, 24, 16, 8, 1, PAL.gold);
   },
   promote_opschief(ctx) {
-    skyGround(ctx);
-    px(ctx, 34, 6, 4, 18, PAL.ink);
-    px(ctx, 28, 6, 16, 3, PAL.red);
-    px(ctx, 10, 24, 22, 10, PAL.wood);
-    px(ctx, 12, 26, 18, 4, "#304878");
-    fig(ctx, 40, 12, PAL.olive, PAL.gold);
-    fig(ctx, 54, 12, PAL.olive2, PAL.navy);
-    px(ctx, 48, 20, 8, 2, PAL.gold);
+    px(ctx, 0, 0, W, 16, "#182838");
+    px(ctx, 0, 16, W, 14, "#3a2818");
+    px(ctx, 0, 30, W, 15, "#503010");
+    px(ctx, 58, 2, 2, 28, PAL.ink);
+    px(ctx, 52, 2, 14, 2, PAL.red);
+    px(ctx, 64, 2, 2, 2, PAL.gold);
+    px(ctx, 56, 8, 6, 1, "#a0b0c0");
+    px(ctx, 4, 6, 22, 12, "#101820");
+    px(ctx, 6, 8, 8, 6, "#304878");
+    px(ctx, 16, 8, 8, 6, "#88b0c8");
+    px(ctx, 8, 18, 28, 12, PAL.wood);
+    px(ctx, 10, 20, 24, 6, "#101830");
+    px(ctx, 12, 21, 4, 4, PAL.gold);
+    px(ctx, 18, 22, 6, 2, "#30c030");
+    px(ctx, 26, 21, 6, 4, PAL.red);
+    px(ctx, 12, 27, 20, 2, "#686860");
+    fig(ctx, 40, 10, PAL.olive, PAL.gold);
+    fig(ctx, 50, 12, PAL.olive2, PAL.navy);
+    px(ctx, 46, 20, 6, 2, "#e8e0c8");
+    px(ctx, 4, 32, 14, 6, PAL.wood2);
+    px(ctx, 22, 34, 10, 4, PAL.crate);
+    pine(ctx, 70, 18);
   },
   porch_challenge(ctx) {
     skyGround(ctx);

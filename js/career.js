@@ -358,7 +358,7 @@ export function maybePromote(state, rank) {
       tab: "personnel",
       unlocked: "People",
       scene: "promote_leader",
-      message: `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust}. People → Hire recruits into your cell, and a side mission in this city is open. You do not need a banner.`,
+      message: `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust}. People → Hire recruits into your cell, and a side mission in this city writes deeds. ADD chairs wait on a banner.`,
     };
   }
   if (current === "leader" && deeds >= 48 && trust >= 70) {
@@ -369,7 +369,7 @@ export function maybePromote(state, rank) {
       tab: "domestic",
       unlocked: "Domestic",
       scene: "promote_opschief",
-      message: `Cell Leader → Operations Chief. Deeds ${deeds} and trust ${trust}. AP rises. You can work this city's elevator, market, and levy without a banner.`,
+      message: `Cell Leader → Operations Chief. Deeds ${deeds} and trust ${trust}. AP rises. You can work this city's elevator, market, and levy. Next rank is Front Commander — raise a banner of your own.`,
     };
   }
   return null;
@@ -461,9 +461,15 @@ export function applyStatusGate(action, ctx) {
     return action;
   }
   if (normalizeStatus(ctx.rank) === "opschief" && COOP_TASKS.has(action.id)) {
+    if ((ctx.worked || []).includes(action.id)) {
+      action.enabled = false;
+      action.statusLocked = true;
+      action.hint = "Once this week. End Week before that desk opens again.";
+      return action;
+    }
     action.enabled = true;
     action.statusLocked = false;
-    action.hint = "Operations Chief: work this city without a banner of your own.";
+    action.hint = "Operations Chief: one pass at this desk each week (1 AP). No banner required.";
     return action;
   }
   if (rule.memberTask && normalizeStatus(ctx.rank) === "member") {
@@ -485,8 +491,30 @@ export function unownedWorkOk(rank, state, actionId) {
   const order = state.orders?.current;
   if (order && (order.status === "accepted" || order.status === "proposed") && order.task === actionId) return true;
   if (normalizeStatus(rank) === "member" && !state.service?.monthTask && COOP_TASKS.has(actionId)) return true;
-  if (normalizeStatus(rank) === "opschief" && COOP_TASKS.has(actionId)) return true;
+  if (normalizeStatus(rank) === "opschief" && COOP_TASKS.has(actionId) && !cityWorkSpent(state, actionId)) return true;
   return false;
+}
+
+export function cityWorkSpent(state, actionId) {
+  const svc = state.service;
+  if (!svc || svc.workWeek !== state.week) return false;
+  return (svc.weekWorks || []).includes(actionId);
+}
+
+export function noteCityWork(state, actionId) {
+  ensureCareer(state);
+  if (state.service.workWeek !== state.week) {
+    state.service.workWeek = state.week;
+    state.service.weekWorks = [];
+  }
+  if (!state.service.weekWorks.includes(actionId)) state.service.weekWorks.push(actionId);
+}
+
+export function opsDeskBlocked(state, rank, actionId) {
+  if (normalizeStatus(rank) !== "opschief" || !COOP_TASKS.has(actionId)) return false;
+  const order = state.orders?.current;
+  if (order && (order.status === "accepted" || order.status === "proposed") && order.task === actionId) return false;
+  return cityWorkSpent(state, actionId);
 }
 
 export function nextRankGoal(state, rankId) {
@@ -645,42 +673,31 @@ export function waiveOrder(state, why) {
   return { log: why || "Orders from above stop. You hold the banner." };
 }
 
+function orderHash(state, salt) {
+  const s = `${state.seed >>> 0}|${state.week || 0}|${salt || ""}`;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 /**
- * Weighted, deterministic task. Territory need, the superior's skills, the player's rank,
- * and the last two orders. Does not touch the weekly RNG stream.
+ * Seeded task pick. Week 0 under Cole stays the elevator. Later months avoid the last
+ * two tasks and prefer anything not seen in the last six, then a hash of the seed.
+ * Does not touch the weekly RNG stream.
  */
 export function pickOrderTask(state, superior) {
   const week = state.week || 0;
   const history = state.orders?.history || [];
   if (week === 0 && !history.length && superior?.id === "cole") return "cultivate";
   const recent = new Set(history.slice(0, 2).map((h) => h.task).filter(Boolean));
-  const region = (state.regions || []).find((r) => r.id === superior?.regionId) || null;
-  const skills = new Set((superior?.skills || []).filter((id) => ORDER_TASKS[id]));
-  const rank = statusIndex(player(state)?.status || "free");
+  const seen = new Set(history.slice(0, 6).map((h) => h.task).filter(Boolean));
   const open = PROPOSE_TASKS.filter((task) => !recent.has(task));
-  const pool = open.length ? open : PROPOSE_TASKS;
-  const slot = monthIndex(week) % PROPOSE_TASKS.length;
-  const spotlight = PROPOSE_TASKS[slot];
-  if (pool.includes(spotlight)) return spotlight;
-  const scored = pool.map((task, i) => {
-    let w = 2;
-    if (skills.has(task)) w += 2;
-    if (region) {
-      if (task === "cultivate" && (region.food ?? 50) < 55) w += 2;
-      if (task === "commerce" && (region.economy ?? 50) < 50) w += 2;
-      if (task === "safety" && (region.order ?? 50) < 50) w += 2;
-      if (task === "drill" && (region.garrison ?? 40) < 40) w += 2;
-      if (task === "fortify" && (region.walls ?? 0) < 25) w += 2;
-      if (task === "spy" && (region.intel ?? 0) < 25) w += 2;
-      if (task === "research" && (region.intel ?? 0) < 40) w += 2;
-    }
-    if (task === "research" && rank < statusIndex("leader")) w += 1;
-    if (task === "spy" && rank < statusIndex("member")) w += 1;
-    const tie = (monthIndex(week) * 3 + i) % 5;
-    return { task, w, tie };
-  });
-  scored.sort((a, b) => b.w - a.w || b.tie - a.tie || (a.task < b.task ? -1 : 1));
-  return scored[0]?.task || "cultivate";
+  const fresh = open.filter((task) => !seen.has(task));
+  const pool = fresh.length ? fresh : open.length ? open : PROPOSE_TASKS;
+  return pool[orderHash(state, superior?.id || "desk") % pool.length] || "cultivate";
 }
 
 /**
@@ -790,14 +807,21 @@ export function resolveOrderChoice(state, choice, taskId, ctx) {
   return { ok: false, message: "Answer accept, refuse, or propose." };
 }
 
+function adjacentRoad(state, fromId, toId) {
+  if (!fromId || !toId || fromId === toId) return false;
+  const from = (state.regions || []).find((r) => r.id === fromId);
+  return !!(from?.neighbors || []).includes(toId);
+}
+
 export function recordServiceAction(state, actionId, extra, rank) {
   ensureCareer(state);
   const order = state.orders.current;
   const live = order && (order.status === "accepted" || order.status === "proposed") && order.task === actionId;
   let completed = null;
   if (live) {
-    const hereOk = !order.regionId || !extra?.hereId || extra.hereId === order.regionId || actionId === "spy";
-    if (hereOk) {
+    const hereOk = !order.regionId || !extra?.hereId || extra.hereId === order.regionId;
+    const spyOk = actionId !== "spy" || adjacentRoad(state, order.regionId || extra?.hereId, extra?.regionId);
+    if (hereOk && spyOk) {
       order.status = "done";
       pushHistory(state, order, "done");
       state.orders.current = null;

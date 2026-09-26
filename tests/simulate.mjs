@@ -30,6 +30,8 @@ import {
   battleCmd,
   challengeCandidates,
   hireCandidates,
+  hireMenuOfficers,
+  cellRecruitPool,
   ladderRankOf,
   ladderLabel,
   ladderRoster,
@@ -598,8 +600,10 @@ console.log("ok inland siege hooks");
 
 const spyState = createNewGame(content, { seed: 9, difficulty: "normal", name: "Mara", background: "speaker" });
 act(spyState, content, "raise_banner");
-res = act(spyState, content, "spy", { regionId: "anchorage" });
+res = act(spyState, content, "spy", { regionId: "denver" });
 assert(res.ok, `spy: ${res.message}`);
+res = act(spyState, content, "spy", { regionId: "nome" });
+assert(!res.ok && /Adjacent roads only/.test(res.message || ""), `spy stays on an adjacent road: ${res.message}`);
 res = act(spyState, content, "ally", { factionId: "compact" });
 assert(res.ok, `ally: ${res.message}`);
 const beforeHire = playerGenerals(spyState).length;
@@ -1740,17 +1744,30 @@ assert(denverBoss?.region === "denver", "the issuer follows the city");
 
 const cellLead = createNewGame(content, { seed: 8, difficulty: "normal", name: "Casey Flint", background: "scout" });
 playerOf(cellLead).status = "leader";
+const above = cellRecruitPool(cellLead).map((o) => o.id);
+assert(!above.includes("cole") && !above.includes("hart") && !above.includes("nash"), `superiors stay out of the cell pool: ${above.join(",")}`);
+const refusedBoss = act(cellLead, content, "hire", { officerId: "cole" });
+assert(!refusedBoss.ok && /above you/.test(refusedBoss.message || ""), refusedBoss.message);
+const volunteer = createCustomOfficer(cellLead, { name: "Lane Voss", personality: "merchant", war: 40, int: 40, pol: 40, chr: 40 });
+assert(volunteer.ok, volunteer.message);
 const cellHire = listActions(cellLead).find((a) => a.id === "hire");
 assert(cellHire?.enabled && /cell/i.test(cellHire.hint || ""), `Cell Leader can recruit: ${cellHire?.hint}`);
-const joinedCell = act(cellLead, content, "hire", { officerId: "cole" });
-assert(joinedCell.ok && cellLead.service.cell.includes("cole") && !playerOf(cellLead).faction, joinedCell.message);
-const cellMission = listActions(cellLead).find((a) => a.id === "mission");
-assert(!/Raise a banner first/.test(cellMission?.hint || ""), "a cell mission is not locked behind a banner");
-const localJob = openMissions(cellLead).find((j) => j.regionId === playerOf(cellLead).region);
-if (localJob && cellLead.ap > 0) {
-  const ran = act(cellLead, content, "mission", { jobId: localJob.id });
-  assert(!/Raise a banner first/.test(ran.message || ""), ran.message);
-}
+const menu = hireMenuOfficers(cellLead);
+assert(menu.some((o) => o.id === volunteer.id) && !menu.some((o) => o.id === "cole"), "the hire menu is the cell pool");
+const joinedCell = act(cellLead, content, "hire", { officerId: volunteer.id });
+assert(joinedCell.ok && cellLead.service.cell.includes(volunteer.id) && !playerOf(cellLead).faction, joinedCell.message);
+const dryCell = createNewGame(content, { seed: 11, difficulty: "normal", name: "Casey Flint", background: "scout" });
+playerOf(dryCell).status = "leader";
+dryCell.missions = { board: [], seq: 0, lastRefresh: -1 };
+const cellMission = listActions(dryCell).find((a) => a.id === "mission");
+assert(cellMission?.enabled && !/Raise a banner/.test(cellMission.hint || ""), `cell mission hint: ${cellMission?.hint}`);
+const localJob = openMissions(dryCell).find((j) => j.regionId === playerOf(dryCell).region);
+assert(localJob, "a cell job is posted when the city board is empty");
+const deedsBefore = dryCell.service.deeds || 0;
+const ran = act(dryCell, content, "mission", { jobId: localJob.id });
+assert(ran.ok && !/Raise a banner/.test(ran.message || "") && dryCell.service.deeds > deedsBefore, ran.message);
+const hireUi = uiSrc.slice(uiSrc.indexOf('a.needs === "hire"'), uiSrc.indexOf('a.needs === "appoint"'));
+assert(/hireMenuOfficers\(state\)/.test(hireUi) && /Recruit into your cell/.test(hireUi) && /data-hire=/.test(hireUi), "People → Hire opens the cell-recruit picker");
 const bareLeader = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });
 playerOf(bareLeader).status = "leader";
 const bareResign = listActions(bareLeader).find((a) => a.id === "resign");
@@ -1761,6 +1778,8 @@ assert(apMax(opsChief) === 6, `Operations Chief AP is 6: ${apMax(opsChief)}`);
 assert(listActions(opsChief).find((a) => a.id === "cultivate")?.enabled, "Operations Chief can work the city");
 assert(/Front Commander/.test(nextRankGoal(opsChief, "opschief")) && /banner/i.test(nextRankGoal(opsChief, "opschief")), "the plate names the next rank");
 assert(act(opsChief, content, "cultivate").ok, "Operations Chief cultivates without a banner");
+assert(!act(opsChief, content, "cultivate").ok, "that desk is once per week");
+assert(act(opsChief, content, "drill").ok, "a different desk is still open");
 
 const rosterGate = createNewGame(content, { seed: 8, difficulty: "easy", name: "Casey Flint", background: "scout" });
 assert(act(rosterGate, content, "enlist").ok, "enlist joins a banner");

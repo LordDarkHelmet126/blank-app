@@ -53,6 +53,7 @@ import {
   factionOf,
   getRelation,
   hireCandidates,
+  hireMenuOfficers,
   attackCandidates,
   neighborRegions,
   serialize,
@@ -596,6 +597,11 @@ export async function boot(loaded) {
       act(state, content, "cultivate");
       if (state.service) state.service.monthTask = null;
     }
+    if (want === "leader" || want === "opschief") {
+      playerOf(state).status = want;
+      createCustomOfficer(state, { name: "Lane Voss", personality: "merchant", war: 40, int: 40, pol: 40, chr: 40 });
+      commandCat = params.get("cat") || "personnel";
+    }
     selectedRegion = "cheyenne";
     commandCat = params.get("cat") || "domestic";
     hideModal({ flush: false });
@@ -670,7 +676,7 @@ function bindChrome() {
   $("btn-order").onclick = () => reopenPendingOrder();
   $("objective").addEventListener("click", (e) => {
     if (e.target.closest("button")) return;
-    reopenPendingOrder();
+    focusMonthWork();
   });
   $("btn-coach").onclick = () => {
     coachOn = true;
@@ -1097,7 +1103,12 @@ function nextHintCore(st) {
     const route = routeSentence(st);
     if (route) return `NEXT: ${route}`;
   }
-  if (!p.faction) return "NEXT: Finish the month's order. Deeds and trust raise you. A banner of your own can wait.";
+  if (!p.faction) {
+    const rungNow = rankOf(st, p);
+    if (rungNow === "opschief") return "NEXT: Next rank is Front Commander. Raise a banner of your own for ground and ADD chairs.";
+    if (rungNow === "leader") return "NEXT: People → Hire recruits into your cell. A side mission here writes deeds. A banner is the Front Commander rank.";
+    return "NEXT: Finish the month's order. Deeds and trust raise you. A banner is the Front Commander rank.";
+  }
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
   const arc = campaignArcLine(st);
   if (arc) {
@@ -1217,7 +1228,9 @@ function applyCoachRing() {
   const step = COACH_STEPS[coachStep];
   if (!step?.target) return;
   const el = document.querySelector(step.target);
-  if (el) el.classList.add("coach-ring");
+  if (!el) return;
+  el.classList.add("coach-ring");
+  el.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 function maybeAdvanceCoach(actionId) {
@@ -1313,6 +1326,27 @@ function reopenPendingOrder() {
   if (card) card.scrollTop = 0;
 }
 
+function focusOrderedTile() {
+  const btn = document.querySelector("#cmd-actions button.is-ordered");
+  if (!btn) return;
+  btn.scrollIntoView({ block: "nearest", inline: "nearest" });
+  btn.focus({ preventScroll: true });
+}
+
+function focusMonthWork() {
+  const o = state?.orders?.current;
+  if (!o) return;
+  if (o.status === "pending") {
+    reopenPendingOrder();
+    return;
+  }
+  if (o.status !== "accepted" && o.status !== "proposed") return;
+  const live = listActions(state).find((a) => a.ordered);
+  if (live?.tab) commandCat = live.tab;
+  renderActions();
+  focusOrderedTile();
+}
+
 function serviceHtml() {
   const p = playerOf(state);
   const rank = rankOf(state, p);
@@ -1375,6 +1409,10 @@ function answerOrder(choice, taskId) {
   if (res.tab) commandCat = res.tab;
   hideModal();
   render();
+  if (choice === "accept" || res.approved) {
+    focusOrderedTile();
+    requestAnimationFrame(focusOrderedTile);
+  }
   if (res.promoted) {
     showEventScene({
       id: res.promoted.scene || "promote_member",
@@ -1895,7 +1933,9 @@ export function render() {
   $("rank").textContent = statusShort(rankOf(state, p));
   $("app").dataset.season = state._season?.id || "";
   $("officer-plate").innerHTML = officerHtml();
+  $("officer-plate").classList.toggle("is-open", plateOpen);
   $("city-stats").innerHTML = cityHtml();
+  $("city-stats").classList.toggle("is-open", cityOpen);
   if ($("court-strip")) $("court-strip").innerHTML = courtHtml();
   paintCourtDesk();
   renderActions();
@@ -1936,7 +1976,14 @@ function officerHtml() {
   const here = regionOf(state, p.region);
   const rank = rankLabel(rankOf(state, p));
   const stripe = fac?.color || "#607838";
+  const goal = nextRankGoal(state, rankOf(state, p));
   return `
+    <button type="button" class="plate-summary" data-toggle-plate>
+      <b>${esc(p.name)}</b>
+      <span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span>
+      <span id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5}</span>
+      <span class="goal-line">${esc(goal)}</span>
+    </button>
     <div class="chrome-head">
       <span class="panel-title">Status</span>
       <span class="panel-why">Service record for this officer.</span>
@@ -1952,7 +1999,7 @@ function officerHtml() {
         <p class="officer-rankline"><span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span></p>
         <p class="muted">${esc(p.title)} · ${fac ? esc(fac.short) : "No banner"}</p>
         <p class="muted">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""} · ${esc(here?.short || "?")} · AP ${state.ap}/${apMax(state)}</p>
-        <p class="service-line" id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
+        <p class="service-line">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
         <p class="service-line">Commission ${esc(commissionLabel(state.service?.commission))} · Fame ${state.fame}</p>
         <p class="service-line goal-line" id="next-goal">${esc(nextRankGoal(state, rankOf(state, p)))}</p>
         <p class="service-actions"><button type="button" data-open-service>Service record</button>${state.orders?.current ? `<button type="button" data-open-order>Order</button>` : ""}</p>
@@ -1978,7 +2025,9 @@ function courtHtml() {
   const deskId = syncCourtDesk();
   const look = inlandLook(deskId);
   const desk = inlandDesk(deskId);
-  const courtBase = rung || "NEXT: Roster → Create a friend (they start as Player), or People → Hire fills an ADD chair.";
+  const courtBase = rung || (p.faction
+    ? "NEXT: Roster → Create a friend (they start as Player), or People → Hire fills an ADD chair."
+    : "NEXT: People → Hire recruits into your cell. A banner fills the ADD chairs.");
   const courtNext = desk && look ? `NEXT: ${desk.line}. ${look.read}. ${courtBase.replace(/^NEXT:\s*/, "")}` : courtBase;
   const courtTitle = look ? `Court — ${look.strip}` : "Court";
   const courtStrip = look
@@ -2008,7 +2057,7 @@ function courtHtml() {
       let hint;
       if (!p.faction) {
         hint = statusIndex(rankOf(state, p)) >= statusIndex("leader")
-          ? "People → Hire recruits into your cell. A banner fills these chairs."
+          ? "People → Hire recruits into your cell. Not an ADD chair."
           : "Finish orders to Cell Leader, then People → Hire into your cell.";
       }
       else if (wait[0]) hint = `Command → Appoint ${esc(wait[0].name)}.`;
@@ -2029,7 +2078,7 @@ function cityHtml() {
   const r = regionOf(state, selectedRegion) || regionOf(state, playerOf(state).region);
   const p = playerOf(state);
   const f = r.owner ? factionOf(state, r.owner) : null;
-  const known = r.intel > 0 || (playerOf(state).faction && r.owner === playerOf(state).faction);
+  const known = r.id === p.region || r.intel > 0 || (p.faction && r.owner === p.faction);
   const garr = known ? r.garrison : "???";
   const walls = known ? r.walls : "?";
   const order = known ? r.order : "?";
@@ -2038,6 +2087,9 @@ function cityHtml() {
   const minus = (r.minus || []).join(" · ");
   const kind = markerKind(r);
   return `
+    <button type="button" class="city-summary" data-toggle-city>
+      <b>City</b> ${esc(r.stateCode || "—")} → ${esc(r.short)} · ECON ${econ} · LEVY ${garr}
+    </button>
     <div class="chrome-head">
       <span class="panel-title">City report</span>
       <span class="panel-why">Selected city.</span>
@@ -2170,6 +2222,8 @@ const SCENE_ACTIONS = new Set([
   "porch_challenge",
 ]);
 let commandCat = "personal";
+let plateOpen = false;
+let cityOpen = false;
 const COACH_KEY = "northern-front-v01-coach";
 let coachForced = false;
 let coachOn = true;
@@ -2194,7 +2248,7 @@ const COACH_STEPS = [
   {
     id: "hire",
     title: "3 / 4  Ranks ahead",
-    body: "Finish orders to climb. Fill an ADD chair only after you are a Cell Leader: People → Hire. Command → Appoint waits on a Front Commander. Same words on the court strip.",
+    body: "Finish orders to climb. People → Hire, once you are a Cell Leader, recruits into your cell — not an ADD chair. Fill an ADD chair after you raise a banner: People → Hire, then Command → Appoint. Appoint waits on a Front Commander.",
     target: "#status-panel",
     cat: "personal",
   },
@@ -2376,7 +2430,8 @@ function stopSceneFx() {
 
 function startAction(a) {
   if (a.needs === "region" || a.needs === "neighbor") {
-    const list = a.needs === "neighbor" ? neighborRegions(state) : state.regions;
+    const list = a.needs === "neighbor" || a.id === "spy" ? neighborRegions(state) : state.regions;
+    if (!list.length) return toast("No adjacent road from this city.");
     showModal(`<h2>${esc(a.label)}</h2><p class="muted">Adjacent roads only. No leaping.</p>${list.map((r) => `<button class="list-btn" data-act="${a.id}" data-region="${r.id}"><img class="cmd-thumb" src="${sceneArt(a.id)}" alt="" /><span>${esc(r.stateCode || "—")} → ${esc(r.short)} · ${geoTags(r).map((t) => t.label).join("/") || "—"}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-region]").forEach((btn) => {
       btn.onclick = () => {
@@ -2387,9 +2442,18 @@ function startAction(a) {
     return;
   }
   if (a.needs === "hire") {
-    const cs = hireCandidates(state);
-    if (!cs.length) return toast("No free officers in this region. Travel, or Officers → Create (cap 10).");
-    showModal(`<h2>Hire into court / generals</h2><p class="muted">${HIRE_LINE}</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
+    const cellHire = !playerOf(state).faction;
+    const cs = hireMenuOfficers(state);
+    if (!cs.length) {
+      return toast(cellHire
+        ? "No free officer in this city who is not above you."
+        : "No free officers in this region. Travel, or Officers → Create (cap 10).");
+    }
+    const title = cellHire ? "Recruit into your cell" : "Hire into court / generals";
+    const blurb = cellHire
+      ? "People → Hire recruits a free officer into your cell. Not an ADD chair. A banner fills those chairs. 8 scrip."
+      : HIRE_LINE;
+    showModal(`<h2>${title}</h2><p class="muted">${blurb}</p>${cs.map((o) => `<button class="list-btn" data-hire="${o.id}"><img class="cmd-thumb" src="${sceneArt("hire")}" alt="" /><span>${esc(o.name)} · ${o.personality} · ambition ${o.ambition}${o.elite ? " · ELITE" : ""}${o.legend ? " · LEGEND" : ""}</span></button>`).join("")}<button data-close>Cancel</button>`);
     $("modal-card").querySelectorAll("[data-hire]").forEach((btn) => {
       btn.onclick = () => {
         hideModal();
@@ -5139,6 +5203,18 @@ function wireAfterRender() {
   });
   document.querySelectorAll("[data-open-service]").forEach((btn) => {
     btn.onclick = () => showModal(serviceHtml(), { kind: "order" });
+  });
+  document.querySelectorAll("[data-toggle-plate]").forEach((btn) => {
+    btn.onclick = () => {
+      plateOpen = !plateOpen;
+      $("officer-plate")?.classList.toggle("is-open", plateOpen);
+    };
+  });
+  document.querySelectorAll("[data-toggle-city]").forEach((btn) => {
+    btn.onclick = () => {
+      cityOpen = !cityOpen;
+      $("city-stats")?.classList.toggle("is-open", cityOpen);
+    };
   });
   wireMissionButtons();
   wireDynamicModals();
