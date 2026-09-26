@@ -3031,8 +3031,11 @@ function drawGlobe(ctx) {
       ctx.stroke();
     });
   });
-  drawWorldStrikes(ctx);
-  if (!mapView.focus) {
+  // The USSR frame is an atlas close-up. The schematic Arctic approach and the
+  // locked far-shore desks stay on the world overview, where Europe's tighter zoom already hides them.
+  const ussrAtlas = mapView.atlas === "su" && !mapView.focus;
+  if (!ussrAtlas) drawWorldStrikes(ctx);
+  if (!mapView.focus && !ussrAtlas) {
     drawWorldCorridors(ctx);
     drawWorldDesks(ctx);
   }
