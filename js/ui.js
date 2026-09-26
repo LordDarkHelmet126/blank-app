@@ -1894,7 +1894,8 @@ function officerHtml() {
       </div>
       <div class="officer-meta">
         <h2>${esc(p.name)}</h2>
-        <p class="officer-rankline"><span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span>${esc(p.title)} · ${fac ? esc(fac.short) : "FREE"}</p>
+        <p class="officer-rankline"><span class="rank-badge rank-${esc(rankOf(state, p))}">${esc(rank)}</span></p>
+        <p class="muted">${esc(p.title)} · ${fac ? esc(fac.short) : "No banner"}</p>
         <p class="muted">AGE ${p.age || "?"}${p.frail ? " FRAIL" : ""} · ${esc(here?.short || "?")} · AP ${state.ap}/${apMax(state)}</p>
         <p class="service-line" id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
         <p class="service-line">Commission ${esc(commissionLabel(state.service?.commission))} · Fame ${state.fame}</p>
