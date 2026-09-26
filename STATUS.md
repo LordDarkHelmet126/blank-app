@@ -2,7 +2,13 @@
 
 Cadence: ~15-minute bursts. After each chunk, keep the game runnable and update this file.
 
-**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–4 (through South America). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+**Last checkpoint:** 2026-09-26 — World atlas, Regions 1–5 (through Western Europe). The campaign board is unchanged: week 0 is still Cheyenne, the west bloc is still eight states, and the inland desks are untouched. The atlas is a separate layer (`data/world/`) drawn at world zoom and when a subdivision is framed. It is occupied and not marchable.
+
+## World atlas (Region 5 — Western Europe)
+
+The United Kingdom (1974 counties, 1975 Scottish regions, six Northern Ireland counties), Ireland's 26 counties, the Crown dependencies, France's 96 departments in 22 regions with Corsica, Monaco, Andorra, the Benelux, West Germany's ten Länder, the GDR's fifteen Bezirke, and West Berlin as an enclave with three air corridors and the transit roads. Switzerland, Austria, Liechtenstein, Italy with Sicily and Sardinia, San Marino, Vatican City, Spain with the Balearics, Canaries, Ceuta, and Melilla, Portugal with the Azores and Madeira, Denmark with Greenland and the Faroes, Norway with Svalbard, Sweden, Finland, Iceland, Malta, divided Cyprus, Greece's nomoi, and Turkey's 67 provinces. The Channel, the Great Belt, and the Øresund are ferries. The Little Belt and the Boğaziçi Bridge are roads. The Bosporus is a sea lane. Alpine and Pyrenean crossings are real passes. No road enters Eastern Europe.
+
+`/?demo=look&view=world` shows the atlas, now including Europe. `/?demo=look&view=europe` frames the continent. `/?demo=look&view=atlas&state=CL-VS&city=cl.los_andes` still frames the Andes. Close campaign zoom still does not draw the atlas.
 
 ## World atlas (Region 4 — South America)
 
