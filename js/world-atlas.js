@@ -143,8 +143,8 @@ export function drawAtlasLabels(ctx, opts) {
     const hover = city.id === hoverId;
     const focused = mode === "state" && city.subdivision === mapView.atlas;
     const remoteCap = REMOTE.has(city.subdivision) && city.role === "capital";
-    const canadaCap = city.country === "CA" && city.role === "capital";
-    if (!selected && !hover && !focused && !(mode === "world" && (remoteCap || canadaCap))) return;
+    const offshoreCap = city.role === "capital" && city.subdivision === "NL";
+    if (!selected && !hover && !focused && !(mode === "world" && (remoteCap || offshoreCap))) return;
     const [x, y] = project(city.lon, city.lat);
     drawAtlasLabel(ctx, mapView, x, y, city, selected || hover || focused);
   });
