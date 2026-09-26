@@ -2348,7 +2348,7 @@ export const DJIBOUTI_REGION = land({
     "minLat": 9.6,
     "maxLat": 13.46
   },
-  "notes": "Atlas only. Five districts, on the sheet so Bab-el-Mandeb has an African shore. Ethiopia, Eritrea, and Somalia are not started. Occupied and off the week-0 march.",
+  "notes": "Atlas only. Five districts, on the sheet so Bab-el-Mandeb has an African shore. The Franco-Ethiopian railway continues to Dire Dawa, and the seas to Assab and Berbera, on the Region 8 Horn sheet. Occupied and off the week-0 march.",
   "defaultBiome": "desert",
   "climate": {
     "_default": {

@@ -9,6 +9,7 @@ import { SOUTH_AMERICA } from "../data/world/regions/south-america.js";
 import { WESTERN_EUROPE } from "../data/world/regions/western-europe.js";
 import { EASTERN_EUROPE } from "../data/world/regions/eastern-europe.js";
 import { MIDDLE_EAST } from "../data/world/regions/middle-east.js";
+import { SUB_SAHARAN_AFRICA } from "../data/world/regions/sub-saharan-africa.js";
 
 function modesFor(kind) {
   if (kind === "sea") return ["sea"];
@@ -43,6 +44,7 @@ export const WORLD_REGIONS = stitchBorders([
   ...WESTERN_EUROPE,
   ...EASTERN_EUROPE,
   ...MIDDLE_EAST,
+  ...SUB_SAHARAN_AFRICA,
 ]);
 
 const COMMAND_SLOTS = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];

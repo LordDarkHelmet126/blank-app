@@ -46,12 +46,27 @@ const WORLD_CAPS = new Set([
   "ir.tehran",
   "iq.baghdad",
   "af.kabul",
+  "sn.dakar",
+  "ci.abidjan",
+  "gh.accra",
+  "bf.ouagadougou",
+  "ng.lagos",
+  "cm.yaounde",
+  "zr.kinshasa",
+  "et.addis",
+  "so.mogadishu",
+  "ke.nairobi",
+  "tz.dar",
+  "ao.luanda",
+  "za.pretoria",
+  "zw.harare",
+  "mg.antananarivo",
 ]);
 
 /** World zoom shows the whole atlas. A framed state or province shows its cities up close. */
 export function atlasMode(mapView) {
   if (!mapView || mapView.focus) return "off";
-  if (mapView.atlas === "eu" || mapView.atlas === "su" || mapView.atlas === "me") return "world";
+  if (mapView.atlas === "eu" || mapView.atlas === "su" || mapView.atlas === "me" || mapView.atlas === "ssa") return "world";
   if (mapView.z < 0.55) return "world";
   if (mapView.atlas && mapView.atlas !== "us") return "state";
   return "off";
