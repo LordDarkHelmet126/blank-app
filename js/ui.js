@@ -2388,10 +2388,10 @@ function frameLonLat(lon0, lat0, lon1, lat1, pad) {
   const maxX = Math.max(xA, xB);
   const minY = Math.min(yA, yB);
   const maxY = Math.max(yA, yB);
-  const z = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
-  mapView.z = Math.max(0.16, Math.min(3.2, z));
-  mapView.x = (1000 - (minX + maxX) * z) / 2;
-  mapView.y = (620 - (minY + maxY) * z) / 2;
+  const fit = Math.min(1000 / (maxX - minX), 620 / (maxY - minY)) * (pad || 0.9);
+  mapView.z = Math.max(0.16, Math.min(12, fit));
+  mapView.x = (1000 - (minX + maxX) * mapView.z) / 2;
+  mapView.y = (620 - (minY + maxY) * mapView.z) / 2;
   drawMap();
 }
 
