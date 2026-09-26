@@ -88,7 +88,7 @@ import {
 import { DUEL_CLOCK_S, DUEL_PICK_MS, DUEL_RESOLVE_MS } from "./duel.js";
 import { inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampDuelDesk, stampMissionDesk } from "./inland.js";
 import { siegeCoach, siegeRecommend } from "./siege.js";
-import { LABEL_ANCHOR, LABEL_MIN_SCREEN, LABEL_TOUCH_SCREEN, MAP_DETAIL_KEY, applyMapDrag, calloutCap, canvasDisplayScale, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, keyPanelInset, labelOwnsMarker, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stableKeyIds, stampMapDetail } from "./map-detail.js";
+import { LABEL_ANCHOR, LABEL_MIN_SCREEN, LABEL_TOUCH_SCREEN, MAP_DETAIL_KEY, applyMapDrag, calloutCap, canvasDisplayScale, chordIsMisleading, cityLabelSizes, closeRoadWidth, heldKeyRows, insetMarkerCenter, keyPanelInset, labelOwnsMarker, labelPlaceRank, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stableKeyIds, stampMapDetail } from "./map-detail.js";
 
 const SAVE_KEY = "northern-front-v01";
 let content;
@@ -3234,6 +3234,13 @@ let cityClaims = [];
 let leaderRoutes = [];
 /** Last committed key. Small pans and hovers reuse it instead of renumbering. */
 let labelAnchor = null;
+/** Cities along the stalled front. They keep a name ahead of the rest of the map. */
+const FRONT_CITIES = ["cheyenne", "omaha", "lincoln", "topeka", "wichita", "st_louis"];
+let lastCityLabels = { held: false, visibleIds: [], nameIds: [], keyIds: [], keyNumbers: [], x: 0, y: 0, z: 1 };
+
+export function readCityLabels() {
+  return lastCityLabels;
+}
 
 function mapViewRect() {
   const z = mapView.z || 1;
@@ -4188,7 +4195,7 @@ function labelCap(marker, allowBeside) {
 function gridLabelSlots(x, y, w, h, marker, maxEdge) {
   const view = cityLabelView();
   const reach = marker / 2 + maxEdge + 2;
-  const step = Math.max(2, Math.round(Math.min(w, h) * 0.34));
+  const step = Math.max(2, Math.round(Math.min(w, h) * 0.22));
   const slots = [];
   const yStart = Math.max(view.y0, y - reach - h);
   const yEnd = Math.min(view.y1 - h, y + reach);
@@ -4208,13 +4215,13 @@ function gridLabelSlots(x, y, w, h, marker, maxEdge) {
   return slots;
 }
 
-function pickCityLabel(x, y, w, h, marker, blocks, neighbors, markers, mode, grid) {
+function pickCityLabel(x, y, w, h, marker, blocks, neighbors, markers, mode, grid, pads) {
   const cap = mode === "tight" ? labelCap(marker, true) : labelCap(marker, false);
   const slots = grid
     ? gridLabelSlots(x, y, w, h, marker, cap)
     : cityLabelSlots(x, y, w, h, marker, neighbors, cap);
-  const pads = { city: 0, state: 0, block: 0 };
-  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, markers, pads, mode);
+  const gap = pads || { city: 0, state: 0, block: 0 };
+  return firstLegalLabel(slots, x, y, w, h, marker, blocks, neighbors, markers, gap, mode);
 }
 
 function drawLabelLeader(ctx, x, y, marker, lx, ly, w, h, route) {
@@ -4267,7 +4274,7 @@ function drawCleanCityLabels(ctx, painted) {
     const spot = cleanCitySpot(r, hereId);
     if (spot) spots.push(spot);
   });
-  const neighborsOf = (id) => spots.filter((s) => s.r.id !== id).map((s) => ({ x: s.x, y: s.y, marker: s.marker }));
+  const neighborsOf = (id) => spots.filter((s) => s.r.id !== id).map((s) => ({ id: s.r.id, x: s.x, y: s.y, marker: s.marker }));
   const markerClaims = spots.map((s) => ({
     id: s.r.id,
     x: s.x - s.marker / 2 - 1,
@@ -4282,11 +4289,27 @@ function drawCleanCityLabels(ctx, painted) {
   });
   const blocksFor = (id) => markerClaims.filter((c) => c.id !== id).concat(chipClaims);
   const markersFor = (id) => markerClaims.filter((c) => c.id !== id);
+  const hereRegion = regionOf(state, hereId);
+  const selected = selectedRegion ? regionOf(state, selectedRegion) : null;
+  const adjacentIds = [...(hereRegion?.neighbors || []), ...(selected?.neighbors || [])];
+  const nearIds = new Set(FRONT_CITIES);
+  adjacentIds.forEach((id) => {
+    const node = regionOf(state, id);
+    (node?.neighbors || []).forEach((nid) => nearIds.add(nid));
+  });
+  const nearestGap = (s) => {
+    let best = Infinity;
+    spots.forEach((o) => {
+      if (o.r.id === s.r.id) return;
+      best = Math.min(best, Math.hypot(o.x - s.x, o.y - s.y));
+    });
+    return best;
+  };
   const ranked = spots
     .map((s, i) => ({ s, i }))
     .sort((a, b) => {
-      const rank = (r) => (r.id === hereId ? 1 : 0);
-      return rank(b.s.r) - rank(a.s.r) || a.s.r.id.localeCompare(b.s.r.id) || a.i - b.i;
+      const rank = (id) => labelPlaceRank(id, hereId, adjacentIds, [...nearIds]);
+      return rank(a.s.r.id) - rank(b.s.r.id) || nearestGap(a.s) - nearestGap(b.s) || a.s.r.id.localeCompare(b.s.r.id) || a.i - b.i;
     });
   const measureName = (item, sized) => {
     ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
@@ -4320,9 +4343,8 @@ function drawCleanCityLabels(ctx, painted) {
     if (!list.length) return [];
     ctx.font = `${sized}px 'Press Start 2P', 'Courier New', monospace`;
     const rowH = Math.ceil(sized + 3);
-    const ordered = list.slice().sort((a, b) => a.s.r.id.localeCompare(b.s.r.id));
-    const rows = ordered.map((item, index) => {
-      const n = item.keyNumber || String(index + 1);
+    const rows = list.map((item, index) => {
+      const n = String(index + 1);
       const text = `${n} ${item.s.r.short}`;
       return { item, text, w: Math.ceil(ctx.measureText(text).width) + 4, h: rowH, n };
     });
@@ -4371,10 +4393,12 @@ function drawCleanCityLabels(ctx, painted) {
     if (!origin) return [];
     const found = [];
     let ly = origin[1];
+    const touch = LABEL_TOUCH_SCREEN / (Math.max(0.2, z) * Math.max(0.05, mapCssScale()));
+    const digitPad = { city: touch, state: touch, block: touch };
     rows.forEach((row) => {
       const keyW = Math.ceil(ctx.measureText(row.n).width) + 4;
       const keyH = row.h;
-      const key = pickCityLabel(row.item.s.x, row.item.s.y, keyW, keyH, row.item.s.marker, blocksFor(row.item.s.r.id), neighborsOf(row.item.s.r.id), markersFor(row.item.s.r.id), "tight", true);
+      const key = pickCityLabel(row.item.s.x, row.item.s.y, keyW, keyH, row.item.s.marker, blocksFor(row.item.s.r.id), neighborsOf(row.item.s.r.id), markersFor(row.item.s.r.id), "tight", true, digitPad);
       if (key) {
         key.text = row.n;
         cityClaims.push({ x: key.lx, y: key.ly, w: keyW, h: keyH, id: `${row.item.s.r.id}-key` });
@@ -4394,41 +4418,91 @@ function drawCleanCityLabels(ctx, painted) {
   const sizes = cityLabelSizes(fontPx, z, mapCssScale());
   const panPx = !labelAnchor || labelAnchor.z !== z
     ? Infinity
-    : Math.hypot((mapView.x - labelAnchor.x) * z, (mapView.y - labelAnchor.y) * z);
+    : Math.hypot(mapView.x - labelAnchor.x, mapView.y - labelAnchor.y);
   const holding = labelAnchor != null && panPx <= 12;
   const visible = new Map(ranked.map((item) => [item.s.r.id, item]));
-  let pending = ranked;
+  let queue = ranked;
   if (holding) {
     const frozen = new Set(stableKeyIds(labelAnchor.keyIds, [...visible.keys()], panPx));
-    pending = ranked.filter((item) => !frozen.has(item.s.r.id));
+    queue = ranked.filter((item) => !frozen.has(item.s.r.id));
   }
+  const trySeat = (item) => {
+    for (let i = 0; i < sizes.length; i++) {
+      const pass = placeList([item], sizes[i], "tight");
+      if (pass.found.length) return pass.found[0];
+    }
+    for (let i = 0; i < sizes.length; i++) {
+      const pass = placeList([item], sizes[i], "own");
+      if (pass.found.length) return pass.found[0];
+    }
+    return null;
+  };
+  const release = (item) => {
+    const id = item.s.r.id;
+    for (let i = cityClaims.length - 1; i >= 0; i--) {
+      if (cityClaims[i].id === id) cityClaims.splice(i, 1);
+    }
+    if (item.placed && item.placed.route) {
+      const at = leaderRoutes.indexOf(item.placed.route);
+      if (at >= 0) leaderRoutes.splice(at, 1);
+    }
+  };
+  const restore = (item) => {
+    cityClaims.push({ x: item.placed.lx, y: item.placed.ly, w: item.w, h: item.h, id: item.s.r.id });
+    if (item.placed.route) leaderRoutes.push(item.placed.route);
+  };
   let found = [];
-  sizes.forEach((sized) => {
-    if (!pending.length) return;
-    const pass = placeList(pending, sized, "tight");
-    found = found.concat(pass.found);
-    pending = pass.next;
+  let pending = [];
+  queue.forEach((item) => {
+    const seated = trySeat(item);
+    if (seated) found.push(seated);
+    else pending.push(item);
   });
-  if (pending.length) {
-    const sized = sizes[sizes.length - 1];
-    const spread = placeList(pending, sized, "own");
-    found = found.concat(spread.found);
-    pending = spread.next;
-  }
-  let legendItems = [];
+  const still = [];
+  pending.forEach((item) => {
+    const rivals = found
+      .filter((other) => Math.hypot(other.s.x - item.s.x, other.s.y - item.s.y) < 160)
+      .sort((a, b) => Math.hypot(a.s.x - item.s.x, a.s.y - item.s.y) - Math.hypot(b.s.x - item.s.x, b.s.y - item.s.y));
+    let seated = null;
+    for (let i = 0; i < rivals.length && !seated && i < 6; i++) {
+      const rival = rivals[i];
+      release(rival);
+      const got = trySeat(item);
+      const back = got ? trySeat(rival) : null;
+      if (got && back) {
+        seated = got;
+        const at = found.indexOf(rival);
+        if (at >= 0) found[at] = back;
+      } else {
+        if (got) release(got);
+        if (back) release(back);
+        restore(rival);
+      }
+    }
+    if (seated) found.push(seated);
+    else still.push(item);
+  });
+  pending = still;
+  const failedIds = pending.map((item) => item.s.r.id);
+  const frozenIds = holding ? stableKeyIds(labelAnchor.keyIds, [...visible.keys()], panPx) : stableKeyIds(null, failedIds, Infinity);
+  const rows = heldKeyRows(frozenIds, [...visible.keys()], holding ? failedIds : []);
   if (holding) {
-    const frozen = stableKeyIds(labelAnchor.keyIds, [...visible.keys()], panPx);
-    legendItems = frozen.map((id, index) => {
-      const item = visible.get(id);
-      if (!item) return null;
-      return { ...item, keyNumber: String(index + 1) };
-    }).filter(Boolean);
+    labelAnchor = { z: labelAnchor.z, x: labelAnchor.x, y: labelAnchor.y, keyIds: rows.map((row) => row.id) };
   } else {
-    const keyIds = stableKeyIds(null, pending.map((item) => item.s.r.id), Infinity);
-    labelAnchor = { z, x: mapView.x, y: mapView.y, keyIds };
-    legendItems = keyIds.map((id) => visible.get(id)).filter(Boolean);
+    labelAnchor = { z, x: mapView.x, y: mapView.y, keyIds: rows.map((row) => row.id) };
   }
+  const legendItems = rows.map((row) => visible.get(row.id)).filter(Boolean);
   if (legendItems.length) found = found.concat(placeLegend(legendItems, sizes[sizes.length - 1]));
+  lastCityLabels = {
+    held: holding,
+    visibleIds: [...visible.keys()],
+    nameIds: found.filter((item) => !item.placed?.text).map((item) => item.s.r.id),
+    keyIds: rows.map((row) => row.id),
+    keyNumbers: rows.map((row) => row.n),
+    x: mapView.x,
+    y: mapView.y,
+    z,
+  };
   if (legendFrame) {
     ctx.fillStyle = "#14100c";
     ctx.fillRect(legendFrame.x, legendFrame.y, legendFrame.w, legendFrame.h);

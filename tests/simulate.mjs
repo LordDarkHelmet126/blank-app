@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, calloutCap, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, keyPanelInset, labelEdgeGap, labelOwnsMarker, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stableKeyIds, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, calloutCap, chordIsMisleading, cityLabelSizes, closeRoadWidth, heldKeyRows, insetMarkerCenter, keyPanelInset, labelEdgeGap, labelOwnsMarker, labelPlaceRank, leaderEndOnLabel, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stableKeyIds, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1421,6 +1421,15 @@ assert(!/clampCloseMarkers/.test(uiSrc) && !/mapView\.z = z2/.test(uiSrc) && /ap
   assert(stableKeyIds(["spokane"], ["seattle", "spokane"], 0).join() === "spokane", "hover does not change key membership");
   assert(stableKeyIds(["kenai"], ["seattle", "anchorage"], 13).join() === "anchorage,seattle", "a longer pan renumbers the key by city id");
   assert(stableKeyIds(null, ["nome", "anchorage"], 0).join() === "anchorage,nome", "a fresh key is numbered by city id");
+  const heldRows = heldKeyRows(["olympia", "fairbanks", "kenai"], ["fairbanks", "kenai", "portland"], ["portland"]);
+  assert(heldRows.map((row) => row.id).join() === "fairbanks,kenai,portland", "a held key keeps its cities and adds one that lost its slot");
+  assert(heldRows.map((row) => row.n).join() === "1,2,3", "a held key numbers the rows that are shown");
+  const gapRows = heldKeyRows(["gone", "fairbanks", "kenai", "klondike", "nome"], ["fairbanks", "kenai", "klondike", "nome"], []);
+  assert(gapRows.map((row) => `${row.n} ${row.id}`).join() === "1 fairbanks,2 kenai,3 klondike,4 nome", "a key drops hidden ids before it numbers 1..n");
+  assert(labelPlaceRank("cheyenne", "cheyenne", ["denver"], ["grand_junction"]) === 0, "the start city is placed first");
+  assert(labelPlaceRank("denver", "cheyenne", ["denver"], ["grand_junction"]) === 1, "a neighbour of the start is placed next");
+  assert(labelPlaceRank("grand_junction", "cheyenne", ["denver"], ["grand_junction", "lincoln"]) === 2, "the next ring and the front place before the rest");
+  assert(labelPlaceRank("nome", "cheyenne", ["denver"], ["grand_junction"]) === 3, "a distant city waits its turn");
   const stroke = Math.max(0.6, 1.2 / 1.3);
   const inset = keyPanelInset(1.3, 3, stroke, 2);
   const frameCanvas = (inset - 3) * 1.3;
@@ -1567,6 +1576,32 @@ assert(/letterboxCanvasPoint/.test(uiSrc) && /letterboxContains/.test(uiSrc), "m
     /* redraw can stop after the hover is recorded */
   }
   assert(ui.readMapPointer().hover !== "nome", "overview clicks use the region shape, not the close-up slide");
+  ui.mapView.z = 2.2;
+  ui.mapView.x = -(364 - 220) * 2.2;
+  ui.mapView.y = -(273 - 140) * 2.2;
+  ui.mapView.focus = null;
+  ui.mapView.drag = null;
+  const at = (canvasX, canvasY) => ({ clientX: ox + canvasX * scale, clientY: oy + canvasY * scale });
+  const denverCanvasX = 352 * ui.mapView.z + ui.mapView.x;
+  const denverCanvasY = 313 * ui.mapView.z + ui.mapView.y;
+  try {
+    map.dispatchEvent(new PointerEvent("pointermove", at(denverCanvasX, denverCanvasY)));
+  } catch {
+    /* redraw can stop after the hover is recorded */
+  }
+  ui.mapView.x += 6;
+  try {
+    map.dispatchEvent(new PointerEvent("pointermove", at(8, 8)));
+  } catch {
+    /* redraw can stop after the hover is recorded */
+  }
+  const plan = ui.readCityLabels();
+  assert(plan.held && Math.abs(plan.x - ui.mapView.x) < 0.01 && plan.z === 2.2, "a 6px pan holds the key and redraws");
+  const covered = new Set([...plan.nameIds, ...plan.keyIds]);
+  plan.visibleIds.forEach((id) => {
+    assert(covered.has(id), `a city still has a name or a key row after the pan: ${id}`);
+  });
+  assert(plan.keyNumbers.join(",") === plan.keyNumbers.map((_, i) => String(i + 1)).join(","), "key numbers after a pan are 1..n");
   const regionFn = uiSrc.slice(uiSrc.indexOf("function regionAt"), uiSrc.indexOf("function hitPoly"));
   assert(/clearRoads/.test(regionFn) && /markerSquareHit/.test(regionFn) && regionFn.indexOf("markerSquareHit") < regionFn.indexOf("hitPoly"), "drawn markers are hit before region shapes");
   assert(/onMapClick/.test(uiSrc) && /regionAt\(e\.clientX, e\.clientY, \$\("map"\)\)/.test(uiSrc), "click uses the same drawn-marker hit test as hover");

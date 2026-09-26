@@ -263,6 +263,40 @@ export function stableKeyIds(previous, next, panPx) {
 }
 
 /**
+ * Rows actually drawn in the key. Invisible ids are dropped before numbering, then any city
+ * that still has no name is appended. Numbers are always 1..n with no gaps.
+ */
+export function heldKeyRows(frozenIds, visibleIds, failedIds) {
+  const visible = new Set((visibleIds || []).map(String));
+  const shown = [];
+  const have = new Set();
+  (frozenIds || []).forEach((id) => {
+    const key = String(id);
+    if (!visible.has(key) || have.has(key)) return;
+    shown.push(key);
+    have.add(key);
+  });
+  (failedIds || []).forEach((id) => {
+    const key = String(id);
+    if (!visible.has(key) || have.has(key)) return;
+    shown.push(key);
+    have.add(key);
+  });
+  return shown.map((id, index) => ({ id, n: index + 1 }));
+}
+
+/**
+ * Placement priority. 0 is the start city, 1 is adjacent to the start or the selection,
+ * 2 is a front city or the next ring out, and everyone else is 3.
+ */
+export function labelPlaceRank(id, hereId, adjacentIds, nearIds) {
+  if (id && id === hereId) return 0;
+  if ((adjacentIds || []).includes(id)) return 1;
+  if ((nearIds || []).includes(id)) return 2;
+  return 3;
+}
+
+/**
  * World-unit inset for a keyed panel.
  * The frame pad plus half the stroke stays at least `marginCanvas` canvas px inside the map.
  */
