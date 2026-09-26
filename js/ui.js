@@ -499,6 +499,7 @@ export async function boot(loaded) {
     else if (view === "ussr") frameUssr();
     else if (view === "mideast") frameMideast();
     else if (view === "africa") frameAfrica();
+    else if (view === "asia") frameAsia();
     else if (view === "atlas") {
       const city = params.get("city");
       if (city) {
@@ -516,7 +517,7 @@ export async function boot(loaded) {
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
-    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe" && view !== "ussr" && view !== "mideast" && view !== "africa") pulseTravel("cheyenne", "denver", { loop: true });
+    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe" && view !== "ussr" && view !== "mideast" && view !== "africa" && view !== "asia") pulseTravel("cheyenne", "denver", { loop: true });
     frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -2382,6 +2383,13 @@ function frameAfrica() {
   frameLonLat(-26, 28, 65, -36, 0.9);
 }
 
+/** Pakistan through Japan and Indonesia. Oceania stays on the world view. */
+function frameAsia() {
+  clearForeignFrame();
+  mapView.atlas = "asia";
+  frameLonLat(60, 55, 155, -12, 0.9);
+}
+
 function frameWorld() {
   clearForeignFrame();
   mapView.atlas = "us";
@@ -3049,7 +3057,7 @@ function drawGlobe(ctx) {
   });
   // The USSR frame is an atlas close-up. The schematic Arctic approach and the
   // locked far-shore desks stay on the world overview, where Europe's tighter zoom already hides them.
-  const framedAtlas = (mapView.atlas === "su" || mapView.atlas === "me" || mapView.atlas === "ssa") && !mapView.focus;
+  const framedAtlas = (mapView.atlas === "su" || mapView.atlas === "me" || mapView.atlas === "ssa" || mapView.atlas === "asia") && !mapView.focus;
   if (!framedAtlas) drawWorldStrikes(ctx);
   if (!mapView.focus && !framedAtlas) {
     drawWorldCorridors(ctx);
@@ -3692,7 +3700,7 @@ function drawMap() {
   const liftSea = mapView.z < 0.7 || mapView.focus === "cuba" || mapView.focus === "bering" || mapView.focus === "korea";
   // Geographic close-ups. The schematic campaign plate (Cheyenne and the west
   // bloc) would otherwise sit on the Atlantic edge of the Middle East or Africa.
-  const atlasCloseup = (mapView.atlas === "me" || mapView.atlas === "ssa") && !mapView.focus;
+  const atlasCloseup = (mapView.atlas === "me" || mapView.atlas === "ssa" || mapView.atlas === "asia") && !mapView.focus;
   if (!atlasCloseup) ctx.drawImage(liftSea ? theaterLandPlate() : drawMap.off, 0, 0);
   if (mapView.focus) {
     drawWorldCorridors(ctx);
