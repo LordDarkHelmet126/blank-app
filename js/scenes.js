@@ -435,6 +435,127 @@ const PAINT = {
   },
 };
 
+const RW = 160;
+const RH = 90;
+
+function head(ctx, x, y, coat, hat, hair) {
+  px(ctx, x + 1, y, 12, 3, hat);
+  px(ctx, x - 1, y + 3, 16, 3, hat);
+  px(ctx, x + 2, y + 5, 10, 3, hair || hat);
+  px(ctx, x + 3, y + 8, 8, 8, PAL.skin);
+  px(ctx, x + 4, y + 10, 2, 2, PAL.ink);
+  px(ctx, x + 8, y + 10, 2, 2, PAL.ink);
+  px(ctx, x + 5, y + 14, 4, 1, "#804030");
+  px(ctx, x + 4, y + 16, 6, 2, PAL.skin);
+  px(ctx, x + 1, y + 18, 12, 14, coat);
+  px(ctx, x - 2, y + 19, 4, 10, coat);
+  px(ctx, x + 12, y + 19, 4, 10, coat);
+  px(ctx, x + 2, y + 32, 4, 8, "#241810");
+  px(ctx, x + 8, y + 32, 4, 8, "#241810");
+  px(ctx, x + 1, y + 39, 5, 2, "#3a2818");
+  px(ctx, x + 8, y + 39, 5, 2, "#3a2818");
+}
+
+function rankSky(ctx, top, mid) {
+  px(ctx, 0, 0, RW, 28, top);
+  px(ctx, 0, 28, RW, 18, mid);
+  for (let i = 0; i < 16; i++) px(ctx, i * 10 + 2, 8 + (i % 3) * 4, 2, 2, "#f8f8f8");
+}
+
+const RANK_SCENES = {
+  promote_member(ctx) {
+    rankSky(ctx, "#6aa0d0", "#c8d8a0");
+    px(ctx, 0, 46, RW, 44, "#c8a050");
+    px(ctx, 0, 46, RW, 4, "#e0c060");
+    for (let i = 0; i < 14; i++) {
+      px(ctx, 4 + i * 11, 52 + (i % 2) * 6, 6, 10, i % 2 ? "#d8b050" : "#b89030");
+      px(ctx, 6 + i * 11, 50 + (i % 2) * 6, 2, 4, "#f0d878");
+    }
+    px(ctx, 112, 18, 28, 52, "#684028");
+    px(ctx, 104, 14, 44, 8, "#886038");
+    px(ctx, 118, 26, 16, 10, "#88b0c8");
+    px(ctx, 120, 40, 12, 8, PAL.crate);
+    px(ctx, 116, 52, 20, 4, PAL.gold);
+    px(ctx, 8, 28, 36, 22, "#684028");
+    px(ctx, 12, 32, 12, 10, "#88b0c8");
+    px(ctx, 26, 32, 12, 10, "#c8a060");
+    px(ctx, 14, 18, 4, 12, "#886038");
+    px(ctx, 10, 16, 12, 4, PAL.gold);
+    px(ctx, 12, 12, 8, 4, "#fff2a0");
+    px(ctx, 48, 58, 16, 12, PAL.wheat);
+    px(ctx, 66, 62, 14, 10, PAL.crate);
+    head(ctx, 46, 28, PAL.olive, PAL.gold, "#503010");
+    head(ctx, 72, 30, "#507040", "#c8a060", "#302010");
+    px(ctx, 64, 48, 10, 6, "#e8e0c8");
+  },
+  promote_leader(ctx) {
+    px(ctx, 0, 0, RW, 52, "#3a2818");
+    px(ctx, 0, 52, RW, 38, "#503010");
+    for (let y = 4; y < 48; y += 8) px(ctx, 0, y, RW, 2, "#2a1c10");
+    px(ctx, 8, 8, 36, 28, "#88b0c8");
+    px(ctx, 12, 12, 28, 20, "#c8a048");
+    px(ctx, 16, 16, 10, 8, PAL.pine);
+    px(ctx, 28, 18, 8, 6, PAL.blue);
+    px(ctx, 56, 6, 48, 22, "#241810");
+    px(ctx, 60, 10, 40, 14, "#e8e0c8");
+    px(ctx, 64, 13, 18, 2, PAL.ink);
+    px(ctx, 64, 17, 28, 2, PAL.ink);
+    px(ctx, 118, 4, 6, 24, "#886038");
+    px(ctx, 114, 2, 14, 6, PAL.gold);
+    px(ctx, 116, 0, 10, 4, "#fff2a0");
+    px(ctx, 16, 50, 128, 8, "#886038");
+    px(ctx, 24, 58, 4, 16, "#503010");
+    px(ctx, 132, 58, 4, 16, "#503010");
+    px(ctx, 36, 46, 16, 6, PAL.crate);
+    px(ctx, 70, 44, 22, 6, "#c8c8d0");
+    px(ctx, 100, 46, 14, 6, PAL.gold);
+    px(ctx, 78, 40, 8, 4, "#f8f8f8");
+    head(ctx, 18, 26, PAL.olive, "#507040", "#302010");
+    head(ctx, 68, 24, PAL.navy, PAL.gold, "#503010");
+    head(ctx, 112, 26, "#507040", PAL.ink, "#201810");
+  },
+  promote_opschief(ctx) {
+    px(ctx, 0, 0, RW, 36, "#182838");
+    px(ctx, 0, 36, RW, 28, "#3a2818");
+    px(ctx, 0, 64, RW, 26, "#503010");
+    px(ctx, 124, 2, 4, 62, PAL.ink);
+    px(ctx, 108, 4, 28, 4, PAL.red);
+    px(ctx, 132, 2, 6, 4, PAL.gold);
+    for (let i = 0; i < 5; i++) px(ctx, 112, 12 + i * 6, 16, 2, "#a0b0c0");
+    px(ctx, 6, 8, 44, 24, "#101820");
+    px(ctx, 10, 12, 16, 14, "#304878");
+    px(ctx, 28, 12, 16, 14, "#88b0c8");
+    px(ctx, 8, 36, 70, 28, "#684028");
+    px(ctx, 12, 40, 62, 14, "#101830");
+    px(ctx, 16, 44, 10, 8, PAL.gold);
+    px(ctx, 30, 46, 16, 4, "#30c030");
+    px(ctx, 50, 44, 14, 8, PAL.red);
+    px(ctx, 14, 56, 50, 4, "#686860");
+    px(ctx, 86, 58, 8, 6, "#e8e0c8");
+    px(ctx, 8, 70, 28, 12, "#886038");
+    px(ctx, 42, 72, 20, 8, PAL.crate);
+    head(ctx, 78, 26, PAL.olive, PAL.gold, "#302010");
+    head(ctx, 104, 28, "#507040", PAL.navy, "#201010");
+    px(ctx, 90, 40, 8, 3, "#c8c8d0");
+    px(ctx, 116, 42, 8, 3, "#c8c8d0");
+  },
+};
+
+function paintRank(fn) {
+  const c = document.createElement("canvas");
+  c.width = RW;
+  c.height = RH;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  fn(ctx);
+  ctx.fillStyle = PAL.ink;
+  ctx.fillRect(0, 0, RW, 3);
+  ctx.fillRect(0, RH - 3, RW, 3);
+  ctx.fillRect(0, 0, 3, RH);
+  ctx.fillRect(RW - 3, 0, 3, RH);
+  return c.toDataURL("image/png");
+}
+
 function paintId(id) {
   const src = document.createElement("canvas");
   src.width = W;
@@ -530,6 +651,9 @@ export async function bakeScenes() {
   Object.keys(PAINT).forEach((id) => {
     cache[id] = paintId(id);
   });
+  Object.keys(RANK_SCENES).forEach((id) => {
+    cache[id] = paintRank(RANK_SCENES[id]);
+  });
   await Promise.all(
     Object.entries(PHOTO_TINTS).map(async ([id, [src, color]]) => {
       const tinted = await tintPhoto(src, color);
@@ -542,7 +666,7 @@ export async function bakeScenes() {
 export function sceneUrl(id) {
   if (cache[id]) return cache[id];
   try {
-    cache[id] = paintId(id);
+    cache[id] = RANK_SCENES[id] ? paintRank(RANK_SCENES[id]) : paintId(id);
     return cache[id];
   } catch {
     return cache.travel || cache.drill || "art/scenes/scene-council.png";

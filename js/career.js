@@ -325,6 +325,54 @@ function bestGrant(issuerRank, fame) {
   return COMMISSIONS[Math.min(capIdx, fameIdx)] || COMMISSIONS[0];
 }
 
+function recruitBlocklist(state) {
+  const ids = new Set(["cole", "hart", "nash"]);
+  if (state.service?.superiorId) ids.add(state.service.superiorId);
+  if (state.orders?.current?.issuerId) ids.add(state.orders.current.issuerId);
+  (state.orders?.history || []).forEach((h) => {
+    if (h.issuerId) ids.add(h.issuerId);
+  });
+  const p = player(state);
+  if (p?.faction) {
+    const fac = (state.factions || []).find((f) => f.id === p.faction);
+    if (fac?.ruler && fac.ruler !== p.id) ids.add(fac.ruler);
+    if (fac?.opsChiefId && fac.opsChiefId !== p.id) ids.add(fac.opsChiefId);
+  }
+  if (p?.id) ids.delete(p.id);
+  return ids;
+}
+
+export function leaderHireAvailable(state) {
+  const p = player(state);
+  if (!p || p.faction) return false;
+  const rank = normalizeStatus(p.status) || "free";
+  const idx = statusIndex(rank);
+  if (idx < statusIndex("leader") || idx >= statusIndex("commander")) return false;
+  const cell = new Set(state.service?.cell || []);
+  const above = recruitBlocklist(state);
+  return (state.officers || []).some(
+    (o) =>
+      o.id !== p.id &&
+      !o.faction &&
+      o.region === p.region &&
+      o.alive !== false &&
+      !o.retired &&
+      !o.hidden &&
+      !o.friend &&
+      o.ladder !== "player" &&
+      !(o.child && (o.age || 0) < 16) &&
+      !cell.has(o.id) &&
+      !above.has(o.id)
+  );
+}
+
+export function leaderNextLine(state) {
+  const hire = leaderHireAvailable(state)
+    ? "People → Hire recruits into your cell. "
+    : "Hire waits until a free officer is in this city. ";
+  return `NEXT: ${hire}A side mission here writes deeds when you clear it. A banner is the Front Commander rank.`;
+}
+
 export function maybePromote(state, rank) {
   const current = normalizeStatus(rank) || normalizeStatus(player(state)?.status) || "free";
   if (current === "commander" || current === "governor" || current === "chair") return null;
@@ -358,7 +406,9 @@ export function maybePromote(state, rank) {
       tab: "personnel",
       unlocked: "People",
       scene: "promote_leader",
-      message: `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust}. People → Hire recruits into your cell, and a side mission in this city writes deeds. ADD chairs wait on a banner.`,
+      message: leaderHireAvailable(state)
+        ? `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust}. People → Hire recruits into your cell, and a side mission in this city writes deeds when you clear it. ADD chairs wait on a banner.`
+        : `Cell Member → Cell Leader. Deeds ${deeds} and trust ${trust}. A side mission in this city writes deeds when you clear it. Hire waits until a free officer is in this city. ADD chairs wait on a banner.`,
     };
   }
   if (current === "leader" && deeds >= 48 && trust >= 70) {

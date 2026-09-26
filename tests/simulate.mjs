@@ -59,6 +59,8 @@ import {
   payForGrade,
   runPayroll,
   orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
   nextRankGoal,
   apMax,
   noteDeeds,
@@ -1756,16 +1758,84 @@ const menu = hireMenuOfficers(cellLead);
 assert(menu.some((o) => o.id === volunteer.id) && !menu.some((o) => o.id === "cole"), "the hire menu is the cell pool");
 const joinedCell = act(cellLead, content, "hire", { officerId: volunteer.id });
 assert(joinedCell.ok && cellLead.service.cell.includes(volunteer.id) && !playerOf(cellLead).faction, joinedCell.message);
+const snap = (s) => JSON.stringify(s);
+const pure = createNewGame(content, { seed: 11, difficulty: "normal", name: "Casey Flint", background: "scout" });
+const pureBefore = snap(pure);
+listActions(pure);
+listActions(pure);
+listActions(pure);
+assert(snap(pure) === pureBefore, "listActions changes nothing on a new game");
+playerOf(pure).status = "leader";
+const pureLead = snap(pure);
+listActions(pure);
+listActions(pure);
+assert(snap(pure) === pureLead, "listActions changes nothing for a Cell Leader");
 const dryCell = createNewGame(content, { seed: 11, difficulty: "normal", name: "Casey Flint", background: "scout" });
 playerOf(dryCell).status = "leader";
 dryCell.missions = { board: [], seq: 0, lastRefresh: -1 };
+const dryBefore = snap(dryCell);
 const cellMission = listActions(dryCell).find((a) => a.id === "mission");
-assert(cellMission?.enabled && !/Raise a banner/.test(cellMission.hint || ""), `cell mission hint: ${cellMission?.hint}`);
-const localJob = openMissions(dryCell).find((j) => j.regionId === playerOf(dryCell).region);
-assert(localJob, "a cell job is posted when the city board is empty");
-const deedsBefore = dryCell.service.deeds || 0;
-const ran = act(dryCell, content, "mission", { jobId: localJob.id });
-assert(ran.ok && !/Raise a banner/.test(ran.message || "") && dryCell.service.deeds > deedsBefore, ran.message);
+assert(snap(dryCell) === dryBefore, "an empty board is not filled by a redraw");
+assert(cellMission && !cellMission.enabled && /End Week posts/.test(cellMission.hint || "") && !/Raise a banner/.test(cellMission.hint || ""), cellMission?.hint);
+assert(act(dryCell, content, "end_week").ok, "End Week posts the cell job");
+const posted = openMissions(dryCell).filter((j) => j.cell && j.regionId === playerOf(dryCell).region);
+assert(posted.length === 1, `one cell job a week: ${posted.length}`);
+const redraw = snap(dryCell);
+listActions(dryCell);
+listActions(dryCell);
+assert(snap(dryCell) === redraw, "redraw does not repost the cell job");
+let sawCellSuccess = false;
+for (let n = 0; n < 16 && !sawCellSuccess; n++) {
+  const job = openMissions(dryCell).find((j) => j.cell && j.regionId === playerOf(dryCell).region);
+  assert(job, "the week has one open cell job");
+  const deedsBefore = dryCell.service.deeds || 0;
+  const ran = act(dryCell, content, "mission", { jobId: job.id });
+  assert(ran.ok && !/Raise a banner/.test(ran.message || ""), ran.message);
+  if (ran.success) {
+    assert(dryCell.service.deeds === deedsBefore + 4, `a clear pays 4 deeds: ${dryCell.service.deeds}`);
+    sawCellSuccess = true;
+  } else {
+    assert(dryCell.service.deeds === deedsBefore, `a failed cell job pays nothing: ${ran.message}`);
+  }
+  assert(job.done, "the job closes either way");
+  assert(!act(dryCell, content, "mission", { jobId: job.id }).ok, "the same job cannot be run again");
+  const held = snap(dryCell);
+  listActions(dryCell);
+  assert(snap(dryCell) === held && !openMissions(dryCell).some((j) => j.cell), "a redraw does not revive the job");
+  if (!sawCellSuccess) assert(act(dryCell, content, "end_week").ok, "next week posts the next cell job");
+}
+assert(sawCellSuccess, "a cleared cell job pays deeds");
+const played = createNewGame(content, { seed: 5, difficulty: "normal", name: "Casey Flint", background: "scout" });
+respondToOrder(played, "accept");
+const climbed = act(played, content, "cultivate");
+assert(climbed.promoted?.to === "member" && !playerOf(played).faction, "the real order path reaches Cell Member");
+played.service.deeds = 28;
+played.bonds.cole = 55;
+played.service.superiorId = "cole";
+const led = noteDeeds(played, 0, "member");
+assert(led.promoted?.to === "leader", "deeds and trust reach Cell Leader in play");
+assert(/People → Hire/.test(led.promoted.message || ""), led.promoted.message);
+assert(leaderHireAvailable(played), "a free officer is in reach");
+const rosterPool = cellRecruitPool(played).map((o) => o.id);
+assert(rosterPool.includes("pell") && rosterPool.includes("briggs"), `Cheyenne volunteers are recruitable: ${rosterPool.join(",")}`);
+assert(!rosterPool.includes("cole") && !rosterPool.includes("hart") && !rosterPool.includes("nash"), "superiors stay out");
+assert(listActions(played).find((a) => a.id === "hire")?.enabled, "People → Hire is live for this Leader");
+const hiredPell = act(played, content, "hire", { officerId: "pell" });
+assert(hiredPell.ok && played.service.cell.includes("pell") && !playerOf(played).faction, hiredPell.message);
+const lone = createNewGame(content, { seed: 6, difficulty: "normal", name: "Casey Flint", background: "scout" });
+lone.officers.forEach((o) => {
+  if (!o.faction && o.region === "cheyenne" && o.id !== "cole" && o.id !== "hart" && o.id !== "nash" && o.id !== "player") o.region = "nome";
+});
+lone.service.deeds = 28;
+lone.bonds.cole = 55;
+lone.service.superiorId = "cole";
+const alone = noteDeeds(lone, 0, "free");
+assert(alone.promoted?.to === "member", "quiet path still promotes");
+lone.service.deeds = 28;
+const aloneLead = noteDeeds(lone, 0, "member");
+assert(aloneLead.promoted?.to === "leader" && !/People → Hire/.test(aloneLead.promoted.message || ""), aloneLead.promoted?.message);
+assert(!leaderHireAvailable(lone) && !/People → Hire/.test(leaderNextLine(lone)), leaderNextLine(lone));
+assert(!listActions(lone).find((a) => a.id === "hire")?.enabled, "Hire stays locked when the city has no recruit");
 const hireUi = uiSrc.slice(uiSrc.indexOf('a.needs === "hire"'), uiSrc.indexOf('a.needs === "appoint"'));
 assert(/hireMenuOfficers\(state\)/.test(hireUi) && /Recruit into your cell/.test(hireUi) && /data-hire=/.test(hireUi), "People → Hire opens the cell-recruit picker");
 const bareLeader = createNewGame(content, { seed: 3, difficulty: "normal", name: "Casey Flint", background: "scout" });

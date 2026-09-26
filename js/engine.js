@@ -62,6 +62,8 @@ import {
   noteDeeds,
   nextRankGoal,
   orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
   payForGrade,
   proposalChoices,
   payoutHarvest,
@@ -95,6 +97,8 @@ export {
   nextRankGoal,
   noteDeeds,
   orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
   cadenceLead,
   payForGrade,
   levyForGrade,
@@ -1218,7 +1222,7 @@ export function listActions(state) {
     hint: "Move to a neighboring city. Cheyenne opens Denver, Jackson, Billings, Omaha, Lincoln (I-80 Stall), and Salt Lake (I-80 basin). Reno uses the Wendover rail. Cuba is Gulf Sealift, then Havana. Nicaragua, then Managua. Russia is Bering, then Kamchatka and Siberia. Korea is the Sponsor Lane, then Korea, then Sheds — Korea inland (kr_inland). No leaping. Focus an inland desk and NEXT names its siege board: Cut the berm, Rake the parapet, Rush the gap.",
     needs: "neighbor",
   });
-  const camp = ensureCampaign(state);
+  const camp = state.campaign || { phase: 1 };
   actions.push({
     id: "war_council",
     label: "War Council",
@@ -1243,18 +1247,18 @@ export function listActions(state) {
       : "Need 8 garrison in a held region, or 8 personal retinue as a free officer.",
     needs: "attack",
   });
-  if (cellRank(state)) ensureCellMission(state);
   const jobs = openMissions(state);
+  const cellJobs = cellMissions(state, jobs);
   actions.push({
     id: "mission",
-    label: jobs.length ? `Side Mission (${jobs.length})` : "Side Mission",
+    label: cellJobs.length ? `Side Mission (${cellJobs.length})` : jobs.length ? `Side Mission (${jobs.length})` : "Side Mission",
     ap: 1,
     group: "command",
-    enabled: (hasBanner && jobs.length > 0) || cellMissions(state, jobs).length > 0,
-    hint: cellMissions(state, jobs).length
-      ? "Run a side mission in this city for the cell. It writes deeds. No banner required."
+    enabled: (hasBanner && jobs.length > 0) || cellJobs.length > 0,
+    hint: cellJobs.length
+      ? "Run this week's cell job in this city. Deeds if you clear it. No banner required."
       : cellRank(state)
-      ? "A cell job is posted in this city. It writes deeds."
+      ? "One cell job a week. End Week posts the next one in this city."
       : !hasBanner
       ? "Raise a banner, then take optional jobs (Military → Side Mission)."
       : jobs.length
@@ -1371,8 +1375,7 @@ function commandChain(state) {
 export function cellRecruitPool(state) {
   const p = playerOf(state);
   if (!cellRank(state)) return [];
-  ensureCareer(state);
-  const cell = new Set(state.service.cell || []);
+  const cell = new Set(state.service?.cell || []);
   const above = commandChain(state);
   return visibleOfficers(state).filter(
     (o) =>
@@ -1404,14 +1407,19 @@ function cellHash(state) {
   return h >>> 0;
 }
 
-function ensureCellMission(state) {
+function postCellMission(state) {
   if (!cellRank(state)) return null;
+  const svc = state.service;
   const p = playerOf(state);
-  if (!state.missions || !Array.isArray(state.missions.board)) {
-    state.missions = { board: [], seq: state.missions?.seq || 0, lastRefresh: state.missions?.lastRefresh ?? -1 };
+  if (!svc || !p || !state.missions || !Array.isArray(state.missions.board)) return null;
+  if (svc.cellJobWeek === state.week) {
+    return state.missions.board.find((j) => j.cell && !j.done && j.regionId === p.region) || null;
   }
-  const local = state.missions.board.find((j) => !j.done && j.regionId === p.region);
-  if (local) return local;
+  const open = state.missions.board.find((j) => j.cell && !j.done && j.regionId === p.region);
+  if (open) {
+    svc.cellJobWeek = state.week;
+    return open;
+  }
   const templates = ["scout_road", "escort_convoy", "radio_run", "cache_pull", "ford_watch", "ranch_relay"];
   const templateId = templates[cellHash(state) % templates.length];
   const t = templateOf(templateId);
@@ -1427,13 +1435,14 @@ function ensureCellMission(state) {
     cell: true,
   };
   state.missions.board.push(job);
+  svc.cellJobWeek = state.week;
   return job;
 }
 
 function cellMissions(state, jobs) {
   const p = playerOf(state);
   if (!cellRank(state)) return [];
-  return (jobs || []).filter((j) => j.regionId === p.region);
+  return (jobs || []).filter((j) => j.cell && j.regionId === p.region);
 }
 
 export function hireCandidates(state) {
@@ -2209,8 +2218,9 @@ function lockedMissionDesk(id) {
   return inlandDesk(id) ? id : null;
 }
 
-function grantCellDeeds(state, res) {
-  if (!res?.ok || !cellRank(state) || playerOf(state).faction) return res;
+function grantCellDeeds(state, res, job) {
+  if (!res?.ok || res.success !== true || !job?.cell) return res;
+  if (!cellRank(state) || playerOf(state).faction) return res;
   const bump = noteDeeds(state, 4, rankOf(state, playerOf(state)));
   res.message = `${res.message || ""} Cell deeds +4.`.trim();
   if (bump.promoted && !res.promoted) res.promoted = bump.promoted;
@@ -2220,7 +2230,6 @@ function grantCellDeeds(state, res) {
 function doMission(state, jobId, officerId, deskId) {
   const p = playerOf(state);
   const forCell = cellRank(state);
-  if (forCell) ensureCellMission(state);
   if (!p.faction && !forCell) return { ok: false, message: "Raise a banner first." };
   const job = missionById(state, jobId);
   if (!job || job.done) return { ok: false, message: "That job is gone. End Week refreshes the board." };
@@ -2237,7 +2246,7 @@ function doMission(state, jobId, officerId, deskId) {
     if (!foe) {
       const res = resolveMission(state, job, actor, missionHelpers());
       pushLog(state, res.report || res.message, "player");
-      return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk });
+      return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk }, job);
     }
     beginDuel(state, actor, foe, {
       jobId: job.id,
@@ -2248,13 +2257,13 @@ function doMission(state, jobId, officerId, deskId) {
     });
     const msg = `Porch challenge: ${foe.name} in ${regionOf(state, job.regionId)?.short || "town"}.`;
     pushLog(state, msg, "war");
-    return grantCellDeeds(state, { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk });
+    return grantCellDeeds(state, { ok: true, duel: true, message: msg, sceneId: "porch_challenge", deskId: desk }, job);
   }
   if (!spend(state, job.ap || 1)) return { ok: false, message: "No AP." };
   const actor = officerOf(state, officerId) || p;
   const res = resolveMission(state, job, actor, missionHelpers());
   pushLog(state, res.report || res.message, "player");
-  return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk });
+  return grantCellDeeds(state, { ...res, sceneId: res.sceneId || "mission", deskId: desk }, job);
 }
 
 function runStandingMission(state, off) {
@@ -3020,6 +3029,7 @@ function applyOfficerChoice(state, off, choice, playerStaff) {
 
 function officerActAI(state, content, off) {
   if (off.id === "player" || off.alive === false) return null;
+  if (!off.faction && off.cellVolunteer) return null;
   if (off.hidden && !state.discovered.includes(off.id) && off.legend) {
     if (state.week >= 6 && chance(state, 0.2)) {
       noteLegendRumor(state, off.id);
@@ -3285,6 +3295,7 @@ export function endWeek(state, content) {
   const chronicle = buildChronicle(state, { year, seasonChanged, lifeEvents: life.events });
   tryUnlockTech(state, content, true);
   refreshMissionBoard(state);
+  postCellMission(state);
   state.ap = apMax(state);
   playerOf(state).fame = Math.min(100, playerOf(state).fame + (playerOf(state).faction ? 1 : 0));
 

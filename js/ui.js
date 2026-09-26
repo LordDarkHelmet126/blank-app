@@ -39,9 +39,12 @@ import {
   statusIndex,
   apMax,
   orderLead,
+  leaderHireAvailable,
+  leaderNextLine,
   nextRankGoal,
   cadenceLead,
   respondToOrder,
+  noteDeeds,
   commissionLabel,
   payForGrade,
   levyForGrade,
@@ -635,7 +638,18 @@ export async function boot(loaded) {
     suppressOrderPrompt = true;
     state = createNewGame(content, { name: "Alex Rourke", background: "scout", difficulty: "normal", seed: 7 });
     respondToOrder(state, "accept");
-    const done = act(state, content, "cultivate");
+    const rankShot = params.get("rank");
+    let done = act(state, content, "cultivate");
+    if (rankShot === "leader" || rankShot === "opschief") {
+      playerOf(state).status = rankShot === "opschief" ? "leader" : "member";
+      if (state.service) {
+        state.service.deeds = rankShot === "opschief" ? 48 : 28;
+        state.service.superiorId = "cole";
+      }
+      state.bonds = state.bonds || {};
+      state.bonds.cole = rankShot === "opschief" ? 75 : 55;
+      done = noteDeeds(state, 0, rankShot === "opschief" ? "leader" : "member");
+    }
     selectedRegion = "cheyenne";
     commandCat = "domestic";
     hideModal({ flush: false });
@@ -1106,7 +1120,7 @@ function nextHintCore(st) {
   if (!p.faction) {
     const rungNow = rankOf(st, p);
     if (rungNow === "opschief") return "NEXT: Next rank is Front Commander. Raise a banner of your own for ground and ADD chairs.";
-    if (rungNow === "leader") return "NEXT: People → Hire recruits into your cell. A side mission here writes deeds. A banner is the Front Commander rank.";
+    if (rungNow === "leader") return leaderNextLine(st);
     return "NEXT: Finish the month's order. Deeds and trust raise you. A banner is the Front Commander rank.";
   }
   if (st.ap <= 0) return `NEXT: End Week. Next week may bring ${weekTease(st)}.`;
@@ -1249,17 +1263,41 @@ function maybeAdvanceCoach(actionId) {
   openCoach();
 }
 
+function placeTip(anchor) {
+  const tip = $("tip");
+  if (!tip || !anchor) return;
+  tip.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const tipW = Math.min(280, tip.offsetWidth || 260);
+  const tipH = tip.offsetHeight || 96;
+  const side = document.querySelector(".side");
+  const plate = document.querySelector("#officer-plate");
+  const sideRight = side ? side.getBoundingClientRect().right : r.right;
+  let left = sideRight + 8;
+  let top = Math.max(8, r.top);
+  if (left + tipW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - tipW - 8);
+  if (top + tipH > window.innerHeight - 8) top = Math.max(8, window.innerHeight - tipH - 8);
+  const pr = plate?.getBoundingClientRect();
+  const overlaps =
+    pr &&
+    left < pr.right &&
+    left + tipW > pr.left &&
+    top < pr.bottom &&
+    top + tipH > pr.top;
+  if (overlaps) {
+    left = Math.min(window.innerWidth - tipW - 8, Math.max(8, pr.right + 8));
+    if (top + tipH > pr.top && top < pr.bottom) top = Math.max(8, pr.top - tipH - 8);
+  }
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
 function bindTip(el, text) {
   if (!el || !text) return;
   const show = (e) => {
     const tip = $("tip");
     tip.innerHTML = text;
-    tip.hidden = false;
-    const r = (e.currentTarget || el).getBoundingClientRect();
-    const x = Math.max(8, Math.min(window.innerWidth - 288, r.left));
-    const y = r.bottom + 6;
-    tip.style.left = `${x}px`;
-    tip.style.top = `${Math.min(window.innerHeight - 8, y)}px`;
+    placeTip(e.currentTarget || el);
   };
   const hide = () => {
     $("tip").hidden = true;
@@ -1391,6 +1429,8 @@ function wireOrderDialog() {
   root.querySelectorAll("[data-propose]").forEach((btn) => {
     btn.onclick = () => answerOrder("propose", btn.dataset.propose);
   });
+  const accept = root.querySelector("[data-order='accept']");
+  if (accept) accept.focus();
 }
 
 function answerOrder(choice, taskId) {
@@ -1443,14 +1483,7 @@ function showLockedTip(actionId) {
   const action = listActions(state).find((a) => a.id === actionId);
   tip.innerHTML = actionTipHtml(action || { label: actionId, hint: "Locked.", ap: 1, enabled: false });
   btn.scrollIntoView({ block: "center", inline: "nearest" });
-  tip.hidden = false;
-  const r = btn.getBoundingClientRect();
-  const width = 280;
-  const left = Math.max(8, Math.min(window.innerWidth - width - 8, r.left));
-  let top = r.bottom + 6;
-  if (top + 130 > window.innerHeight) top = Math.max(8, r.top - 130);
-  tip.style.left = `${left}px`;
-  tip.style.top = `${top}px`;
+  placeTip(btn);
 }
 
 function helpHtml() {
@@ -1643,11 +1676,16 @@ function missionsHtml() {
   if (!state) return `<p>No game.</p>`;
   const p = playerOf(state);
   const jobs = openMissions(state);
+  const rung = rankOf(state, p);
+  const cellPlay = !p.faction && (rung === "leader" || rung === "opschief");
+  const shown = cellPlay ? jobs.filter((j) => j.cell && j.regionId === p.region) : jobs;
   const stash = (state.stash || []).slice(-8);
-    const empty = jobs.length
+    const empty = shown.length
     ? ""
-    : `<p class="muted">No jobs. Raise a banner, then End Week. Scout, raid, escort, radio, cache, ford, strip, claim, ice, ranch, porch.</p>`;
-  const rows = jobs
+    : cellPlay
+      ? `<p class="muted">One cell job a week. End Week posts the next one in this city. Deeds if you clear it.</p>`
+      : `<p class="muted">No jobs. Raise a banner, then End Week. Scout, raid, escort, radio, cache, ford, strip, claim, ice, ranch, porch.</p>`;
+  const rows = shown
     .map((j) => {
       const dest = regionOf(state, j.regionId);
       const here = j.regionId === p.region;
@@ -1984,6 +2022,10 @@ function officerHtml() {
       <span id="status-panel">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5}</span>
       <span class="goal-line">${esc(goal)}</span>
     </button>
+    <p class="plate-tools">
+      <button type="button" data-open-service>Service record</button>
+      ${state.orders?.current ? `<button type="button" data-open-order>Order</button>` : ""}
+    </p>
     <div class="chrome-head">
       <span class="panel-title">Status</span>
       <span class="panel-why">Service record for this officer.</span>
@@ -2002,7 +2044,6 @@ function officerHtml() {
         <p class="service-line">Deeds ${state.service?.deeds ?? 0} · Grade ${state.service?.grade ?? 5} · Pay ${payForGrade(state.service?.grade)} · Levy ${levyForGrade(state.service?.grade)}</p>
         <p class="service-line">Commission ${esc(commissionLabel(state.service?.commission))} · Fame ${state.fame}</p>
         <p class="service-line goal-line" id="next-goal">${esc(nextRankGoal(state, rankOf(state, p)))}</p>
-        <p class="service-actions"><button type="button" data-open-service>Service record</button>${state.orders?.current ? `<button type="button" data-open-order>Order</button>` : ""}</p>
         ${loyBar(p.loyalty)}
         <div class="stat-row">
           <span><b>WAR</b><strong>${p.war}</strong></span>
@@ -2025,9 +2066,14 @@ function courtHtml() {
   const deskId = syncCourtDesk();
   const look = inlandLook(deskId);
   const desk = inlandDesk(deskId);
+  const cellHire = leaderHireAvailable(state);
   const courtBase = rung || (p.faction
     ? "NEXT: Roster → Create a friend (they start as Player), or People → Hire fills an ADD chair."
-    : "NEXT: People → Hire recruits into your cell. A banner fills the ADD chairs.");
+    : cellHire
+      ? "NEXT: People → Hire recruits into your cell. A banner fills the ADD chairs."
+      : statusIndex(rankOf(state, p)) >= statusIndex("leader")
+        ? "NEXT: Hire waits until a free officer is in this city. A banner fills the ADD chairs."
+        : "NEXT: Finish orders to Cell Leader. A banner fills the ADD chairs.");
   const courtNext = desk && look ? `NEXT: ${desk.line}. ${look.read}. ${courtBase.replace(/^NEXT:\s*/, "")}` : courtBase;
   const courtTitle = look ? `Court — ${look.strip}` : "Court";
   const courtStrip = look
@@ -2056,9 +2102,11 @@ function courtHtml() {
     } else {
       let hint;
       if (!p.faction) {
-        hint = statusIndex(rankOf(state, p)) >= statusIndex("leader")
+        hint = cellHire
           ? "People → Hire recruits into your cell. Not an ADD chair."
-          : "Finish orders to Cell Leader, then People → Hire into your cell.";
+          : statusIndex(rankOf(state, p)) >= statusIndex("leader")
+            ? "No free officer in this city to recruit. Not an ADD chair."
+            : "Finish orders to Cell Leader. Hire waits on a free officer in this city.";
       }
       else if (wait[0]) hint = `Command → Appoint ${esc(wait[0].name)}.`;
       else if (ladderRoster(state).officer.some((o) => o.region === p.region) && gens.length < MAX_GENERALS) hint = "Roster → Promote an officer to general.";
@@ -2248,7 +2296,7 @@ const COACH_STEPS = [
   {
     id: "hire",
     title: "3 / 4  Ranks ahead",
-    body: "Finish orders to climb. People → Hire, once you are a Cell Leader, recruits into your cell — not an ADD chair. Fill an ADD chair after you raise a banner: People → Hire, then Command → Appoint. Appoint waits on a Front Commander.",
+    body: "Finish orders to climb. People → Hire, once you are a Cell Leader and a free officer is in your city, recruits into your cell — not an ADD chair. Fill an ADD chair after you raise a banner: People → Hire, then Command → Appoint. Appoint waits on a Front Commander.",
     target: "#status-panel",
     cat: "personal",
   },
