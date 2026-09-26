@@ -50,7 +50,7 @@ import {
   geoTags,
   startInlandBattle,
 } from "../js/engine.js";
-import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
+import { CLOSE_ZOOM, LABEL_ANCHOR, LABEL_MIN_SCREEN, chordIsMisleading, cityLabelSizes, closeRoadWidth, insetMarkerCenter, letterboxCanvasPoint, letterboxContains, mapDetailFromSave, mapLayerVisibility, stampMapDetail } from "../js/map-detail.js";
 import { createBattle, autoResolveBattle } from "../js/battle.js";
 import { INLAND_IDS, inlandDesk, inlandLook, stampBattleDesk, stampCourtDesk, stampMissionDesk } from "../js/inland.js";
 import {
@@ -1394,7 +1394,7 @@ assert(!/clampCloseMarkers/.test(uiSrc) && !/mapView\.z = z2/.test(uiSrc) && /ap
   assert(corner && corner[0] >= 8 && corner[1] >= 8, "a corner marker whose centre is in view slides inside");
   assert(insetMarkerCenter(-30, 90, 8, view) === null, "a marker whose centre is off-canvas is not used to move the camera");
 }
-assert(/letterboxCanvasPoint/.test(uiSrc), "map clicks use the same letterbox as the drawn canvas");
+assert(/letterboxCanvasPoint/.test(uiSrc) && /letterboxContains/.test(uiSrc), "map clicks use the drawn letterbox and ignore the empty bars");
 {
   const rect = { left: 6, top: 171.2, width: 1428, height: 722.8 };
   const scale = Math.min(rect.width / 1000, rect.height / 620);
@@ -1411,6 +1411,10 @@ assert(/letterboxCanvasPoint/.test(uiSrc), "map clicks use the same letterbox as
   const fit = { left: 10, top: 20, width: 500, height: 310 };
   const [ax, ay] = letterboxCanvasPoint(110, 80, fit, 1000, 620);
   assert(Math.abs(ax - ((110 - 10) / 500) * 1000) < 0.05 && Math.abs(ay - ((80 - 20) / 310) * 620) < 0.05, "an unletterboxed canvas keeps the old click mapping");
+  assert(letterboxContains(clientX, clientY, rect, 1000, 620), "a point on drawn Denver is inside the map");
+  assert(!letterboxContains(rect.left + 4, oy + 200, rect, 1000, 620), "the empty bar left of the map is not a hit");
+  assert(!letterboxContains(ox + 1000 * scale + 30, oy + 200, rect, 1000, 620), "the empty bar right of the map is not a hit");
+  assert(/letterboxContains\(mx, my/.test(uiSrc), "hover and click ignore the letterbox bars");
 }
 assert(/territoryTipHtml/.test(uiSrc) && /Yield \+/.test(uiSrc) && /Works:/.test(uiSrc), "city report and hover keep levy yield and works");
 const closeRoad = closeRoadWidth(3.2);

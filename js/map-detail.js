@@ -1,6 +1,7 @@
 /** Close-up map layers. Overview stays as drawn. Zoomed theater drops the extras. */
 
-export const CLOSE_ZOOM = 1.15;
+/** The ×1.2 button from the full theater stays the overview. Clean labels start on the next step. */
+export const CLOSE_ZOOM = 1.25;
 export const MAP_DETAIL_KEY = "northern-front-v01-map-detail";
 /** City names stay readable. Screen pixels, not world units. */
 export const LABEL_MIN_SCREEN = 8;
@@ -105,13 +106,26 @@ export function cityLabelSizes(baseWorld, z, cssScale = 1) {
  * The drawn map is letterboxed inside the element; stretching the element box
  * drifts hits toward the edges.
  */
-export function letterboxCanvasPoint(clientX, clientY, rect, canvasW, canvasH) {
+export function letterboxMetrics(rect, canvasW, canvasH) {
   const rw = Math.max(1, rect.width);
   const rh = Math.max(1, rect.height);
   const scale = Math.min(rw / canvasW, rh / canvasH);
   const ox = rect.left + (rw - canvasW * scale) / 2;
   const oy = rect.top + (rh - canvasH * scale) / 2;
-  return [(clientX - ox) / scale, (clientY - oy) / scale];
+  return { scale, ox, oy, dw: canvasW * scale, dh: canvasH * scale };
+}
+
+/** True when the pointer is on the drawn map, not the empty bars beside a letterboxed canvas. */
+export function letterboxContains(clientX, clientY, rect, canvasW, canvasH) {
+  const box = letterboxMetrics(rect, canvasW, canvasH);
+  const x = clientX - box.ox;
+  const y = clientY - box.oy;
+  return x >= -0.5 && y >= -0.5 && x <= box.dw + 0.5 && y <= box.dh + 0.5;
+}
+
+export function letterboxCanvasPoint(clientX, clientY, rect, canvasW, canvasH) {
+  const box = letterboxMetrics(rect, canvasW, canvasH);
+  return [(clientX - box.ox) / box.scale, (clientY - box.oy) / box.scale];
 }
 
 /**
