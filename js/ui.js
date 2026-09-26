@@ -495,6 +495,7 @@ export async function boot(loaded) {
     render();
     const view = params.get("view");
     if (view === "world") frameWorld();
+    else if (view === "europe") frameEurope();
     else if (view === "atlas") {
       const city = params.get("city");
       if (city) {
@@ -512,7 +513,7 @@ export async function boot(loaded) {
     else if (view === "bering") frameBering();
     else if (view === "cuba") frameCuba();
     else if (view === "korea") frameKorea();
-    if (!battleFx && view !== "world" && view !== "atlas") pulseTravel("cheyenne", "denver", { loop: true });
+    if (!battleFx && view !== "world" && view !== "atlas" && view !== "europe") pulseTravel("cheyenne", "denver", { loop: true });
     frameForInlandFocus(params.get("focus") || params.get("city") || "");
     if (params.get("panel") === "officers") {
       showModal(officersHtml(), { kind: "officers" });
@@ -2351,10 +2352,16 @@ function frameAtlasState(code) {
   frameLonLat(b.minLon, b.maxLat, b.maxLon, b.minLat, 0.78);
 }
 
+function frameEurope() {
+  clearForeignFrame();
+  mapView.atlas = "eu";
+  frameLonLat(-11.5, 66.2, 40.5, 35.2, 0.9);
+}
+
 function frameWorld() {
   clearForeignFrame();
   mapView.atlas = "us";
-  const [xWest, yNorth] = projectLL(-192, 78);
+  const [xWest, yNorth] = projectLL(-192, 84);
   const [xEast, ySouth] = projectLL(185, -56);
   const minX = Math.min(xWest, xEast) - 30;
   const maxX = Math.max(xWest, xEast) + 30;

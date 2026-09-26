@@ -18,11 +18,21 @@ const WORLD_CAPS = new Set([
   "br.brasilia",
   "pe.lima",
   "ar.buenos_aires",
+  "gb.london",
+  "fr.paris",
+  "de.bonn",
+  "wb.west_berlin",
+  "it.rome",
+  "es.madrid",
+  "se.stockholm",
+  "gr.athens",
+  "tr.ankara",
 ]);
 
 /** World zoom shows the whole atlas. A framed state or province shows its cities up close. */
 export function atlasMode(mapView) {
   if (!mapView || mapView.focus) return "off";
+  if (mapView.atlas === "eu") return "world";
   if (mapView.z < 0.55) return "world";
   if (mapView.atlas && mapView.atlas !== "us") return "state";
   return "off";
@@ -112,7 +122,7 @@ export function drawWorldAtlas(ctx, opts) {
   links.forEach((link) => {
     const [x1, y1] = project(link.from.lon, link.from.lat);
     const [x2, y2] = project(link.to.lon, link.to.lat);
-    const sea = link.kind === "sea";
+    const sea = link.kind === "sea" || link.kind === "air";
     const rail = link.kind === "rail";
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -121,7 +131,7 @@ export function drawWorldAtlas(ctx, opts) {
     ctx.strokeStyle = "#1a0808";
     ctx.lineWidth = casing;
     ctx.stroke();
-    ctx.strokeStyle = sea ? "#d5e6f2" : rail ? "#e2b84a" : "#fff6d0";
+    ctx.strokeStyle = link.kind === "air" ? "#e7d4ff" : link.kind === "sea" ? "#d5e6f2" : rail ? "#e2b84a" : "#fff6d0";
     ctx.lineWidth = core;
     ctx.stroke();
     ctx.setLineDash([]);

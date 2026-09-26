@@ -6,9 +6,11 @@ import { MEXICO_REGION } from "../data/world/regions/mexico.js";
 import { CENTRAL_AMERICA } from "../data/world/regions/central-america.js";
 import { CARIBBEAN } from "../data/world/regions/caribbean.js";
 import { SOUTH_AMERICA } from "../data/world/regions/south-america.js";
+import { WESTERN_EUROPE } from "../data/world/regions/western-europe.js";
 
 function modesFor(kind) {
   if (kind === "sea") return ["sea"];
+  if (kind === "air") return ["air"];
   if (kind === "trail") return ["trail"];
   if (kind === "rail") return ["rail", "road"];
   return ["road"];
@@ -36,6 +38,7 @@ export const WORLD_REGIONS = stitchBorders([
   ...CENTRAL_AMERICA,
   ...CARIBBEAN,
   ...SOUTH_AMERICA,
+  ...WESTERN_EUROPE,
 ]);
 
 const COMMAND_SLOTS = ["head_of_state", "defense_minister", "chief_of_staff", "front_commander", "field_officer"];
@@ -47,7 +50,7 @@ export function requiredCommandSlots(territoryCount) {
   return COMMAND_SLOTS;
 }
 const STATUSES = new Set(["neutral", "occupied", "held"]);
-const LINK_KINDS = new Set(["road", "rail", "sea", "trail"]);
+const LINK_KINDS = new Set(["road", "rail", "sea", "air", "trail"]);
 
 export function worldCatalog() {
   return { resources: RESOURCES, regions: WORLD_REGIONS };

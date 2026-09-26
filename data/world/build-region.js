@@ -1,7 +1,11 @@
 import { geoFromYields } from "./resources.js";
 
 function modesFor(kind) {
-  return kind === "sea" ? ["sea"] : kind === "trail" ? ["trail"] : kind === "rail" ? ["rail", "road"] : ["road"];
+  if (kind === "sea") return ["sea"];
+  if (kind === "air") return ["air"];
+  if (kind === "trail") return ["trail"];
+  if (kind === "rail") return ["rail", "road"];
+  return ["road"];
 }
 
 function envelope(points, pad) {
@@ -79,6 +83,7 @@ export function buildRegion(spec) {
       id: sub.id,
       name: sub.name,
       kind: sub.kind,
+      group: sub.group || null,
       country: spec.country,
       biome: biome[sub.id] || spec.defaultBiome || "tropical",
       bbox: sub.bbox || envelope(pins, spec.subPad ?? 0.35),

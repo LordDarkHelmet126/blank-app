@@ -30,6 +30,7 @@ export const RESOURCES = [
   { id: "cocoa", group: "farm", label: "Cocoa" },
   { id: "nutmeg", group: "farm", label: "Nutmeg" },
   { id: "wool", group: "farm", label: "Wool" },
+  { id: "olives", group: "farm", label: "Olives" },
   { id: "coal", group: "mine", label: "Coal" },
   { id: "lignite", group: "mine", label: "Lignite" },
   { id: "iron", group: "mine", label: "Iron ore" },
